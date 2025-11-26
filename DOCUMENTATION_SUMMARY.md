@@ -1,3 +1,26 @@
+### Dépendances Machine Learning (Phase 2)
+
+Pour la phase Machine Learning du Module 3, les bibliothèques Python suivantes sont utilisées :
+
+- `pandas` : chargement et manipulation du dataset CSV
+- `scikit-learn` : entraînement du modèle de classification (RandomForest, etc.)
+- `joblib` : sérialisation du pipeline (encoders + modèle) vers un fichier `.pkl`
+
+Installation recommandée :
+
+```bash
+pip install -r requirements_ml.txt
+```
+
+---
+
+🎯 Résumé de ce que tu as maintenant :
+
+- Une commande `export_future_skills_dataset` qui génère un **vrai dataset structuré** pour ton modèle.
+- Un fichier de dépendances ML (`requirements_ml.txt`) pour ne pas oublier ce qu’il faut installer.
+
+Quand tu auras exécuté la commande et que le CSV est là, on pourra passer à **ML-1 — `ml/train_future_skills_model.py`** et je te ferai un script d’entraînement complet (avec Pipeline, RandomForest, sauvegarde `.pkl`).
+
 # Module 3 : Future Skills — Récapitulatif Global
 
 ## 📋 Vue d'ensemble
