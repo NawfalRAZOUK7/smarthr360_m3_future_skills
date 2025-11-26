@@ -8,7 +8,14 @@ from django.test import TestCase
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from future_skills.models import Skill, JobRole, MarketTrend, FutureSkillPrediction, HRInvestmentRecommendation
+from future_skills.models import (
+    Skill,
+    JobRole,
+    MarketTrend,
+    FutureSkillPrediction,
+    HRInvestmentRecommendation,
+    PredictionRun,  # ⬅️ ajoute ceci
+)
 from future_skills.services.prediction_engine import recalculate_predictions
 from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
 
@@ -126,9 +133,20 @@ class RecalculateFutureSkillsAPITests(BaseAPITestCase):
 
         self.assertIn("total_predictions", data)
         self.assertIn("horizon_years", data)
+
         # Vérifie que total_predictions correspond bien au nombre d'objets en base
         expected = JobRole.objects.count() * Skill.objects.count()
         self.assertEqual(data["total_predictions"], expected)
+
+        # Vérifier le dernier PredictionRun
+        last_run = PredictionRun.objects.order_by("-run_date").first()
+        self.assertIsNotNone(last_run)
+        self.assertEqual(last_run.run_by, self.user_drh)
+        self.assertIsInstance(last_run.parameters, dict)
+        self.assertEqual(last_run.parameters.get("trigger"), "api")
+        self.assertEqual(last_run.parameters.get("horizon_years"), 5)
+        self.assertEqual(last_run.parameters.get("engine"), "rules_v1")
+
 
 
 class MarketTrendsAPITests(BaseAPITestCase):

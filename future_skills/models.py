@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Skill(models.Model):
@@ -150,9 +151,21 @@ class PredictionRun(models.Model):
         null=True,
         help_text="Contexte du recalcul (ex : 'Mise à jour tendances 2025')."
     )
-    total_predictions = models.PositiveIntegerField(
-        default=0,
-        help_text="Nombre total de prédictions créées / mises à jour."
+    total_predictions = models.IntegerField()
+
+    # 🔐 Nouveaux champs de traçabilité
+    run_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="future_skills_runs",
+        help_text="Utilisateur ayant déclenché le recalcul (null si CLI).",
+    )
+    parameters = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Paramètres utilisés pour ce recalcul (horizon, moteur, trigger, etc.).",
     )
 
     class Meta:
