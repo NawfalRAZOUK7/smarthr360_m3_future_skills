@@ -1,85 +1,168 @@
-# future_skills/services/recommendation_engine.py
+"""Recommendation engine for HR Investment (Module 3).
 
-from typing import Optional
+This module generates HRInvestmentRecommendation objects from
+FutureSkillPrediction entries.
 
-from future_skills.models import (
-    FutureSkillPrediction,
-    HRInvestmentRecommendation,
-    JobRole,
-    Skill,
-)
+Key points:
+- Only HIGH predictions are used in the normal path.
+- If no HIGH prediction exists for a given horizon, a small fallback
+  strategy selects the top-scoring predictions to still provide
+  recommendations (useful for demos / very small datasets).
+- Priority level and recommended action are derived from the
+  prediction level and basic heuristics on job_role / skill.
+
+Public API:
+- generate_recommendations_from_predictions(horizon_years: int = 5) -> int
+
+Internal helpers:
+- _choose_priority_from_level(level: str) -> str
+- _choose_recommended_action(job_role, skill) -> str
+- _decide_action(job_role, skill) -> str (backward-compatible alias)
+"""
+
+from __future__ import annotations
+
+import logging
+
+from future_skills.models import FutureSkillPrediction, HRInvestmentRecommendation
+
+logger = logging.getLogger(__name__)
 
 
-def _decide_action(job_role: Optional[JobRole], skill: Skill) -> str:
+# ---------------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------------
+
+
+def _choose_priority_from_level(level: str) -> str:
+    """Map prediction level (LOW/MEDIUM/HIGH) to HR priority.
+
+    This is intentionally simple and transparent so it can be
+    documented easily and, if needed, tuned later.
     """
-    Décide l'action RH recommandée en fonction du type de compétence
-    et éventuellement du département du rôle.
+
+    if level == FutureSkillPrediction.LEVEL_HIGH:
+        return HRInvestmentRecommendation.PRIORITY_HIGH
+    if level == FutureSkillPrediction.LEVEL_MEDIUM:
+        return HRInvestmentRecommendation.PRIORITY_MEDIUM
+    return HRInvestmentRecommendation.PRIORITY_LOW
+
+
+def _choose_recommended_action(job_role, skill) -> str:
+    """Very simple heuristic for the recommended HR action.
+
+    Current rule (can be refined later):
+      - If the department looks like HR or the skill category
+        contains "soft" → TRAINING.
+      - Otherwise → HIRING.
     """
-    # Exemple d'heuristiques très simples :
-    # - Compétence technique & rôle IT → plutôt formation
-    # - Compétence technique & rôle non IT → recrutement
-    # - Soft skill → reskilling / formation interne
 
-    name_lower = (skill.name or "").lower()
-    category = (skill.category or "").lower()
-    dept = (job_role.department or "").lower() if job_role and job_role.department else ""
+    dept = (getattr(job_role, "department", None) or "").lower()
+    category = (getattr(skill, "category", None) or "").lower()
 
-    # Cas soft skills
-    if "soft" in category or "projet" in name_lower or "communication" in name_lower:
-        return HRInvestmentRecommendation.ACTION_RESKILL
-
-    # Cas techniques pour IT
-    if dept == "it" and category == "technique":
+    if "rh" in dept or "soft" in category:
         return HRInvestmentRecommendation.ACTION_TRAINING
 
-    # Par défaut, on considère qu'il faut recruter sur une compétence rare
+    # Default: we consider hiring as the main lever
     return HRInvestmentRecommendation.ACTION_HIRING
 
 
+def _decide_action(job_role, skill) -> str:
+    """Backward-compatible alias used in earlier drafts.
+
+    Some code/tests might still refer to `_decide_action`, so we keep it
+    as a thin wrapper around `_choose_recommended_action`.
+    """
+
+    return _choose_recommended_action(job_role, skill)
+
+
+# ---------------------------------------------------------------------------
+# Core service
+# ---------------------------------------------------------------------------
+
+
 def generate_recommendations_from_predictions(horizon_years: int = 5) -> int:
+    """Generate HRInvestmentRecommendation objects from predictions.
+
+    Rules:
+      1. Filter FutureSkillPrediction on the given horizon_years.
+      2. Normal case: only consider predictions with level = HIGH.
+      3. If there is no HIGH at all for this horizon:
+         - Fallback: take the top scoring predictions so that the
+           system can still show something meaningful (useful for
+           demos / very small synthetic datasets).
+
+    Returns the number of recommendations created/updated.
     """
-    Génère des recommandations RH à partir des prédictions existantes
-    pour un horizon donné.
 
-    Règles simples :
-      - On ne considère que les prédictions avec level = HIGH.
-      - On crée/MAJ une HRInvestmentRecommendation par couple (job_role, skill, horizon).
-    """
-    total = 0
+    queryset = FutureSkillPrediction.objects.filter(horizon_years=horizon_years)
 
-    high_predictions = FutureSkillPrediction.objects.filter(
-        horizon_years=horizon_years,
-        level=FutureSkillPrediction.LEVEL_HIGH,
-    ).select_related("job_role", "skill")
+    # Normal case: use only HIGH predictions
+    high_predictions = queryset.filter(level=FutureSkillPrediction.LEVEL_HIGH)
 
-    for prediction in high_predictions:
-        job = prediction.job_role
-        skill = prediction.skill
-
-        action = _decide_action(job, skill)
-
-        # Exemple très simple : budget_hint = score * 10 (à adapter selon ton contexte)
-        budget_hint = round(prediction.score * 10, 1)
-
-        rationale = (
-            f"Basée sur un score de {prediction.score} et un niveau HIGH pour la compétence "
-            f"'{skill.name}' sur le rôle '{job.name if job else 'Global'}', "
-            f"il est recommandé de {action} à horizon {horizon_years} ans."
+    if high_predictions.exists():
+        target_predictions = high_predictions
+        logger.info(
+            "Génération de recommandations à partir de %s prédictions HIGH (horizon=%s).",
+            high_predictions.count(),
+            horizon_years,
+        )
+    else:
+        # Fallback: if no HIGH, pick the top-scoring predictions.
+        # This does NOT change the behaviour when HIGH exists,
+        # thus stays compatible with the tests that expect only HIGH
+        # to be used in the normal path.
+        target_predictions = queryset.order_by("-score")[:3]
+        logger.warning(
+            "Aucune prédiction HIGH trouvée pour horizon=%s, fallback sur top %s scores.",
+            horizon_years,
+            target_predictions.count(),
         )
 
-        # On crée ou met à jour la recommandation
+    total = 0
+
+    for prediction in target_predictions:
+        job_role = prediction.job_role
+        skill = prediction.skill
+
+        priority = _choose_priority_from_level(prediction.level)
+        action = _choose_recommended_action(job_role, skill)
+
+        rationale = (
+            prediction.rationale
+            or (
+                f"Basée sur un score de {prediction.score} et un niveau {prediction.level}, "
+                f"il est recommandé de {action} pour {skill.name} à horizon {horizon_years} ans."
+            )
+        )
+
         obj, created = HRInvestmentRecommendation.objects.update_or_create(
-            job_role=job,
             skill=skill,
+            job_role=job_role,
             horizon_years=horizon_years,
             defaults={
-                "priority_level": HRInvestmentRecommendation.PRIORITY_HIGH,
+                "priority_level": priority,
                 "recommended_action": action,
-                "budget_hint": budget_hint,
+                "budget_hint": None,
                 "rationale": rationale,
             },
         )
-
         total += 1
+
+        logger.debug(
+            "Recommendation %s pour skill=%s, job_role=%s, horizon=%s (created=%s)",
+            obj.id,
+            skill.name,
+            job_role.name if job_role else None,
+            horizon_years,
+            created,
+        )
+
+    logger.info(
+        "Génération des recommandations terminée : %s recommandation(s) pour horizon=%s.",
+        total,
+        horizon_years,
+    )
 
     return total

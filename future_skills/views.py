@@ -86,8 +86,7 @@ class RecalculateFutureSkillsAPIView(APIView):
             run_by=request.user,
             parameters={
                 "trigger": "api",
-                "horizon_years": horizon_years,
-                "engine": "rules_v1",
+                # engine / horizon_years / model_version seront complétés par recalculate_predictions
             },
         )
 
