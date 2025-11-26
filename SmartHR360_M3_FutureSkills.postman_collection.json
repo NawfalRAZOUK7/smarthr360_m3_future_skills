@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "SmartHR360 - Module 3 - Future Skills",
-    "description": "Collection pour tester les API du Module 3 - Compétences Futures et Tendances du Marché",
+    "description": "Collection pour tester les API du Module 3 - Compétences Futures, Tendances du Marché et Recommandations RH",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -15,11 +15,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://127.0.0.1:8000/api/future-skills/?job_role_id=1&horizon_years=5",
-              "protocol": "http",
-              "host": ["127", "0", "0", "1"],
-              "port": "8000",
-              "path": ["api", "future-skills", ""],
+              "raw": "{{base_url}}/api/future-skills/?job_role_id=1&horizon_years=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "future-skills",
+                ""
+              ],
               "query": [
                 {
                   "key": "job_role_id",
@@ -40,7 +44,7 @@
           "response": []
         },
         {
-          "name": "POST Recalculate Future Skills",
+          "name": "POST Recalculate Future Skills + HR Recommendations",
           "request": {
             "method": "POST",
             "header": [
@@ -54,18 +58,69 @@
               "raw": "{\n  \"horizon_years\": 5\n}"
             },
             "url": {
-              "raw": "http://127.0.0.1:8000/api/future-skills/recalculate/",
-              "protocol": "http",
-              "host": ["127", "0", "0", "1"],
-              "port": "8000",
-              "path": ["api", "future-skills", "recalculate", ""]
+              "raw": "{{base_url}}/api/future-skills/recalculate/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "future-skills",
+                "recalculate",
+                ""
+              ]
             },
-            "description": "Recalcule les prédictions de compétences futures.\nPermissions : DRH, Responsable RH uniquement"
+            "description": "Recalcule les prédictions de compétences futures **et** génère les recommandations RH associées.\n\nPermissions : DRH, Responsable RH uniquement\n\nRéponse attendue (exemple) :\n```json\n{\n  \"horizon_years\": 5,\n  \"total_predictions\": 8,\n  \"total_recommendations\": 3\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "GET HR Investment Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hr-investment-recommendations/?horizon_years=5&job_role_id=1&skill_id=1&priority_level=HIGH",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "hr-investment-recommendations",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "horizon_years",
+                  "value": "5",
+                  "description": "Horizon de la recommandation (en années)",
+                  "disabled": true
+                },
+                {
+                  "key": "job_role_id",
+                  "value": "1",
+                  "description": "Filtrer par rôle / poste",
+                  "disabled": true
+                },
+                {
+                  "key": "skill_id",
+                  "value": "1",
+                  "description": "Filtrer par compétence",
+                  "disabled": true
+                },
+                {
+                  "key": "priority_level",
+                  "value": "HIGH",
+                  "description": "Filtrer par niveau de priorité (LOW, MEDIUM, HIGH)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Récupère les recommandations d'investissement RH générées à partir des prédictions de compétences futures.\nPermissions : DRH, Responsable RH, Manager"
           },
           "response": []
         }
       ],
-      "description": "Endpoints pour la gestion des compétences futures",
+      "description": "Endpoints pour la gestion des compétences futures et des recommandations RH",
       "auth": {
         "type": "basic",
         "basic": [
@@ -83,7 +138,7 @@
       }
     },
     {
-      "name": "Market Trends",
+      "name": "Market Trends & Economic Reports",
       "item": [
         {
           "name": "GET Market Trends",
@@ -91,11 +146,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://127.0.0.1:8000/api/market-trends/?year=2025&sector=RH",
-              "protocol": "http",
-              "host": ["127", "0", "0", "1"],
-              "port": "8000",
-              "path": ["api", "market-trends", ""],
+              "raw": "{{base_url}}/api/market-trends/?year=2025&sector=RH",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "market-trends",
+                ""
+              ],
               "query": [
                 {
                   "key": "year",
@@ -114,9 +173,49 @@
             "description": "Récupère les tendances du marché.\nPermissions : DRH, Responsable RH, Manager"
           },
           "response": []
+        },
+        {
+          "name": "GET Economic Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/economic-reports/?year=2025&sector=Tech&indicator=Taux%20ch%C3%B4mage%20IT",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "economic-reports",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025",
+                  "description": "Année du rapport économique",
+                  "disabled": true
+                },
+                {
+                  "key": "sector",
+                  "value": "Tech",
+                  "description": "Secteur concerné (Tech, RH, Industrie, etc.)",
+                  "disabled": true
+                },
+                {
+                  "key": "indicator",
+                  "value": "Taux chômage IT",
+                  "description": "Filtrer par nom d'indicateur (contient...)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Récupère les rapports / indicateurs économiques utilisés comme inputs macro (taux de chômage, investissements, etc.).\nPermissions : DRH, Responsable RH, Manager"
+          },
+          "response": []
         }
       ],
-      "description": "Endpoints pour consulter les tendances du marché (optionnel)",
+      "description": "Endpoints pour consulter les tendances du marché et les rapports économiques",
       "auth": {
         "type": "basic",
         "basic": [
@@ -154,14 +253,18 @@
       "listen": "prerequest",
       "script": {
         "type": "text/javascript",
-        "exec": [""]
+        "exec": [
+          ""
+        ]
       }
     },
     {
       "listen": "test",
       "script": {
         "type": "text/javascript",
-        "exec": [""]
+        "exec": [
+          ""
+        ]
       }
     }
   ],
