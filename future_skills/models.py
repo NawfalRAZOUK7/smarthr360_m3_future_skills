@@ -162,3 +162,41 @@ class PredictionRun(models.Model):
 
     def __str__(self):
         return f"Run du {self.run_date} - {self.total_predictions} prédictions"
+
+class EconomicReport(models.Model):
+    """
+    Représente un rapport ou indicateur économique utilisé comme input
+    pour la prédiction des compétences futures.
+    Exemples :
+      - Taux de chômage dans l'IT
+      - Investissements en IA par secteur
+      - Croissance de l'emploi dans un domaine donné
+    """
+    title = models.CharField(max_length=200)
+    source_name = models.CharField(
+        max_length=200,
+        help_text="Source du rapport (ex : Banque Mondiale, FMI, HCP, WEF...)."
+    )
+    year = models.IntegerField()
+    indicator = models.CharField(
+        max_length=150,
+        help_text="Nom de l’indicateur (ex : 'Taux chômage IT', 'Investissement IA')."
+    )
+    value = models.FloatField(
+        help_text="Valeur de l’indicateur (pourcentage, indice, budget…)."
+    )
+    sector = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        help_text="Secteur concerné (ex : Tech, Industrie, RH...)."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Rapport économique"
+        verbose_name_plural = "Rapports économiques"
+        ordering = ["-year", "title"]
+
+    def __str__(self):
+        return f"{self.title} ({self.year}) - {self.indicator}"
