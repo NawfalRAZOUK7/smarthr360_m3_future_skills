@@ -119,3 +119,120 @@ Le Module 3 respecte une démarche qualité "production" :
 ---
 
 **Conclusion :** Le Module 3 dispose d'une couverture de tests solide et respecte les standards de qualité pour une mise en production.
+
+---
+
+## 7. Tests de l'intégration Machine Learning (ML-3)
+
+### 7.1 Contexte
+
+Le Module 3 intègre un modèle de Machine Learning optionnel pour la prédiction des compétences futures. Les tests doivent garantir que :
+
+1. Le système fonctionne correctement quand le modèle ML est disponible
+2. Le système bascule automatiquement sur le moteur de règles (fallback) si le modèle est indisponible
+3. La traçabilité via `PredictionRun` reflète fidèlement le moteur utilisé
+
+### 7.2 Commandes de test
+
+**Exécuter tous les tests du Module 3 :**
+```bash
+python manage.py test future_skills
+```
+
+**Exécuter les tests avec couverture :**
+```bash
+coverage run manage.py test future_skills
+coverage report
+```
+
+**Générer un rapport HTML détaillé :**
+```bash
+coverage html
+# Ouvrir htmlcov/index.html dans un navigateur
+```
+
+**Exécuter uniquement les tests ML/fallback :**
+```bash
+python manage.py test future_skills.tests.test_prediction_engine.MLFallbackTests
+python manage.py test future_skills.tests.test_api.RecalculateFutureSkillsMLFallbackTests
+```
+
+### 7.3 Aspects couverts par les tests ML
+
+| Aspect testé                              | Fichier de test                    | Classe/Méthode                                    |
+|-------------------------------------------|------------------------------------|---------------------------------------------------|
+| Moteur de règles fonctionne normalement   | `test_prediction_engine.py`        | `CalculateLevelTests`                             |
+| Fallback ML → règles si `.pkl` absent     | `test_prediction_engine.py`        | `MLFallbackTests.test_fallback_to_rules_when_ml_unavailable` |
+| Utilisation effective du ML si disponible | `test_prediction_engine.py`        | `MLFallbackTests.test_uses_ml_when_available`     |
+| API fallback avec ML indisponible         | `test_api.py`                      | `RecalculateFutureSkillsMLFallbackTests.test_recalculate_with_ml_unavailable_fallback_to_rules` |
+| Traçabilité `PredictionRun.parameters`    | `test_prediction_engine.py`, `test_api.py` | Vérification du champ `engine` dans tous les tests |
+
+### 7.4 Stratégies de test utilisées
+
+**1. Override de settings avec `@override_settings` :**
+```python
+from django.test import override_settings
+
+@override_settings(FUTURE_SKILLS_USE_ML=True)
+def test_ml_behavior(self):
+    # Test avec flag ML activé
+    ...
+```
+
+**2. Mock du modèle ML :**
+```python
+from unittest.mock import patch
+
+@patch("future_skills.services.prediction_engine.FutureSkillsModel.instance")
+def test_fallback(self, mock_ml_instance):
+    mock_ml_instance.return_value.is_available.return_value = False
+    # Le système doit utiliser le fallback
+    ...
+```
+
+**3. Vérification de traçabilité :**
+```python
+last_run = PredictionRun.objects.order_by("-run_date").first()
+self.assertEqual(last_run.parameters["engine"], "rules_v1")
+```
+
+### 7.5 Résultats attendus
+
+Tous les tests ML doivent passer avec succès :
+
+```
+✓ test_fallback_to_rules_when_ml_unavailable ... ok
+✓ test_uses_ml_when_available ... ok
+✓ test_recalculate_with_ml_unavailable_fallback_to_rules ... ok
+```
+
+**Couverture cible :**
+- `prediction_engine.py` : > 90%
+- `ml_model.py` : > 85%
+- Vues API : > 70%
+
+### 7.6 Cas limites testés
+
+- ✅ Fichier `.pkl` absent
+- ✅ Fichier `.pkl` corrompu (via mock)
+- ✅ Flag `FUTURE_SKILLS_USE_ML` désactivé
+- ✅ Traçabilité avec utilisateur authentifié (API)
+- ✅ Traçabilité sans utilisateur (commande CLI)
+- ✅ Cohérence des labels LOW/MEDIUM/HIGH entre moteurs
+
+### 7.7 CI/CD et automatisation
+
+Les tests ML sont intégrés dans le pipeline CI/CD :
+
+```bash
+# Dans le script CI
+python manage.py test future_skills --parallel --keepdb
+coverage run manage.py test future_skills
+coverage report --fail-under=75
+```
+
+**Seuil de couverture minimum :** 75% pour l'ensemble du module.
+
+---
+
+**Conclusion ML-3 :** Les tests ML garantissent la robustesse du système de prédiction en conditions réelles, avec ou sans modèle ML disponible, et assurent une traçabilité complète pour l'audit et la conformité.
