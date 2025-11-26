@@ -100,6 +100,33 @@
     }
   },
 
+    {
+    "model": "future_skills.economicreport",
+    "pk": 1,
+    "fields": {
+      "title": "Taux de chômage dans le secteur IT",
+      "source_name": "Rapport Emploi Maroc 2025",
+      "year": 2025,
+      "indicator": "Taux chômage IT",
+      "value": 7.5,
+      "sector": "Tech",
+      "created_at": "2025-01-01T10:30:00Z"
+    }
+  },
+  {
+    "model": "future_skills.economicreport",
+    "pk": 2,
+    "fields": {
+      "title": "Investissements en formation digitale RH",
+      "source_name": "Observatoire Marocain des Compétences",
+      "year": 2025,
+      "indicator": "Budget formation RH digitale (M MAD)",
+      "value": 120.0,
+      "sector": "RH",
+      "created_at": "2025-01-01T10:35:00Z"
+    }
+  },
+
   {
     "model": "future_skills.predictionrun",
     "pk": 1,

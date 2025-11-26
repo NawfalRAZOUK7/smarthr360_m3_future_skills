@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import Skill, JobRole, MarketTrend, FutureSkillPrediction, PredictionRun
+from .models import (
+    Skill,
+    JobRole,
+    MarketTrend,
+    FutureSkillPrediction,
+    PredictionRun,
+    EconomicReport,   # ⬅️ ajoute ceci
+)
 
 
 @admin.register(Skill)
@@ -44,3 +51,10 @@ class PredictionRunAdmin(admin.ModelAdmin):
         return (obj.description[:60] + "...") if len(obj.description) > 60 else obj.description
 
     short_description.short_description = "Description"
+
+@admin.register(EconomicReport)
+class EconomicReportAdmin(admin.ModelAdmin):
+    list_display = ("title", "indicator", "year", "sector", "value")
+    list_filter = ("year", "sector")
+    search_fields = ("title", "indicator", "source_name")
+    date_hierarchy = "created_at"

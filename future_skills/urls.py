@@ -6,6 +6,7 @@ from .views import (
     FutureSkillPredictionListAPIView,
     RecalculateFutureSkillsAPIView,
     MarketTrendListAPIView,
+    EconomicReportListAPIView,  # ⬅️ ajoute ceci
 )
 
 urlpatterns = [
@@ -28,5 +29,12 @@ urlpatterns = [
         "market-trends/",
         MarketTrendListAPIView.as_view(),
         name="market-trends-list",
+    ),
+
+    # Liste des rapports Economiques
+    path(
+        "economic-reports/",
+        EconomicReportListAPIView.as_view(),
+        name="economic-reports-list",
     ),
 ]

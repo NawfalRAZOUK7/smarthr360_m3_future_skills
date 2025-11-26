@@ -5,10 +5,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from .models import FutureSkillPrediction, MarketTrend
+from .models import FutureSkillPrediction, MarketTrend, EconomicReport
 from .serializers import (
     FutureSkillPredictionSerializer,
     MarketTrendSerializer,
+    EconomicReportSerializer,
 )
 from .services.prediction_engine import recalculate_predictions
 from .permissions import IsHRStaff, IsHRStaffOrManager
@@ -121,4 +122,42 @@ class MarketTrendListAPIView(APIView):
             queryset = queryset.filter(sector__iexact=sector)
 
         serializer = MarketTrendSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class EconomicReportListAPIView(APIView):
+    """
+    Liste les rapports / indicateurs économiques utilisés par le module 3.
+
+    Filtres possibles :
+      - year
+      - sector
+      - indicator (contient)
+    """
+
+    permission_classes = [IsHRStaffOrManager]
+
+    def get(self, request, *args, **kwargs):
+        queryset = EconomicReport.objects.all()
+
+        year = request.query_params.get("year")
+        sector = request.query_params.get("sector")
+        indicator = request.query_params.get("indicator")
+
+        if year is not None:
+            try:
+                year_int = int(year)
+                queryset = queryset.filter(year=year_int)
+            except ValueError:
+                return Response(
+                    {"detail": "year must be an integer."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if sector is not None:
+            queryset = queryset.filter(sector__iexact=sector)
+
+        if indicator is not None:
+            queryset = queryset.filter(indicator__icontains=indicator)
+
+        serializer = EconomicReportSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
