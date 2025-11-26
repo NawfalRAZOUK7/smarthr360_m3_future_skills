@@ -1,0 +1,10 @@
+[run]
+source = future_skills
+branch = True
+
+[report]
+omit =
+    */migrations/*
+    */tests/*
+    config/*
+show_missing = True
