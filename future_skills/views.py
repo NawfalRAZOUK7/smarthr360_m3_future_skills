@@ -11,6 +11,7 @@ from .serializers import (
     MarketTrendSerializer,
 )
 from .services.prediction_engine import recalculate_predictions
+from .permissions import IsHRStaff, IsHRStaffOrManager
 
 
 class FutureSkillPredictionListAPIView(APIView):
@@ -24,7 +25,8 @@ class FutureSkillPredictionListAPIView(APIView):
       GET /api/future-skills/?job_role_id=1&horizon_years=5
     """
 
-    permission_classes = [IsAuthenticated]
+    # DRH + Responsable RH + Manager
+    permission_classes = [IsHRStaffOrManager]
 
     def get(self, request, *args, **kwargs):
         queryset = FutureSkillPrediction.objects.all()
@@ -60,7 +62,8 @@ class RecalculateFutureSkillsAPIView(APIView):
       }
     """
 
-    permission_classes = [IsAuthenticated]
+    # Seulement DRH / Responsable RH (staff RH)
+    permission_classes = [IsHRStaff]
 
     def post(self, request, *args, **kwargs):
         horizon_years = request.data.get("horizon_years", 5)
@@ -95,7 +98,8 @@ class MarketTrendListAPIView(APIView):
       GET /api/market-trends/?year=2025&sector=Tech
     """
 
-    permission_classes = [IsAuthenticated]
+    # DRH + Responsable RH + Manager (lecture)
+    permission_classes = [IsHRStaffOrManager]
 
     def get(self, request, *args, **kwargs):
         queryset = MarketTrend.objects.all()
