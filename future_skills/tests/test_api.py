@@ -8,8 +8,9 @@ from django.test import TestCase
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from future_skills.models import Skill, JobRole, MarketTrend, FutureSkillPrediction
+from future_skills.models import Skill, JobRole, MarketTrend, FutureSkillPrediction, HRInvestmentRecommendation
 from future_skills.services.prediction_engine import recalculate_predictions
+from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
 
 User = get_user_model()
 
@@ -74,6 +75,9 @@ class BaseAPITestCase(APITestCase):
         # Pré-calculer quelques prédictions pour les tests GET
         recalculate_predictions(horizon_years=5)
 
+        # Pré-générer des recommandations pour les tests
+        generate_recommendations_from_predictions(horizon_years=5)
+
 
 class FutureSkillsListAPITests(BaseAPITestCase):
     def test_get_future_skills_without_auth_should_be_forbidden(self):
@@ -137,3 +141,29 @@ class MarketTrendsAPITests(BaseAPITestCase):
 
         data = response.json()
         self.assertTrue(len(data) >= 2)  # on a créé 2 MarketTrend en setUp
+
+class HRInvestmentRecommendationsAPITests(BaseAPITestCase):
+    def test_get_hr_investment_recommendations_without_auth_should_be_forbidden(self):
+        from django.urls import reverse
+        url = reverse("hr-investment-recommendations-list")
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_hr_investment_recommendations_with_manager_role_should_succeed(self):
+        from django.urls import reverse
+        url = reverse("hr-investment-recommendations-list")
+
+        self.client.force_authenticate(user=self.user_manager)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        # On s'attend à au moins une recommandation, vu qu'on en génère en setUp
+        self.assertTrue(len(data) > 0)
+        first = data[0]
+        self.assertIn("skill", first)
+        self.assertIn("horizon_years", first)
+        self.assertIn("priority_level", first)
+        self.assertIn("recommended_action", first)

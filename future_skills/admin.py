@@ -6,6 +6,7 @@ from .models import (
     FutureSkillPrediction,
     PredictionRun,
     EconomicReport,   # ⬅️ ajoute ceci
+    HRInvestmentRecommendation,  # ⬅️ ajoute ceci
 )
 
 
@@ -57,4 +58,24 @@ class EconomicReportAdmin(admin.ModelAdmin):
     list_display = ("title", "indicator", "year", "sector", "value")
     list_filter = ("year", "sector")
     search_fields = ("title", "indicator", "source_name")
+    date_hierarchy = "created_at"
+
+@admin.register(HRInvestmentRecommendation)
+class HRInvestmentRecommendationAdmin(admin.ModelAdmin):
+    list_display = (
+        "skill",
+        "job_role",
+        "horizon_years",
+        "priority_level",
+        "recommended_action",
+        "created_at",
+    )
+    list_filter = (
+        "horizon_years",
+        "priority_level",
+        "recommended_action",
+        "skill",
+        "job_role",
+    )
+    search_fields = ("skill__name", "job_role__name")
     date_hierarchy = "created_at"
