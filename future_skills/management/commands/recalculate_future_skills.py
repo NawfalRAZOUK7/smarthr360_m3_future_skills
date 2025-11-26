@@ -25,7 +25,15 @@ class Command(BaseCommand):
             )
         )
 
-        total = recalculate_predictions(horizon_years=horizon_years)
+        total = recalculate_predictions(
+            horizon_years=horizon_years,
+            run_by=None,  # CLI → pas d'utilisateur
+            parameters={
+                "trigger": "management_command",
+                "horizon_years": horizon_years,
+                "engine": "rules_v1",
+            },
+        )
 
         self.stdout.write(
             self.style.SUCCESS(

@@ -127,7 +127,11 @@ def _find_relevant_trend(job_role: JobRole, skill: Skill) -> float:
     return 0.5  # valeur par défaut si aucune tendance n'est présente
 
 
-def recalculate_predictions(horizon_years: int = 5) -> int:
+def recalculate_predictions(
+    horizon_years: int = 5,
+    run_by=None,
+    parameters=None,
+) -> int:
     """
     Recalcule toutes les prédictions FutureSkillPrediction pour tous les
     couples (JobRole, Skill) en utilisant le moteur de règles simple.
@@ -173,6 +177,13 @@ def recalculate_predictions(horizon_years: int = 5) -> int:
     PredictionRun.objects.create(
         description=f"Recalcul des prédictions à horizon {horizon_years} ans (moteur de règles).",
         total_predictions=total_predictions,
+        run_by=run_by,
+        parameters=parameters
+        or {
+            "engine": "rules_v1",
+            "horizon_years": horizon_years,
+            "trigger": "unknown",
+        },
     )
 
     return total_predictions

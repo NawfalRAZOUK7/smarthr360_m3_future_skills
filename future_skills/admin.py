@@ -43,15 +43,24 @@ class FutureSkillPredictionAdmin(admin.ModelAdmin):
 
 @admin.register(PredictionRun)
 class PredictionRunAdmin(admin.ModelAdmin):
-    list_display = ("run_date", "total_predictions", "short_description")
+    list_display = ("run_date", "description", "total_predictions", "run_by", "short_parameters")
+    list_filter = ("run_date", "run_by")
+    search_fields = ("description", "run_by__username")
     date_hierarchy = "run_date"
+
+    def short_parameters(self, obj):
+        if not obj.parameters:
+            return "-"
+        text = str(obj.parameters)
+        return text if len(text) < 80 else text[:77] + "..."
+    short_parameters.short_description = "Paramètres"
 
     def short_description(self, obj):
         if not obj.description:
             return "-"
         return (obj.description[:60] + "...") if len(obj.description) > 60 else obj.description
-
     short_description.short_description = "Description"
+
 
 @admin.register(EconomicReport)
 class EconomicReportAdmin(admin.ModelAdmin):

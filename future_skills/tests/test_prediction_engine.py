@@ -101,3 +101,10 @@ class RecalculatePredictionsTests(TestCase):
         self.assertEqual(PredictionRun.objects.count(), 1)
         run = PredictionRun.objects.first()
         self.assertEqual(run.total_predictions, expected_count)
+
+        # Nouveau : vérifier les paramètres par défaut
+        self.assertIsNone(run.run_by)
+        self.assertIn("horizon_years", run.parameters)
+        self.assertEqual(run.parameters["horizon_years"], 5)
+        self.assertEqual(run.parameters.get("engine"), "rules_v1")
+

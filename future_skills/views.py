@@ -80,8 +80,16 @@ class RecalculateFutureSkillsAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 1) Recalculer les prédictions
-        total_predictions = recalculate_predictions(horizon_years=horizon_years)
+        # 1) Recalculer les prédictions avec traçabilité utilisateur + paramètres
+        total_predictions = recalculate_predictions(
+            horizon_years=horizon_years,
+            run_by=request.user,
+            parameters={
+                "trigger": "api",
+                "horizon_years": horizon_years,
+                "engine": "rules_v1",
+            },
+        )
 
         # 2) Générer les recommandations RH à partir des prédictions HIGH
         total_recommendations = generate_recommendations_from_predictions(
