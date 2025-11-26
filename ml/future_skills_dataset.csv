@@ -1,0 +1,7 @@
+job_role_name,skill_name,trend_score,internal_usage,training_requests,scarcity_index,future_need_level
+Data Engineer,Python,0.900,0.800,8.000,0.200,HIGH
+Data Engineer,Analyse de données,0.900,0.800,8.000,0.200,HIGH
+Data Engineer,Gestion de projet,0.900,0.500,5.000,0.500,HIGH
+Responsable RH,Python,0.800,0.500,8.000,0.500,HIGH
+Responsable RH,Analyse de données,0.800,0.500,8.000,0.500,HIGH
+Responsable RH,Gestion de projet,0.800,0.700,5.000,0.300,HIGH
