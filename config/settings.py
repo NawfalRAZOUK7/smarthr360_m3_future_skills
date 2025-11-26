@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',  # << ajoute ça
+
+    # Apps projet
+    'future_skills',   # ⬅️ ajoute cette ligne
 ]
 
 MIDDLEWARE = [
