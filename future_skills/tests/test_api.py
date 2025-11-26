@@ -123,29 +123,95 @@ class RecalculateFutureSkillsAPITests(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_recalculate_future_skills_with_drh_role_should_succeed(self):
+        """
+        Test du endpoint recalculate avec utilisateur DRH.
+        Force FUTURE_SKILLS_USE_ML = False pour tester exclusivement les règles.
+        """
+        from django.test import override_settings
+
         url = reverse("future-skills-recalculate")
         self.client.force_authenticate(user=self.user_drh)
 
-        response = self.client.post(url, {"horizon_years": 5}, format="json")
+        # Forcer l'utilisation du moteur de règles
+        with override_settings(FUTURE_SKILLS_USE_ML=False):
+            response = self.client.post(url, {"horizon_years": 5}, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.json()
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            data = response.json()
 
-        self.assertIn("total_predictions", data)
-        self.assertIn("horizon_years", data)
+            self.assertIn("total_predictions", data)
+            self.assertIn("horizon_years", data)
 
-        # Vérifie que total_predictions correspond bien au nombre d'objets en base
-        expected = JobRole.objects.count() * Skill.objects.count()
-        self.assertEqual(data["total_predictions"], expected)
+            # Vérifie que total_predictions correspond bien au nombre d'objets en base
+            expected = JobRole.objects.count() * Skill.objects.count()
+            self.assertEqual(data["total_predictions"], expected)
 
-        # Vérifier le dernier PredictionRun
-        last_run = PredictionRun.objects.order_by("-run_date").first()
-        self.assertIsNotNone(last_run)
-        self.assertEqual(last_run.run_by, self.user_drh)
-        self.assertIsInstance(last_run.parameters, dict)
-        self.assertEqual(last_run.parameters.get("trigger"), "api")
-        self.assertEqual(last_run.parameters.get("horizon_years"), 5)
-        self.assertEqual(last_run.parameters.get("engine"), "rules_v1")
+            # Vérifier le dernier PredictionRun
+            last_run = PredictionRun.objects.order_by("-run_date").first()
+            self.assertIsNotNone(last_run)
+            self.assertEqual(last_run.run_by, self.user_drh)
+            self.assertIsInstance(last_run.parameters, dict)
+            self.assertEqual(last_run.parameters.get("trigger"), "api")
+            self.assertEqual(last_run.parameters.get("horizon_years"), 5)
+            self.assertEqual(last_run.parameters.get("engine"), "rules_v1")
+
+
+
+class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
+    """Tests pour vérifier le fallback ML dans l'API."""
+
+    def test_recalculate_with_ml_unavailable_fallback_to_rules(self):
+        """
+        Test du endpoint POST /api/future-skills/recalculate/ avec ML indisponible.
+        
+        Test : FUTURE_SKILLS_USE_ML = True mais modèle ML non disponible.
+        Résultat attendu :
+        - Réponse 200 OK
+        - total_predictions > 0
+        - PredictionRun.parameters["engine"] == "rules_v1" (fallback)
+        - PredictionRun.parameters["trigger"] == "api"
+        - PredictionRun.run_by == utilisateur DRH
+        """
+        from unittest.mock import patch
+        from django.test import override_settings
+
+        url = reverse("future-skills-recalculate")
+        self.client.force_authenticate(user=self.user_drh)
+
+        with override_settings(FUTURE_SKILLS_USE_ML=True):
+            # Mock du modèle pour simuler qu'il n'est pas disponible
+            with patch("future_skills.services.prediction_engine.FutureSkillsModel.instance") as mock_ml:
+                mock_ml.return_value.is_available.return_value = False
+
+                # Appel de l'API
+                response = self.client.post(url, {"horizon_years": 5}, format="json")
+
+                # Vérifications de la réponse HTTP
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                data = response.json()
+                
+                self.assertIn("total_predictions", data)
+                self.assertIn("horizon_years", data)
+                
+                expected = JobRole.objects.count() * Skill.objects.count()
+                self.assertEqual(data["total_predictions"], expected)
+                self.assertEqual(data["horizon_years"], 5)
+
+                # Vérifier le dernier PredictionRun créé
+                last_run = PredictionRun.objects.order_by("-run_date").first()
+                self.assertIsNotNone(last_run)
+                
+                # ✅ Vérifier que le bon utilisateur est tracé
+                self.assertEqual(last_run.run_by, self.user_drh)
+                
+                # ✅ Vérifier que les paramètres reflètent le fallback
+                self.assertIsInstance(last_run.parameters, dict)
+                self.assertEqual(last_run.parameters.get("trigger"), "api")
+                self.assertEqual(last_run.parameters.get("horizon_years"), 5)
+                self.assertEqual(last_run.parameters.get("engine"), "rules_v1")
+                
+                # ✅ Le champ model_version ne doit PAS être présent en mode fallback
+                self.assertNotIn("model_version", last_run.parameters)
 
 
 
