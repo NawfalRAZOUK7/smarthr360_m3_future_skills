@@ -5,14 +5,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from .models import FutureSkillPrediction, MarketTrend, EconomicReport
+from .models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation
 from .serializers import (
     FutureSkillPredictionSerializer,
     MarketTrendSerializer,
     EconomicReportSerializer,
+    HRInvestmentRecommendationSerializer,
 )
+
 from .services.prediction_engine import recalculate_predictions
 from .permissions import IsHRStaff, IsHRStaffOrManager
+from .services.recommendation_engine import generate_recommendations_from_predictions
 
 
 class FutureSkillPredictionListAPIView(APIView):
@@ -55,7 +58,7 @@ class FutureSkillPredictionListAPIView(APIView):
 class RecalculateFutureSkillsAPIView(APIView):
     """
     Recalcule toutes les prédictions FutureSkillPrediction
-    via le moteur de règles simple.
+    via le moteur de règles simple puis génère les recommandations RH..
 
     Body JSON optionnel :
       {
@@ -77,12 +80,19 @@ class RecalculateFutureSkillsAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        total = recalculate_predictions(horizon_years=horizon_years)
+        # 1) Recalculer les prédictions
+        total_predictions = recalculate_predictions(horizon_years=horizon_years)
+
+        # 2) Générer les recommandations RH à partir des prédictions HIGH
+        total_recommendations = generate_recommendations_from_predictions(
+            horizon_years=horizon_years
+        )
 
         return Response(
             {
                 "horizon_years": horizon_years,
-                "total_predictions": total,
+                "total_predictions": total_predictions,
+                "total_recommendations": total_recommendations,
             },
             status=status.HTTP_200_OK,
         )
@@ -160,4 +170,48 @@ class EconomicReportListAPIView(APIView):
             queryset = queryset.filter(indicator__icontains=indicator)
 
         serializer = EconomicReportSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class HRInvestmentRecommendationListAPIView(APIView):
+    """
+    Liste les recommandations RH générées à partir des prédictions
+    de compétences futures.
+
+    Filtres :
+      - horizon_years
+      - skill_id
+      - job_role_id
+      - priority_level
+    """
+
+    permission_classes = [IsHRStaffOrManager]
+
+    def get(self, request, *args, **kwargs):
+        queryset = HRInvestmentRecommendation.objects.select_related("skill", "job_role")
+
+        horizon_years = request.query_params.get("horizon_years")
+        skill_id = request.query_params.get("skill_id")
+        job_role_id = request.query_params.get("job_role_id")
+        priority_level = request.query_params.get("priority_level")
+
+        if horizon_years is not None:
+            try:
+                h = int(horizon_years)
+                queryset = queryset.filter(horizon_years=h)
+            except ValueError:
+                return Response(
+                    {"detail": "horizon_years must be an integer."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if skill_id is not None:
+            queryset = queryset.filter(skill_id=skill_id)
+
+        if job_role_id is not None:
+            queryset = queryset.filter(job_role_id=job_role_id)
+
+        if priority_level is not None:
+            queryset = queryset.filter(priority_level=priority_level)
+
+        serializer = HRInvestmentRecommendationSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

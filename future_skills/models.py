@@ -200,3 +200,82 @@ class EconomicReport(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.year}) - {self.indicator}"
+
+class HRInvestmentRecommendation(models.Model):
+    """
+    Recommandations d'investissement RH à partir des prédictions
+    de compétences futures.
+
+    Exemple :
+      - former massivement sur Python pour les Data Engineers
+      - lancer une campagne de recrutement sur un profil rare
+    """
+
+    PRIORITY_LOW = "LOW"
+    PRIORITY_MEDIUM = "MEDIUM"
+    PRIORITY_HIGH = "HIGH"
+
+    PRIORITY_CHOICES = [
+        (PRIORITY_LOW, "Low"),
+        (PRIORITY_MEDIUM, "Medium"),
+        (PRIORITY_HIGH, "High"),
+    ]
+
+    ACTION_TRAINING = "TRAINING"
+    ACTION_HIRING = "HIRING"
+    ACTION_RESKILL = "RESKILL"
+
+    ACTION_CHOICES = [
+        (ACTION_TRAINING, "Investir en formation"),
+        (ACTION_HIRING, "Recruter de nouveaux talents"),
+        (ACTION_RESKILL, "Reskilling interne"),
+    ]
+
+    skill = models.ForeignKey(
+        Skill,
+        on_delete=models.CASCADE,
+        related_name="hr_recommendations",
+    )
+    job_role = models.ForeignKey(
+        JobRole,
+        on_delete=models.CASCADE,
+        related_name="hr_recommendations",
+        blank=True,
+        null=True,
+        help_text="Rôle cible de la recommandation (optionnel si globale à la compétence).",
+    )
+    horizon_years = models.PositiveIntegerField(
+        help_text="Horizon temporel de la recommandation (en années)."
+    )
+    priority_level = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        help_text="Priorité de la recommandation (LOW / MEDIUM / HIGH).",
+    )
+    recommended_action = models.CharField(
+        max_length=20,
+        choices=ACTION_CHOICES,
+        help_text="Action RH recommandée (formation, recrutement, reskilling).",
+    )
+    budget_hint = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Indice ou estimation de budget (optionnel, en K€ ou KMAD selon contexte).",
+    )
+    rationale = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Explication textuelle de la recommandation pour le décideur RH.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Recommandation RH"
+        verbose_name_plural = "Recommandations RH"
+        ordering = ["-created_at"]
+        # Une recommandation par couple (job_role, skill, horizon) est logique :
+        unique_together = ("job_role", "skill", "horizon_years")
+
+    def __str__(self):
+        role = self.job_role.name if self.job_role else "Global"
+        return f"{self.skill.name} ({role}, {self.horizon_years} ans) [{self.priority_level}/{self.recommended_action}]"

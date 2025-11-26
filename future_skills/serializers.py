@@ -2,8 +2,14 @@
 
 from rest_framework import serializers
 
-from .models import Skill, JobRole, MarketTrend, FutureSkillPrediction, EconomicReport
-
+from .models import (
+    Skill,
+    JobRole,
+    MarketTrend,
+    FutureSkillPrediction,
+    EconomicReport,
+    HRInvestmentRecommendation,
+)
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
@@ -74,6 +80,24 @@ class FutureSkillPredictionSerializer(serializers.ModelSerializer):
             "horizon_years",
             "score",
             "level",
+            "rationale",
+            "created_at",
+        ]
+
+class HRInvestmentRecommendationSerializer(serializers.ModelSerializer):
+    skill = SkillSerializer(read_only=True)
+    job_role = JobRoleSerializer(read_only=True)
+
+    class Meta:
+        model = HRInvestmentRecommendation
+        fields = [
+            "id",
+            "skill",
+            "job_role",
+            "horizon_years",
+            "priority_level",
+            "recommended_action",
+            "budget_hint",
             "rationale",
             "created_at",
         ]
