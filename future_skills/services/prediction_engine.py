@@ -1,142 +1,165 @@
-# future_skills/services/prediction_engine.py
+"""Prediction engine for Future Skills (Module 3).
 
-from typing import Tuple
+This module provides:
+- A simple rule-based engine (Phase 1).
+- Optional integration with a trained ML model (Phase 2).
+- A recalculate_predictions(...) function used by management commands
+  and API views to refresh FutureSkillPrediction records.
+
+⚠️ IMPORTANT:
+- The public API of this module is recalculate_predictions(...) and
+  calculate_level(...). Existing callers/tests should continue to work.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Tuple, Dict, Any
+
+from django.conf import settings
 
 from future_skills.models import (
-    Skill,
     JobRole,
+    Skill,
     MarketTrend,
     FutureSkillPrediction,
     PredictionRun,
 )
+from future_skills.ml_model import FutureSkillsModel
 
 
-def normalize_training_requests(training_requests: int, max_requests: int = 10) -> float:
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Helpers for the rule-based engine
+# ---------------------------------------------------------------------------
+
+
+def _normalize_training_requests(training_requests: float, max_requests: float = 100.0) -> float:
+    """Normalize training_requests to [0, 1].
+
+    The max_requests is a soft upper bound; values above it are clipped.
     """
-    Normalise le nombre de demandes de formation sur [0, 1].
-    Pour l'instant, on utilisera des valeurs simples / simulées.
-    """
-    if training_requests <= 0:
+
+    if max_requests <= 0:
         return 0.0
     value = training_requests / max_requests
-    return 1.0 if value > 1.0 else value
+    return max(0.0, min(1.0, value))
 
 
 def calculate_level(
     trend_score: float,
     internal_usage: float,
-    training_requests: int,
+    training_requests: float,
 ) -> Tuple[str, float]:
-    """
-    Calcule un niveau LOW / MEDIUM / HIGH + un score (0–100) à partir
-    de trois facteurs simples :
-      - trend_score : intensité de la tendance marché (0–1)
-      - internal_usage : niveau d'utilisation interne (0–1)
-      - training_requests : nb. de demandes de formation (0+)
+    """Simple heuristic engine used in Phase 1.
 
-    Ce n'est PAS encore du ML, mais un moteur de règles structuré.
+    Returns (level, score_0_100) where:
+    - level ∈ {"LOW", "MEDIUM", "HIGH"}
+    - score_0_100 is a float in [0, 100].
+
+    The logic is intentionally simple and transparent so it can be
+    explained in documentation and compared to the ML model later.
     """
 
-    # Sécurité : clamp sur [0, 1]
+    # Clamp basic inputs to [0, 1] just in case
     trend_score = max(0.0, min(1.0, trend_score))
     internal_usage = max(0.0, min(1.0, internal_usage))
-    training_norm = normalize_training_requests(training_requests)
+    training_norm = _normalize_training_requests(training_requests)
 
-    # Pondération simple (tu pourras la documenter dans ton rapport)
-    raw_score = (
-        0.5 * trend_score
-        + 0.3 * internal_usage
-        + 0.2 * training_norm
-    )
+    # Weighted combination (these weights can be tuned/documented)
+    score_0_1 = 0.5 * trend_score + 0.3 * internal_usage + 0.2 * training_norm
 
-    # Convertir en score 0–100 pour stocker dans le modèle
-    score_0_100 = round(raw_score * 100, 1)
-
-    if raw_score >= 0.7:
-        level = FutureSkillPrediction.LEVEL_HIGH
-    elif raw_score >= 0.4:
-        level = FutureSkillPrediction.LEVEL_MEDIUM
+    # Map to discrete level
+    if score_0_1 >= 0.7:
+        level = "HIGH"
+    elif score_0_1 >= 0.4:
+        level = "MEDIUM"
     else:
-        level = FutureSkillPrediction.LEVEL_LOW
+        level = "LOW"
 
+    score_0_100 = round(score_0_1 * 100.0, 2)
     return level, score_0_100
 
 
-def _estimate_internal_usage(job_role: JobRole, skill: Skill) -> float:
-    """
-    Fonction utilitaire pour estimer l'utilisation interne d'une compétence
-    par un métier. Pour l'instant : heuristiques simples / codées en dur.
-
-    Tu pourras plus tard connecter cela à de vraies données (logs, évaluations, etc.).
-    """
-
-    # Exemple d'heuristiques très simples :
-    if job_role.department == "IT" and skill.category == "Technique":
-        return 0.8
-    if job_role.department == "RH" and skill.category == "Soft Skill":
-        return 0.7
-
-    # Valeur par défaut
-    return 0.5
-
-
-def _estimate_training_requests(job_role: JobRole, skill: Skill) -> int:
-    """
-    Estime grossièrement le nombre de demandes de formation.
-    Pour l'instant, on simule quelques variations.
-    """
-
-    # Exemples de règles totalement simplifiées :
-    if skill.name.lower() in {"python", "analyse de données", "data"}:
-        return 8  # très demandé
-    if "projet" in skill.name.lower():
-        return 5
-
-    # Valeur par défaut
-    return 3
-
-
 def _find_relevant_trend(job_role: JobRole, skill: Skill) -> float:
+    """Return a trend_score in [0, 1] for the given (job_role, skill).
+
+    Current implementation is intentionally simple: it tries to
+    fetch a MarketTrend matching the job/skill context, otherwise
+    falls back to a neutral value.
     """
-    Trouve un score de tendance 'logiquement' lié au métier / à la compétence.
-    Pour l'instant, on utilise des règles simples :
-      - on essaie de matcher sur le département ou la catégorie,
-      - sinon on prend la tendance la plus forte.
+
+    # This can be refined later (sector mapping, tech categories, etc.)
+    trend = (
+        MarketTrend.objects.filter(sector__iexact="Tech").order_by("-year").first()
+        or MarketTrend.objects.order_by("-year").first()
+    )
+    if trend is None:
+        return 0.5  # neutral default
+    return max(0.0, min(1.0, float(trend.trend_score)))
+
+
+def _estimate_internal_usage(job_role: JobRole, skill: Skill) -> float:
+    """Estimate internal usage of a skill for a given job role.
+
+    For now, this is a placeholder heuristic.
+    It can later be replaced by real usage metrics.
     """
 
-    # Essayer de matcher secteur ~ département ou catégorie
-    queryset = MarketTrend.objects.all()
+    # Example heuristic: managers use more transversal skills
+    base = 0.6 if "manager" in job_role.name.lower() else 0.4
+    return max(0.0, min(1.0, base))
 
-    # Match par secteur sur le département
-    if job_role.department:
-        sector_match = queryset.filter(sector__iexact=job_role.department)
-        if sector_match.exists():
-            return sector_match.order_by("-trend_score").first().trend_score
 
-    # Match par secteur sur la catégorie de la compétence
-    if skill.category:
-        sector_match = queryset.filter(sector__iexact=skill.category)
-        if sector_match.exists():
-            return sector_match.order_by("-trend_score").first().trend_score
+def _estimate_training_requests(job_role: JobRole, skill: Skill) -> float:
+    """Estimate how many training requests exist for this (job, skill).
 
-    # Fallback : on prend la tendance la plus forte globale, sinon 0.5
-    strongest = queryset.order_by("-trend_score").first()
-    if strongest:
-        return strongest.trend_score
+    Placeholder for now; later it can be replaced by real stats.
+    """
 
-    return 0.5  # valeur par défaut si aucune tendance n'est présente
+    # Example simple heuristic
+    if "data" in skill.name.lower() or "ia" in skill.name.lower():
+        return 40.0
+    return 10.0
+
+
+def _estimate_scarcity_index(job_role: JobRole, skill: Skill, internal_usage: float) -> float:
+    """Very simple scarcity index based on internal usage.
+
+    - Low internal usage → skill considered more rare (scarce).
+    - Value clamped to [0, 1].
+    """
+
+    scarcity = 1.0 - internal_usage
+    return max(0.0, min(1.0, scarcity))
+
+
+# ---------------------------------------------------------------------------
+# Core function: recalculate_predictions
+# ---------------------------------------------------------------------------
 
 
 def recalculate_predictions(
     horizon_years: int = 5,
     run_by=None,
-    parameters=None,
+    parameters: Dict[str, Any] | None = None,
 ) -> int:
-    """
-    Recalcule toutes les prédictions FutureSkillPrediction pour tous les
-    couples (JobRole, Skill) en utilisant le moteur de règles simple.
+    """Recalculate all FutureSkillPrediction entries for all (JobRole, Skill).
 
-    Retourne le nombre total de prédictions créées / mises à jour.
+    Behaviour:
+    - If settings.FUTURE_SKILLS_USE_ML is True and the ML model is available,
+      use the trained ML pipeline (FutureSkillsModel) to predict (level, score).
+    - Otherwise, fall back to the simple rule-based engine (calculate_level).
+
+    A PredictionRun is created to trace:
+    - which engine was used (rules_v1 vs ml_random_forest_v1)
+    - the horizon_years
+    - who triggered the run (run_by)
+    - optional parameters (trigger = api/management_command, etc.).
+
+    Returns the total number of predictions created/updated.
     """
 
     total_predictions = 0
@@ -144,22 +167,54 @@ def recalculate_predictions(
     job_roles = JobRole.objects.all()
     skills = Skill.objects.all()
 
+    # Decide which engine to use
+    use_ml_flag = getattr(settings, "FUTURE_SKILLS_USE_ML", False)
+    ml_model = None
+    use_ml_effective = False
+
+    if use_ml_flag:
+        ml_model = FutureSkillsModel.instance()
+        if ml_model.is_available():
+            use_ml_effective = True
+        else:
+            logger.warning(
+                "recalculate_predictions: FUTURE_SKILLS_USE_ML=True mais le modèle "
+                "ML n'est pas disponible. Fallback sur le moteur de règles."
+            )
+
+    engine_label = "ml_random_forest_v1" if use_ml_effective else "rules_v1"
+
     for job in job_roles:
         for skill in skills:
             trend_score = _find_relevant_trend(job, skill)
             internal_usage = _estimate_internal_usage(job, skill)
             training_requests = _estimate_training_requests(job, skill)
+            scarcity_index = _estimate_scarcity_index(job, skill, internal_usage)
 
-            level, score_0_100 = calculate_level(
-                trend_score=trend_score,
-                internal_usage=internal_usage,
-                training_requests=training_requests,
-            )
+            if use_ml_effective:
+                # Use the trained ML model
+                level, score_0_100 = ml_model.predict_level(
+                    job_role_name=job.name,
+                    skill_name=skill.name,
+                    trend_score=trend_score,
+                    internal_usage=internal_usage,
+                    training_requests=training_requests,
+                    scarcity_index=scarcity_index,
+                )
+            else:
+                # Fallback to rule-based engine
+                level, score_0_100 = calculate_level(
+                    trend_score=trend_score,
+                    internal_usage=internal_usage,
+                    training_requests=training_requests,
+                )
 
             rationale = (
                 f"Prédiction basée sur les tendances marché (score={trend_score:.2f}), "
-                f"l'utilisation interne estimée (score={internal_usage:.2f}) "
-                f"et les demandes de formation (~{training_requests})."
+                f"l'utilisation interne estimée (score={internal_usage:.2f}), "
+                f"les demandes de formation (~{training_requests:.1f}) "
+                f"et l'indice de rareté (~{scarcity_index:.2f}). "
+                f"Moteur utilisé : {engine_label}."
             )
 
             FutureSkillPrediction.objects.update_or_create(
@@ -174,16 +229,29 @@ def recalculate_predictions(
             )
             total_predictions += 1
 
+    # Build parameters for PredictionRun
+    params: Dict[str, Any] = parameters.copy() if isinstance(parameters, dict) else {}
+    params["engine"] = engine_label  # always reflect the engine actually used
+    params.setdefault("horizon_years", horizon_years)
+
+    if use_ml_effective:
+        params["model_version"] = getattr(
+            settings,
+            "FUTURE_SKILLS_MODEL_VERSION",
+            "unknown",
+        )
+    else:
+        # If rule-based, ensure we don't keep a stale model_version
+        params.pop("model_version", None)
+
     PredictionRun.objects.create(
-        description=f"Recalcul des prédictions à horizon {horizon_years} ans (moteur de règles).",
+        description=(
+            f"Recalcul des prédictions à horizon {horizon_years} ans "
+            f"({engine_label})."
+        ),
         total_predictions=total_predictions,
         run_by=run_by,
-        parameters=parameters
-        or {
-            "engine": "rules_v1",
-            "horizon_years": horizon_years,
-            "trigger": "unknown",
-        },
+        parameters=params,
     )
 
     return total_predictions

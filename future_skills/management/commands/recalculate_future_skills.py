@@ -22,6 +22,7 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.WARNING(
                 f"Lancement du recalcul des prédictions à horizon {horizon_years} ans..."
+                f"(via management command)..."
             )
         )
 
@@ -30,8 +31,8 @@ class Command(BaseCommand):
             run_by=None,  # CLI → pas d'utilisateur
             parameters={
                 "trigger": "management_command",
-                "horizon_years": horizon_years,
-                "engine": "rules_v1",
+                # "horizon_years": horizon_years,
+                # "engine": "rules_v1",
             },
         )
 

@@ -136,3 +136,14 @@ REST_FRAMEWORK = {
         # plus tard, tu pourras ajouter JWT si tu veux
     ],
 }
+
+# --- Module 3 : Future Skills / Machine Learning ---
+
+# Active ou non l'utilisation du modèle ML pour les prédictions
+FUTURE_SKILLS_USE_ML = True  # mets True quand tu es prêt à tester le ML
+
+# Chemin vers le modèle entraîné (pipeline scikit-learn)
+FUTURE_SKILLS_MODEL_PATH = BASE_DIR / "ml" / "future_skills_model.pkl"
+
+# Version logique du modèle (utile pour la traçabilité dans PredictionRun.parameters)
+FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_v1"
