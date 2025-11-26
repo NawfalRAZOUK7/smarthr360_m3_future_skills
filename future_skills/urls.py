@@ -2,7 +2,31 @@
 
 from django.urls import path
 
+from .views import (
+    FutureSkillPredictionListAPIView,
+    RecalculateFutureSkillsAPIView,
+    MarketTrendListAPIView,
+)
+
 urlpatterns = [
-    # On remplira ça plus tard avec les endpoints API du module 3
-    # ex: path("future-skills/", FutureSkillPredictionListView.as_view(), name="future-skills-list"),
+    # Liste des prédictions
+    path(
+        "future-skills/",
+        FutureSkillPredictionListAPIView.as_view(),
+        name="future-skills-list",
+    ),
+
+    # Recalcul des prédictions
+    path(
+        "future-skills/recalculate/",
+        RecalculateFutureSkillsAPIView.as_view(),
+        name="future-skills-recalculate",
+    ),
+
+    # (Optionnel) Liste des tendances marché
+    path(
+        "market-trends/",
+        MarketTrendListAPIView.as_view(),
+        name="market-trends-list",
+    ),
 ]
