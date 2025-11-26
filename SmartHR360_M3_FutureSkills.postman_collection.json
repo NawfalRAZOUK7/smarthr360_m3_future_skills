@@ -1,0 +1,175 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "SmartHR360 - Module 3 - Future Skills",
+    "description": "Collection pour tester les API du Module 3 - Compétences Futures et Tendances du Marché",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Future Skills",
+      "item": [
+        {
+          "name": "GET Future Skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/future-skills/?job_role_id=1&horizon_years=5",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "future-skills", ""],
+              "query": [
+                {
+                  "key": "job_role_id",
+                  "value": "1",
+                  "description": "ID du rôle/poste",
+                  "disabled": true
+                },
+                {
+                  "key": "horizon_years",
+                  "value": "5",
+                  "description": "Nombre d'années pour la projection",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Récupère la liste des compétences futures prédites.\nPermissions : DRH, Responsable RH, Manager"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Recalculate Future Skills",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"horizon_years\": 5\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/future-skills/recalculate/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "future-skills", "recalculate", ""]
+            },
+            "description": "Recalcule les prédictions de compétences futures.\nPermissions : DRH, Responsable RH uniquement"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints pour la gestion des compétences futures",
+      "auth": {
+        "type": "basic",
+        "basic": [
+          {
+            "key": "username",
+            "value": "drh_user",
+            "type": "string"
+          },
+          {
+            "key": "password",
+            "value": "password123",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market Trends",
+      "item": [
+        {
+          "name": "GET Market Trends",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/market-trends/?year=2025&sector=RH",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "market-trends", ""],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025",
+                  "description": "Année des tendances",
+                  "disabled": true
+                },
+                {
+                  "key": "sector",
+                  "value": "RH",
+                  "description": "Secteur (RH, Tech, etc.)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Récupère les tendances du marché.\nPermissions : DRH, Responsable RH, Manager"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints pour consulter les tendances du marché (optionnel)",
+      "auth": {
+        "type": "basic",
+        "basic": [
+          {
+            "key": "username",
+            "value": "drh_user",
+            "type": "string"
+          },
+          {
+            "key": "password",
+            "value": "password123",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "drh_user",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "password123",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ]
+}
