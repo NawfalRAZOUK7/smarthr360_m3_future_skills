@@ -1,0 +1,112 @@
+[
+  {
+    "model": "future_skills.skill",
+    "pk": 1,
+    "fields": {
+      "name": "Python",
+      "category": "Technique",
+      "description": "Langage de programmation utilisé pour la data et le backend."
+    }
+  },
+  {
+    "model": "future_skills.skill",
+    "pk": 2,
+    "fields": {
+      "name": "Analyse de données",
+      "category": "Technique",
+      "description": "Compétence en manipulation, analyse et visualisation de données."
+    }
+  },
+  {
+    "model": "future_skills.skill",
+    "pk": 3,
+    "fields": {
+      "name": "Gestion de projet",
+      "category": "Soft Skill",
+      "description": "Planification, suivi et coordination des projets transverses."
+    }
+  },
+
+  {
+    "model": "future_skills.jobrole",
+    "pk": 1,
+    "fields": {
+      "name": "Data Engineer",
+      "department": "IT",
+      "description": "Conçoit et maintient les pipelines de données et l'infrastructure data."
+    }
+  },
+  {
+    "model": "future_skills.jobrole",
+    "pk": 2,
+    "fields": {
+      "name": "Responsable RH",
+      "department": "RH",
+      "description": "Pilote la stratégie RH et accompagne l'évolution des compétences."
+    }
+  },
+
+  {
+    "model": "future_skills.markettrend",
+    "pk": 1,
+    "fields": {
+      "title": "Explosion des besoins en IA & Data",
+      "source_name": "LinkedIn Report 2025",
+      "year": 2025,
+      "sector": "Tech",
+      "trend_score": 0.9,
+      "description": "Forte demande en profils data et IA dans tous les secteurs.",
+      "created_at": "2025-01-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "future_skills.markettrend",
+    "pk": 2,
+    "fields": {
+      "title": "Digitalisation de la fonction RH",
+      "source_name": "WEF Future of Jobs",
+      "year": 2025,
+      "sector": "RH",
+      "trend_score": 0.8,
+      "description": "Transformation digitale des métiers RH et des outils de gestion.",
+      "created_at": "2025-01-01T10:05:00Z"
+    }
+  },
+
+  {
+    "model": "future_skills.futureskillprediction",
+    "pk": 1,
+    "fields": {
+      "job_role": 1,
+      "skill": 1,
+      "horizon_years": 5,
+      "score": 92.5,
+      "level": "HIGH",
+      "rationale": "Forte tendance IA & Data + rôle très dépendant de Python.",
+      "created_at": "2025-01-01T10:15:00Z"
+    }
+  },
+  {
+    "model": "future_skills.futureskillprediction",
+    "pk": 2,
+    "fields": {
+      "job_role": 2,
+      "skill": 3,
+      "horizon_years": 3,
+      "score": 70.0,
+      "level": "MEDIUM",
+      "rationale": "Digitalisation RH nécessitant plus de gestion de projet transverse.",
+      "created_at": "2025-01-01T10:20:00Z"
+    }
+  },
+
+  {
+    "model": "future_skills.predictionrun",
+    "pk": 1,
+    "fields": {
+      "description": "Jeu de données de démonstration pour le Module 3.",
+      "total_predictions": 2,
+      "run_date": "2025-01-01T10:25:00Z"
+    }
+  }
+]
