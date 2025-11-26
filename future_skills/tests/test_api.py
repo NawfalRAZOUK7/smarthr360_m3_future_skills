@@ -1,0 +1,139 @@
+# future_skills/tests/test_api.py
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.urls import reverse
+from django.test import TestCase
+
+from rest_framework.test import APITestCase
+from rest_framework import status
+
+from future_skills.models import Skill, JobRole, MarketTrend, FutureSkillPrediction
+from future_skills.services.prediction_engine import recalculate_predictions
+
+User = get_user_model()
+
+
+class BaseAPITestCase(APITestCase):
+    def setUp(self):
+        # Créer groupes pour les rôles
+        self.group_drh = Group.objects.create(name="DRH")
+        self.group_resp_rh = Group.objects.create(name="RESPONSABLE_RH")
+        self.group_manager = Group.objects.create(name="MANAGER")
+
+        # Créer des utilisateurs
+        self.user_no_role = User.objects.create_user(
+            username="user_no_role", password="pass1234"
+        )
+
+        self.user_manager = User.objects.create_user(
+            username="manager_user", password="pass1234"
+        )
+        self.user_manager.groups.add(self.group_manager)
+
+        self.user_drh = User.objects.create_user(
+            username="drh_user", password="pass1234"
+        )
+        self.user_drh.groups.add(self.group_drh)
+
+        # Créer un peu de data pour les prédictions
+        self.skill_python = Skill.objects.create(
+            name="Python",
+            category="Technique",
+        )
+        self.skill_gp = Skill.objects.create(
+            name="Gestion de projet",
+            category="Soft Skill",
+        )
+
+        self.job_de = JobRole.objects.create(
+            name="Data Engineer",
+            department="IT",
+        )
+        self.job_rh = JobRole.objects.create(
+            name="Responsable RH",
+            department="RH",
+        )
+
+        MarketTrend.objects.create(
+            title="Explosion des besoins en IA & Data",
+            source_name="Test Source",
+            year=2025,
+            sector="Tech",
+            trend_score=0.9,
+        )
+
+        MarketTrend.objects.create(
+            title="Digitalisation de la fonction RH",
+            source_name="Test Source",
+            year=2025,
+            sector="RH",
+            trend_score=0.8,
+        )
+
+        # Pré-calculer quelques prédictions pour les tests GET
+        recalculate_predictions(horizon_years=5)
+
+
+class FutureSkillsListAPITests(BaseAPITestCase):
+    def test_get_future_skills_without_auth_should_be_forbidden(self):
+        url = reverse("future-skills-list")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_future_skills_with_manager_role_should_succeed(self):
+        url = reverse("future-skills-list")
+        # Authentifier en tant que MANAGER
+        self.client.force_authenticate(user=self.user_manager)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        # On doit avoir au moins une prédiction
+        self.assertTrue(len(data) > 0)
+        # Verif champs principaux
+        first = data[0]
+        self.assertIn("job_role", first)
+        self.assertIn("skill", first)
+        self.assertIn("horizon_years", first)
+        self.assertIn("score", first)
+        self.assertIn("level", first)
+
+
+class RecalculateFutureSkillsAPITests(BaseAPITestCase):
+    def test_recalculate_future_skills_with_no_role_should_be_forbidden(self):
+        url = reverse("future-skills-recalculate")
+        self.client.force_authenticate(user=self.user_no_role)
+
+        response = self.client.post(url, {"horizon_years": 5}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_recalculate_future_skills_with_drh_role_should_succeed(self):
+        url = reverse("future-skills-recalculate")
+        self.client.force_authenticate(user=self.user_drh)
+
+        response = self.client.post(url, {"horizon_years": 5}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        self.assertIn("total_predictions", data)
+        self.assertIn("horizon_years", data)
+        # Vérifie que total_predictions correspond bien au nombre d'objets en base
+        expected = JobRole.objects.count() * Skill.objects.count()
+        self.assertEqual(data["total_predictions"], expected)
+
+
+class MarketTrendsAPITests(BaseAPITestCase):
+    def test_get_market_trends_with_manager_role_should_succeed(self):
+        url = reverse("market-trends-list")
+        self.client.force_authenticate(user=self.user_manager)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        self.assertTrue(len(data) >= 2)  # on a créé 2 MarketTrend en setUp
