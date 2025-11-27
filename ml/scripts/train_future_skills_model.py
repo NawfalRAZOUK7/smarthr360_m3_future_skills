@@ -101,7 +101,8 @@ def build_pipeline(categorical_features, numeric_features) -> Pipeline:
         steps=[
             ("preprocess", preprocessor),
             ("clf", clf),
-        ]
+        ],
+        memory='auto'  # Cache transformers for better performance
     )
 
     return pipeline
@@ -215,7 +216,8 @@ def train_model(
         steps=[
             ("preprocess", preprocessor),
             ("clf", clf),
-        ]
+        ],
+        memory='auto'  # Cache transformers for better performance
     )
 
     print(f"[INFO] Entraînement du modèle RandomForestClassifier (n_estimators={n_estimators})...")
