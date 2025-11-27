@@ -127,7 +127,7 @@ class FutureSkillPrediction(models.Model):
         null=True,
         help_text="Explication textuelle de la prédiction (pour le DRH)."
     )
-    
+
     explanation = models.JSONField(
         blank=True,
         null=True,
@@ -181,6 +181,140 @@ class PredictionRun(models.Model):
 
     def __str__(self):
         return f"Run du {self.run_date} - {self.total_predictions} prédictions"
+
+
+class TrainingRun(models.Model):
+    """
+    Trace an ML model training execution for audit and MLOps tracking.
+    Stores training metrics, parameters, and model information.
+    """
+    run_date = models.DateTimeField(auto_now_add=True)
+    model_version = models.CharField(
+        max_length=50,
+        help_text="Version identifier for the trained model (e.g., 'v1', 'v2.1')."
+    )
+    model_path = models.CharField(
+        max_length=500,
+        help_text="File system path where the model was saved."
+    )
+    dataset_path = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Path to the training dataset CSV file."
+    )
+
+    # Training parameters
+    test_split = models.FloatField(
+        default=0.2,
+        help_text="Test set split ratio (e.g., 0.2 = 20% test)."
+    )
+    n_estimators = models.IntegerField(
+        default=200,
+        help_text="Number of trees in RandomForest classifier."
+    )
+    random_state = models.IntegerField(
+        default=42,
+        help_text="Random seed for reproducibility."
+    )
+
+    # Training metrics
+    accuracy = models.FloatField(
+        help_text="Overall accuracy on test set (0.0 to 1.0)."
+    )
+    precision = models.FloatField(
+        help_text="Weighted average precision on test set."
+    )
+    recall = models.FloatField(
+        help_text="Weighted average recall on test set."
+    )
+    f1_score = models.FloatField(
+        help_text="Weighted average F1-score on test set."
+    )
+
+    # Dataset information
+    total_samples = models.IntegerField(
+        help_text="Total number of samples in the dataset."
+    )
+    train_samples = models.IntegerField(
+        help_text="Number of samples in training set."
+    )
+    test_samples = models.IntegerField(
+        help_text="Number of samples in test set."
+    )
+
+    # Training duration
+    training_duration_seconds = models.FloatField(
+        help_text="Total training duration in seconds."
+    )
+
+    # Per-class metrics (stored as JSON)
+    per_class_metrics = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Per-class accuracy and support counts (LOW, MEDIUM, HIGH)."
+    )
+
+    # Feature information
+    features_used = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of features used for training."
+    )
+
+    # User tracking
+    trained_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="training_runs",
+        help_text="User who triggered the training (null if CLI).",
+    )
+
+    # Additional metadata
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Additional notes or comments about this training run."
+    )
+
+    # Training status tracking
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('RUNNING', 'Running'),
+            ('COMPLETED', 'Completed'),
+            ('FAILED', 'Failed'),
+        ],
+        default='COMPLETED',
+        help_text="Current status of the training run."
+    )
+    error_message = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Error message if training failed."
+    )
+
+    # Consolidated hyperparameters (in addition to individual fields)
+    hyperparameters = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="All hyperparameters used for this training run (consolidated view)."
+    )
+
+    class Meta:
+        verbose_name = "Training Run"
+        verbose_name_plural = "Training Runs"
+        ordering = ["-run_date"]
+        indexes = [
+            models.Index(fields=['-run_date']),
+            models.Index(fields=['model_version']),
+        ]
+
+    def __str__(self):
+        return f"Training {self.model_version} - {self.run_date.strftime('%Y-%m-%d %H:%M')} (acc: {self.accuracy:.2%})"
+
 
 class EconomicReport(models.Model):
     """

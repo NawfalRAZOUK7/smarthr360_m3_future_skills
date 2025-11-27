@@ -10,6 +10,7 @@ from ..models import (
     EconomicReport,
     HRInvestmentRecommendation,
     Employee,
+    TrainingRun,
 )
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -345,3 +346,171 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
             'failed': failed,
             'predictions_generated': predictions_generated if auto_predict else None
         }
+
+
+# ============================================================================
+# Training API Serializers (Section 2.4)
+# ============================================================================
+
+class TrainingRunSerializer(serializers.ModelSerializer):
+    """
+    Serializer for TrainingRun model - read-only for listing.
+    """
+    trained_by_username = serializers.CharField(
+        source='trained_by.username',
+        read_only=True,
+        allow_null=True
+    )
+
+    class Meta:
+        model = TrainingRun
+        fields = [
+            'id',
+            'run_date',
+            'model_version',
+            'status',
+            'accuracy',
+            'precision',
+            'recall',
+            'f1_score',
+            'training_duration_seconds',
+            'trained_by_username',
+        ]
+        read_only_fields = fields
+
+
+class TrainingRunDetailSerializer(serializers.ModelSerializer):
+    """
+    Detailed serializer for TrainingRun - includes all fields.
+    """
+    trained_by_username = serializers.CharField(
+        source='trained_by.username',
+        read_only=True,
+        allow_null=True
+    )
+
+    class Meta:
+        model = TrainingRun
+        fields = [
+            'id',
+            'run_date',
+            'model_version',
+            'model_path',
+            'dataset_path',
+            'status',
+            'error_message',
+            # Metrics
+            'accuracy',
+            'precision',
+            'recall',
+            'f1_score',
+            # Dataset info
+            'total_samples',
+            'train_samples',
+            'test_samples',
+            'test_split',
+            # Training config
+            'n_estimators',
+            'random_state',
+            'hyperparameters',
+            'training_duration_seconds',
+            # Additional info
+            'per_class_metrics',
+            'features_used',
+            'trained_by_username',
+            'notes',
+        ]
+        read_only_fields = fields
+
+
+class TrainModelRequestSerializer(serializers.Serializer):
+    """
+    Request serializer for training a new model.
+
+    Section 2.5: Added async_training parameter for Celery background tasks.
+    """
+    dataset_path = serializers.CharField(
+        required=False,
+        default='ml/data/future_skills_dataset.csv',
+        help_text="Path to the training dataset CSV file"
+    )
+    test_split = serializers.FloatField(
+        required=False,
+        default=0.2,
+        min_value=0.1,
+        max_value=0.5,
+        help_text="Test set split ratio (0.1 to 0.5)"
+    )
+    hyperparameters = serializers.JSONField(
+        required=False,
+        default=dict,
+        help_text="Model hyperparameters (n_estimators, max_depth, etc.)"
+    )
+    model_version = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Version identifier (auto-generated if not provided)"
+    )
+    notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Optional notes about this training run"
+    )
+    async_training = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Use Celery for background training (Section 2.5)"
+    )
+
+    def validate_hyperparameters(self, value):
+        """
+        Validate hyperparameters are sensible values.
+        """
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Hyperparameters must be a dictionary")
+
+        # Validate n_estimators if provided
+        if 'n_estimators' in value:
+            n_est = value['n_estimators']
+            if not isinstance(n_est, int) or n_est < 1 or n_est > 1000:
+                raise serializers.ValidationError(
+                    "n_estimators must be an integer between 1 and 1000"
+                )
+
+        # Validate max_depth if provided
+        if 'max_depth' in value and value['max_depth'] is not None:
+            max_d = value['max_depth']
+            if not isinstance(max_d, int) or max_d < 1 or max_d > 100:
+                raise serializers.ValidationError(
+                    "max_depth must be an integer between 1 and 100 or null"
+                )
+
+        return value
+
+
+class TrainModelResponseSerializer(serializers.Serializer):
+    """
+    Response serializer for training endpoint.
+
+    Section 2.5: Added task_id for async Celery tasks.
+    """
+    training_run_id = serializers.IntegerField(
+        help_text="ID of the created TrainingRun record"
+    )
+    status = serializers.CharField(
+        help_text="Training status (RUNNING, COMPLETED, FAILED)"
+    )
+    message = serializers.CharField(
+        help_text="Human-readable status message"
+    )
+    model_version = serializers.CharField(
+        help_text="Version identifier of the trained model"
+    )
+    metrics = serializers.JSONField(
+        required=False,
+        help_text="Training metrics (if completed synchronously)"
+    )
+    task_id = serializers.CharField(
+        required=False,
+        help_text="Celery task ID (if async_training=true)"
+    )

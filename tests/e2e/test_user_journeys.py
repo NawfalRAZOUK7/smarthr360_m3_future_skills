@@ -174,14 +174,67 @@ class TestReportingJourney:
 @pytest.mark.e2e
 @pytest.mark.ml
 class TestMLPipelineJourney:
-    """Test complete ML pipeline journey - skipped as advanced ML endpoints not implemented."""
+    """Test complete ML pipeline journey."""
 
-    @pytest.mark.skip(reason="Advanced ML endpoints not yet implemented")
-    def test_model_training_to_prediction(self, admin_client, settings):
-        """Test complete ML pipeline."""
-        pass
+    @pytest.mark.slow
+    def test_model_training_to_prediction(self, admin_client, db, tmp_path):
+        """
+        Test complete ML pipeline from training to prediction.
 
+        This test:
+        1. Creates a sample training dataset
+        2. Starts model training via the API
+        3. Verifies training run is created
+        4. Checks training run status
+        """
+        # Step 1: Create sample dataset
+        dataset_path = tmp_path / "training_data.csv"
 
+        # Create sample data with required columns for ModelTrainer
+        # Required: future_need_level (target) + feature columns
+        sample_data = """job_role_name,skill_name,skill_category,job_department,trend_score,internal_usage,training_requests,scarcity_index,hiring_difficulty,avg_salary_k,economic_indicator,future_need_level
+Software Engineer,Python,Technical,Engineering,0.85,0.80,45,0.65,0.70,95.5,0.75,HIGH
+Software Engineer,Machine Learning,Technical,Engineering,0.90,0.75,60,0.80,0.85,110.0,0.78,HIGH
+Manager,Leadership,Soft Skills,Management,0.75,0.85,30,0.40,0.50,85.0,0.72,MEDIUM
+HR Specialist,Communication,Soft Skills,HR,0.80,0.90,25,0.35,0.45,75.0,0.70,MEDIUM
+Data Analyst,Data Analysis,Technical,Analytics,0.88,0.82,50,0.70,0.75,90.0,0.76,HIGH
+Project Manager,Project Management,Management,Management,0.82,0.88,35,0.55,0.60,88.0,0.73,MEDIUM
+Cloud Engineer,Cloud Computing,Technical,Engineering,0.92,0.70,65,0.85,0.90,105.0,0.80,HIGH
+Scrum Master,Agile Methods,Management,Engineering,0.78,0.80,28,0.50,0.55,82.0,0.71,MEDIUM
+DevOps Engineer,DevOps,Technical,Engineering,0.87,0.78,55,0.75,0.80,98.0,0.77,HIGH
+Team Lead,Team Collaboration,Soft Skills,Management,0.76,0.92,22,0.38,0.42,80.0,0.69,LOW
+Business Analyst,SQL,Technical,Analytics,0.84,0.85,40,0.60,0.65,87.5,0.74,MEDIUM
+UX Designer,Design Thinking,Soft Skills,Design,0.79,0.75,32,0.52,0.58,83.0,0.72,MEDIUM
+Security Engineer,Cybersecurity,Technical,Security,0.91,0.68,68,0.88,0.92,112.0,0.81,HIGH
+Product Manager,Product Strategy,Management,Product,0.83,0.87,38,0.58,0.63,93.0,0.75,MEDIUM
+Quality Engineer,Testing,Technical,QA,0.77,0.82,26,0.48,0.52,78.0,0.70,LOW
+Sales Manager,Negotiation,Soft Skills,Sales,0.74,0.88,20,0.42,0.48,86.0,0.68,LOW
+Marketing Analyst,Marketing Analytics,Technical,Marketing,0.81,0.80,42,0.62,0.68,85.5,0.73,MEDIUM
+Finance Manager,Financial Analysis,Management,Finance,0.80,0.90,30,0.45,0.50,92.0,0.71,MEDIUM
+Operations Manager,Process Improvement,Management,Operations,0.78,0.85,28,0.50,0.55,84.0,0.70,MEDIUM
+Customer Success,Customer Relations,Soft Skills,Customer Success,0.75,0.92,24,0.40,0.45,77.0,0.69,LOW
+"""
+        dataset_path.write_text(sample_data)
+
+        # Step 2: Start training
+        url = reverse('training-start')
+        data = {
+            'dataset_path': str(dataset_path),
+            'test_split': 0.2
+        }
+        response = admin_client.post(url, data, format='json')
+
+        # Should accept 200 (sync success), 201 (created), or 202 (async accepted)
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_201_CREATED, status.HTTP_202_ACCEPTED]
+        assert 'training_run_id' in response.data
+
+        # Step 3: Check training run status
+        training_run_id = response.data['training_run_id']
+        detail_url = reverse('training-run-detail', kwargs={'pk': training_run_id})
+        detail_response = admin_client.get(detail_url)
+
+        assert detail_response.status_code == status.HTTP_200_OK
+        assert detail_response.data['status'] in ['RUNNING', 'COMPLETED']
 @pytest.mark.django_db
 @pytest.mark.e2e
 class TestErrorRecoveryJourney:

@@ -5,6 +5,7 @@ from .models import (
     MarketTrend,
     FutureSkillPrediction,
     PredictionRun,
+    TrainingRun,
     EconomicReport,   # ⬅️ ajoute ceci
     HRInvestmentRecommendation,  # ⬅️ ajoute ceci
     Employee,  # ⬅️ nouveau
@@ -61,6 +62,61 @@ class PredictionRunAdmin(admin.ModelAdmin):
             return "-"
         return (obj.description[:60] + "...") if len(obj.description) > 60 else obj.description
     short_description.short_description = "Description"
+
+
+@admin.register(TrainingRun)
+class TrainingRunAdmin(admin.ModelAdmin):
+    list_display = ('run_date', 'model_version', 'status', 'accuracy', 'f1_score', 'initiated_by')
+    list_filter = ('status', 'run_date')
+    readonly_fields = (
+        'run_date',
+        'training_duration_seconds',
+        'accuracy',
+        'precision',
+        'recall',
+        'f1_score',
+        'total_samples',
+        'train_samples',
+        'test_samples',
+        'per_class_metrics',
+        'features_used',
+        'hyperparameters'
+    )
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('run_date', 'trained_by', 'status', 'model_version')
+        }),
+        ('Dataset', {
+            'fields': ('dataset_path', 'total_samples', 'test_samples')
+        }),
+        ('Metrics', {
+            'fields': ('accuracy', 'precision', 'recall', 'f1_score')
+        }),
+        ('Advanced', {
+            'fields': ('hyperparameters', 'features_used', 'per_class_metrics', 'error_message'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def initiated_by(self, obj):
+        """Display the user who initiated the training."""
+        return obj.trained_by.username if obj.trained_by else '-'
+    initiated_by.short_description = 'Initiated By'
+    initiated_by.admin_order_field = 'trained_by'
+
+    def training_duration(self, obj):
+        """Display training duration in human-readable format."""
+        seconds = obj.training_duration_seconds
+        if seconds < 60:
+            return f"{seconds:.1f}s"
+        elif seconds < 3600:
+            minutes = seconds / 60
+            return f"{minutes:.1f}m"
+        else:
+            hours = seconds / 3600
+            return f"{hours:.1f}h"
+    training_duration.short_description = 'Duration'
+    training_duration.admin_order_field = 'training_duration_seconds'
 
 
 @admin.register(EconomicReport)
