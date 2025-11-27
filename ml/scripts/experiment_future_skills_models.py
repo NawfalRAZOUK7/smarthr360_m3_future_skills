@@ -350,7 +350,7 @@ def train_and_evaluate_model(
     for label in class_labels:
         header += f" {label[:3]:3s} |"
     print(header)
-    print(f"   " + "-" * (len(header) - 4))
+    print("   " + "-" * (len(header) - 4))
 
     for i, level in enumerate(class_labels):
         row = f"   {level:7s}    |"
@@ -420,7 +420,7 @@ def _build_main_comparison_table(sorted_results: list) -> str:
         md += f"{metrics['f1_weighted']:.4f} | "
         md += f"{metrics['cv_f1_mean']:.4f} (±{metrics['cv_f1_std']:.4f}) | "
         md += f"{result['training_time_seconds']:.2f} |\n"
-    
+
     return md
 
 
@@ -436,7 +436,7 @@ def _add_best_model_highlight(best_model: dict) -> str:
 
 def _add_per_class_performance(sorted_results: list, class_labels: list) -> str:
     """Add per-class performance section."""
-    md = "---\n\n"
+    md = MARKDOWN_SEPARATOR
     md += "## 📈 Performance par Classe\n\n"
 
     for level in class_labels:
@@ -450,13 +450,13 @@ def _add_per_class_performance(sorted_results: list, class_labels: list) -> str:
                 md += f"| {result['model_name']} | {pc['accuracy']:.2%} | {pc['support']} |\n"
 
         md += "\n"
-    
+
     return md
 
 
 def _add_model_configurations(sorted_results: list) -> str:
     """Add detailed model configurations section."""
-    md = "---\n\n"
+    md = MARKDOWN_SEPARATOR
     md += "## ⚙️ Configurations des Modèles\n\n"
 
     for result in sorted_results:
@@ -466,13 +466,13 @@ def _add_model_configurations(sorted_results: list) -> str:
         for param, value in result["hyperparameters"].items():
             md += f"- `{param}` = {value}\n"
         md += "\n"
-    
+
     return md
 
 
 def _add_recommendations_section(best_model: dict, results: list) -> str:
     """Add recommendations section."""
-    md = "---\n\n"
+    md = MARKDOWN_SEPARATOR
     md += "## 💡 Recommandations\n\n"
     md += "### Choix du Modèle en Production\n\n"
 
@@ -516,7 +516,7 @@ def _add_recommendations_section(best_model: dict, results: list) -> str:
     md += "3. Recharger le nouveau modèle dans `future_skills/ml_model.py`\n"
     md += "4. Aucun changement nécessaire dans les APIs ou la logique métier\n\n"
 
-    md += "---\n\n"
+    md += MARKDOWN_SEPARATOR
     md += "## 🔄 Prochaines Étapes\n\n"
     md += "- [ ] Tester l'hyperparameter tuning (GridSearch/RandomSearch)\n"
     md += "- [ ] Évaluer l'impact de features additionnelles\n"
@@ -541,7 +541,7 @@ def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[
 
     md = "# 🔬 Comparaison des Modèles - Future Skills Prediction\n\n"
     md += f"**Date de l'expérimentation** : {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
-    md += "---\n\n"
+    md += MARKDOWN_SEPARATOR
     md += "## 📊 Tableau Comparatif Global\n\n"
 
     # Main comparison table
