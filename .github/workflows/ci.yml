@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_smarthr360
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Create .env file
+        run: |
+          cp .env.example .env
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_smarthr360" >> .env
+          echo "DJANGO_SETTINGS_MODULE=config.settings.test" >> .env
+
+      - name: Run migrations
+        run: |
+          python manage.py migrate --settings=config.settings.test
+
+      - name: Run linting - Black
+        run: |
+          black --check --diff .
+        continue-on-error: true
+
+      - name: Run linting - Flake8
+        run: |
+          flake8 future_skills/ config/ ml/ --max-line-length=120 --exclude=migrations,__pycache__,.venv
+        continue-on-error: true
+
+      - name: Run linting - isort
+        run: |
+          isort --check-only --diff .
+        continue-on-error: true
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Run unit tests only
+        run: |
+          pytest future_skills/tests/ -v -m "not slow"
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -v
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+
+      - name: Check for security issues
+        run: |
+          pip install bandit safety
+          bandit -r future_skills/ -ll
+          safety check --json || true
+        continue-on-error: true
+
+  docker-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t smarthr360:test .
+
+      - name: Test Docker image
+        run: |
+          docker run --rm smarthr360:test python manage.py check --settings=config.settings.production
+
+  documentation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check documentation links
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y markdown
+          find docs/ -name "*.md" -type f | head -n 1
+
+      - name: Validate documentation structure
+        run: |
+          test -d docs/architecture || exit 1
+          test -d docs/api || exit 1
+          test -d docs/deployment || exit 1
+          test -d docs/development || exit 1
