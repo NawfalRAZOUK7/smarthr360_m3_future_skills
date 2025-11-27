@@ -4,7 +4,7 @@ Test settings for SmartHR360 Future Skills project.
 This configuration is optimized for running automated tests with pytest.
 """
 
-from .base import *  # noqa: F403 - Standard Django settings pattern
+from .base import *  # noqa: F403,S2208 - Standard Django settings pattern
 
 # Debug mode for tests
 DEBUG = True
