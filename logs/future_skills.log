@@ -29,3 +29,4 @@
 [INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: Action distribution: HIRING=3, TRAINING=1
 [INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: ========================================
 [WARNING] 2025-11-27 11:38:54 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 11:44:57 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap

@@ -9,6 +9,7 @@ The Future Skills API provides endpoints for managing and querying future skill 
 ## Authentication
 
 All endpoints require authentication. Users must belong to one of the following groups:
+
 - `DRH` (HR Director) - Full access
 - `RESPONSABLE_RH` (HR Manager) - Full access
 - `MANAGER` - Read-only access
@@ -18,11 +19,13 @@ All endpoints require authentication. Users must belong to one of the following 
 ### Future Skill Predictions
 
 #### List Predictions
+
 ```
 GET /api/future-skills/
 ```
 
 **Query Parameters:**
+
 - `job_role_id` (integer, optional) - Filter by job role
 - `horizon_years` (integer, optional) - Filter by time horizon
 
@@ -33,11 +36,13 @@ GET /api/future-skills/
 ---
 
 #### Recalculate Predictions
+
 ```
 POST /api/future-skills/recalculate/
 ```
 
 **Body:**
+
 ```json
 {
   "horizon_years": 5
@@ -47,6 +52,7 @@ POST /api/future-skills/recalculate/
 **Permissions:** `IsHRStaff` (DRH or RESPONSABLE_RH only)
 
 **Response:**
+
 ```json
 {
   "horizon_years": 5,
@@ -60,11 +66,13 @@ POST /api/future-skills/recalculate/
 ### Market Trends
 
 #### List Market Trends
+
 ```
 GET /api/market-trends/
 ```
 
 **Query Parameters:**
+
 - `year` (integer, optional) - Filter by year
 - `sector` (string, optional) - Filter by sector
 
@@ -77,11 +85,13 @@ GET /api/market-trends/
 ### Economic Reports
 
 #### List Economic Reports
+
 ```
 GET /api/economic-reports/
 ```
 
 **Query Parameters:**
+
 - `year` (integer, optional) - Filter by year
 - `sector` (string, optional) - Filter by sector
 - `indicator` (string, optional) - Filter by indicator (contains)
@@ -95,11 +105,13 @@ GET /api/economic-reports/
 ### HR Investment Recommendations
 
 #### List Recommendations
+
 ```
 GET /api/hr-investment-recommendations/
 ```
 
 **Query Parameters:**
+
 - `horizon_years` (integer, optional) - Filter by time horizon
 - `skill_id` (integer, optional) - Filter by skill
 - `job_role_id` (integer, optional) - Filter by job role
@@ -114,6 +126,7 @@ GET /api/hr-investment-recommendations/
 ## Response Formats
 
 ### Prediction Object
+
 ```json
 {
   "id": 1,
@@ -138,6 +151,7 @@ GET /api/hr-investment-recommendations/
 ```
 
 ### Market Trend Object
+
 ```json
 {
   "id": 1,
@@ -152,6 +166,7 @@ GET /api/hr-investment-recommendations/
 ```
 
 ### Economic Report Object
+
 ```json
 {
   "id": 1,
@@ -166,6 +181,7 @@ GET /api/hr-investment-recommendations/
 ```
 
 ### Recommendation Object
+
 ```json
 {
   "id": 1,
@@ -193,6 +209,7 @@ GET /api/hr-investment-recommendations/
 ## Error Responses
 
 ### 400 Bad Request
+
 ```json
 {
   "detail": "horizon_years must be an integer."
@@ -200,6 +217,7 @@ GET /api/hr-investment-recommendations/
 ```
 
 ### 401 Unauthorized
+
 ```json
 {
   "detail": "Authentication credentials were not provided."
@@ -207,6 +225,7 @@ GET /api/hr-investment-recommendations/
 ```
 
 ### 403 Forbidden
+
 ```json
 {
   "detail": "You do not have permission to perform this action."
@@ -216,6 +235,7 @@ GET /api/hr-investment-recommendations/
 ## Testing
 
 Example using curl:
+
 ```bash
 # Login and get session cookie
 curl -X POST http://localhost:8000/api-auth/login/ \
@@ -252,6 +272,7 @@ future_skills/
 ```
 
 This separation ensures:
+
 - **API layer** handles HTTP requests/responses
 - **Services layer** contains business logic
 - **Models layer** defines data structure
