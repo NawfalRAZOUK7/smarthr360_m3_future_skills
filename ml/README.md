@@ -6,19 +6,22 @@ This directory contains the ML model evaluation framework for comparing the Mach
 
 ### Core Files
 
-| File                               | Description                                  |
-| ---------------------------------- | -------------------------------------------- |
-| `evaluate_future_skills_models.py` | Main evaluation script comparing ML vs Rules |
-| `train_future_skills_model.py`     | Model training script                        |
-| `future_skills_model.pkl`          | Trained ML pipeline (Random Forest)          |
-| `future_skills_dataset.csv`        | Enriched dataset for training/evaluation     |
-| `evaluation_results.json`          | Detailed metrics in JSON format              |
+| File                                 | Description                                  |
+| ------------------------------------ | -------------------------------------------- |
+| `evaluate_future_skills_models.py`   | Main evaluation script comparing ML vs Rules |
+| `train_future_skills_model.py`       | Model training script                        |
+| `experiment_future_skills_models.py` | **NEW** Model experimentation & comparison   |
+| `future_skills_model.pkl`            | Trained ML pipeline (Random Forest)          |
+| `future_skills_dataset.csv`          | Enriched dataset for training/evaluation     |
+| `evaluation_results.json`            | Detailed metrics in JSON format              |
+| `experiment_results.json`            | **NEW** Model comparison results             |
 
 ### Generated Reports
 
 | File                                | Description                      |
 | ----------------------------------- | -------------------------------- |
 | `../docs/ML_VS_RULES_COMPARISON.md` | Markdown comparison report       |
+| `MODEL_COMPARISON.md`               | **NEW** Multi-model comparison   |
 | `../docs/MT3_COMPLETION.md`         | Complete MT-3 task documentation |
 
 ## 🚀 Quick Start
@@ -51,14 +54,38 @@ python ml/evaluate_future_skills_models.py
 - `ml/evaluation_results.json` - Detailed metrics
 - Console output with performance summaries
 
-### 3. View Results
+### 3. Experiment with Different Models (NEW)
+
+```bash
+# Compare multiple ML algorithms
+python ml/experiment_future_skills_models.py
+```
+
+**Output:**
+
+- `ml/MODEL_COMPARISON.md` - Comprehensive model comparison report
+- `ml/experiment_results.json` - All experiment metrics
+- Console output with rankings and recommendations
+
+**Models tested:**
+
+- RandomForest (baseline)
+- RandomForest_tuned (optimized hyperparameters)
+- LogisticRegression (linear model)
+- XGBoost (if installed with `brew install libomp`)
+- LightGBM (if installed)
+
+### 4. View Results
 
 ```bash
 # View the markdown report
 cat docs/ML_VS_RULES_COMPARISON.md
 
+# View model comparison
+cat ml/MODEL_COMPARISON.md
+
 # Or open in VS Code
-code docs/ML_VS_RULES_COMPARISON.md
+code ml/MODEL_COMPARISON.md
 
 # View JSON data
 cat ml/evaluation_results.json | jq '.'
@@ -226,8 +253,74 @@ print(df['future_need_level'].value_counts())
 
 - **Complete MT-3 documentation**: `docs/MT3_COMPLETION.md`
 - **ML implementation guide**: `docs/ML3_SUMMARY.md`
+- **Model comparison**: `ml/MODEL_COMPARISON.md` ⭐ **NEW**
 - **Monitoring setup**: `docs/MT2_MONITORING_COMPLETION.md`
 - **API documentation**: `DOCUMENTATION_SUMMARY.md`
+
+## 🔧 Model Extensibility & Selection Policy
+
+### Architecture Extensibility
+
+The ML pipeline is designed to be **model-agnostic**. You can replace the underlying algorithm without changing the API or business logic.
+
+**Key principles:**
+
+1. ✅ **Interface Contract**: All models must predict `(level: LOW/MEDIUM/HIGH, score: 0-100)`
+2. ✅ **Pipeline Structure**: `Preprocessing → Model → Prediction`
+3. ✅ **No API Changes**: Model replacement is transparent to consumers
+4. ✅ **Versioned Artifacts**: Models are saved with metadata for traceability
+
+### Model Selection Policy
+
+**Currently selected: RandomForest**
+
+**Reasons for selection:**
+
+- ✅ **Stability**: Robust performance across validation sets (CV F1: 0.9929 ±0.0087)
+- ✅ **Simplicity**: Pure scikit-learn, no complex dependencies
+- ✅ **Interprétabilité**: Feature importance readily available for audit/explainability
+- ✅ **Maintenance**: Simple training and deployment process
+- ✅ **No Overfitting**: Ensemble approach provides good generalization
+
+**Alternative models tested:**
+
+See `ml/MODEL_COMPARISON.md` for full comparison:
+
+- LogisticRegression: Slightly better F1 (0.9862) but less interpretable
+- XGBoost/LightGBM: Not essential for current dataset size and performance
+
+**When to reconsider:**
+
+1. Dataset grows significantly (>10,000 samples)
+2. New feature categories emerge requiring different decision boundaries
+3. Performance degrades below acceptable threshold (F1 < 0.95)
+4. Need for real-time predictions requires faster inference
+
+### How to Change Models
+
+**Step 1:** Edit `ml/train_future_skills_model.py`
+
+```python
+# Replace this:
+clf = RandomForestClassifier(...)
+
+# With your model:
+clf = XGBClassifier(...)  # or any sklearn-compatible estimator
+```
+
+**Step 2:** Retrain
+
+```bash
+python ml/train_future_skills_model.py --version v2
+```
+
+**Step 3:** Reload in application
+
+The new model will be automatically picked up by `future_skills/ml_model.py` on next restart.
+
+**Step 4:** No API changes needed
+
+All endpoints continue to work identically.
 
 ## ⚠️ Limitations
 
