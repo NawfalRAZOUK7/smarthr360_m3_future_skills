@@ -10,20 +10,28 @@ Script d'entraînement du modèle ML pour le Module 3 - Future Skills.
     - StandardScaler pour les features numériques
     - RandomForestClassifier comme modèle de classification
 - Enregistre le pipeline complet (préprocessing + modèle) dans :
-    ml/future_skills_model.pkl
+    ml/future_skills_model_vX.pkl (avec versioning)
+- Génère un fichier de métadonnées JSON pour traçabilité MLOps
 
 Ce script est volontairement indépendant de Django (pas besoin de settings).
 """
 
 import argparse
+import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 import joblib
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    accuracy_score,
+    precision_recall_fscore_support,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -102,9 +110,24 @@ def build_pipeline(categorical_features, numeric_features) -> Pipeline:
 def train_model(
     csv_path: Path,
     output_model_path: Path,
+    model_version: str = "v1",
     test_size: float = 0.2,
     random_state: int = 42,
+    n_estimators: int = 200,
 ):
+    """
+    Train the Future Skills ML model and save with metadata.
+    
+    Args:
+        csv_path: Path to the input dataset CSV
+        output_model_path: Path where the model will be saved
+        model_version: Version identifier (e.g., 'v1', 'v2', 'v2.1')
+        test_size: Proportion of test set
+        random_state: Random seed for reproducibility
+        n_estimators: Number of trees in RandomForest
+    """
+    training_start_time = datetime.now()
+    
     print(f"[INFO] Chargement du dataset : {csv_path}")
     df = load_dataset(csv_path)
 
@@ -170,16 +193,47 @@ def train_model(
 
     print(f"[INFO] Taille train : {len(X_train)}, test : {len(X_test)}")
 
-    pipeline = build_pipeline(
-        categorical_features=categorical_features,
-        numeric_features=numeric_features,
+    # Build pipeline with custom n_estimators
+    categorical_transformer = OneHotEncoder(handle_unknown="ignore")
+    numeric_transformer = StandardScaler()
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("cat", categorical_transformer, categorical_features),
+            ("num", numeric_transformer, numeric_features),
+        ]
     )
 
-    print("[INFO] Entraînement du modèle RandomForestClassifier...")
+    clf = RandomForestClassifier(
+        n_estimators=n_estimators,
+        random_state=random_state,
+        class_weight="balanced",
+        n_jobs=-1,
+    )
+
+    pipeline = Pipeline(
+        steps=[
+            ("preprocess", preprocessor),
+            ("clf", clf),
+        ]
+    )
+
+    print(f"[INFO] Entraînement du modèle RandomForestClassifier (n_estimators={n_estimators})...")
     pipeline.fit(X_train, y_train)
 
+    training_end_time = datetime.now()
+    training_duration = (training_end_time - training_start_time).total_seconds()
+
+    # Evaluation
     print("[INFO] Évaluation sur le set de test :")
     y_pred = pipeline.predict(X_test)
+    
+    # Compute metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision, recall, f1, support = precision_recall_fscore_support(
+        y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"], average="weighted"
+    )
+    
     print("\nClassification report :")
     print(classification_report(y_test, y_pred, digits=4))
 
@@ -187,18 +241,23 @@ def train_model(
     cm = confusion_matrix(y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"])
     print(cm)
     
-    # Calculate per-class accuracy
+    # Calculate per-class metrics
+    per_class_metrics = {}
     print("\nPrécision par classe :")
     for i, level in enumerate(["LOW", "MEDIUM", "HIGH"]):
         if cm.sum(axis=1)[i] > 0:
-            accuracy = cm[i, i] / cm.sum(axis=1)[i]
-            print(f"  {level}: {accuracy:.2%}")
+            class_accuracy = cm[i, i] / cm.sum(axis=1)[i]
+            per_class_metrics[level] = {
+                "accuracy": round(float(class_accuracy), 4),
+                "support": int(support[i])
+            }
+            print(f"  {level}: {class_accuracy:.2%} (support: {support[i]})")
 
-    # Exemple : récupérer les classes pour info
+    # Feature importance
     clf = pipeline.named_steps["clf"]
     print(f"[INFO] Classes apprises par le modèle : {clf.classes_}")
     
-    # Feature importance (if available)
+    feature_importance_dict = {}
     if hasattr(clf, 'feature_importances_'):
         print("\n[INFO] Importance des features :")
         preprocessor = pipeline.named_steps["preprocess"]
@@ -220,13 +279,56 @@ def train_model(
             )
             for feat, importance in feature_importance[:10]:  # Top 10
                 print(f"  {feat}: {importance:.4f}")
+                feature_importance_dict[feat] = float(importance)
 
     # Sauvegarde du pipeline complet
     output_model_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, output_model_path)
-
     print(f"\n[SUCCESS] Modèle sauvegardé dans : {output_model_path}")
+
+    # Generate and save metadata
+    metadata = {
+        "model_version": model_version,
+        "training_date": training_start_time.isoformat(),
+        "training_duration_seconds": round(training_duration, 2),
+        "dataset": {
+            "csv_path": str(csv_path),
+            "total_samples": len(df),
+            "train_samples": len(X_train),
+            "test_samples": len(X_test),
+            "features_used": available_features,
+            "features_missing": missing_cols,
+            "categorical_features": categorical_features,
+            "numeric_features": numeric_features,
+            "class_distribution": {k: int(v) for k, v in class_counts.items()},
+            "imbalance_ratio": round(float(imbalance_ratio), 2),
+        },
+        "hyperparameters": {
+            "n_estimators": n_estimators,
+            "random_state": random_state,
+            "test_size": test_size,
+            "class_weight": "balanced",
+        },
+        "metrics": {
+            "accuracy": round(float(accuracy), 4),
+            "precision_weighted": round(float(precision), 4),
+            "recall_weighted": round(float(recall), 4),
+            "f1_weighted": round(float(f1), 4),
+            "per_class": per_class_metrics,
+        },
+        "feature_importance_top10": dict(list(feature_importance_dict.items())[:10]),
+        "model_classes": clf.classes_.tolist(),
+    }
+
+    # Save metadata JSON
+    metadata_path = output_model_path.with_suffix('.json')
+    with open(metadata_path, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, indent=2, ensure_ascii=False)
+    
+    print(f"[SUCCESS] Métadonnées sauvegardées dans : {metadata_path}")
     print(f"[SUCCESS] Le modèle utilise {len(available_features)} features")
+    
+    return metadata
 
 
 def main():
@@ -251,6 +353,12 @@ def main():
         help=f"Chemin de sortie du modèle .pkl (par défaut: {default_model})",
     )
     parser.add_argument(
+        "--version",
+        type=str,
+        default="v1",
+        help="Version du modèle (ex: v1, v2, v2.1). Utilisé pour la traçabilité.",
+    )
+    parser.add_argument(
         "--test-size",
         type=float,
         default=0.2,
@@ -262,18 +370,41 @@ def main():
         default=42,
         help="Seed aléatoire (par défaut: 42).",
     )
+    parser.add_argument(
+        "--n-estimators",
+        type=int,
+        default=200,
+        help="Nombre d'arbres dans RandomForest (par défaut: 200).",
+    )
 
     args = parser.parse_args()
 
     csv_path = Path(args.csv)
     output_model_path = Path(args.output)
 
-    train_model(
+    # If version is provided and output doesn't include version, add it
+    if args.version and args.version not in output_model_path.stem:
+        output_model_path = output_model_path.parent / f"{output_model_path.stem}_{args.version}.pkl"
+        print(f"[INFO] Nom du modèle ajusté avec version : {output_model_path}")
+
+    metadata = train_model(
         csv_path=csv_path,
         output_model_path=output_model_path,
+        model_version=args.version,
         test_size=args.test_size,
         random_state=args.random_state,
+        n_estimators=args.n_estimators,
     )
+    
+    print("\n" + "="*60)
+    print("📊 RÉSUMÉ DE L'ENTRAÎNEMENT")
+    print("="*60)
+    print(f"Version: {metadata['model_version']}")
+    print(f"Date: {metadata['training_date']}")
+    print(f"Durée: {metadata['training_duration_seconds']}s")
+    print(f"Précision: {metadata['metrics']['accuracy']:.2%}")
+    print(f"F1-score: {metadata['metrics']['f1_weighted']:.4f}")
+    print("="*60)
 
 
 if __name__ == "__main__":

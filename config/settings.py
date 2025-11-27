@@ -148,6 +148,10 @@ FUTURE_SKILLS_MODEL_PATH = BASE_DIR / "ml" / "future_skills_model.pkl"
 # Version logique du modèle (utile pour la traçabilité dans PredictionRun.parameters)
 FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_v1"
 
+# MLOps: Monitoring et drift detection
+FUTURE_SKILLS_ENABLE_MONITORING = True  # Active le logging des prédictions pour drift detection
+FUTURE_SKILLS_MONITORING_LOG = BASE_DIR / "logs" / "predictions_monitoring.jsonl"
+
 # --- Django Logging Configuration ---
 
 LOGGING = {
