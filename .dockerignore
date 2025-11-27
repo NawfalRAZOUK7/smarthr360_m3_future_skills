@@ -1,28 +1,82 @@
-.venv/
+# Python cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
 *.so
+.Python
 *.egg
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
 .git/
 .gitignore
-.idea/
-.vscode/
-*.log
-db.sqlite3
-htmlcov/
-.coverage
-.pytest_cache/
+.gitattributes
+
+# Documentation (exclude from image)
 docs/
 *.md
-.env
-.DS_Store
+README.md
+
+# Tests and coverage
+htmlcov/
+.coverage
+.tox/
+
+# Database files
+*.sqlite3
+*.db
+
+# Logs
 logs/
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Docker files
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# CI/CD
+.github/
+
+# Collections
+*.postman_collection.json
+
+# Development tools
+Makefile
+
+# Jupyter notebooks
 ml/notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# ML artifacts (mounted as volumes)
 ml/results/*.json
 ml/data/*.csv
+
+# Media files (handled by volumes)
+media/
+staticfiles/
