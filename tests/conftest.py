@@ -78,13 +78,21 @@ def regular_user(db):
             assert regular_user.username == 'testuser'
             assert not regular_user.is_staff
     """
-    return User.objects.create_user(
+    from django.contrib.auth.models import Group
+
+    user = User.objects.create_user(
         username='testuser',
         email='testuser@example.com',
         password='testpass123',
         is_staff=False,
         is_superuser=False
     )
+
+    # Add to MANAGER group for API access
+    manager_group, _ = Group.objects.get_or_create(name='MANAGER')
+    user.groups.add(manager_group)
+
+    return user
 
 
 @pytest.fixture
@@ -107,19 +115,25 @@ def admin_user(db):
 @pytest.fixture
 def hr_manager(db):
     """
-    Creates an HR manager user with staff privileges.
+    Creates an HR manager user with staff privileges and RESPONSABLE_RH group.
 
     Usage:
         def test_hr_manager_permissions(hr_manager):
             assert hr_manager.is_staff
-            assert hr_manager.has_perm('future_skills.view_futureskill')
+            assert hr_manager.groups.filter(name='RESPONSABLE_RH').exists()
     """
+    from django.contrib.auth.models import Group
+
     user = User.objects.create_user(
         username='hr_manager',
         email='hr_manager@example.com',
         password='hrpass123',
         is_staff=True
     )
+
+    # Add to RESPONSABLE_RH group for HR staff permissions
+    hr_group, _ = Group.objects.get_or_create(name='RESPONSABLE_RH')
+    user.groups.add(hr_group)
 
     # Add future_skills permissions
     permissions = Permission.objects.filter(
@@ -134,11 +148,12 @@ def hr_manager(db):
 def hr_viewer(db):
     """
     Creates an HR viewer user with read-only permissions.
+    NOT part of HR staff groups, so will get 403 on protected endpoints.
 
     Usage:
         def test_hr_viewer_access(hr_viewer):
-            assert hr_viewer.has_perm('future_skills.view_futureskill')
-            assert not hr_viewer.has_perm('future_skills.add_futureskill')
+            # This user should get 403 on HR staff-only endpoints
+            assert not hr_viewer.groups.filter(name__in=['DRH', 'RESPONSABLE_RH']).exists()
     """
     user = User.objects.create_user(
         username='hr_viewer',
@@ -147,7 +162,7 @@ def hr_viewer(db):
         is_staff=False
     )
 
-    # Add view-only permissions
+    # Add view-only permissions (but no group membership)
     view_permissions = Permission.objects.filter(
         content_type__app_label='future_skills',
         codename__startswith='view_'
@@ -162,62 +177,77 @@ def hr_viewer(db):
 # ============================================================================
 
 @pytest.fixture
-def sample_future_skill(db):
+def sample_skill(db):
     """
-    Creates a sample FutureSkill instance for testing.
+    Creates a sample Skill instance for testing.
 
     Usage:
-        def test_future_skill_display(sample_future_skill):
-            assert 'Python' in sample_future_skill.skill_name
+        def test_skill_display(sample_skill):
+            assert 'Python' in sample_skill.name
     """
-    from future_skills.models import FutureSkill
+    from future_skills.models import Skill
 
-    return FutureSkill.objects.create(
-        skill_name='Python Programming',
+    return Skill.objects.create(
+        name='Python Programming',
         category='Technical',
-        description='Advanced Python programming skills',
-        importance_score=0.85,
-        relevance_score=0.90
+        description='Advanced Python programming skills'
     )
 
 
 @pytest.fixture
-def sample_employee(db):
+def sample_job_role(db):
     """
-    Creates a sample Employee instance for testing.
+    Creates a sample JobRole instance for testing.
 
     Usage:
-        def test_employee_creation(sample_employee):
-            assert sample_employee.name == 'John Doe'
+        def test_job_role_display(sample_job_role):
+            assert 'Engineer' in sample_job_role.name
     """
-    from future_skills.models import Employee
+    from future_skills.models import JobRole
 
-    return Employee.objects.create(
-        name='John Doe',
-        email='john.doe@example.com',
+    return JobRole.objects.create(
+        name='Software Engineer',
         department='Engineering',
-        position='Software Engineer',
-        current_skills=['Python', 'Django', 'REST APIs']
+        description='Develops and maintains software applications'
     )
 
 
 @pytest.fixture
-def sample_prediction(db, sample_employee):
+def sample_future_skill_prediction(db, sample_job_role, sample_skill):
+    """
+    Creates a sample FutureSkillPrediction instance for testing.
+
+    Usage:
+        def test_prediction_display(sample_future_skill_prediction):
+            assert sample_future_skill_prediction.level == 'HIGH'
+    """
+    from future_skills.models import FutureSkillPrediction
+
+    return FutureSkillPrediction.objects.create(
+        job_role=sample_job_role,
+        skill=sample_skill,
+        horizon_years=5,
+        score=85.0,
+        level='HIGH',
+        rationale='High demand for Python skills in software engineering'
+    )
+
+
+@pytest.fixture
+def sample_prediction_run(db):
     """
     Creates a sample PredictionRun instance for testing.
 
     Usage:
-        def test_prediction_results(sample_prediction):
-            assert sample_prediction.status == 'completed'
+        def test_prediction_run_results(sample_prediction_run):
+            assert sample_prediction_run.total_predictions > 0
     """
     from future_skills.models import PredictionRun
 
     return PredictionRun.objects.create(
-        employee=sample_employee,
-        status='completed',
-        confidence_score=0.75,
-        predicted_skills=[SKILL_MACHINE_LEARNING, 'AI', 'Data Science'],
-        model_version='v1.0'
+        description='Test prediction run',
+        total_predictions=10,
+        parameters={'horizon_years': 5, 'engine': 'rules'}
     )
 
 
@@ -279,42 +309,56 @@ def request_factory():
 # ============================================================================
 
 @pytest.fixture
-def employee_data():
+def skill_data():
     """
-    Provides sample employee data for testing.
+    Provides sample skill data for testing.
 
     Usage:
-        def test_employee_creation(employee_data):
-            employee = Employee.objects.create(**employee_data)
-            assert employee.name == employee_data['name']
+        def test_skill_creation(skill_data):
+            skill = Skill.objects.create(**skill_data)
+            assert skill.category == 'Technical'
     """
     return {
-        'name': 'Jane Smith',
-        'email': 'jane.smith@example.com',
-        'department': 'Data Science',
-        'position': 'Data Analyst',
-        'current_skills': ['SQL', 'Excel', 'Tableau'],
-        'experience_years': 3
+        'name': SKILL_MACHINE_LEARNING,
+        'category': 'Technical',
+        'description': 'ML algorithms and frameworks'
     }
 
 
 @pytest.fixture
-def future_skill_data():
+def job_role_data():
     """
-    Provides sample future skill data for testing.
+    Provides sample job role data for testing.
 
     Usage:
-        def test_skill_creation(future_skill_data):
-            skill = FutureSkill.objects.create(**future_skill_data)
-            assert skill.category == 'Technical'
+        def test_job_role_creation(job_role_data):
+            role = JobRole.objects.create(**job_role_data)
+            assert role.department == 'Data Science'
     """
     return {
-        'skill_name': SKILL_MACHINE_LEARNING,
-        'category': 'Technical',
-        'description': 'ML algorithms and frameworks',
-        'importance_score': 0.90,
-        'relevance_score': 0.85,
-        'growth_rate': 0.25
+        'name': 'Data Analyst',
+        'department': 'Data Science',
+        'description': 'Analyzes data and provides insights'
+    }
+
+
+@pytest.fixture
+def future_skill_prediction_data(sample_job_role, sample_skill):
+    """
+    Provides sample future skill prediction data for testing.
+
+    Usage:
+        def test_prediction_creation(future_skill_prediction_data):
+            prediction = FutureSkillPrediction.objects.create(**future_skill_prediction_data)
+            assert prediction.level == 'HIGH'
+    """
+    return {
+        'job_role': sample_job_role,
+        'skill': sample_skill,
+        'horizon_years': 5,
+        'score': 90.0,
+        'level': 'HIGH',
+        'rationale': 'Strong market demand'
     }
 
 
