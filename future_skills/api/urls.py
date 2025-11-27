@@ -1,16 +1,28 @@
 # future_skills/api/urls.py
 
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
 from .views import (
     FutureSkillPredictionListAPIView,
     RecalculateFutureSkillsAPIView,
     MarketTrendListAPIView,
-    EconomicReportListAPIView,  # ⬅️ ajoute ceci
-    HRInvestmentRecommendationListAPIView,  # ⬅️
+    EconomicReportListAPIView,
+    HRInvestmentRecommendationListAPIView,
+    EmployeeViewSet,
+    PredictSkillsAPIView,
+    RecommendSkillsAPIView,
+    BulkPredictAPIView,
 )
 
+# Router for ViewSets
+router = DefaultRouter()
+router.register(r"employees", EmployeeViewSet, basename="employee")
+
 urlpatterns = [
+    # Include router URLs (employee-list, employee-detail, etc.)
+    path("", include(router.urls)),
+    
     # Liste des prédictions
     path(
         "future-skills/",
@@ -44,5 +56,26 @@ urlpatterns = [
         "hr-investment-recommendations/",
         HRInvestmentRecommendationListAPIView.as_view(),
         name="hr-investment-recommendations-list",
+    ),
+
+    # Prediction endpoints
+    path(
+        "predict-skills/",
+        PredictSkillsAPIView.as_view(),
+        name="futureskill-predict-skills",
+    ),
+
+    # Recommendation endpoints
+    path(
+        "recommend-skills/",
+        RecommendSkillsAPIView.as_view(),
+        name="futureskill-recommend-skills",
+    ),
+
+    # Bulk prediction endpoint
+    path(
+        "bulk-predict/",
+        BulkPredictAPIView.as_view(),
+        name="futureskill-bulk-predict",
     ),
 ]

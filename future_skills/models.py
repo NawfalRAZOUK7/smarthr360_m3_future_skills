@@ -298,3 +298,42 @@ class HRInvestmentRecommendation(models.Model):
     def __str__(self):
         role = self.job_role.name if self.job_role else "Global"
         return f"{self.skill.name} ({role}, {self.horizon_years} ans) [{self.priority_level}/{self.recommended_action}]"
+
+
+class Employee(models.Model):
+    """
+    Représente un employé dans l'entreprise.
+    Utilisé pour générer des prédictions de compétences personnalisées.
+    """
+    name = models.CharField(max_length=200)
+    email = models.EmailField(unique=True)
+    department = models.CharField(
+        max_length=150,
+        help_text="Département de l'employé (ex : IT, RH, Finance...)."
+    )
+    position = models.CharField(
+        max_length=150,
+        help_text="Poste actuel de l'employé (ex : Developer, Manager...)."
+    )
+    job_role = models.ForeignKey(
+        JobRole,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="employees",
+        help_text="Rôle/métier associé dans le référentiel JobRole."
+    )
+    current_skills = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Liste des compétences actuelles de l'employé (ex : ['Python', 'Django'])."
+    )
+    date_joined = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Employé"
+        verbose_name_plural = "Employés"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.email})"

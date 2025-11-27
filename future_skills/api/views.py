@@ -4,13 +4,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 
-from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation
+from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation, Employee
 from .serializers import (
     FutureSkillPredictionSerializer,
     MarketTrendSerializer,
     EconomicReportSerializer,
     HRInvestmentRecommendationSerializer,
+    EmployeeSerializer,
+    PredictSkillsRequestSerializer,
+    PredictSkillsResponseSerializer,
+    RecommendSkillsRequestSerializer,
+    BulkPredictRequestSerializer,
 )
 
 from ..services.prediction_engine import recalculate_predictions
@@ -228,3 +234,201 @@ class HRInvestmentRecommendationListAPIView(APIView):
 
         serializer = HRInvestmentRecommendationSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class EmployeeViewSet(ModelViewSet):
+    """
+    ViewSet for Employee CRUD operations.
+    
+    Provides:
+    - GET /api/employees/ - List all employees
+    - POST /api/employees/ - Create new employee
+    - GET /api/employees/{id}/ - Get employee detail
+    - PUT/PATCH /api/employees/{id}/ - Update employee
+    - DELETE /api/employees/{id}/ - Delete employee
+    """
+    queryset = Employee.objects.select_related("job_role").all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsHRStaffOrManager]
+
+
+class PredictSkillsAPIView(APIView):
+    """
+    Generate skill predictions for a specific employee.
+    
+    POST /api/predict-skills/
+    Body: {
+        "employee_id": 1,
+        "current_skills": ["Python", "Django"],  # optional override
+        "department": "Engineering"  # optional override
+    }
+    
+    Returns: List of predicted skills with scores and levels
+    """
+    permission_classes = [IsHRStaffOrManager]
+
+    def post(self, request, *args, **kwargs):
+        # Validate input
+        input_serializer = PredictSkillsRequestSerializer(data=request.data)
+        if not input_serializer.is_valid():
+            return Response(
+                input_serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get employee
+        employee_id = input_serializer.validated_data['employee_id']
+        employee = Employee.objects.select_related('job_role').get(pk=employee_id)
+
+        if not employee.job_role:
+            return Response(
+                {"detail": "Employee has no associated job role."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get predictions for this employee's job role
+        predictions = FutureSkillPrediction.objects.filter(
+            job_role=employee.job_role
+        ).select_related('skill').order_by('-score')[:10]
+
+        # Format response
+        results = []
+        for pred in predictions:
+            results.append({
+                'skill_name': pred.skill.name,
+                'skill_id': pred.skill.id,
+                'level': pred.level,
+                'score': pred.score,
+                'rationale': pred.rationale or ''
+            })
+
+        response_serializer = PredictSkillsResponseSerializer(results, many=True)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class RecommendSkillsAPIView(APIView):
+    """
+    Generate personalized skill recommendations for an employee.
+    
+    POST /api/recommend-skills/
+    Body: {
+        "employee_id": 1,
+        "exclude_current": true
+    }
+    
+    Returns: List of recommended skills (excluding current skills if specified)
+    """
+    permission_classes = [IsHRStaffOrManager]
+
+    def post(self, request, *args, **kwargs):
+        # Validate input
+        input_serializer = RecommendSkillsRequestSerializer(data=request.data)
+        if not input_serializer.is_valid():
+            return Response(
+                input_serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get employee
+        employee_id = input_serializer.validated_data['employee_id']
+        exclude_current = input_serializer.validated_data['exclude_current']
+        
+        employee = Employee.objects.select_related('job_role').get(pk=employee_id)
+
+        if not employee.job_role:
+            return Response(
+                {"detail": "Employee has no associated job role."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get high priority predictions for this job role
+        predictions = FutureSkillPrediction.objects.filter(
+            job_role=employee.job_role,
+            level__in=['HIGH', 'MEDIUM']
+        ).select_related('skill').order_by('-score')
+
+        # Filter out current skills if requested
+        if exclude_current:
+            current_skill_names = [s.lower() for s in employee.current_skills]
+            predictions = predictions.exclude(
+                skill__name__icontains=lambda name: any(cs in name.lower() for cs in current_skill_names)
+            )
+            # Manual filtering since Django ORM doesn't support complex icontains with list
+            filtered_predictions = []
+            for pred in predictions:
+                if not any(cs in pred.skill.name.lower() for cs in current_skill_names):
+                    filtered_predictions.append(pred)
+            predictions = filtered_predictions[:10]
+        else:
+            predictions = list(predictions[:10])
+
+        # Format response
+        results = []
+        for pred in predictions:
+            results.append({
+                'skill_name': pred.skill.name,
+                'skill_id': pred.skill.id,
+                'level': pred.level,
+                'score': pred.score,
+                'rationale': pred.rationale or ''
+            })
+
+        response_serializer = PredictSkillsResponseSerializer(results, many=True)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class BulkPredictAPIView(APIView):
+    """
+    Generate predictions for multiple employees at once.
+    
+    POST /api/bulk-predict/
+    Body: {
+        "employee_ids": [1, 2, 3, 4, 5]
+    }
+    
+    Returns: Predictions for each employee
+    """
+    permission_classes = [IsHRStaffOrManager]
+
+    def post(self, request, *args, **kwargs):
+        # Validate input
+        input_serializer = BulkPredictRequestSerializer(data=request.data)
+        if not input_serializer.is_valid():
+            return Response(
+                input_serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        employee_ids = input_serializer.validated_data['employee_ids']
+        
+        # Get all employees with their job roles
+        employees = Employee.objects.filter(
+            pk__in=employee_ids
+        ).select_related('job_role')
+
+        # Generate predictions for each
+        results = {}
+        for employee in employees:
+            if not employee.job_role:
+                results[employee.id] = {
+                    'error': 'No associated job role'
+                }
+                continue
+
+            predictions = FutureSkillPrediction.objects.filter(
+                job_role=employee.job_role
+            ).select_related('skill').order_by('-score')[:5]
+
+            employee_predictions = []
+            for pred in predictions:
+                employee_predictions.append({
+                    'skill_name': pred.skill.name,
+                    'skill_id': pred.skill.id,
+                    'level': pred.level,
+                    'score': pred.score,
+                    'rationale': pred.rationale or ''
+                })
+
+            results[employee.id] = employee_predictions
+
+        return Response(results, status=status.HTTP_200_OK)
