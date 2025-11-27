@@ -185,13 +185,13 @@ def main():
         print("\n⏭️  Étape 1/3: Export du dataset (SKIP)")
     
     # Step 2: Train model
-    model_path = base_dir / f"future_skills_model_{args.version}.pkl"
+    model_path = base_dir / "models" / f"future_skills_model_{args.version}.pkl"
     
     train_cmd = [
         sys.executable,
-        str(base_dir / "train_future_skills_model.py"),
-        "--csv", str(base_dir / "future_skills_dataset.csv"),
-        "--output", str(model_path),
+        str(base_dir / "scripts" / "train_future_skills_model.py"),
+        "--csv", str(base_dir / "data" / "future_skills_dataset.csv"),
+        "--output", str(base_dir / "models" / f"future_skills_model_{args.version}.pkl"),
         "--version", args.version,
         "--n-estimators", str(args.n_estimators),
         "--test-size", str(args.test_size),

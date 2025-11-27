@@ -332,10 +332,10 @@ def train_model(
 
 
 def main():
-    base_dir = Path(__file__).resolve().parent
+    base_dir = Path(__file__).resolve().parent.parent
 
-    default_csv = base_dir / "future_skills_dataset.csv"
-    default_model = base_dir / "future_skills_model.pkl"
+    default_csv = base_dir / "data" / "future_skills_dataset.csv"
+    default_model = base_dir / "models" / "future_skills_model.pkl"
 
     parser = argparse.ArgumentParser(
         description="Entraîne le modèle ML pour le Module 3 - Future Skills."

@@ -447,25 +447,25 @@ def main():
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=BASE_DIR / "ml" / "future_skills_dataset.csv",
+        default=BASE_DIR / "ml" / "data" / "future_skills_dataset.csv",
         help="Path to the dataset CSV file",
     )
     parser.add_argument(
         "--model",
         type=Path,
-        default=BASE_DIR / "ml" / "future_skills_model.pkl",
+        default=BASE_DIR / "ml" / "models" / "future_skills_model.pkl",
         help="Path to the trained ML model",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=BASE_DIR / "docs" / "ML_VS_RULES_COMPARISON.md",
+        default=BASE_DIR / "docs" / "ml" / "ML_VS_RULES_COMPARISON.md",
         help="Path for the output comparison report",
     )
     parser.add_argument(
         "--json-output",
         type=Path,
-        default=BASE_DIR / "ml" / "evaluation_results.json",
+        default=BASE_DIR / "ml" / "results" / "evaluation_results.json",
         help="Path for JSON output with detailed metrics",
     )
     

@@ -143,7 +143,10 @@ REST_FRAMEWORK = {
 FUTURE_SKILLS_USE_ML = True  # mets True quand tu es prêt à tester le ML
 
 # Chemin vers le modèle entraîné (pipeline scikit-learn)
-FUTURE_SKILLS_MODEL_PATH = BASE_DIR / "ml" / "future_skills_model.pkl"
+FUTURE_SKILLS_MODEL_PATH = BASE_DIR / "ml" / "models" / "future_skills_model.pkl"
+
+# Chemin vers le dataset d'entraînement
+FUTURE_SKILLS_DATASET_PATH = BASE_DIR / "ml" / "data" / "future_skills_dataset.csv"
 
 # Version logique du modèle (utile pour la traçabilité dans PredictionRun.parameters)
 FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_v1"
