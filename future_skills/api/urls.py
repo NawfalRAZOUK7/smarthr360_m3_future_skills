@@ -1,4 +1,4 @@
-# future_skills/urls.py
+# future_skills/api/urls.py
 
 from django.urls import path
 
