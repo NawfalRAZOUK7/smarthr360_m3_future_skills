@@ -1,192 +1,346 @@
-# Makefile for SmartHR360 Module 3 - Future Skills ML Operations
+# Makefile for SmartHR360 Module 3 - Future Skills
 
-.PHONY: help export-dataset train-model retrain-future-skills evaluate-model test coverage install-ml serve shell migrate createsuperuser
+.PHONY: help install install-dev install-ml test test-unit test-integration test-e2e test-fast test-ml test-api coverage lint format check docker-build docker-up docker-down docker-prod docker-logs docker-shell ml-prepare ml-experiment ml-evaluate ml-train serve shell migrate createsuperuser clean
 
-# Default Python interpreter (adjust if needed)
+# Default Python interpreter and settings
 PYTHON := python
 MANAGE := $(PYTHON) manage.py
-
-# Default model version for training
+SETTINGS := config.settings.development
 MODEL_VERSION := v1
 N_ESTIMATORS := 200
+
+# Colors for output
+RED := \033[0;31m
+GREEN := \033[0;32m
+YELLOW := \033[1;33m
+BLUE := \033[0;34m
+NC := \033[0m # No Color
 
 # Help target
 help:
 	@echo "=============================================="
-	@echo "SmartHR360 - Future Skills ML Operations"
+	@echo "$(BLUE)SmartHR360 - Future Skills$(NC)"
 	@echo "=============================================="
 	@echo ""
-	@echo "📊 Machine Learning Commands:"
-	@echo "  make export-dataset           Export future skills dataset to CSV"
-	@echo "  make train-model              Train ML model (specify MODEL_VERSION=vX)"
-	@echo "  make retrain-future-skills    Full retraining pipeline (export + train + update)"
-	@echo "  make evaluate-model           Evaluate trained models"
+	@echo "$(YELLOW)📦 Installation Commands:$(NC)"
+	@echo "  make install              Install production dependencies"
+	@echo "  make install-dev          Install development dependencies"
+	@echo "  make install-ml           Install ML dependencies"
+	@echo "  make setup                Complete development environment setup"
 	@echo ""
-	@echo "🧪 Testing Commands:"
-	@echo "  make test                     Run all tests"
-	@echo "  make test-ml                  Run ML-specific tests"
-	@echo "  make coverage                 Run tests with coverage report"
+	@echo "$(YELLOW)🧪 Testing Commands:$(NC)"
+	@echo "  make test                 Run all tests with coverage"
+	@echo "  make test-unit            Run unit tests only"
+	@echo "  make test-integration     Run integration tests"
+	@echo "  make test-e2e             Run end-to-end tests"
+	@echo "  make test-fast            Run fast tests (exclude slow)"
+	@echo "  make test-ml              Run ML-specific tests"
+	@echo "  make test-api             Run API tests"
+	@echo "  make test-failed          Re-run last failed tests"
+	@echo "  make coverage             Generate detailed coverage report"
 	@echo ""
-	@echo "🔧 Development Commands:"
-	@echo "  make install-ml               Install ML dependencies"
-	@echo "  make serve                    Run Django development server"
-	@echo "  make shell                    Open Django shell"
-	@echo "  make migrate                  Run database migrations"
-	@echo "  make createsuperuser          Create Django superuser"
-	@echo "  make load-demo-data           Load demo fixtures"
+	@echo "$(YELLOW)🎨 Code Quality Commands:$(NC)"
+	@echo "  make lint                 Run all linters (black, flake8, isort)"
+	@echo "  make format               Auto-format code (black, isort)"
+	@echo "  make check                Run Django system checks"
+	@echo "  make pre-commit           Run pre-commit hooks on all files"
 	@echo ""
-	@echo "📝 Documentation Commands:"
-	@echo "  make docs-ml                  Open ML documentation"
-	@echo "  make registry                 View model registry"
+	@echo "$(YELLOW)🐳 Docker Commands:$(NC)"
+	@echo "  make docker-build         Build Docker images"
+	@echo "  make docker-up            Start development environment"
+	@echo "  make docker-down          Stop Docker containers"
+	@echo "  make docker-prod          Start production environment"
+	@echo "  make docker-logs          Show Docker logs"
+	@echo "  make docker-shell         Open shell in web container"
+	@echo "  make docker-test          Run tests in Docker"
+	@echo "  make docker-clean         Clean Docker resources"
 	@echo ""
-	@echo "🧹 Cleanup Commands:"
-	@echo "  make clean                    Clean temporary files"
-	@echo "  make clean-models             Remove all model files (careful!)"
+	@echo "$(YELLOW)🤖 Machine Learning Commands:$(NC)"
+	@echo "  make ml-prepare           Prepare ML dataset"
+	@echo "  make ml-experiment        Run model experiments"
+	@echo "  make ml-evaluate          Evaluate trained models"
+	@echo "  make ml-train             Train specific model"
+	@echo "  make ml-compare           Compare model performance"
+	@echo "  make ml-retrain           Full retraining pipeline"
+	@echo "  make ml-explainability    Run explainability analysis"
+	@echo ""
+	@echo "$(YELLOW)🔧 Development Commands:$(NC)"
+	@echo "  make serve                Run Django development server"
+	@echo "  make shell                Open Django shell"
+	@echo "  make migrate              Run database migrations"
+	@echo "  make createsuperuser      Create Django superuser"
+	@echo "  make seed-data            Load demo data"
+	@echo ""
+	@echo "$(YELLOW)🧹 Cleanup Commands:$(NC)"
+	@echo "  make clean                Clean temporary files"
+	@echo "  make clean-pyc            Remove Python cache files"
+	@echo "  make clean-test           Remove test artifacts"
+	@echo "  make clean-models         Remove ML model files"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make retrain-future-skills MODEL_VERSION=v2 N_ESTIMATORS=300"
-	@echo "  make train-model MODEL_VERSION=v3"
+	@echo "  make setup                # Complete dev setup"
+	@echo "  make test-fast            # Quick test run"
+	@echo "  make docker-up            # Start with Docker"
+	@echo "  make ml-retrain           # Retrain ML models"
 	@echo "=============================================="
 
 # ============================================
-# Machine Learning Commands
+# Installation Commands
 # ============================================
 
-export-dataset:
-	@echo "📤 Exporting Future Skills dataset to CSV..."
-	$(MANAGE) export_future_skills_dataset
+install:
+	@echo "$(GREEN)📦 Installing production dependencies...$(NC)"
+	pip install -r requirements.txt
+	@echo "$(GREEN)✓ Production dependencies installed$(NC)"
 
-train-model:
-	@echo "🎓 Training Future Skills model (version: $(MODEL_VERSION))..."
-	$(PYTHON) ml/train_future_skills_model.py \
-		--version $(MODEL_VERSION) \
-		--n-estimators $(N_ESTIMATORS) \
-		--output ml/future_skills_model_$(MODEL_VERSION).pkl
+install-dev:
+	@echo "$(GREEN)📦 Installing development dependencies...$(NC)"
+	pip install -r requirements.txt
+	pip install -r requirements-dev.txt
+	@echo "$(GREEN)✓ Development dependencies installed$(NC)"
 
-retrain-future-skills:
-	@echo "🔄 Full retraining pipeline (version: $(MODEL_VERSION))..."
-	$(PYTHON) ml/retrain_model.py \
-		--version $(MODEL_VERSION) \
-		--n-estimators $(N_ESTIMATORS) \
-		--auto-update-settings
+install-ml:
+	@echo "$(GREEN)📦 Installing ML dependencies...$(NC)"
+	pip install -r requirements_ml.txt
+	@echo "$(GREEN)✓ ML dependencies installed$(NC)"
 
-retrain-future-skills-manual:
-	@echo "🔄 Full retraining pipeline without auto-update (version: $(MODEL_VERSION))..."
-	$(PYTHON) ml/retrain_model.py \
-		--version $(MODEL_VERSION) \
-		--n-estimators $(N_ESTIMATORS)
-
-evaluate-model:
-	@echo "📊 Evaluating Future Skills models..."
-	$(PYTHON) ml/evaluate_future_skills_models.py
+setup:
+	@echo "$(BLUE)🚀 Setting up development environment...$(NC)"
+	@bash scripts/setup_dev.sh
 
 # ============================================
 # Testing Commands
 # ============================================
 
 test:
-	@echo "🧪 Running all tests..."
-	$(MANAGE) test
+	@echo "$(BLUE)🧪 Running all tests with coverage...$(NC)"
+	pytest --cov=future_skills --cov-report=html --cov-report=term-missing -v
+
+test-unit:
+	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
+	pytest future_skills/tests/ -v -m "not slow"
+
+test-integration:
+	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
+	pytest tests/integration/ -v
+
+test-e2e:
+	@echo "$(BLUE)🧪 Running end-to-end tests...$(NC)"
+	pytest tests/e2e/ -v
+
+test-fast:
+	@echo "$(BLUE)🧪 Running fast tests...$(NC)"
+	pytest -v -m "not slow"
 
 test-ml:
-	@echo "🧪 Running ML-specific tests..."
-	$(MANAGE) test future_skills.tests.test_prediction_engine
+	@echo "$(BLUE)🧪 Running ML tests...$(NC)"
+	pytest -v -m "ml"
+
+test-api:
+	@echo "$(BLUE)🧪 Running API tests...$(NC)"
+	pytest -v -m "api"
+
+test-failed:
+	@echo "$(BLUE)🧪 Re-running last failed tests...$(NC)"
+	pytest --lf -v
 
 coverage:
-	@echo "📊 Running tests with coverage..."
-	coverage run --source='future_skills' $(MANAGE) test
-	coverage report
-	coverage html
-	@echo "✅ Coverage report generated in htmlcov/index.html"
+	@echo "$(BLUE)📊 Generating detailed coverage report...$(NC)"
+	pytest --cov=future_skills --cov-report=html --cov-report=term-missing --cov-report=json
+	@echo "$(GREEN)✓ Coverage report: htmlcov/index.html$(NC)"
+
+# ============================================
+# Code Quality Commands
+# ============================================
+
+lint:
+	@echo "$(BLUE)🔍 Running linters...$(NC)"
+	@echo "Running Black..."
+	black --check . || true
+	@echo "Running Flake8..."
+	flake8 future_skills/ config/ ml/ --max-line-length=120 --exclude=migrations,__pycache__,.venv || true
+	@echo "Running isort..."
+	isort --check-only . || true
+	@echo "$(GREEN)✓ Linting complete$(NC)"
+
+format:
+	@echo "$(BLUE)🎨 Formatting code...$(NC)"
+	black .
+	isort .
+	@echo "$(GREEN)✓ Code formatted$(NC)"
+
+check:
+	@echo "$(BLUE)🔍 Running Django system checks...$(NC)"
+	$(MANAGE) check --settings=$(SETTINGS)
+	@echo "$(GREEN)✓ System checks passed$(NC)"
+
+pre-commit:
+	@echo "$(BLUE)🔍 Running pre-commit hooks...$(NC)"
+	pre-commit run --all-files
+
+# ============================================
+# Docker Commands
+# ============================================
+
+docker-build:
+	@echo "$(BLUE)🐳 Building Docker images...$(NC)"
+	docker-compose build
+	@echo "$(GREEN)✓ Docker images built$(NC)"
+
+docker-up:
+	@echo "$(BLUE)🐳 Starting development environment...$(NC)"
+	docker-compose up -d
+	@echo "$(GREEN)✓ Development environment running$(NC)"
+	@docker-compose ps
+
+docker-down:
+	@echo "$(BLUE)🐳 Stopping Docker containers...$(NC)"
+	docker-compose down
+	@echo "$(GREEN)✓ Containers stopped$(NC)"
+
+docker-prod:
+	@echo "$(BLUE)🐳 Starting production environment...$(NC)"
+	docker-compose -f docker-compose.prod.yml up -d --build
+	@echo "$(GREEN)✓ Production environment running$(NC)"
+	@docker-compose -f docker-compose.prod.yml ps
+
+docker-logs:
+	@echo "$(BLUE)📋 Docker logs:$(NC)"
+	docker-compose logs -f
+
+docker-shell:
+	@echo "$(BLUE)🐚 Opening shell in web container...$(NC)"
+	docker-compose exec web /bin/bash
+
+docker-test:
+	@echo "$(BLUE)🧪 Running tests in Docker...$(NC)"
+	docker-compose exec web pytest --cov=future_skills
+
+docker-clean:
+	@echo "$(YELLOW)⚠️  Cleaning Docker resources...$(NC)"
+	docker-compose down -v
+	docker system prune -f
+
+# ============================================
+# Machine Learning Commands
+# ============================================
+
+ml-prepare:
+	@echo "$(BLUE)📤 Preparing ML dataset...$(NC)"
+	$(MANAGE) export_future_skills_dataset --settings=$(SETTINGS)
+	@echo "$(GREEN)✓ Dataset prepared$(NC)"
+
+ml-experiment:
+	@echo "$(BLUE)🔬 Running model experiments...$(NC)"
+	$(PYTHON) ml/experiment_future_skills_models.py
+	@echo "$(GREEN)✓ Experiments complete: ml/results/experiment_results.json$(NC)"
+
+ml-evaluate:
+	@echo "$(BLUE)📊 Evaluating trained models...$(NC)"
+	$(PYTHON) ml/evaluate_future_skills_models.py
+	@echo "$(GREEN)✓ Evaluation complete: ml/results/evaluation_results.json$(NC)"
+
+ml-train:
+	@echo "$(BLUE)🎓 Training model (version: $(MODEL_VERSION))...$(NC)"
+	$(PYTHON) ml/scripts/train_model.py --model random_forest --version $(MODEL_VERSION)
+	@echo "$(GREEN)✓ Model training complete$(NC)"
+
+ml-compare:
+	@echo "$(BLUE)📊 Comparing model performance...$(NC)"
+	@bash scripts/ml_train.sh compare
+
+ml-retrain:
+	@echo "$(BLUE)🔄 Full retraining pipeline...$(NC)"
+	@bash scripts/ml_train.sh retrain
+
+ml-explainability:
+	@echo "$(BLUE)🔍 Running explainability analysis...$(NC)"
+	jupyter nbconvert --execute ml/notebooks/explainability_analysis.ipynb --to html
+	@echo "$(GREEN)✓ Analysis complete: ml/notebooks/explainability_analysis.html$(NC)"
 
 # ============================================
 # Development Commands
 # ============================================
 
-install-ml:
-	@echo "📦 Installing ML dependencies..."
-	pip install -r requirements_ml.txt
-
 serve:
-	@echo "🚀 Starting Django development server..."
-	$(MANAGE) runserver
+	@echo "$(BLUE)🚀 Starting Django development server...$(NC)"
+	$(MANAGE) runserver --settings=$(SETTINGS)
 
 shell:
-	@echo "🐚 Opening Django shell..."
-	$(MANAGE) shell
+	@echo "$(BLUE)🐚 Opening Django shell...$(NC)"
+	$(MANAGE) shell --settings=$(SETTINGS)
 
 migrate:
-	@echo "🗄️  Running database migrations..."
-	$(MANAGE) migrate
+	@echo "$(BLUE)🗄️  Running database migrations...$(NC)"
+	$(MANAGE) migrate --settings=$(SETTINGS)
+	@echo "$(GREEN)✓ Migrations complete$(NC)"
+
+makemigrations:
+	@echo "$(BLUE)🗄️  Creating migrations...$(NC)"
+	$(MANAGE) makemigrations --settings=$(SETTINGS)
 
 createsuperuser:
-	@echo "👤 Creating Django superuser..."
-	$(MANAGE) createsuperuser
+	@echo "$(BLUE)👤 Creating Django superuser...$(NC)"
+	$(MANAGE) createsuperuser --settings=$(SETTINGS)
 
-load-demo-data:
-	@echo "📥 Loading demo fixtures..."
-	$(MANAGE) loaddata future_skills/fixtures/future_skills_demo.json
+seed-data:
+	@echo "$(BLUE)📥 Loading demo data...$(NC)"
+	$(MANAGE) seed_future_skills --settings=$(SETTINGS)
+	@echo "$(GREEN)✓ Demo data loaded$(NC)"
 
-recalculate-predictions:
-	@echo "🔮 Recalculating all future skills predictions..."
-	$(MANAGE) recalculate_future_skills
-
-# ============================================
-# Documentation Commands
-# ============================================
-
-docs-ml:
-	@echo "📚 Opening ML documentation..."
-	@cat ml/README.md
-
-registry:
-	@echo "📋 Model Registry:"
-	@cat ml/MODEL_REGISTRY.md
-
-mlops-guide:
-	@echo "📖 MLOps Guide:"
-	@cat ml/MLOPS_GUIDE.md
+recalculate:
+	@echo "$(BLUE)🔮 Recalculating predictions...$(NC)"
+	$(MANAGE) recalculate_future_skills --settings=$(SETTINGS)
+	@echo "$(GREEN)✓ Predictions recalculated$(NC)"
 
 # ============================================
 # Cleanup Commands
 # ============================================
 
 clean:
-	@echo "🧹 Cleaning temporary files..."
+	@echo "$(BLUE)🧹 Cleaning temporary files...$(NC)"
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.pyo" -delete
-	find . -type f -name ".DS_Store" -delete
-	rm -rf htmlcov/
-	rm -rf .coverage
-	rm -rf .pytest_cache/
-	@echo "✅ Cleanup complete"
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	find . -type f -name ".DS_Store" -delete 2>/dev/null || true
+	@echo "$(GREEN)✓ Cleanup complete$(NC)"
+
+clean-pyc:
+	@echo "$(BLUE)🧹 Removing Python cache files...$(NC)"
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	find . -type f -name "*.pyo" -delete 2>/dev/null || true
+
+clean-test:
+	@echo "$(BLUE)🧹 Removing test artifacts...$(NC)"
+	rm -rf htmlcov/ .coverage .pytest_cache/ 2>/dev/null || true
+	@echo "$(GREEN)✓ Test artifacts removed$(NC)"
 
 clean-models:
-	@echo "⚠️  WARNING: This will delete all model files!"
-	@echo "Press Ctrl+C to cancel, or Enter to continue..."
+	@echo "$(YELLOW)⚠️  WARNING: This will delete all ML model files!$(NC)"
+	@echo "Press Ctrl+C to cancel, Enter to continue..."
 	@read dummy
-	rm -f ml/future_skills_model*.pkl
-	rm -f ml/future_skills_model*.json
-	@echo "✅ Model files deleted"
+	rm -rf ml/models/*.joblib ml/results/*.json 2>/dev/null || true
+	@echo "$(GREEN)✓ Model files deleted$(NC)"
+
+clean-all: clean clean-test
+	@echo "$(GREEN)✓ Complete cleanup done$(NC)"
 
 # ============================================
-# Quick Development Workflows
+# Quick Workflows
 # ============================================
 
-# Full setup for new developers
-setup: install-ml migrate load-demo-data
-	@echo "✅ Development environment setup complete!"
-	@echo "Next steps:"
-	@echo "  1. Create superuser: make createsuperuser"
-	@echo "  2. Train initial model: make retrain-future-skills MODEL_VERSION=v1"
-	@echo "  3. Start server: make serve"
+# Quick test before commit
+quick-check: format lint test-fast
+	@echo "$(GREEN)✓ Quick check complete - ready to commit!$(NC)"
 
-# Quick test cycle
-quick-test: test-ml
-	@echo "✅ Quick test cycle complete"
+# Full CI simulation
+ci: install-dev migrate lint test
+	@echo "$(GREEN)✓ CI simulation complete$(NC)"
 
-# Full ML pipeline (for production updates)
-ml-pipeline: export-dataset train-model evaluate-model
-	@echo "✅ ML pipeline complete"
-	@echo "Review results and update settings.py if satisfied"
+# Development cycle
+dev: migrate seed-data serve
+
+# Production deployment check
+prod-check: lint test docker-build
+	@echo "$(GREEN)✓ Production checks passed$(NC)"
