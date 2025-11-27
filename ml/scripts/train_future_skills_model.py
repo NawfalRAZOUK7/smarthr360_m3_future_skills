@@ -118,7 +118,7 @@ def train_model(
 ):
     """
     Train the Future Skills ML model and save with metadata.
-    
+
     Args:
         csv_path: Path to the input dataset CSV
         output_model_path: Path where the model will be saved
@@ -128,7 +128,7 @@ def train_model(
         n_estimators: Number of trees in RandomForest
     """
     training_start_time = datetime.now()
-    
+
     print(f"[INFO] Chargement du dataset : {csv_path}")
     df = load_dataset(csv_path)
 
@@ -151,10 +151,10 @@ def train_model(
     # Check for missing columns and use available ones
     available_features = [c for c in feature_cols if c in df.columns]
     missing_cols = [c for c in feature_cols if c not in df.columns]
-    
+
     if missing_cols:
         print(f"[WARN] Colonnes manquantes (ignorées) : {missing_cols}")
-    
+
     if not available_features:
         raise ValueError("Aucune feature disponible dans le dataset!")
 
@@ -164,7 +164,7 @@ def train_model(
     # Identify categorical and numeric features dynamically
     categorical_features = []
     numeric_features = []
-    
+
     for col in available_features:
         if df[col].dtype == 'object' or df[col].dtype.name == 'category':
             categorical_features.append(col)
@@ -229,20 +229,20 @@ def train_model(
     # Evaluation
     print("[INFO] Évaluation sur le set de test :")
     y_pred = pipeline.predict(X_test)
-    
+
     # Compute metrics
     accuracy = accuracy_score(y_test, y_pred)
     precision, recall, f1, support = precision_recall_fscore_support(
         y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"], average="weighted"
     )
-    
+
     print("\nClassification report :")
     print(classification_report(y_test, y_pred, digits=4))
 
     print("\nMatrice de confusion :")
     cm = confusion_matrix(y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"])
     print(cm)
-    
+
     # Calculate per-class metrics
     per_class_metrics = {}
     print("\nPrécision par classe :")
@@ -258,21 +258,21 @@ def train_model(
     # Feature importance
     clf = pipeline.named_steps["clf"]
     print(f"[INFO] Classes apprises par le modèle : {clf.classes_}")
-    
+
     feature_importance_dict = {}
     if hasattr(clf, 'feature_importances_'):
         print("\n[INFO] Importance des features :")
         preprocessor = pipeline.named_steps["preprocess"]
-        
+
         # Get feature names after preprocessing
         cat_features = []
         if categorical_features:
             cat_transformer = preprocessor.named_transformers_['cat']
             if hasattr(cat_transformer, 'get_feature_names_out'):
                 cat_features = cat_transformer.get_feature_names_out(categorical_features).tolist()
-        
+
         all_features = cat_features + numeric_features
-        
+
         if len(all_features) == len(clf.feature_importances_):
             feature_importance = sorted(
                 zip(all_features, clf.feature_importances_),
@@ -326,10 +326,10 @@ def train_model(
     metadata_path = output_model_path.with_suffix('.json')
     with open(metadata_path, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=2, ensure_ascii=False)
-    
+
     print(f"[SUCCESS] Métadonnées sauvegardées dans : {metadata_path}")
     print(f"[SUCCESS] Le modèle utilise {len(available_features)} features")
-    
+
     return metadata
 
 
@@ -397,7 +397,7 @@ def main():
         random_state=args.random_state,
         n_estimators=args.n_estimators,
     )
-    
+
     print("\n" + "="*60)
     print("📊 RÉSUMÉ DE L'ENTRAÎNEMENT")
     print("="*60)
