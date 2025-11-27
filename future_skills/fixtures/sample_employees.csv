@@ -1,0 +1,11 @@
+first_name,last_name,email,job_role_id,skills
+Alice,Johnson,alice.johnson@company.com,1,"Python;Machine Learning;TensorFlow;Data Analysis;Statistics"
+Bob,Smith,bob.smith@company.com,1,"JavaScript;React;Node.js;TypeScript;Redux"
+Carol,Williams,carol.williams@company.com,2,"Java;Spring Boot;Microservices;Docker;Kubernetes"
+David,Brown,david.brown@company.com,2,"C#;.NET Core;Azure;SQL Server;Entity Framework"
+Emma,Davis,emma.davis@company.com,3,"Project Management;Agile;Scrum;JIRA;Confluence"
+Frank,Miller,frank.miller@company.com,3,"UI/UX Design;Figma;Adobe XD;User Research;Prototyping"
+Grace,Wilson,grace.wilson@company.com,4,"DevOps;AWS;Terraform;Jenkins;CI/CD"
+Henry,Moore,henry.moore@company.com,4,"Data Engineering;Apache Spark;Hadoop;ETL;Big Data"
+Iris,Taylor,iris.taylor@company.com,5,"Cybersecurity;Penetration Testing;Network Security;SIEM;Firewall"
+Jack,Anderson,jack.anderson@company.com,5,"Business Analysis;Requirements Gathering;Process Mapping;Stakeholder Management;SQL"

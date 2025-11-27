@@ -1,0 +1,9 @@
+# Example CSV template for bulk employee import
+# Save this file as: employees_import_template.csv
+
+name,email,department,position,job_role_id,job_role_name,current_skills
+John Doe,john.doe@example.com,Engineering,Senior Developer,1,,Python;Django;REST API;PostgreSQL
+Jane Smith,jane.smith@example.com,Data Science,Data Analyst,2,,"SQL,Tableau,Python,Pandas"
+Bob Johnson,bob.johnson@example.com,Marketing,Marketing Manager,3,Marketing Manager,SEO;Content Marketing;Social Media
+Alice Williams,alice.williams@example.com,HR,HR Specialist,4,,"Recruitment,Employee Relations,HRIS"
+Charlie Brown,charlie.brown@example.com,Finance,Financial Analyst,5,,Excel;Financial Modeling;SAP
