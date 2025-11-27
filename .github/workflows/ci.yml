@@ -80,6 +80,7 @@ jobs:
           pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
@@ -93,12 +94,14 @@ jobs:
           pytest future_skills/tests/ -v -m "not slow"
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Run integration tests
         run: |
           pytest tests/integration/ -v
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Check for security issues
         run: |
