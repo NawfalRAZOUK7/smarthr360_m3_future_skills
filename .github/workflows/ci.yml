@@ -128,7 +128,7 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm smarthr360:test python manage.py check --settings=config.settings.production
+          docker run --rm -e SECRET_KEY=test-key-for-ci -e DJANGO_SETTINGS_MODULE=config.settings.test smarthr360:test python manage.py check
 
   documentation:
     runs-on: ubuntu-latest
