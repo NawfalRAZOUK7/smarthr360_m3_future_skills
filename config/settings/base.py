@@ -166,6 +166,26 @@ FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_v1"
 FUTURE_SKILLS_ENABLE_MONITORING = True  # Active le logging des prédictions pour drift detection
 FUTURE_SKILLS_MONITORING_LOG = BASE_DIR / "logs" / "predictions_monitoring.jsonl"
 
+# --- Celery Configuration (Section 2.5) ---
+
+# Celery broker and backend (Redis)
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+
+# Celery task settings
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes max per task
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes soft limit
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Disable prefetch for long tasks
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 50  # Restart worker after 50 tasks
+
+# Celery result expiration
+CELERY_RESULT_EXPIRES = 3600  # Results expire after 1 hour
+
 # --- Django Logging Configuration ---
 
 LOGGING = {

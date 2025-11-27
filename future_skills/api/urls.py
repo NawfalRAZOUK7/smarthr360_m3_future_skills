@@ -15,6 +15,9 @@ from .views import (
     BulkPredictAPIView,
     BulkEmployeeImportAPIView,
     BulkEmployeeUploadAPIView,
+    TrainModelAPIView,
+    TrainingRunListAPIView,
+    TrainingRunDetailAPIView,
 )
 
 # Router for ViewSets
@@ -93,5 +96,37 @@ urlpatterns = [
         "bulk-upload/employees/",
         BulkEmployeeUploadAPIView.as_view(),
         name="employee-bulk-upload",
+    ),
+
+    # ========================================================================
+    # Training API Endpoints (Sections 2.4 & 2.6)
+    # ========================================================================
+
+    # Train new model (Section 2.4: training/train/)
+    path(
+        "training/train/",
+        TrainModelAPIView.as_view(),
+        name="training-train-model",
+    ),
+
+    # Train new model - Alternative endpoint (Section 2.6: training/start/)
+    path(
+        "training/start/",
+        TrainModelAPIView.as_view(),
+        name="training-start",
+    ),
+
+    # List all training runs with pagination (Section 2.6)
+    path(
+        "training/runs/",
+        TrainingRunListAPIView.as_view(),
+        name="training-runs",
+    ),
+
+    # Get specific training run details (Section 2.6)
+    path(
+        "training/runs/<int:pk>/",
+        TrainingRunDetailAPIView.as_view(),
+        name="training-run-detail",
     ),
 ]

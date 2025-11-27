@@ -35,3 +35,316 @@
 [WARNING] 2025-11-27 12:23:27 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
 [WARNING] 2025-11-27 14:59:22 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
 [WARNING] 2025-11-27 14:59:32 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:17:41 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:21:28 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:25:20 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:29:10 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:54:25 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:54:34 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:58:22 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:58:55 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 15:59:30 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 16:03:22 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 16:03:46 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 16:03:58 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 16:04:26 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 16:04:40 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.__init__: ModelTrainer initialized: dataset=ml/data/future_skills_dataset.csv, test_split=0.2
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.load_data: Loading dataset from: ml/data/future_skills_dataset.csv
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.load_data: Loaded 357 rows
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.load_data: Using 11 features
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service._identify_feature_types: Categorical features: ['job_role_name', 'skill_name', 'skill_category', 'job_department']
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service._identify_feature_types: Numeric features: ['trend_score', 'internal_usage', 'training_requests', 'scarcity_index', 'hiring_difficulty', 'avg_salary_k', 'economic_indicator']
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.load_data: Class distribution: {'MEDIUM': 237, 'HIGH': 120}
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.load_data: Class imbalance ratio: 1.98
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.load_data: Split complete: train=285, test=72
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.train: Starting model training
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.train: Hyperparameters: {'n_estimators': 50, 'max_depth': None, 'min_samples_split': 2, 'min_samples_leaf': 1, 'class_weight': 'balanced', 'random_state': 42, 'n_jobs': -1}
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.train: Fitting model...
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.train: Training completed in 0.07s
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.evaluate: Evaluating model on test set
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.evaluate: Accuracy: 0.9861
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.evaluate: Precision: 0.9864
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.evaluate: Recall: 0.9861
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.evaluate: F1-Score: 0.9860
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.evaluate: Confusion matrix:
+[[ 0  0  0]
+ [ 0 48  0]
+ [ 0  1 23]]
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service._compute_per_class_metrics:   LOW: accuracy=0.00%, support=0
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service._compute_per_class_metrics:   MEDIUM: accuracy=100.00%, support=48
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service._compute_per_class_metrics:   HIGH: accuracy=95.83%, support=24
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.evaluate: Classification report:
+              precision    recall  f1-score   support
+
+        HIGH     1.0000    0.9583    0.9787        24
+      MEDIUM     0.9796    1.0000    0.9897        48
+
+    accuracy                         0.9861        72
+   macro avg     0.9898    0.9792    0.9842        72
+weighted avg     0.9864    0.9861    0.9860        72
+
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance: Top 10 important features:
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   1. scarcity_index: 0.2896
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   2. hiring_difficulty: 0.2523
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   3. skill_category_Soft Skill: 0.0912
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   4. internal_usage: 0.0815
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   5. skill_category_Technique: 0.0772
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   6. avg_salary_k: 0.0737
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   7. skill_name_Data Analysis: 0.0199
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   8. skill_category_Business: 0.0171
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   9. job_role_name_Product Manager: 0.0113
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.get_feature_importance:   10. job_role_name_HR Manager: 0.0107
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.save_model: Saving model to: ml/models/test_service_model.pkl
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.save_model: Model saved successfully: 104872 bytes
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.save_training_run: Saving training run: version=test_service_v1
+[INFO] 2025-11-27 16:08:56 future_skills.services.training_service training_service.save_training_run: Training run saved: ID=4
+[INFO] 2025-11-27 16:10:50 future_skills.services.training_service training_service.__init__: ModelTrainer initialized: dataset=invalid_path.csv, test_split=0.2
+[INFO] 2025-11-27 16:10:50 future_skills.services.training_service training_service.load_data: Loading dataset from: invalid_path.csv
+[INFO] 2025-11-27 16:10:50 future_skills.services.training_service training_service.__init__: ModelTrainer initialized: dataset=ml/data/future_skills_dataset.csv, test_split=0.2
+[INFO] 2025-11-27 16:11:18 future_skills.services.training_service training_service.__init__: ModelTrainer initialized: dataset=ml/data/future_skills_dataset.csv, test_split=0.2
+[INFO] 2025-11-27 16:11:18 future_skills.services.training_service training_service.save_failed_training_run: Saving failed training run: version=test_failure_v1
+[INFO] 2025-11-27 16:11:18 future_skills.services.training_service training_service.save_failed_training_run: Failed training run saved: ID=5
+[WARNING] 2025-11-27 16:41:22 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 16:44:01 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 16:45:57 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 16:46:28 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[INFO] 2025-11-27 16:46:30 future_skills.api.views views.post: Training started: run_id=1, version=test_api_v1, user=test_hr
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.__init__: ModelTrainer initialized: dataset=ml/data/future_skills_dataset.csv, test_split=0.2
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.load_data: Loading dataset from: ml/data/future_skills_dataset.csv
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.load_data: Loaded 357 rows
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.load_data: Using 11 features
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service._identify_feature_types: Categorical features: ['job_role_name', 'skill_name', 'skill_category', 'job_department']
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service._identify_feature_types: Numeric features: ['trend_score', 'internal_usage', 'training_requests', 'scarcity_index', 'hiring_difficulty', 'avg_salary_k', 'economic_indicator']
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.load_data: Class distribution: {'MEDIUM': 237, 'HIGH': 120}
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.load_data: Class imbalance ratio: 1.98
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.load_data: Split complete: train=285, test=72
+[INFO] 2025-11-27 16:46:30 future_skills.api.views views.post: Data loaded: 285 train, 72 test
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.train: Starting model training
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.train: Hyperparameters: {'n_estimators': 20, 'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 1, 'class_weight': 'balanced', 'random_state': 42, 'n_jobs': -1}
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.train: Fitting model...
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.train: Training completed in 0.05s
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.evaluate: Evaluating model on test set
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.evaluate: Accuracy: 0.9861
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.evaluate: Precision: 0.9867
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.evaluate: Recall: 0.9861
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.evaluate: F1-Score: 0.9862
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.evaluate: Confusion matrix:
+[[ 0  0  0]
+ [ 0 47  1]
+ [ 0  0 24]]
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service._compute_per_class_metrics:   LOW: accuracy=0.00%, support=0
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service._compute_per_class_metrics:   MEDIUM: accuracy=97.92%, support=48
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service._compute_per_class_metrics:   HIGH: accuracy=100.00%, support=24
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.evaluate: Classification report:
+              precision    recall  f1-score   support
+
+        HIGH     0.9600    1.0000    0.9796        24
+      MEDIUM     1.0000    0.9792    0.9895        48
+
+    accuracy                         0.9861        72
+   macro avg     0.9800    0.9896    0.9845        72
+weighted avg     0.9867    0.9861    0.9862        72
+
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance: Top 10 important features:
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   1. scarcity_index: 0.2820
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   2. hiring_difficulty: 0.2309
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   3. skill_category_Technique: 0.1766
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   4. avg_salary_k: 0.0847
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   5. skill_category_Soft Skill: 0.0428
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   6. internal_usage: 0.0396
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   7. skill_name_Data Analysis: 0.0269
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   8. skill_name_Analyse de données: 0.0149
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   9. skill_name_Machine Learning: 0.0107
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.get_feature_importance:   10. training_requests: 0.0095
+[INFO] 2025-11-27 16:46:30 future_skills.api.views views.post: Training completed: accuracy=98.61%
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.save_model: Saving model to: ml/models/test_api_v1.pkl
+[INFO] 2025-11-27 16:46:30 future_skills.services.training_service training_service.save_model: Model saved successfully: 33352 bytes
+[INFO] 2025-11-27 16:46:30 future_skills.api.views views.post: Model saved: ml/models/test_api_v1.pkl
+[INFO] 2025-11-27 16:46:30 future_skills.api.views views.post: Training run updated: id=1, status=COMPLETED, accuracy=98.61%
+[WARNING] 2025-11-27 17:17:44 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[INFO] 2025-11-27 17:17:45 future_skills.api.views views.post: Training started: run_id=1, version=test_sync_v1, user=test_drh, async=False
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.__init__: ModelTrainer initialized: dataset=ml/data/future_skills_dataset.csv, test_split=0.2
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.load_data: Loading dataset from: ml/data/future_skills_dataset.csv
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.load_data: Loaded 357 rows
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.load_data: Using 11 features
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service._identify_feature_types: Categorical features: ['job_role_name', 'skill_name', 'skill_category', 'job_department']
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service._identify_feature_types: Numeric features: ['trend_score', 'internal_usage', 'training_requests', 'scarcity_index', 'hiring_difficulty', 'avg_salary_k', 'economic_indicator']
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.load_data: Class distribution: {'MEDIUM': 237, 'HIGH': 120}
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.load_data: Class imbalance ratio: 1.98
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.load_data: Split complete: train=285, test=72
+[INFO] 2025-11-27 17:17:45 future_skills.api.views views.post: Data loaded: 285 train, 72 test
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.train: Starting model training
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.train: Hyperparameters: {'n_estimators': 20, 'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 1, 'class_weight': 'balanced', 'random_state': 42, 'n_jobs': -1}
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.train: Fitting model...
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.train: Training completed in 0.05s
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.evaluate: Evaluating model on test set
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.evaluate: Accuracy: 0.9861
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.evaluate: Precision: 0.9867
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.evaluate: Recall: 0.9861
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.evaluate: F1-Score: 0.9862
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.evaluate: Confusion matrix:
+[[ 0  0  0]
+ [ 0 47  1]
+ [ 0  0 24]]
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service._compute_per_class_metrics:   LOW: accuracy=0.00%, support=0
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service._compute_per_class_metrics:   MEDIUM: accuracy=97.92%, support=48
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service._compute_per_class_metrics:   HIGH: accuracy=100.00%, support=24
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.evaluate: Classification report:
+              precision    recall  f1-score   support
+
+        HIGH     0.9600    1.0000    0.9796        24
+      MEDIUM     1.0000    0.9792    0.9895        48
+
+    accuracy                         0.9861        72
+   macro avg     0.9800    0.9896    0.9845        72
+weighted avg     0.9867    0.9861    0.9862        72
+
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance: Top 10 important features:
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   1. scarcity_index: 0.2820
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   2. hiring_difficulty: 0.2309
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   3. skill_category_Technique: 0.1766
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   4. avg_salary_k: 0.0847
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   5. skill_category_Soft Skill: 0.0428
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   6. internal_usage: 0.0396
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   7. skill_name_Data Analysis: 0.0269
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   8. skill_name_Analyse de données: 0.0149
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   9. skill_name_Machine Learning: 0.0107
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.get_feature_importance:   10. training_requests: 0.0095
+[INFO] 2025-11-27 17:17:45 future_skills.api.views views.post: Training completed: accuracy=98.61%
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.save_model: Saving model to: ml/models/test_sync_v1.pkl
+[INFO] 2025-11-27 17:17:45 future_skills.services.training_service training_service.save_model: Model saved successfully: 33352 bytes
+[INFO] 2025-11-27 17:17:45 future_skills.api.views views.post: Model saved: ml/models/test_sync_v1.pkl
+[INFO] 2025-11-27 17:17:45 future_skills.api.views views.post: Training run updated: id=1, status=COMPLETED, accuracy=98.61%
+[WARNING] 2025-11-27 17:19:29 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[INFO] 2025-11-27 17:19:29 future_skills.api.views views.post: Training started: run_id=1, version=test_async_v1, user=test_drh, async=True
+[INFO] 2025-11-27 17:19:29 future_skills.api.views views.post: Celery task dispatched: task_id=test-task-id-12345, training_run_id=1
+[WARNING] 2025-11-27 17:19:41 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[INFO] 2025-11-27 17:19:41 future_skills.api.views views.post: Training started: run_id=1, version=test_async_v1, user=test_drh, async=True
+[INFO] 2025-11-27 17:19:41 future_skills.api.views views.post: Celery task dispatched: task_id=test-task-id-12345, training_run_id=1
+[INFO] 2025-11-27 17:19:41 future_skills.api.views views.post: Training started: run_id=1, version=test_celery_fail, user=test_drh, async=True
+[ERROR] 2025-11-27 17:19:41 future_skills.api.views views.post: Celery dispatch failed: run_id=1, error=Redis connection refused
+[INFO] 2025-11-27 17:19:41 future_skills.tasks tasks.train_model_task: [CELERY] Starting async training task for TrainingRun ID=1
+[INFO] 2025-11-27 17:19:42 future_skills.tasks tasks.train_model_task: [CELERY] Starting async training task for TrainingRun ID=1
+[INFO] 2025-11-27 17:19:42 future_skills.api.views views.post: Training started: run_id=1, version=test_sync_v1, user=test_drh, async=False
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.__init__: ModelTrainer initialized: dataset=ml/data/future_skills_dataset.csv, test_split=0.2
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.load_data: Loading dataset from: ml/data/future_skills_dataset.csv
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.load_data: Loaded 357 rows
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.load_data: Using 11 features
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service._identify_feature_types: Categorical features: ['job_role_name', 'skill_name', 'skill_category', 'job_department']
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service._identify_feature_types: Numeric features: ['trend_score', 'internal_usage', 'training_requests', 'scarcity_index', 'hiring_difficulty', 'avg_salary_k', 'economic_indicator']
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.load_data: Class distribution: {'MEDIUM': 237, 'HIGH': 120}
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.load_data: Class imbalance ratio: 1.98
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.load_data: Split complete: train=285, test=72
+[INFO] 2025-11-27 17:19:42 future_skills.api.views views.post: Data loaded: 285 train, 72 test
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.train: Starting model training
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.train: Hyperparameters: {'n_estimators': 20, 'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 1, 'class_weight': 'balanced', 'random_state': 42, 'n_jobs': -1}
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.train: Fitting model...
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.train: Training completed in 0.05s
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.evaluate: Evaluating model on test set
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.evaluate: Accuracy: 0.9861
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.evaluate: Precision: 0.9867
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.evaluate: Recall: 0.9861
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.evaluate: F1-Score: 0.9862
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.evaluate: Confusion matrix:
+[[ 0  0  0]
+ [ 0 47  1]
+ [ 0  0 24]]
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service._compute_per_class_metrics:   LOW: accuracy=0.00%, support=0
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service._compute_per_class_metrics:   MEDIUM: accuracy=97.92%, support=48
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service._compute_per_class_metrics:   HIGH: accuracy=100.00%, support=24
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.evaluate: Classification report:
+              precision    recall  f1-score   support
+
+        HIGH     0.9600    1.0000    0.9796        24
+      MEDIUM     1.0000    0.9792    0.9895        48
+
+    accuracy                         0.9861        72
+   macro avg     0.9800    0.9896    0.9845        72
+weighted avg     0.9867    0.9861    0.9862        72
+
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance: Top 10 important features:
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   1. scarcity_index: 0.2820
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   2. hiring_difficulty: 0.2309
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   3. skill_category_Technique: 0.1766
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   4. avg_salary_k: 0.0847
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   5. skill_category_Soft Skill: 0.0428
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   6. internal_usage: 0.0396
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   7. skill_name_Data Analysis: 0.0269
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   8. skill_name_Analyse de données: 0.0149
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   9. skill_name_Machine Learning: 0.0107
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.get_feature_importance:   10. training_requests: 0.0095
+[INFO] 2025-11-27 17:19:42 future_skills.api.views views.post: Training completed: accuracy=98.61%
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.save_model: Saving model to: ml/models/test_sync_v1.pkl
+[INFO] 2025-11-27 17:19:42 future_skills.services.training_service training_service.save_model: Model saved successfully: 33352 bytes
+[INFO] 2025-11-27 17:19:42 future_skills.api.views views.post: Model saved: ml/models/test_sync_v1.pkl
+[INFO] 2025-11-27 17:19:42 future_skills.api.views views.post: Training run updated: id=1, status=COMPLETED, accuracy=98.61%
+[WARNING] 2025-11-27 17:19:53 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[INFO] 2025-11-27 17:19:53 future_skills.api.views views.post: Training started: run_id=1, version=test_async_v1, user=test_drh, async=True
+[INFO] 2025-11-27 17:19:53 future_skills.api.views views.post: Celery task dispatched: task_id=test-task-id-12345, training_run_id=1
+[INFO] 2025-11-27 17:19:53 future_skills.api.views views.post: Training started: run_id=1, version=test_celery_fail, user=test_drh, async=True
+[ERROR] 2025-11-27 17:19:53 future_skills.api.views views.post: Celery dispatch failed: run_id=1, error=Redis connection refused
+[INFO] 2025-11-27 17:19:54 future_skills.tasks tasks.train_model_task: [CELERY] Starting async training task for TrainingRun ID=1
+[INFO] 2025-11-27 17:19:54 future_skills.tasks tasks.train_model_task: [CELERY] Starting async training task for TrainingRun ID=1
+[INFO] 2025-11-27 17:19:54 future_skills.api.views views.post: Training started: run_id=1, version=test_sync_v1, user=test_drh, async=False
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.__init__: ModelTrainer initialized: dataset=ml/data/future_skills_dataset.csv, test_split=0.2
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.load_data: Loading dataset from: ml/data/future_skills_dataset.csv
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.load_data: Loaded 357 rows
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.load_data: Using 11 features
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service._identify_feature_types: Categorical features: ['job_role_name', 'skill_name', 'skill_category', 'job_department']
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service._identify_feature_types: Numeric features: ['trend_score', 'internal_usage', 'training_requests', 'scarcity_index', 'hiring_difficulty', 'avg_salary_k', 'economic_indicator']
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.load_data: Class distribution: {'MEDIUM': 237, 'HIGH': 120}
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.load_data: Class imbalance ratio: 1.98
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.load_data: Split complete: train=285, test=72
+[INFO] 2025-11-27 17:19:54 future_skills.api.views views.post: Data loaded: 285 train, 72 test
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.train: Starting model training
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.train: Hyperparameters: {'n_estimators': 20, 'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 1, 'class_weight': 'balanced', 'random_state': 42, 'n_jobs': -1}
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.train: Fitting model...
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.train: Training completed in 0.04s
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.evaluate: Evaluating model on test set
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.evaluate: Accuracy: 0.9861
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.evaluate: Precision: 0.9867
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.evaluate: Recall: 0.9861
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.evaluate: F1-Score: 0.9862
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.evaluate: Confusion matrix:
+[[ 0  0  0]
+ [ 0 47  1]
+ [ 0  0 24]]
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service._compute_per_class_metrics:   LOW: accuracy=0.00%, support=0
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service._compute_per_class_metrics:   MEDIUM: accuracy=97.92%, support=48
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service._compute_per_class_metrics:   HIGH: accuracy=100.00%, support=24
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.evaluate: Classification report:
+              precision    recall  f1-score   support
+
+        HIGH     0.9600    1.0000    0.9796        24
+      MEDIUM     1.0000    0.9792    0.9895        48
+
+    accuracy                         0.9861        72
+   macro avg     0.9800    0.9896    0.9845        72
+weighted avg     0.9867    0.9861    0.9862        72
+
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance: Top 10 important features:
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   1. scarcity_index: 0.2820
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   2. hiring_difficulty: 0.2309
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   3. skill_category_Technique: 0.1766
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   4. avg_salary_k: 0.0847
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   5. skill_category_Soft Skill: 0.0428
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   6. internal_usage: 0.0396
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   7. skill_name_Data Analysis: 0.0269
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   8. skill_name_Analyse de données: 0.0149
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   9. skill_name_Machine Learning: 0.0107
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.get_feature_importance:   10. training_requests: 0.0095
+[INFO] 2025-11-27 17:19:54 future_skills.api.views views.post: Training completed: accuracy=98.61%
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.save_model: Saving model to: ml/models/test_sync_v1.pkl
+[INFO] 2025-11-27 17:19:54 future_skills.services.training_service training_service.save_model: Model saved successfully: 33352 bytes
+[INFO] 2025-11-27 17:19:54 future_skills.api.views views.post: Model saved: ml/models/test_sync_v1.pkl
+[INFO] 2025-11-27 17:19:54 future_skills.api.views views.post: Training run updated: id=1, status=COMPLETED, accuracy=98.61%
+[INFO] 2025-11-27 17:19:54 future_skills.api.views views.post: Training started: run_id=1, version=test_run_creation, user=test_drh, async=True
+[INFO] 2025-11-27 17:19:54 future_skills.api.views views.post: Celery task dispatched: task_id=task-123, training_run_id=1
+[WARNING] 2025-11-27 17:28:59 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 17:29:48 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 17:30:41 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 17:31:46 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 17:58:11 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 18:07:45 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-27 18:08:03 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap

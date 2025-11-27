@@ -5,8 +5,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.pagination import PageNumberPagination
 
-from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation, Employee
+from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation, Employee, TrainingRun
 from .serializers import (
     FutureSkillPredictionSerializer,
     MarketTrendSerializer,
@@ -18,6 +20,10 @@ from .serializers import (
     RecommendSkillsRequestSerializer,
     BulkPredictRequestSerializer,
     BulkEmployeeImportSerializer,
+    TrainingRunSerializer,
+    TrainingRunDetailSerializer,
+    TrainModelRequestSerializer,
+    TrainModelResponseSerializer,
 )
 
 from ..services.prediction_engine import recalculate_predictions
@@ -1107,3 +1113,358 @@ class BulkEmployeeUploadAPIView(APIView):
             return [], [{'row': 0, 'field': 'file', 'error': f'Invalid JSON: {str(e)}'}]
         except Exception as e:
             return [], [{'row': 0, 'field': 'file', 'error': f'Failed to parse JSON: {str(e)}'}]
+
+
+# ============================================================================
+# Training API Views (Section 2.4)
+# ============================================================================
+
+class TrainingRunPagination(PageNumberPagination):
+    """
+    Custom pagination for training runs.
+    """
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class TrainModelAPIView(APIView):
+    """
+    Train a new ML model (synchronous or asynchronous execution).
+
+    POST /api/training/train/
+
+    Body:
+    {
+        "dataset_path": "ml/data/future_skills_dataset.csv",
+        "test_split": 0.2,
+        "hyperparameters": {
+            "n_estimators": 100,
+            "max_depth": 15,
+            "min_samples_split": 5
+        },
+        "model_version": "v3.0",
+        "notes": "Production model with optimized parameters",
+        "async_training": false  // Optional: use Celery for background training
+    }
+
+    Synchronous Mode (async_training=false, default):
+    Returns:
+    {
+        "training_run_id": 10,
+        "status": "COMPLETED",
+        "message": "Training completed successfully",
+        "model_version": "v3.0",
+        "metrics": {
+            "accuracy": 0.9861,
+            "f1_score": 0.9860,
+            ...
+        }
+    }
+
+    Asynchronous Mode (async_training=true):
+    Returns:
+    {
+        "training_run_id": 10,
+        "status": "RUNNING",
+        "message": "Training started in background",
+        "model_version": "v3.0",
+        "task_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    }
+    """
+    permission_classes = [IsHRStaff]
+
+    def post(self, request, *args, **kwargs):
+        """
+        Train a new model synchronously or asynchronously.
+        """
+        import logging
+        from datetime import datetime
+        from pathlib import Path
+        from ..services.training_service import (
+            ModelTrainer,
+            DataLoadError,
+            TrainingError
+        )
+
+        logger = logging.getLogger('future_skills.api.views')
+
+        # Validate request data
+        request_serializer = TrainModelRequestSerializer(data=request.data)
+        if not request_serializer.is_valid():
+            return Response(
+                {
+                    'error': 'Invalid request data',
+                    'details': request_serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        validated_data = request_serializer.validated_data
+        dataset_path = validated_data.get('dataset_path')
+        test_split = validated_data.get('test_split')
+        hyperparameters = validated_data.get('hyperparameters', {})
+        notes = validated_data.get('notes', '')
+
+        # Check if async training is requested (Section 2.5)
+        async_training = request.data.get('async_training', False)
+
+        # Generate model version if not provided
+        model_version = validated_data.get('model_version')
+        if not model_version:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            model_version = f"api_v{timestamp}"
+
+        # Create initial TrainingRun record with RUNNING status
+        training_run = TrainingRun.objects.create(
+            model_version=model_version,
+            model_path="",  # Will be updated after training
+            dataset_path=dataset_path,
+            test_split=test_split,
+            status='RUNNING',
+            accuracy=0.0,
+            precision=0.0,
+            recall=0.0,
+            f1_score=0.0,
+            total_samples=0,
+            train_samples=0,
+            test_samples=0,
+            training_duration_seconds=0.0,
+            trained_by=request.user,
+            notes=notes,
+            hyperparameters=hyperparameters,
+        )
+
+        logger.info(
+            f"Training started: run_id={training_run.id}, "
+            f"version={model_version}, user={request.user.username}, "
+            f"async={async_training}"
+        )
+
+        # === ASYNC MODE: Dispatch Celery task (Section 2.5) ===
+        if async_training:
+            try:
+                from ..tasks import train_model_task
+
+                # Dispatch the training task to Celery
+                task = train_model_task.delay(
+                    training_run_id=training_run.id,
+                    dataset_path=dataset_path,
+                    test_split=test_split,
+                    hyperparameters=hyperparameters
+                )
+
+                logger.info(
+                    f"Celery task dispatched: task_id={task.id}, "
+                    f"training_run_id={training_run.id}"
+                )
+
+                # Return immediately with RUNNING status
+                return Response(
+                    {
+                        'training_run_id': training_run.id,
+                        'status': 'RUNNING',
+                        'message': 'Training started in background. Check status with GET /api/training/runs/<id>/',
+                        'model_version': model_version,
+                        'task_id': task.id
+                    },
+                    status=status.HTTP_202_ACCEPTED
+                )
+
+            except Exception as e:
+                # If Celery fails, fall back to sync or return error
+                training_run.status = 'FAILED'
+                training_run.error_message = f"Failed to dispatch Celery task: {str(e)}"
+                training_run.save()
+
+                logger.error(
+                    f"Celery dispatch failed: run_id={training_run.id}, error={str(e)}"
+                )
+
+                return Response(
+                    {
+                        'training_run_id': training_run.id,
+                        'status': 'FAILED',
+                        'message': 'Failed to start background training. Redis/Celery may not be available.',
+                        'error': str(e)
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+
+        # === SYNC MODE: Train immediately (Section 2.4) ===
+
+        try:
+            # Initialize trainer
+            trainer = ModelTrainer(
+                dataset_path=dataset_path,
+                test_split=test_split,
+                random_state=hyperparameters.get('random_state', 42)
+            )
+
+            # Load data
+            trainer.load_data()
+            logger.info(f"Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test")
+
+            # Train model with provided hyperparameters
+            metrics = trainer.train(**hyperparameters)
+            logger.info(f"Training completed: accuracy={metrics['accuracy']:.2%}")
+
+            # Save model
+            model_dir = Path('ml/models')
+            model_dir.mkdir(parents=True, exist_ok=True)
+            model_path = model_dir / f"{model_version}.pkl"
+            trainer.save_model(str(model_path))
+            logger.info(f"Model saved: {model_path}")
+
+            # Update training run with success
+            training_run.status = 'COMPLETED'
+            training_run.model_path = str(model_path)
+            training_run.accuracy = metrics['accuracy']
+            training_run.precision = metrics['precision']
+            training_run.recall = metrics['recall']
+            training_run.f1_score = metrics['f1_score']
+            training_run.total_samples = len(trainer.X_train) + len(trainer.X_test)
+            training_run.train_samples = len(trainer.X_train)
+            training_run.test_samples = len(trainer.X_test)
+            training_run.training_duration_seconds = trainer.training_duration_seconds
+            training_run.per_class_metrics = metrics.get('per_class_metrics', {})
+            training_run.features_used = list(trainer.X_train.columns) if hasattr(trainer.X_train, 'columns') else []
+
+            # Update hyperparameters from trainer
+            if hasattr(trainer, 'hyperparameters'):
+                training_run.hyperparameters = trainer.hyperparameters
+
+            training_run.save()
+
+            logger.info(
+                f"Training run updated: id={training_run.id}, "
+                f"status={training_run.status}, accuracy={training_run.accuracy:.2%}"
+            )
+
+            # Prepare response
+            response_data = {
+                'training_run_id': training_run.id,
+                'status': training_run.status,
+                'message': f'Training completed successfully in {training_run.training_duration_seconds:.2f}s',
+                'model_version': model_version,
+                'metrics': {
+                    'accuracy': training_run.accuracy,
+                    'precision': training_run.precision,
+                    'recall': training_run.recall,
+                    'f1_score': training_run.f1_score,
+                    'training_duration_seconds': training_run.training_duration_seconds,
+                }
+            }
+
+            response_serializer = TrainModelResponseSerializer(response_data)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+        except DataLoadError as e:
+            # Update training run with failure
+            training_run.status = 'FAILED'
+            training_run.error_message = f"Data loading error: {str(e)}"
+            training_run.save()
+
+            logger.error(f"Training failed (data load): run_id={training_run.id}, error={str(e)}")
+
+            return Response(
+                {
+                    'training_run_id': training_run.id,
+                    'status': 'FAILED',
+                    'message': 'Training failed due to data loading error',
+                    'error': str(e)
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        except TrainingError as e:
+            # Update training run with failure
+            training_run.status = 'FAILED'
+            training_run.error_message = f"Training error: {str(e)}"
+            training_run.save()
+
+            logger.error(f"Training failed (training): run_id={training_run.id}, error={str(e)}")
+
+            return Response(
+                {
+                    'training_run_id': training_run.id,
+                    'status': 'FAILED',
+                    'message': 'Training failed during model training',
+                    'error': str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        except Exception as e:
+            # Update training run with unexpected failure
+            training_run.status = 'FAILED'
+            training_run.error_message = f"Unexpected error: {str(e)}"
+            training_run.save()
+
+            logger.error(f"Training failed (unexpected): run_id={training_run.id}, error={str(e)}", exc_info=True)
+
+            return Response(
+                {
+                    'training_run_id': training_run.id,
+                    'status': 'FAILED',
+                    'message': 'Training failed due to unexpected error',
+                    'error': str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class TrainingRunListAPIView(ListAPIView):
+    """
+    List all training runs with pagination.
+
+    GET /api/training/runs/
+
+    Query params:
+    - page: Page number (default: 1)
+    - page_size: Items per page (default: 20, max: 100)
+    - status: Filter by status (RUNNING, COMPLETED, FAILED)
+    - trained_by: Filter by username
+
+    Returns paginated list of training runs with basic metrics.
+    """
+    permission_classes = [IsHRStaffOrManager]
+    serializer_class = TrainingRunSerializer
+    pagination_class = TrainingRunPagination
+
+    def get_queryset(self):
+        """
+        Get filtered queryset based on query parameters.
+        """
+        queryset = TrainingRun.objects.select_related('trained_by').all()
+
+        # Filter by status
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter.upper())
+
+        # Filter by username
+        trained_by = self.request.query_params.get('trained_by')
+        if trained_by:
+            queryset = queryset.filter(trained_by__username=trained_by)
+
+        return queryset
+
+
+class TrainingRunDetailAPIView(RetrieveAPIView):
+    """
+    Get detailed information about a specific training run.
+
+    GET /api/training/runs/<id>/
+
+    Returns full training run details including:
+    - All metrics (accuracy, precision, recall, f1)
+    - Per-class metrics
+    - Feature importance
+    - Hyperparameters
+    - Dataset information
+    - Error messages (if failed)
+    """
+    permission_classes = [IsHRStaffOrManager]
+    serializer_class = TrainingRunDetailSerializer
+    queryset = TrainingRun.objects.select_related('trained_by').all()

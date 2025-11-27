@@ -127,7 +127,7 @@ def _prepare_features(df: pd.DataFrame, feature_cols: list, target_col: str) -> 
     X = df[available_features].copy()
     y = df[target_col].copy()
 
-    return X, y, available_features
+    return X, y, available_features, missing_cols
 
 
 def _identify_feature_types(df: pd.DataFrame, available_features: list) -> tuple:
@@ -144,14 +144,14 @@ def _identify_feature_types(df: pd.DataFrame, available_features: list) -> tuple
     return categorical_features, numeric_features
 
 
-def _check_class_imbalance(y: pd.Series) -> float:
-    """Check for class imbalance and print warnings."""
+def _check_class_imbalance(y: pd.Series) -> tuple:
+    """Check for class imbalance and print warnings. Returns (imbalance_ratio, class_counts)."""
     class_counts = y.value_counts()
     imbalance_ratio = class_counts.max() / class_counts.min()
     print(f"[INFO] Ratio de déséquilibre : {imbalance_ratio:.2f}")
     if imbalance_ratio > 3:
         print("[WARN] Déséquilibre des classes détecté. Utilisation de class_weight='balanced'")
-    return imbalance_ratio
+    return imbalance_ratio, class_counts
 
 
 def _compute_per_class_metrics(cm: np.ndarray) -> dict:
@@ -217,7 +217,7 @@ def train_model(
     target_col = "future_need_level"
 
     # Prepare features and target
-    X, y, available_features = _prepare_features(df, feature_cols, target_col)
+    X, y, available_features, missing_cols = _prepare_features(df, feature_cols, target_col)
 
     # Identify feature types
     categorical_features, numeric_features = _identify_feature_types(df, available_features)
@@ -229,7 +229,7 @@ def train_model(
     print(y.value_counts())
 
     # Check for class imbalance
-    _check_class_imbalance(y)
+    imbalance_ratio, class_counts = _check_class_imbalance(y)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
