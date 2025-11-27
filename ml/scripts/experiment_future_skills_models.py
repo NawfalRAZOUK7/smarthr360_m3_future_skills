@@ -396,26 +396,9 @@ def save_results(results: List[Dict[str, Any]], output_path: Path):
     print(f"\n✅ Résultats sauvegardés dans : {output_path}")
 
 
-def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[str]) -> str:
-    """Generate a markdown table comparing all models."""
-
-    if not results:
-        return "# ⚠️ Aucun résultat d'expérimentation disponible\n\nAucun modèle n'a pu être entraîné avec succès.\n"
-
-    # Sort by F1-score
-    sorted_results = sorted(
-        results,
-        key=lambda x: x["metrics"]["f1_weighted"],
-        reverse=True
-    )
-
-    md = "# 🔬 Comparaison des Modèles - Future Skills Prediction\n\n"
-    md += f"**Date de l'expérimentation** : {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
-    md += "---\n\n"
-    md += "## 📊 Tableau Comparatif Global\n\n"
-
-    # Main comparison table
-    md += "| Rang | Modèle | Accuracy | Precision | Recall | F1-Score | CV F1 (±std) | Temps (s) |\n"
+def _build_main_comparison_table(sorted_results: list) -> str:
+    """Build the main comparison table section."""
+    md = "| Rang | Modèle | Accuracy | Precision | Recall | F1-Score | CV F1 (±std) | Temps (s) |\n"
     md += "|------|--------|----------|-----------|--------|----------|--------------|----------|\n"
 
     for i, result in enumerate(sorted_results, 1):
@@ -437,17 +420,23 @@ def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[
         md += f"{metrics['f1_weighted']:.4f} | "
         md += f"{metrics['cv_f1_mean']:.4f} (±{metrics['cv_f1_std']:.4f}) | "
         md += f"{result['training_time_seconds']:.2f} |\n"
+    
+    return md
 
-    # Best model highlight
-    best_model = sorted_results[0]
-    md += f"\n### 🏆 Meilleur Modèle : {best_model['model_name']}\n\n"
+
+def _add_best_model_highlight(best_model: dict) -> str:
+    """Add best model highlight section."""
+    md = f"\n### 🏆 Meilleur Modèle : {best_model['model_name']}\n\n"
     md += f"- **F1-Score** : {best_model['metrics']['f1_weighted']:.4f}\n"
     md += f"- **Accuracy** : {best_model['metrics']['accuracy']:.4f}\n"
     md += f"- **Description** : {best_model['description']}\n"
     md += f"- **Temps d'entraînement** : {best_model['training_time_seconds']:.2f}s\n\n"
+    return md
 
-    # Per-class performance
-    md += "---\n\n"
+
+def _add_per_class_performance(sorted_results: list, class_labels: list) -> str:
+    """Add per-class performance section."""
+    md = "---\n\n"
     md += "## 📈 Performance par Classe\n\n"
 
     for level in class_labels:
@@ -461,9 +450,13 @@ def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[
                 md += f"| {result['model_name']} | {pc['accuracy']:.2%} | {pc['support']} |\n"
 
         md += "\n"
+    
+    return md
 
-    # Detailed model configurations
-    md += "---\n\n"
+
+def _add_model_configurations(sorted_results: list) -> str:
+    """Add detailed model configurations section."""
+    md = "---\n\n"
     md += "## ⚙️ Configurations des Modèles\n\n"
 
     for result in sorted_results:
@@ -473,13 +466,16 @@ def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[
         for param, value in result["hyperparameters"].items():
             md += f"- `{param}` = {value}\n"
         md += "\n"
+    
+    return md
 
-    # Recommendations
-    md += "---\n\n"
+
+def _add_recommendations_section(best_model: dict, results: list) -> str:
+    """Add recommendations section."""
+    md = "---\n\n"
     md += "## 💡 Recommandations\n\n"
     md += "### Choix du Modèle en Production\n\n"
 
-    # Analyze results
     best_f1 = best_model["metrics"]["f1_weighted"]
     baseline = next((r for r in results if r["model_name"] == "RandomForest"), None)
 
@@ -526,6 +522,43 @@ def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[
     md += "- [ ] Évaluer l'impact de features additionnelles\n"
     md += "- [ ] Monitorer les performances en production\n"
     md += "- [ ] Définir un seuil de dégradation pour déclencher un réentraînement\n"
+
+    return md
+
+
+def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[str]) -> str:
+    """Generate a markdown table comparing all models."""
+
+    if not results:
+        return "# ⚠️ Aucun résultat d'expérimentation disponible\n\nAucun modèle n'a pu être entraîné avec succès.\n"
+
+    # Sort by F1-score
+    sorted_results = sorted(
+        results,
+        key=lambda x: x["metrics"]["f1_weighted"],
+        reverse=True
+    )
+
+    md = "# 🔬 Comparaison des Modèles - Future Skills Prediction\n\n"
+    md += f"**Date de l'expérimentation** : {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+    md += "---\n\n"
+    md += "## 📊 Tableau Comparatif Global\n\n"
+
+    # Main comparison table
+    md += _build_main_comparison_table(sorted_results)
+
+    # Best model highlight
+    best_model = sorted_results[0]
+    md += _add_best_model_highlight(best_model)
+
+    # Per-class performance
+    md += _add_per_class_performance(sorted_results, class_labels)
+
+    # Model configurations
+    md += _add_model_configurations(sorted_results)
+
+    # Recommendations
+    md += _add_recommendations_section(best_model, results)
 
     return md
 

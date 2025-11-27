@@ -26,13 +26,13 @@ def run_command(cmd: list, description: str) -> int:
     print(f"🔄 {description}")
     print(f"{'='*60}")
     print(f"Commande: {' '.join(cmd)}\n")
-    
+
     result = subprocess.run(cmd, capture_output=False)
-    
+
     if result.returncode != 0:
         print(f"\n❌ ERREUR: {description} a échoué (code {result.returncode})")
         return result.returncode
-    
+
     print(f"\n✅ {description} terminé avec succès")
     return 0
 
@@ -40,14 +40,14 @@ def run_command(cmd: list, description: str) -> int:
 def update_settings_file(model_version: str, model_path: Path):
     """Update config/settings.py with new model version and path."""
     settings_path = Path(__file__).resolve().parent.parent / "config" / "settings.py"
-    
+
     if not settings_path.exists():
         print(f"⚠️  Fichier settings.py introuvable: {settings_path}")
         return False
-    
+
     with open(settings_path, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Update FUTURE_SKILLS_MODEL_VERSION
     import re
     content = re.sub(
@@ -55,7 +55,7 @@ def update_settings_file(model_version: str, model_path: Path):
         f'FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_{model_version}"',
         content
     )
-    
+
     # Update FUTURE_SKILLS_MODEL_PATH
     model_filename = model_path.name
     content = re.sub(
@@ -63,10 +63,10 @@ def update_settings_file(model_version: str, model_path: Path):
         f'FUTURE_SKILLS_MODEL_PATH = BASE_DIR / "ml" / "{model_filename}"',
         content
     )
-    
+
     with open(settings_path, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     print(f"✅ settings.py mis à jour:")
     print(f"   - FUTURE_SKILLS_MODEL_VERSION = 'ml_random_forest_{model_version}'")
     print(f"   - FUTURE_SKILLS_MODEL_PATH = BASE_DIR / 'ml' / '{model_filename}'")
@@ -76,30 +76,30 @@ def update_settings_file(model_version: str, model_path: Path):
 def update_registry(metadata_path: Path):
     """Add entry to MODEL_REGISTRY.md for the new model version."""
     registry_path = Path(__file__).resolve().parent / "MODEL_REGISTRY.md"
-    
+
     if not registry_path.exists():
         print(f"⚠️  Fichier MODEL_REGISTRY.md introuvable: {registry_path}")
         return False
-    
+
     # Read metadata
     import json
     with open(metadata_path, 'r', encoding='utf-8') as f:
         metadata = json.load(f)
-    
+
     version = metadata['model_version']
     date = datetime.fromisoformat(metadata['training_date']).strftime('%Y-%m-%d')
     samples = metadata['dataset']['total_samples']
     accuracy = metadata['metrics']['accuracy'] * 100
     f1_score = metadata['metrics']['f1_weighted']
     n_estimators = metadata['hyperparameters']['n_estimators']
-    
+
     # Create registry entry
     new_entry = f"| {version} | {date} | future_skills_dataset.csv | {samples} | {accuracy:.2f}% | {f1_score:.4f} | {n_estimators} | Auto-generated |"
-    
+
     # Read registry
     with open(registry_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
-    
+
     # Find insertion point (after table header)
     insert_idx = None
     for i, line in enumerate(lines):
@@ -107,18 +107,18 @@ def update_registry(metadata_path: Path):
             # Skip the header separator line
             insert_idx = i + 2
             break
-    
+
     if insert_idx is None:
         print("⚠️  Impossible de trouver le tableau dans MODEL_REGISTRY.md")
         return False
-    
+
     # Insert new entry
     lines.insert(insert_idx, new_entry + "\n")
-    
+
     # Write back
     with open(registry_path, 'w', encoding='utf-8') as f:
         f.writelines(lines)
-    
+
     print(f"✅ MODEL_REGISTRY.md mis à jour avec la version {version}")
     return True
 
@@ -126,7 +126,7 @@ def update_registry(metadata_path: Path):
 def main():
     base_dir = Path(__file__).resolve().parent
     project_root = base_dir.parent
-    
+
     parser = argparse.ArgumentParser(
         description="Orchestration complète du retraining du modèle Future Skills"
     )
@@ -158,9 +158,9 @@ def main():
         action="store_true",
         help="Sauter l'export du dataset (utiliser le CSV existant)"
     )
-    
+
     args = parser.parse_args()
-    
+
     print("="*60)
     print("🚀 RETRAINING AUTOMATISÉ - FUTURE SKILLS ML")
     print("="*60)
@@ -169,7 +169,7 @@ def main():
     print(f"Test size: {args.test_size}")
     print(f"Auto-update settings: {args.auto_update_settings}")
     print("="*60)
-    
+
     # Step 1: Export dataset (unless skipped)
     if not args.skip_export:
         export_cmd = [
@@ -177,16 +177,16 @@ def main():
             str(project_root / "manage.py"),
             "export_future_skills_dataset"
         ]
-        
+
         if run_command(export_cmd, "Étape 1/3: Export du dataset") != 0:
             print("\n❌ Retraining interrompu à l'étape 1")
             return 1
     else:
         print("\n⏭️  Étape 1/3: Export du dataset (SKIP)")
-    
+
     # Step 2: Train model
     model_path = base_dir / "models" / f"future_skills_model_{args.version}.pkl"
-    
+
     train_cmd = [
         sys.executable,
         str(base_dir / "scripts" / "train_future_skills_model.py"),
@@ -196,23 +196,23 @@ def main():
         "--n-estimators", str(args.n_estimators),
         "--test-size", str(args.test_size),
     ]
-    
+
     if run_command(train_cmd, "Étape 2/3: Entraînement du modèle") != 0:
         print("\n❌ Retraining interrompu à l'étape 2")
         return 1
-    
+
     # Step 3: Update registry and optionally settings
     print(f"\n{'='*60}")
     print("📝 Étape 3/3: Mise à jour de la documentation")
     print(f"{'='*60}")
-    
+
     metadata_path = model_path.with_suffix('.json')
-    
+
     if not metadata_path.exists():
         print(f"⚠️  Fichier de métadonnées introuvable: {metadata_path}")
     else:
         update_registry(metadata_path)
-    
+
     if args.auto_update_settings:
         print("\n🔧 Mise à jour automatique de config/settings.py...")
         update_settings_file(args.version, model_path)
@@ -222,7 +222,7 @@ def main():
         print(f"   - config/settings.py:")
         print(f"     FUTURE_SKILLS_MODEL_VERSION = 'ml_random_forest_{args.version}'")
         print(f"     FUTURE_SKILLS_MODEL_PATH = BASE_DIR / 'ml' / '{model_path.name}'")
-    
+
     print("\n" + "="*60)
     print("✅ RETRAINING TERMINÉ AVEC SUCCÈS")
     print("="*60)
@@ -230,7 +230,7 @@ def main():
     print(f"📊 Métadonnées: {metadata_path}")
     print(f"📋 Registre: ml/MODEL_REGISTRY.md")
     print("="*60)
-    
+
     return 0
 
 
