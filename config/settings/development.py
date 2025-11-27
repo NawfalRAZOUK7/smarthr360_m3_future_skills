@@ -4,7 +4,7 @@ Development settings for SmartHR360 Future Skills project.
 This configuration is optimized for local development with debugging tools enabled.
 """
 
-from .base import *
+from .base import *  # noqa: F403 - Standard Django settings pattern
 
 # Debug mode
 DEBUG = True

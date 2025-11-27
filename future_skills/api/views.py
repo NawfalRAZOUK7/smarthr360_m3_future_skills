@@ -18,6 +18,12 @@ from ..permissions import IsHRStaff, IsHRStaffOrManager
 from ..services.recommendation_engine import generate_recommendations_from_predictions
 
 
+# Error messages constants
+ERROR_MESSAGES = {
+    'HORIZON_YEARS_INTEGER': 'horizon_years must be an integer.',
+}
+
+
 class FutureSkillPredictionListAPIView(APIView):
     """
     Liste les prédictions de compétences futures.
@@ -47,7 +53,7 @@ class FutureSkillPredictionListAPIView(APIView):
                 queryset = queryset.filter(horizon_years=horizon)
             except ValueError:
                 return Response(
-                    {"detail": "horizon_years must be an integer."},
+                    {"detail": ERROR_MESSAGES['HORIZON_YEARS_INTEGER']},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -76,7 +82,7 @@ class RecalculateFutureSkillsAPIView(APIView):
             horizon_years = int(horizon_years)
         except (TypeError, ValueError):
             return Response(
-                {"detail": "horizon_years must be an integer."},
+                {"detail": ERROR_MESSAGES['HORIZON_YEARS_INTEGER']},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -207,7 +213,7 @@ class HRInvestmentRecommendationListAPIView(APIView):
                 queryset = queryset.filter(horizon_years=h)
             except ValueError:
                 return Response(
-                    {"detail": "horizon_years must be an integer."},
+                    {"detail": ERROR_MESSAGES['HORIZON_YEARS_INTEGER']},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
