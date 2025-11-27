@@ -10,7 +10,6 @@ from django.urls import reverse
 from rest_framework import status
 
 
-@pytest.mark.skip(reason="Endpoints and models (Employee, futureskill-predict-skills) not yet implemented")
 @pytest.mark.django_db
 @pytest.mark.integration
 class TestPredictionFlow:
@@ -64,7 +63,8 @@ class TestPredictionFlow:
 
         response = api_client.post(url, data, format='json')
 
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        # DRF returns 403 when permission check fails (not 401)
+        assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
 
     @pytest.mark.slow
     def test_bulk_prediction_flow(self, authenticated_client, db):
@@ -96,13 +96,12 @@ class TestPredictionFlow:
         assert response.status_code in [status.HTTP_200_OK, status.HTTP_202_ACCEPTED]
 
 
-@pytest.mark.skip(reason="Recommendation endpoints (futureskill-recommend-skills) not yet implemented")
 @pytest.mark.django_db
 @pytest.mark.integration
 class TestRecommendationFlow:
     """Test complete recommendation flow."""
 
-    def test_get_recommendations_for_employee(self, authenticated_client, sample_employee, sample_future_skill):
+    def test_get_recommendations_for_employee(self, authenticated_client, sample_employee, sample_future_skill_prediction):
         """Test getting skill recommendations for an employee."""
         url = reverse('futureskill-recommend-skills')
         data = {'employee_id': sample_employee.id}
@@ -129,7 +128,6 @@ class TestRecommendationFlow:
         #     assert not any(skill in sample_employee.current_skills for skill in recommended_skills)
 
 
-@pytest.mark.skip(reason="Employee endpoints (employee-list) not yet implemented")
 @pytest.mark.django_db
 @pytest.mark.integration
 class TestDataPipelineFlow:
@@ -152,6 +150,7 @@ class TestDataPipelineFlow:
         assert response.data['name'] == data['name']
         assert response.data['email'] == data['email']
 
+    @pytest.mark.skip(reason="employee-add-skill endpoint not yet implemented")
     def test_skill_tracking_flow(self, admin_client, sample_employee, sample_future_skill):
         """Test tracking skill assignments to employees."""
         # Add skill to employee
@@ -195,7 +194,6 @@ class TestMLModelIntegration:
         assert response.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.skip(reason="Employee endpoints (employee-list) not yet implemented")
 @pytest.mark.django_db
 @pytest.mark.integration
 class TestPermissionsFlow:

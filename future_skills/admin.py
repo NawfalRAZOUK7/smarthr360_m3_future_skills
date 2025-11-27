@@ -7,6 +7,7 @@ from .models import (
     PredictionRun,
     EconomicReport,   # ⬅️ ajoute ceci
     HRInvestmentRecommendation,  # ⬅️ ajoute ceci
+    Employee,  # ⬅️ nouveau
 )
 
 
@@ -88,3 +89,12 @@ class HRInvestmentRecommendationAdmin(admin.ModelAdmin):
     )
     search_fields = ("skill__name", "job_role__name")
     date_hierarchy = "created_at"
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ("name", "email", "department", "position", "job_role", "date_joined")
+    search_fields = ("name", "email", "department", "position", "job_role__name")
+    list_filter = ("department", "job_role", "date_joined")
+    autocomplete_fields = ("job_role",)
+    date_hierarchy = "date_joined"

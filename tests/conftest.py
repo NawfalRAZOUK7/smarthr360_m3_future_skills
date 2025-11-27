@@ -251,6 +251,28 @@ def sample_prediction_run(db):
     )
 
 
+@pytest.fixture
+def sample_employee(db, sample_job_role):
+    """
+    Creates a sample Employee instance for testing.
+
+    Usage:
+        def test_employee_info(sample_employee):
+            assert sample_employee.name == 'John Doe'
+            assert 'Python' in sample_employee.current_skills
+    """
+    from future_skills.models import Employee
+
+    return Employee.objects.create(
+        name='John Doe',
+        email='john.doe@example.com',
+        department='Engineering',
+        position='Developer',
+        job_role=sample_job_role,
+        current_skills=['Python', 'Django']
+    )
+
+
 # ============================================================================
 # ML Testing Fixtures
 # ============================================================================

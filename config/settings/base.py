@@ -144,6 +144,8 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.BasicAuthentication",
         # plus tard, tu pourras ajouter JWT si tu veux
     ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }
 
 # --- Module 3 : Future Skills / Machine Learning ---
