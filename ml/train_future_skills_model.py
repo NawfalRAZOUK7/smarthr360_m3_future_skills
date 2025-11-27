@@ -108,35 +108,57 @@ def train_model(
     print(f"[INFO] Chargement du dataset : {csv_path}")
     df = load_dataset(csv_path)
 
-    # Définir les features et la cible
+    # Définir les features et la cible (UPDATED with new features)
     feature_cols = [
         "job_role_name",
         "skill_name",
+        "skill_category",
+        "job_department",
         "trend_score",
         "internal_usage",
         "training_requests",
         "scarcity_index",
+        "hiring_difficulty",
+        "avg_salary_k",
+        "economic_indicator",
     ]
     target_col = "future_need_level"
 
+    # Check for missing columns and use available ones
+    available_features = [c for c in feature_cols if c in df.columns]
     missing_cols = [c for c in feature_cols if c not in df.columns]
+    
     if missing_cols:
-        raise ValueError(f"Colonnes manquantes dans le dataset : {missing_cols}")
+        print(f"[WARN] Colonnes manquantes (ignorées) : {missing_cols}")
+    
+    if not available_features:
+        raise ValueError("Aucune feature disponible dans le dataset!")
 
-    X = df[feature_cols].copy()
+    X = df[available_features].copy()
     y = df[target_col].copy()
 
-    categorical_features = ["job_role_name", "skill_name"]
-    numeric_features = [
-        "trend_score",
-        "internal_usage",
-        "training_requests",
-        "scarcity_index",
-    ]
+    # Identify categorical and numeric features dynamically
+    categorical_features = []
+    numeric_features = []
+    
+    for col in available_features:
+        if df[col].dtype == 'object' or df[col].dtype.name == 'category':
+            categorical_features.append(col)
+        else:
+            numeric_features.append(col)
 
+    print(f"[INFO] Features catégorielles : {categorical_features}")
+    print(f"[INFO] Features numériques : {numeric_features}")
     print(f"[INFO] Nombre total d'exemples : {len(df)}")
     print("[INFO] Répartition des classes :")
     print(y.value_counts())
+
+    # Check for class imbalance
+    class_counts = y.value_counts()
+    imbalance_ratio = class_counts.max() / class_counts.min()
+    print(f"[INFO] Ratio de déséquilibre : {imbalance_ratio:.2f}")
+    if imbalance_ratio > 3:
+        print("[WARN] Déséquilibre des classes détecté. Utilisation de class_weight='balanced'")
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
@@ -161,18 +183,50 @@ def train_model(
     print("\nClassification report :")
     print(classification_report(y_test, y_pred, digits=4))
 
-    print("Matrice de confusion :")
-    print(confusion_matrix(y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"]))
+    print("\nMatrice de confusion :")
+    cm = confusion_matrix(y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"])
+    print(cm)
+    
+    # Calculate per-class accuracy
+    print("\nPrécision par classe :")
+    for i, level in enumerate(["LOW", "MEDIUM", "HIGH"]):
+        if cm.sum(axis=1)[i] > 0:
+            accuracy = cm[i, i] / cm.sum(axis=1)[i]
+            print(f"  {level}: {accuracy:.2%}")
 
     # Exemple : récupérer les classes pour info
     clf = pipeline.named_steps["clf"]
     print(f"[INFO] Classes apprises par le modèle : {clf.classes_}")
+    
+    # Feature importance (if available)
+    if hasattr(clf, 'feature_importances_'):
+        print("\n[INFO] Importance des features :")
+        preprocessor = pipeline.named_steps["preprocess"]
+        
+        # Get feature names after preprocessing
+        cat_features = []
+        if categorical_features:
+            cat_transformer = preprocessor.named_transformers_['cat']
+            if hasattr(cat_transformer, 'get_feature_names_out'):
+                cat_features = cat_transformer.get_feature_names_out(categorical_features).tolist()
+        
+        all_features = cat_features + numeric_features
+        
+        if len(all_features) == len(clf.feature_importances_):
+            feature_importance = sorted(
+                zip(all_features, clf.feature_importances_),
+                key=lambda x: x[1],
+                reverse=True
+            )
+            for feat, importance in feature_importance[:10]:  # Top 10
+                print(f"  {feat}: {importance:.4f}")
 
     # Sauvegarde du pipeline complet
     output_model_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, output_model_path)
 
-    print(f"[SUCCESS] Modèle sauvegardé dans : {output_model_path}")
+    print(f"\n[SUCCESS] Modèle sauvegardé dans : {output_model_path}")
+    print(f"[SUCCESS] Le modèle utilise {len(available_features)} features")
 
 
 def main():
