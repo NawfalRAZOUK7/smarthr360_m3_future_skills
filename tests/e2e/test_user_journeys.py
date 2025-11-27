@@ -113,14 +113,41 @@ class TestSkillManagementJourney:
 @pytest.mark.e2e
 @pytest.mark.slow
 class TestBulkOperationsJourney:
-    """Test bulk operations workflow - skipped as bulk endpoints not implemented."""
+    """Test bulk operations workflow."""
 
-    @pytest.mark.skip(reason="Bulk prediction endpoints not yet implemented")
-    def test_bulk_employee_import_and_predict(self, admin_client, db):
+    def test_bulk_employee_import_and_predict(self, admin_client, db, sample_job_role):
         """Test importing multiple employees and running bulk predictions."""
-        pass
+        url = reverse('employee-bulk-import')
 
+        employees_data = [
+            {
+                'name': f'Employee {i}',
+                'email': f'employee{i}@test.com',
+                'department': 'Engineering',
+                'position': 'Developer',
+                'job_role_id': sample_job_role.id,
+                'current_skills': ['Python', 'Django']
+            }
+            for i in range(5)
+        ]
 
+        data = {
+            'employees': employees_data,
+            'auto_predict': True,
+            'horizon_years': 5
+        }
+
+        response = admin_client.post(url, data, format='json')
+
+        # Debug output
+        if response.status_code not in [status.HTTP_200_OK, status.HTTP_201_CREATED]:
+            print(f"\nUnexpected status: {response.status_code}")
+            print(f"Response data: {response.data}")
+            print(f"Response content: {response.content}")
+
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_201_CREATED, status.HTTP_207_MULTI_STATUS]
+        assert response.data.get('created', 0) == 5
+        assert response.data.get('predictions_generated') is True
 @pytest.mark.django_db
 @pytest.mark.e2e
 class TestReportingJourney:

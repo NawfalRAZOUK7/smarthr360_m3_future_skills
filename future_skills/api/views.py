@@ -17,6 +17,7 @@ from .serializers import (
     PredictSkillsResponseSerializer,
     RecommendSkillsRequestSerializer,
     BulkPredictRequestSerializer,
+    BulkEmployeeImportSerializer,
 )
 
 from ..services.prediction_engine import recalculate_predictions
@@ -239,7 +240,7 @@ class HRInvestmentRecommendationListAPIView(APIView):
 class EmployeeViewSet(ModelViewSet):
     """
     ViewSet for Employee CRUD operations.
-    
+
     Provides:
     - GET /api/employees/ - List all employees
     - POST /api/employees/ - Create new employee
@@ -255,14 +256,14 @@ class EmployeeViewSet(ModelViewSet):
 class PredictSkillsAPIView(APIView):
     """
     Generate skill predictions for a specific employee.
-    
+
     POST /api/predict-skills/
     Body: {
         "employee_id": 1,
         "current_skills": ["Python", "Django"],  # optional override
         "department": "Engineering"  # optional override
     }
-    
+
     Returns: List of predicted skills with scores and levels
     """
     permission_classes = [IsHRStaffOrManager]
@@ -309,13 +310,13 @@ class PredictSkillsAPIView(APIView):
 class RecommendSkillsAPIView(APIView):
     """
     Generate personalized skill recommendations for an employee.
-    
+
     POST /api/recommend-skills/
     Body: {
         "employee_id": 1,
         "exclude_current": true
     }
-    
+
     Returns: List of recommended skills (excluding current skills if specified)
     """
     permission_classes = [IsHRStaffOrManager]
@@ -332,7 +333,7 @@ class RecommendSkillsAPIView(APIView):
         # Get employee
         employee_id = input_serializer.validated_data['employee_id']
         exclude_current = input_serializer.validated_data['exclude_current']
-        
+
         employee = Employee.objects.select_related('job_role').get(pk=employee_id)
 
         if not employee.job_role:
@@ -380,12 +381,12 @@ class RecommendSkillsAPIView(APIView):
 class BulkPredictAPIView(APIView):
     """
     Generate predictions for multiple employees at once.
-    
+
     POST /api/bulk-predict/
     Body: {
         "employee_ids": [1, 2, 3, 4, 5]
     }
-    
+
     Returns: Predictions for each employee
     """
     permission_classes = [IsHRStaffOrManager]
@@ -400,7 +401,7 @@ class BulkPredictAPIView(APIView):
             )
 
         employee_ids = input_serializer.validated_data['employee_ids']
-        
+
         # Get all employees with their job roles
         employees = Employee.objects.filter(
             pk__in=employee_ids
@@ -432,3 +433,677 @@ class BulkPredictAPIView(APIView):
             results[employee.id] = employee_predictions
 
         return Response(results, status=status.HTTP_200_OK)
+
+
+class BulkEmployeeImportAPIView(APIView):
+    """
+    Bulk import/update employees from JSON data with automatic prediction generation.
+
+    This endpoint allows HR staff (DRH/Responsable RH) to create or update multiple
+    employees in a single API call. The operation is performed within a database
+    transaction to ensure data consistency.
+
+    **Endpoint:** `POST /api/bulk-import/employees/`
+
+    **Authentication:** Required (Token/Session)
+
+    **Permissions:** IsHRStaff (DRH or Responsable RH groups only)
+
+    **Request Body (JSON):**
+    ```json
+    {
+        "employees": [
+            {
+                "first_name": "John",
+                "last_name": "Doe",
+                "email": "john.doe@company.com",
+                "job_role_id": 1,
+                "skills": ["Python", "Django", "REST API"]
+            },
+            {
+                "first_name": "Jane",
+                "last_name": "Smith",
+                "email": "jane.smith@company.com",
+                "job_role_id": 2,
+                "skills": ["JavaScript", "React", "Node.js"]
+            }
+        ],
+        "auto_predict": true,
+        "horizon_years": 5
+    }
+    ```
+
+    **Request Parameters:**
+    - `employees` (required): List of employee objects to import
+      - `first_name` (required): Employee's first name
+      - `last_name` (required): Employee's last name
+      - `email` (required): Unique email address
+      - `job_role_id` (required): Valid JobRole ID
+      - `skills` (optional): List of skill names
+    - `auto_predict` (optional, default=true): Generate predictions after import
+    - `horizon_years` (optional, default=5): Prediction horizon in years
+
+    **Success Response (201 CREATED):**
+    ```json
+    {
+        "status": "success",
+        "created": 5,
+        "updated": 0,
+        "failed": 0,
+        "errors": [],
+        "predictions_generated": true,
+        "total_predictions": 15
+    }
+    ```
+
+    **Partial Success Response (207 MULTI-STATUS):**
+    ```json
+    {
+        "status": "partial_success",
+        "created": 3,
+        "updated": 1,
+        "failed": 2,
+        "errors": [
+            {
+                "row": 2,
+                "email": "duplicate@company.com",
+                "error": "Employee with this email already exists"
+            },
+            {
+                "row": 5,
+                "email": "invalid@company.com",
+                "error": "Job role with ID 999 does not exist"
+            }
+        ],
+        "predictions_generated": true,
+        "total_predictions": 12
+    }
+    ```
+
+    **Error Response (400 BAD REQUEST):**
+    ```json
+    {
+        "employees": [
+            "This field is required."
+        ]
+    }
+    ```
+
+    **Behavior:**
+    - Checks for existing employees by email
+    - Creates new employees if email doesn't exist
+    - Updates existing employees if email matches
+    - Validates job_role_id existence before processing
+    - Detects duplicate emails within the batch
+    - Generates predictions for all job roles after successful import
+    - Returns detailed error information for failed rows
+    - Uses transaction.atomic() for data integrity
+
+    **Example cURL:**
+    ```bash
+    curl -X POST http://localhost:8000/api/bulk-import/employees/ \
+      -H "Authorization: Bearer YOUR_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d @employees.json
+    ```
+
+    **See Also:**
+    - BulkEmployeeUploadAPIView for file upload support
+    - BulkEmployeeImportSerializer for validation details
+    - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
+    """
+    permission_classes = [IsHRStaff]  # Only DRH/Responsable RH
+
+    def post(self, request, *args, **kwargs):
+        from django.db import transaction
+
+        # Validate input
+        input_serializer = BulkEmployeeImportSerializer(data=request.data)
+        if not input_serializer.is_valid():
+            return Response(
+                input_serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        employees_data = input_serializer.validated_data['employees']
+        auto_predict = input_serializer.validated_data['auto_predict']
+        horizon_years = input_serializer.validated_data['horizon_years']
+
+        # Track results
+        created_count = 0
+        updated_count = 0
+        failed_count = 0
+        errors = []
+        created_employees = []
+        updated_employees = []
+
+        # Process each employee within a transaction
+        with transaction.atomic():
+            for idx, employee_data in enumerate(employees_data):
+                try:
+                    email = employee_data.get('email')
+
+                    # Check if employee exists by email
+                    existing_employee = Employee.objects.filter(email=email).first()
+
+                    if existing_employee:
+                        # Update existing employee
+                        for field, value in employee_data.items():
+                            if field != 'id':  # Don't update ID
+                                setattr(existing_employee, field, value)
+                        existing_employee.save()
+                        updated_count += 1
+                        updated_employees.append(existing_employee)
+                    else:
+                        # Create new employee
+                        new_employee = Employee.objects.create(**employee_data)
+                        created_count += 1
+                        created_employees.append(new_employee)
+
+                except Exception as e:
+                    failed_count += 1
+                    errors.append({
+                        'row': idx + 1,
+                        'email': employee_data.get('email', 'unknown'),
+                        'error': str(e)
+                    })
+
+        # Auto-generate predictions if requested
+        predictions_generated = False
+        total_predictions = 0
+
+        if auto_predict:
+            # Recalculate predictions for all job roles
+            try:
+                total_predictions = recalculate_predictions(
+                    horizon_years=horizon_years,
+                    run_by=request.user if request.user.is_authenticated else None,
+                    parameters={'trigger': 'bulk_employee_import'}
+                )
+                predictions_generated = True
+            except Exception as e:
+                # Log but don't fail the entire import
+                errors.append({
+                    'row': None,
+                    'email': None,
+                    'error': f'Prediction generation failed: {str(e)}'
+                })
+
+        # Build response
+        response_data = {
+            'status': 'success' if failed_count == 0 else 'partial_success',
+            'created': created_count,
+            'updated': updated_count,
+            'failed': failed_count,
+            'errors': errors if errors else [],
+            'predictions_generated': predictions_generated,
+            'total_predictions': total_predictions if predictions_generated else 0
+        }
+
+        return Response(
+            response_data,
+            status=status.HTTP_201_CREATED if failed_count == 0 else status.HTTP_207_MULTI_STATUS
+        )
+
+
+class BulkEmployeeUploadAPIView(APIView):
+    """
+    File upload endpoint for bulk employee import from CSV/Excel/JSON files.
+
+    This endpoint allows HR staff to upload CSV, Excel, or JSON files containing
+    employee data for bulk import. Files are validated, parsed, and processed
+    using the same logic as BulkEmployeeImportAPIView.
+
+    **Endpoint:** `POST /api/bulk-upload/employees/`
+
+    **Authentication:** Required (Token/Session)
+
+    **Permissions:** IsHRStaff (DRH or Responsable RH groups only)
+
+    **Content-Type:** `multipart/form-data`
+
+    **Form Parameters:**
+    - `file` (required): File to upload (CSV/Excel/JSON)
+      - Max size: 10 MB
+      - Extensions: .csv, .xlsx, .xls, .json
+      - MIME types: text/csv, application/vnd.ms-excel,
+        application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,
+        application/json
+    - `auto_predict` (optional, default=true): Generate predictions after import
+    - `horizon_years` (optional, default=5): Prediction horizon in years
+
+    **Supported File Formats:**
+
+    1. **CSV Format (.csv):**
+    ```csv
+    first_name,last_name,email,job_role_id,skills
+    John,Doe,john.doe@company.com,1,"Python;Django;REST API"
+    Jane,Smith,jane.smith@company.com,2,"JavaScript;React;Node.js"
+    ```
+
+    2. **Excel Format (.xlsx, .xls):**
+    Same columns as CSV, but in Excel spreadsheet format
+
+    3. **JSON Format (.json):**
+    ```json
+    [
+        {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john.doe@company.com",
+            "job_role_id": 1,
+            "skills": ["Python", "Django", "REST API"]
+        },
+        {
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "email": "jane.smith@company.com",
+            "job_role_id": 2,
+            "skills": ["JavaScript", "React", "Node.js"]
+        }
+    ]
+    ```
+
+    **Skill Format Support (CSV/Excel):**
+    - Semicolon-separated: `"Python;Django;REST API"`
+    - Comma-separated: `"Python,Django,REST API"`
+    - JSON array string: `"[\"Python\", \"Django\", \"REST API\"]"`
+
+    **Success Response (201 CREATED):**
+    ```json
+    {
+        "status": "success",
+        "message": "File uploaded and processed successfully",
+        "filename": "employees.csv",
+        "created": 5,
+        "updated": 0,
+        "failed": 0,
+        "errors": [],
+        "predictions_generated": true,
+        "total_predictions": 15
+    }
+    ```
+
+    **File Validation Errors (400 BAD REQUEST):**
+    ```json
+    {
+        "error": "File size exceeds 10MB limit"
+    }
+    ```
+    ```json
+    {
+        "error": "Invalid file type. Allowed: .csv, .xlsx, .xls, .json"
+    }
+    ```
+    ```json
+    {
+        "error": "MIME type text/plain not allowed"
+    }
+    ```
+
+    **Parsing Errors (400 BAD REQUEST):**
+    ```json
+    {
+        "status": "error",
+        "message": "File parsing failed",
+        "errors": [
+            {
+                "row": 3,
+                "error": "Missing required field: email"
+            },
+            {
+                "row": 7,
+                "error": "Invalid email format"
+            }
+        ]
+    }
+    ```
+
+    **Behavior:**
+    - Validates file size (max 10MB)
+    - Validates file extension (.csv, .xlsx, .xls, .json)
+    - Validates MIME type for security
+    - Parses file using appropriate parser (CSV/Excel/JSON)
+    - Handles multiple encoding formats (UTF-8, Latin-1)
+    - Creates/updates employees based on email
+    - Generates predictions after successful import
+    - Returns detailed error information per row
+    - Uses transaction.atomic() for data integrity
+
+    **Example cURL (CSV):**
+    ```bash
+    curl -X POST http://localhost:8000/api/bulk-upload/employees/ \
+      -H "Authorization: Bearer YOUR_TOKEN" \
+      -F "file=@employees.csv"
+    ```
+
+    **Example cURL (Excel):**
+    ```bash
+    curl -X POST http://localhost:8000/api/bulk-upload/employees/ \
+      -H "Authorization: Bearer YOUR_TOKEN" \
+      -F "file=@employees.xlsx" \
+      -F "auto_predict=true" \
+      -F "horizon_years=10"
+    ```
+
+    **Example Python Requests:**
+    ```python
+    import requests
+
+    url = 'http://localhost:8000/api/bulk-upload/employees/'
+    headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+    files = {'file': open('employees.csv', 'rb')}
+    data = {'auto_predict': 'true', 'horizon_years': '5'}
+
+    response = requests.post(url, headers=headers, files=files, data=data)
+    print(response.json())
+    ```
+
+    **Template File:**
+    A sample CSV template is available at:
+    `future_skills/services/employees_import_template.csv`
+
+    **See Also:**
+    - BulkEmployeeImportAPIView for JSON data import
+    - file_parser.py module for parsing implementation
+    - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
+    """
+    permission_classes = [IsHRStaff]  # Only DRH/Responsable RH
+
+    # File upload limits
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls', '.json'}
+    ALLOWED_MIME_TYPES = {
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/json',
+    }
+
+    def post(self, request, *args, **kwargs):
+        import os
+        from ..services.file_parser import parse_employee_file
+
+        # Validate file presence
+        if 'file' not in request.FILES:
+            return Response(
+                {
+                    'status': 'error',
+                    'message': 'No file provided',
+                    'errors': [{'field': 'file', 'error': 'File is required'}]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        uploaded_file = request.FILES['file']
+
+        # Validate file size
+        if uploaded_file.size > self.MAX_FILE_SIZE:
+            return Response(
+                {
+                    'status': 'error',
+                    'message': 'File too large',
+                    'errors': [{
+                        'field': 'file',
+                        'error': f'File size exceeds maximum limit of {self.MAX_FILE_SIZE / (1024*1024):.1f}MB'
+                    }]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate file extension
+        filename = uploaded_file.name
+        _, file_extension = os.path.splitext(filename)
+        file_extension = file_extension.lower()
+
+        if file_extension not in self.ALLOWED_EXTENSIONS:
+            return Response(
+                {
+                    'status': 'error',
+                    'message': 'Invalid file type',
+                    'errors': [{
+                        'field': 'file',
+                        'error': f'File type {file_extension} not supported. Allowed: {", ".join(self.ALLOWED_EXTENSIONS)}'
+                    }]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate MIME type (additional security check)
+        content_type = uploaded_file.content_type
+        if content_type and content_type not in self.ALLOWED_MIME_TYPES:
+            return Response(
+                {
+                    'status': 'error',
+                    'message': 'Invalid file format',
+                    'errors': [{
+                        'field': 'file',
+                        'error': f'MIME type {content_type} not allowed'
+                    }]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Parse file based on extension
+        try:
+            if file_extension == '.json':
+                # Handle JSON format
+                employees, parse_errors = self._parse_json_file(uploaded_file)
+            else:
+                # Handle CSV/Excel formats
+                employees, parse_errors = parse_employee_file(uploaded_file, file_extension)
+
+            if parse_errors:
+                return Response(
+                    {
+                        'status': 'error',
+                        'message': 'File parsing failed',
+                        'errors': parse_errors
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if not employees:
+                return Response(
+                    {
+                        'status': 'error',
+                        'message': 'No valid employee data found in file',
+                        'errors': [{'field': 'file', 'error': 'File contains no valid employee records'}]
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        except Exception as e:
+            return Response(
+                {
+                    'status': 'error',
+                    'message': 'Failed to process file',
+                    'errors': [{'field': 'file', 'error': str(e)}]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get optional parameters from form data
+        auto_predict = request.data.get('auto_predict', 'true').lower() in ['true', '1', 'yes']
+        try:
+            horizon_years = int(request.data.get('horizon_years', 5))
+        except ValueError:
+            horizon_years = 5
+
+        # Validate and import employees using BulkEmployeeImportSerializer
+        import_data = {
+            'employees': employees,
+            'auto_predict': auto_predict,
+            'horizon_years': horizon_years
+        }
+
+        serializer = BulkEmployeeImportSerializer(data=import_data)
+        if not serializer.is_valid():
+            return Response(
+                {
+                    'status': 'error',
+                    'message': 'Validation failed',
+                    'errors': serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Process the import (reuse logic from BulkEmployeeImportAPIView)
+        from django.db import transaction
+
+        employees_data = serializer.validated_data['employees']
+        auto_predict = serializer.validated_data['auto_predict']
+        horizon_years = serializer.validated_data['horizon_years']
+
+        # Track results
+        created_count = 0
+        updated_count = 0
+        failed_count = 0
+        errors = []
+        created_employees = []
+        updated_employees = []
+
+        # Process each employee within a transaction
+        with transaction.atomic():
+            for idx, employee_data in enumerate(employees_data):
+                try:
+                    email = employee_data.get('email')
+
+                    # Check if employee exists by email
+                    existing_employee = Employee.objects.filter(email=email).first()
+
+                    if existing_employee:
+                        # Update existing employee
+                        for field, value in employee_data.items():
+                            if field != 'id':  # Don't update ID
+                                setattr(existing_employee, field, value)
+                        existing_employee.save()
+                        updated_count += 1
+                        updated_employees.append(existing_employee)
+                    else:
+                        # Create new employee
+                        new_employee = Employee.objects.create(**employee_data)
+                        created_count += 1
+                        created_employees.append(new_employee)
+
+                except Exception as e:
+                    failed_count += 1
+                    errors.append({
+                        'row': idx + 1,
+                        'email': employee_data.get('email', 'unknown'),
+                        'error': str(e)
+                    })
+
+        # Auto-generate predictions if requested
+        predictions_generated = False
+        total_predictions = 0
+
+        if auto_predict:
+            # Recalculate predictions for all job roles
+            try:
+                total_predictions = recalculate_predictions(
+                    horizon_years=horizon_years,
+                    run_by=request.user if request.user.is_authenticated else None,
+                    parameters={'trigger': 'bulk_employee_upload'}
+                )
+                predictions_generated = True
+            except Exception as e:
+                # Log but don't fail the entire import
+                errors.append({
+                    'row': None,
+                    'email': None,
+                    'error': f'Prediction generation failed: {str(e)}'
+                })
+
+        # Build response
+        response_data = {
+            'status': 'success' if failed_count == 0 else 'partial_success',
+            'message': f'File processed: {filename}',
+            'file_info': {
+                'filename': filename,
+                'size_bytes': uploaded_file.size,
+                'format': file_extension
+            },
+            'created': created_count,
+            'updated': updated_count,
+            'failed': failed_count,
+            'errors': errors if errors else [],
+            'predictions_generated': predictions_generated,
+            'total_predictions': total_predictions if predictions_generated else 0
+        }
+
+        return Response(
+            response_data,
+            status=status.HTTP_201_CREATED if failed_count == 0 else status.HTTP_207_MULTI_STATUS
+        )
+
+    def _parse_json_file(self, file):
+        """
+        Parse JSON file containing employee data.
+
+        Expected format:
+        {
+            "employees": [
+                {
+                    "name": "John Doe",
+                    "email": "john@example.com",
+                    "department": "Engineering",
+                    "position": "Developer",
+                    "job_role_id": 1,
+                    "current_skills": ["Python", "Django"]
+                }
+            ]
+        }
+
+        OR simple array:
+        [
+            {"name": "John Doe", "email": "john@example.com", ...}
+        ]
+        """
+        import json
+
+        try:
+            file.seek(0)
+            data = json.load(file)
+
+            # Handle both formats
+            if isinstance(data, dict) and 'employees' in data:
+                employees = data['employees']
+            elif isinstance(data, list):
+                employees = data
+            else:
+                return [], [{'row': 0, 'field': 'file', 'error': 'Invalid JSON format. Expected array or object with "employees" key'}]
+
+            # Validate each employee
+            validated_employees = []
+            errors = []
+
+            for idx, emp in enumerate(employees):
+                if not isinstance(emp, dict):
+                    errors.append({
+                        'row': idx + 1,
+                        'field': 'employee',
+                        'error': 'Each employee must be an object'
+                    })
+                    continue
+
+                # Basic validation
+                required_fields = ['name', 'email', 'department', 'position']
+                missing_fields = [f for f in required_fields if not emp.get(f)]
+
+                if missing_fields:
+                    errors.append({
+                        'row': idx + 1,
+                        'field': ', '.join(missing_fields),
+                        'error': f'Missing required fields: {", ".join(missing_fields)}'
+                    })
+                    continue
+
+                validated_employees.append(emp)
+
+            return validated_employees, errors
+
+        except json.JSONDecodeError as e:
+            return [], [{'row': 0, 'field': 'file', 'error': f'Invalid JSON: {str(e)}'}]
+        except Exception as e:
+            return [], [{'row': 0, 'field': 'file', 'error': f'Failed to parse JSON: {str(e)}'}]

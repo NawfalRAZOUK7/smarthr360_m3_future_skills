@@ -13,6 +13,8 @@ from .views import (
     PredictSkillsAPIView,
     RecommendSkillsAPIView,
     BulkPredictAPIView,
+    BulkEmployeeImportAPIView,
+    BulkEmployeeUploadAPIView,
 )
 
 # Router for ViewSets
@@ -22,7 +24,7 @@ router.register(r"employees", EmployeeViewSet, basename="employee")
 urlpatterns = [
     # Include router URLs (employee-list, employee-detail, etc.)
     path("", include(router.urls)),
-    
+
     # Liste des prédictions
     path(
         "future-skills/",
@@ -77,5 +79,19 @@ urlpatterns = [
         "bulk-predict/",
         BulkPredictAPIView.as_view(),
         name="futureskill-bulk-predict",
+    ),
+
+    # Bulk employee import endpoint (JSON data) - placed before router to avoid conflicts
+    path(
+        "bulk-import/employees/",
+        BulkEmployeeImportAPIView.as_view(),
+        name="employee-bulk-import",
+    ),
+
+    # Bulk employee upload endpoint (File upload)
+    path(
+        "bulk-upload/employees/",
+        BulkEmployeeUploadAPIView.as_view(),
+        name="employee-bulk-upload",
     ),
 ]
