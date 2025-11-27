@@ -29,6 +29,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
       - DEBUG=True
       - SECRET_KEY=docker-dev-secret-key-change-in-production
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/smarthr360
