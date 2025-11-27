@@ -281,7 +281,7 @@ def train_and_evaluate_model(
     )
 
     # Train
-    print(f"[INFO] Entraînement en cours...")
+    print("[INFO] Entraînement en cours...")
     pipeline.fit(X_train, y_train)
 
     training_time = (datetime.now() - start_time).total_seconds()
@@ -318,7 +318,7 @@ def train_and_evaluate_model(
             }
 
     # Cross-validation score (on train set for comparison)
-    print(f"[INFO] Cross-validation (5-fold) en cours...")
+    print("[INFO] Cross-validation (5-fold) en cours...")
     cv_scores = cross_val_score(
         pipeline, X_train, y_train, cv=5, scoring="f1_weighted", n_jobs=-1
     )
@@ -326,7 +326,7 @@ def train_and_evaluate_model(
     cv_std = cv_scores.std()
 
     # Print results
-    print(f"\n📊 Résultats :")
+    print("\n📊 Résultats :")
     print(f"   • Accuracy        : {accuracy:.4f}")
     print(f"   • Precision (W)   : {precision_weighted:.4f}")
     print(f"   • Recall (W)      : {recall_weighted:.4f}")
@@ -334,16 +334,16 @@ def train_and_evaluate_model(
     print(f"   • CV F1-score     : {cv_mean:.4f} (+/- {cv_std:.4f})")
     print(f"   • Training time   : {training_time:.2f}s")
 
-    print(f"\n📈 Précision par classe :")
+    print("\n📈 Précision par classe :")
     for level, metrics in per_class_metrics.items():
         print(f"   • {level:7s} : {metrics['accuracy']:.2%} (n={metrics['support']})")
 
     # Classification report
-    print(f"\n📋 Classification Report :")
+    print("\n📋 Classification Report :")
     print(classification_report(y_test, y_pred, digits=4))
 
     # Confusion matrix
-    print(f"🔲 Matrice de confusion :")
+    print("🔲 Matrice de confusion :")
 
     # Dynamic header based on actual classes
     header = "   Prédiction → |"
@@ -420,7 +420,15 @@ def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[
 
     for i, result in enumerate(sorted_results, 1):
         metrics = result["metrics"]
-        medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+        # Assign medal based on rank
+        if i == 1:
+            medal = "🥇"
+        elif i == 2:
+            medal = "🥈"
+        elif i == 3:
+            medal = "🥉"
+        else:
+            medal = f"{i}."
 
         md += f"| {medal} | **{result['model_name']}** | "
         md += f"{metrics['accuracy']:.4f} | "
@@ -563,11 +571,11 @@ def main():
 
     X, y, categorical_features, numeric_features = prepare_data(df)
 
-    print(f"\n📊 Informations du Dataset :")
+    print("\n📊 Informations du Dataset :")
     print(f"   • Nombre d'exemples : {len(df)}")
     print(f"   • Features catégorielles : {categorical_features}")
     print(f"   • Features numériques : {numeric_features}")
-    print(f"\n📈 Distribution des classes :")
+    print("\n📈 Distribution des classes :")
     for level, count in y.value_counts().items():
         print(f"   • {level:7s} : {count:4d} ({count/len(y)*100:.1f}%)")
 
@@ -643,7 +651,15 @@ def main():
 
     print("\n🏆 Classement par F1-score :\n")
     for i, result in enumerate(sorted_results, 1):
-        medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+        # Assign medal based on rank
+        if i == 1:
+            medal = "🥇"
+        elif i == 2:
+            medal = "🥈"
+        elif i == 3:
+            medal = "🥉"
+        else:
+            medal = f"{i}."
         f1 = result["metrics"]["f1_weighted"]
         acc = result["metrics"]["accuracy"]
         time = result["training_time_seconds"]

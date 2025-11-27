@@ -51,7 +51,7 @@ def update_settings_file(model_version: str, model_path: Path):
     # Update FUTURE_SKILLS_MODEL_VERSION
     import re
     content = re.sub(
-        r'FUTURE_SKILLS_MODEL_VERSION\s*=\s*["\'].*?["\']',
+        r'FUTURE_SKILLS_MODEL_VERSION\s*=\s*["\'][^"\']* ["\']',
         f'FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_{model_version}"',
         content
     )
@@ -59,7 +59,7 @@ def update_settings_file(model_version: str, model_path: Path):
     # Update FUTURE_SKILLS_MODEL_PATH
     model_filename = model_path.name
     content = re.sub(
-        r'FUTURE_SKILLS_MODEL_PATH\s*=\s*BASE_DIR\s*/\s*"ml"\s*/\s*".*?"',
+        r'FUTURE_SKILLS_MODEL_PATH\s*=\s*BASE_DIR\s*/\s*"ml"\s*/\s*"[^"]*"',
         f'FUTURE_SKILLS_MODEL_PATH = BASE_DIR / "ml" / "{model_filename}"',
         content
     )
