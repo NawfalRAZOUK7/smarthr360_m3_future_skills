@@ -81,13 +81,12 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        continue-on-error: true  # Skip if CODECOV_TOKEN not set
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
 
       - name: Run unit tests only
         run: |
