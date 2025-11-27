@@ -56,6 +56,37 @@ python manage.py seed_future_skills
 
 # Recalculer les prédictions
 python manage.py recalculate_future_skills
+
+# Exporter le dataset pour l'entraînement ML
+python manage.py export_future_skills_dataset
+```
+
+## 🤖 Machine Learning
+
+```bash
+# Entraîner le modèle ML
+python ml/train_future_skills_model.py
+
+# Avec paramètres personnalisés
+python ml/train_future_skills_model.py \
+  --dataset ml/future_skills_dataset.csv \
+  --output ml/future_skills_model.pkl \
+  --test-size 0.2
+
+# Évaluer et comparer les performances (ML vs Règles)
+python ml/evaluate_future_skills_models.py
+
+# Avec paramètres personnalisés
+python ml/evaluate_future_skills_models.py \
+  --dataset ml/future_skills_dataset.csv \
+  --model ml/future_skills_model.pkl \
+  --output docs/COMPARISON_REPORT.md \
+  --json-output ml/evaluation_results.json
+
+# Workflow complet ML
+python manage.py export_future_skills_dataset && \
+python ml/train_future_skills_model.py && \
+python ml/evaluate_future_skills_models.py
 ```
 
 ## 📊 Administration
