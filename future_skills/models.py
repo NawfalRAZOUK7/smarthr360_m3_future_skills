@@ -127,6 +127,12 @@ class FutureSkillPrediction(models.Model):
         null=True,
         help_text="Explication textuelle de la prédiction (pour le DRH)."
     )
+    
+    explanation = models.JSONField(
+        blank=True,
+        null=True,
+        help_text="Explication détaillée générée par SHAP/LIME (text, top_factors, confidence)."
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

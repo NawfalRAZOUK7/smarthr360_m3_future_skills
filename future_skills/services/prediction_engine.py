@@ -27,6 +27,17 @@ from future_skills.models import (
 )
 from future_skills.ml_model import FutureSkillsModel
 
+# Lazy import pour éviter erreur si SHAP pas installé
+try:
+    from future_skills.services.explanation_engine import ExplanationEngine
+    EXPLANATION_ENGINE_AVAILABLE = True
+except ImportError:
+    EXPLANATION_ENGINE_AVAILABLE = False
+    logger.warning(
+        "ExplanationEngine non disponible. Les explications ne seront pas générées. "
+        "Installez 'shap' pour activer cette fonctionnalité."
+    )
+
 
 logger = logging.getLogger(__name__)
 
@@ -145,6 +156,7 @@ def recalculate_predictions(
     horizon_years: int = 5,
     run_by=None,
     parameters: Dict[str, Any] | None = None,
+    generate_explanations: bool = False,
 ) -> int:
     """Recalculate all FutureSkillPrediction entries for all (JobRole, Skill).
 
@@ -158,6 +170,12 @@ def recalculate_predictions(
     - the horizon_years
     - who triggered the run (run_by)
     - optional parameters (trigger = api/management_command, etc.).
+    
+    Args:
+        horizon_years: Horizon de prédiction en années (défaut: 5)
+        run_by: Utilisateur ayant déclenché le recalcul (optionnel)
+        parameters: Paramètres additionnels (optionnel)
+        generate_explanations: Si True, génère des explications SHAP/LIME (défaut: False)
 
     Returns the total number of predictions created/updated.
     """
@@ -198,6 +216,24 @@ def recalculate_predictions(
 
     engine_label = "ml_random_forest_v1" if use_ml_effective else "rules_v1"
     logger.info("🔧 Engine selected: %s", engine_label)
+    
+    # Initialize explanation engine if requested and available
+    explanation_engine = None
+    if generate_explanations and use_ml_effective and EXPLANATION_ENGINE_AVAILABLE:
+        try:
+            explanation_engine = ExplanationEngine(ml_model)
+            if explanation_engine.is_available():
+                logger.info("✅ Explanation engine initialized (SHAP)")
+            else:
+                logger.warning("⚠️  Explanation engine not available, skipping explanations")
+                explanation_engine = None
+        except Exception as exc:
+            logger.warning("⚠️  Failed to initialize explanation engine: %s", exc)
+            explanation_engine = None
+    elif generate_explanations and not use_ml_effective:
+        logger.warning("⚠️  Explanations only available with ML model, skipping")
+    elif generate_explanations and not EXPLANATION_ENGINE_AVAILABLE:
+        logger.warning("⚠️  Explanation engine not installed, skipping")
 
     for job in job_roles:
         for skill in skills:
@@ -231,16 +267,39 @@ def recalculate_predictions(
                 f"et l'indice de rareté (~{scarcity_index:.2f}). "
                 f"Moteur utilisé : {engine_label}."
             )
+            
+            # Generate explanation if requested and available
+            explanation_data = None
+            if explanation_engine is not None:
+                try:
+                    explanation_data = explanation_engine.generate_explanation(
+                        job_role_name=job.name,
+                        skill_name=skill.name,
+                        trend_score=trend_score,
+                        internal_usage=internal_usage,
+                        training_requests=training_requests,
+                        scarcity_index=scarcity_index,
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Failed to generate explanation for %s × %s: %s",
+                        job.name, skill.name, exc
+                    )
+
+            defaults = {
+                "score": score_0_100,
+                "level": level,
+                "rationale": rationale,
+            }
+            
+            if explanation_data is not None:
+                defaults["explanation"] = explanation_data
 
             FutureSkillPrediction.objects.update_or_create(
                 job_role=job,
                 skill=skill,
                 horizon_years=horizon_years,
-                defaults={
-                    "score": score_0_100,
-                    "level": level,
-                    "rationale": rationale,
-                },
+                defaults=defaults,
             )
             total_predictions += 1
 
