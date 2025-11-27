@@ -11,6 +11,14 @@ User = get_user_model()
 
 
 # ============================================================================
+# Test Constants
+# ============================================================================
+
+SKILL_AI_ML = 'AI/ML'
+SKILL_CLOUD_ARCHITECTURE = 'Cloud Architecture'
+
+
+# ============================================================================
 # Complex Model Fixtures
 # ============================================================================
 
@@ -18,14 +26,14 @@ User = get_user_model()
 def complete_employee_with_predictions(db, sample_employee):
     """
     Creates an employee with complete prediction history.
-    
+
     Usage:
         def test_employee_history(complete_employee_with_predictions):
             employee = complete_employee_with_predictions
             assert employee.prediction_runs.count() > 0
     """
     from future_skills.models import PredictionRun
-    
+
     # Create multiple prediction runs
     for i in range(3):
         PredictionRun.objects.create(
@@ -35,7 +43,7 @@ def complete_employee_with_predictions(db, sample_employee):
             predicted_skills=[f'Skill {j}' for j in range(3)],
             model_version=f'v1.{i}'
         )
-    
+
     return sample_employee
 
 
@@ -43,13 +51,13 @@ def complete_employee_with_predictions(db, sample_employee):
 def multiple_employees(db):
     """
     Creates multiple employees for testing list operations.
-    
+
     Usage:
         def test_employee_listing(multiple_employees):
             assert len(multiple_employees) == 5
     """
     from future_skills.models import Employee
-    
+
     employees = []
     for i in range(5):
         emp = Employee.objects.create(
@@ -60,7 +68,7 @@ def multiple_employees(db):
             current_skills=[f'Skill {j}' for j in range(3)]
         )
         employees.append(emp)
-    
+
     return employees
 
 
@@ -68,16 +76,16 @@ def multiple_employees(db):
 def multiple_future_skills(db):
     """
     Creates multiple future skills for testing.
-    
+
     Usage:
         def test_skill_categories(multiple_future_skills):
             assert len(multiple_future_skills) == 10
     """
     from future_skills.models import FutureSkill
-    
+
     categories = ['Technical', 'Soft Skills', 'Leadership', 'Domain']
     skills = []
-    
+
     for i in range(10):
         skill = FutureSkill.objects.create(
             skill_name=f'Skill {i}',
@@ -87,7 +95,7 @@ def multiple_future_skills(db):
             relevance_score=0.6 + (i * 0.04)
         )
         skills.append(skill)
-    
+
     return skills
 
 
@@ -99,21 +107,21 @@ def multiple_future_skills(db):
 def skills_gap_scenario(db):
     """
     Creates a scenario for testing skills gap analysis.
-    
+
     Returns: dict with employees, current_skills, and future_skills
     """
     from future_skills.models import Employee, FutureSkill
-    
+
     # Create future skills that are in demand
     future_skills = [
         FutureSkill.objects.create(
-            skill_name='AI/ML',
+            skill_name=SKILL_AI_ML,
             category='Technical',
             importance_score=0.95,
             relevance_score=0.90
         ),
         FutureSkill.objects.create(
-            skill_name='Cloud Architecture',
+            skill_name=SKILL_CLOUD_ARCHITECTURE,
             category='Technical',
             importance_score=0.88,
             relevance_score=0.85
@@ -125,7 +133,7 @@ def skills_gap_scenario(db):
             relevance_score=0.80
         )
     ]
-    
+
     # Create employees with gaps in their skills
     employees = [
         Employee.objects.create(
@@ -141,13 +149,13 @@ def skills_gap_scenario(db):
             current_skills=['JavaScript', 'React']  # Missing AI/ML, Cloud
         )
     ]
-    
+
     return {
         'employees': employees,
         'future_skills': future_skills,
         'expected_gaps': {
-            'Developer A': ['AI/ML', 'Cloud Architecture', 'Leadership'],
-            'Developer B': ['AI/ML', 'Cloud Architecture', 'Leadership']
+            'Developer A': [SKILL_AI_ML, SKILL_CLOUD_ARCHITECTURE, 'Leadership'],
+            'Developer B': [SKILL_AI_ML, SKILL_CLOUD_ARCHITECTURE, 'Leadership']
         }
     }
 
@@ -156,11 +164,11 @@ def skills_gap_scenario(db):
 def prediction_test_scenario(db):
     """
     Creates a complete scenario for testing prediction functionality.
-    
+
     Returns: dict with employee, input_data, and expected_predictions
     """
     from future_skills.models import Employee, FutureSkill
-    
+
     # Create employee
     employee = Employee.objects.create(
         name='Test Employee',
@@ -169,7 +177,7 @@ def prediction_test_scenario(db):
         position='Data Analyst',
         current_skills=['Python', 'SQL', 'Excel']
     )
-    
+
     # Create future skills that should be predicted
     predicted_skills = [
         FutureSkill.objects.create(
@@ -183,7 +191,7 @@ def prediction_test_scenario(db):
             importance_score=0.85
         )
     ]
-    
+
     return {
         'employee': employee,
         'input_data': {
@@ -242,7 +250,7 @@ def valid_prediction_payload(sample_employee):
 def sample_csv_data():
     """Provides sample CSV data for testing bulk imports."""
     import io
-    
+
     csv_content = """name,email,department,position,current_skills
 John Doe,john@example.com,Engineering,Developer,"Python,JavaScript"
 Jane Smith,jane@example.com,Marketing,Manager,"SEO,Analytics"
@@ -260,7 +268,7 @@ def mock_ml_predictions(mocker):
     """Mocks ML model predictions for testing without actual model."""
     mock_predict = mocker.patch('future_skills.services.prediction_engine.PredictionEngine.predict')
     mock_predict.return_value = {
-        'predictions': ['AI/ML', 'Cloud Computing', 'DevOps'],
+        'predictions': [SKILL_AI_ML, 'Cloud Computing', 'DevOps'],
         'confidence_scores': [0.85, 0.78, 0.72],
         'model_version': 'v1.0'
     }

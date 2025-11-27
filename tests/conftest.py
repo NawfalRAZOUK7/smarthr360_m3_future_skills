@@ -13,6 +13,13 @@ User = get_user_model()
 
 
 # ============================================================================
+# Test Constants
+# ============================================================================
+
+SKILL_MACHINE_LEARNING = 'Machine Learning'
+
+
+# ============================================================================
 # API Client Fixtures
 # ============================================================================
 
@@ -20,7 +27,7 @@ User = get_user_model()
 def api_client():
     """
     Provides an unauthenticated DRF API client.
-    
+
     Usage:
         def test_public_endpoint(api_client):
             response = api_client.get('/api/endpoint/')
@@ -33,7 +40,7 @@ def api_client():
 def authenticated_client(api_client, regular_user):
     """
     Provides an authenticated API client with a regular user.
-    
+
     Usage:
         def test_authenticated_endpoint(authenticated_client):
             response = authenticated_client.get('/api/protected/')
@@ -47,7 +54,7 @@ def authenticated_client(api_client, regular_user):
 def admin_client(api_client, admin_user):
     """
     Provides an authenticated API client with an admin user.
-    
+
     Usage:
         def test_admin_endpoint(admin_client):
             response = admin_client.get('/api/admin-only/')
@@ -65,7 +72,7 @@ def admin_client(api_client, admin_user):
 def regular_user(db):
     """
     Creates a regular user without special permissions.
-    
+
     Usage:
         def test_user_creation(regular_user):
             assert regular_user.username == 'testuser'
@@ -84,7 +91,7 @@ def regular_user(db):
 def admin_user(db):
     """
     Creates an admin user with superuser privileges.
-    
+
     Usage:
         def test_admin_access(admin_user):
             assert admin_user.is_superuser
@@ -101,7 +108,7 @@ def admin_user(db):
 def hr_manager(db):
     """
     Creates an HR manager user with staff privileges.
-    
+
     Usage:
         def test_hr_manager_permissions(hr_manager):
             assert hr_manager.is_staff
@@ -113,13 +120,13 @@ def hr_manager(db):
         password='hrpass123',
         is_staff=True
     )
-    
+
     # Add future_skills permissions
     permissions = Permission.objects.filter(
         content_type__app_label='future_skills'
     )
     user.user_permissions.set(permissions)
-    
+
     return user
 
 
@@ -127,7 +134,7 @@ def hr_manager(db):
 def hr_viewer(db):
     """
     Creates an HR viewer user with read-only permissions.
-    
+
     Usage:
         def test_hr_viewer_access(hr_viewer):
             assert hr_viewer.has_perm('future_skills.view_futureskill')
@@ -139,14 +146,14 @@ def hr_viewer(db):
         password='viewerpass123',
         is_staff=False
     )
-    
+
     # Add view-only permissions
     view_permissions = Permission.objects.filter(
         content_type__app_label='future_skills',
         codename__startswith='view_'
     )
     user.user_permissions.set(view_permissions)
-    
+
     return user
 
 
@@ -158,13 +165,13 @@ def hr_viewer(db):
 def sample_future_skill(db):
     """
     Creates a sample FutureSkill instance for testing.
-    
+
     Usage:
         def test_future_skill_display(sample_future_skill):
             assert 'Python' in sample_future_skill.skill_name
     """
     from future_skills.models import FutureSkill
-    
+
     return FutureSkill.objects.create(
         skill_name='Python Programming',
         category='Technical',
@@ -178,13 +185,13 @@ def sample_future_skill(db):
 def sample_employee(db):
     """
     Creates a sample Employee instance for testing.
-    
+
     Usage:
         def test_employee_creation(sample_employee):
             assert sample_employee.name == 'John Doe'
     """
     from future_skills.models import Employee
-    
+
     return Employee.objects.create(
         name='John Doe',
         email='john.doe@example.com',
@@ -198,18 +205,18 @@ def sample_employee(db):
 def sample_prediction(db, sample_employee):
     """
     Creates a sample PredictionRun instance for testing.
-    
+
     Usage:
         def test_prediction_results(sample_prediction):
             assert sample_prediction.status == 'completed'
     """
     from future_skills.models import PredictionRun
-    
+
     return PredictionRun.objects.create(
         employee=sample_employee,
         status='completed',
         confidence_score=0.75,
-        predicted_skills=['Machine Learning', 'AI', 'Data Science'],
+        predicted_skills=[SKILL_MACHINE_LEARNING, 'AI', 'Data Science'],
         model_version='v1.0'
     )
 
@@ -222,14 +229,14 @@ def sample_prediction(db, sample_employee):
 def mock_ml_model(mocker):
     """
     Provides a mocked ML model for testing without actual model loading.
-    
+
     Usage:
         def test_prediction_service(mock_ml_model):
             result = predict_future_skills(employee_data)
             assert result is not None
     """
     mock_model = mocker.patch('future_skills.services.prediction_engine.load_model')
-    mock_model.return_value.predict.return_value = ['AI', 'Machine Learning']
+    mock_model.return_value.predict.return_value = ['AI', SKILL_MACHINE_LEARNING]
     mock_model.return_value.predict_proba.return_value = [[0.1, 0.9]]
     return mock_model
 
@@ -238,7 +245,7 @@ def mock_ml_model(mocker):
 def disable_ml(settings):
     """
     Disables ML features for tests that don't require them.
-    
+
     Usage:
         def test_without_ml(disable_ml):
             # Test runs without ML predictions
@@ -256,7 +263,7 @@ def disable_ml(settings):
 def request_factory():
     """
     Provides Django's RequestFactory for testing views directly.
-    
+
     Usage:
         def test_view_directly(request_factory):
             request = request_factory.get('/api/endpoint/')
@@ -275,7 +282,7 @@ def request_factory():
 def employee_data():
     """
     Provides sample employee data for testing.
-    
+
     Usage:
         def test_employee_creation(employee_data):
             employee = Employee.objects.create(**employee_data)
@@ -295,14 +302,14 @@ def employee_data():
 def future_skill_data():
     """
     Provides sample future skill data for testing.
-    
+
     Usage:
         def test_skill_creation(future_skill_data):
             skill = FutureSkill.objects.create(**future_skill_data)
             assert skill.category == 'Technical'
     """
     return {
-        'skill_name': 'Machine Learning',
+        'skill_name': SKILL_MACHINE_LEARNING,
         'category': 'Technical',
         'description': 'ML algorithms and frameworks',
         'importance_score': 0.90,
