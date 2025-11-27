@@ -1,0 +1,143 @@
+{
+  "experiment_date": "2025-11-27T11:52:21.677057",
+  "random_state": 42,
+  "test_size": 0.2,
+  "models_tested": 3,
+  "results": [
+    {
+      "model_name": "RandomForest",
+      "description": "Baseline actuelle - Ensemble d'arbres de décision",
+      "hyperparameters": {
+        "n_estimators": 200,
+        "max_depth": null,
+        "class_weight": "balanced"
+      },
+      "metrics": {
+        "accuracy": 0.9861,
+        "precision_weighted": 0.9864,
+        "recall_weighted": 0.9861,
+        "f1_weighted": 0.986,
+        "cv_f1_mean": 0.9929,
+        "cv_f1_std": 0.0087,
+        "per_class": {
+          "HIGH": {
+            "accuracy": 0.9583,
+            "support": 24,
+            "precision": 1.0,
+            "recall": 0.9583,
+            "f1": 0.9787
+          },
+          "MEDIUM": {
+            "accuracy": 1.0,
+            "support": 48,
+            "precision": 0.9796,
+            "recall": 1.0,
+            "f1": 0.9897
+          }
+        }
+      },
+      "training_time_seconds": 0.19,
+      "confusion_matrix": [
+        [
+          23,
+          1
+        ],
+        [
+          0,
+          48
+        ]
+      ]
+    },
+    {
+      "model_name": "RandomForest_tuned",
+      "description": "RandomForest avec hyperparamètres ajustés",
+      "hyperparameters": {
+        "n_estimators": 300,
+        "max_depth": 20,
+        "min_samples_split": 5,
+        "min_samples_leaf": 2,
+        "class_weight": "balanced"
+      },
+      "metrics": {
+        "accuracy": 0.9861,
+        "precision_weighted": 0.9864,
+        "recall_weighted": 0.9861,
+        "f1_weighted": 0.986,
+        "cv_f1_mean": 0.9929,
+        "cv_f1_std": 0.0087,
+        "per_class": {
+          "HIGH": {
+            "accuracy": 0.9583,
+            "support": 24,
+            "precision": 1.0,
+            "recall": 0.9583,
+            "f1": 0.9787
+          },
+          "MEDIUM": {
+            "accuracy": 1.0,
+            "support": 48,
+            "precision": 0.9796,
+            "recall": 1.0,
+            "f1": 0.9897
+          }
+        }
+      },
+      "training_time_seconds": 0.31,
+      "confusion_matrix": [
+        [
+          23,
+          1
+        ],
+        [
+          0,
+          48
+        ]
+      ]
+    },
+    {
+      "model_name": "LogisticRegression",
+      "description": "Modèle linéaire régularisé - Simple et rapide",
+      "hyperparameters": {
+        "C": 1.0,
+        "max_iter": 1000,
+        "class_weight": "balanced",
+        "multi_class": "multinomial"
+      },
+      "metrics": {
+        "accuracy": 0.9861,
+        "precision_weighted": 0.9867,
+        "recall_weighted": 0.9861,
+        "f1_weighted": 0.9862,
+        "cv_f1_mean": 0.9965,
+        "cv_f1_std": 0.0071,
+        "per_class": {
+          "HIGH": {
+            "accuracy": 1.0,
+            "support": 24,
+            "precision": 0.96,
+            "recall": 1.0,
+            "f1": 0.9796
+          },
+          "MEDIUM": {
+            "accuracy": 0.9792,
+            "support": 48,
+            "precision": 1.0,
+            "recall": 0.9792,
+            "f1": 0.9895
+          }
+        }
+      },
+      "training_time_seconds": 0.02,
+      "confusion_matrix": [
+        [
+          24,
+          0
+        ],
+        [
+          1,
+          47
+        ]
+      ]
+    }
+  ]
+}

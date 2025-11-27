@@ -296,5 +296,128 @@ smarthr360_m3_future_skills/
 
 ---
 
+## 🔧 Model Extensibility Architecture
+
+### Design Principles
+
+The ML pipeline is architected to be **model-agnostic** through:
+
+1. **Interface Contract**: All models must implement sklearn-compatible `fit()` and `predict()` methods
+2. **Pipeline Composition**: `ColumnTransformer` → `Estimator` → Output
+3. **Serialization Standard**: Models saved as `.pkl` with JSON metadata
+4. **API Abstraction**: Business logic decoupled from model internals
+
+### Supported Model Types
+
+```
+┌────────────────────────────────────────────────────────┐
+│                  SKLEARN-COMPATIBLE                     │
+│                     ESTIMATORS                          │
+├────────────────────────────────────────────────────────┤
+│                                                         │
+│  Tree-Based Models        Linear Models                │
+│  ┌─────────────────┐     ┌──────────────────┐        │
+│  │ RandomForest ✅  │     │ LogisticReg ✅   │        │
+│  │ XGBoost         │     │ Ridge/Lasso      │        │
+│  │ LightGBM        │     │ ElasticNet       │        │
+│  │ GradientBoost   │     └──────────────────┘        │
+│  └─────────────────┘                                  │
+│                                                         │
+│  Neural Networks          Ensemble Methods             │
+│  ┌─────────────────┐     ┌──────────────────┐        │
+│  │ MLPClassifier   │     │ VotingClassifier │        │
+│  │ Keras (wrapper) │     │ StackingClass    │        │
+│  └─────────────────┘     └──────────────────┘        │
+│                                                         │
+└────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+            ┌──────────────────────────┐
+            │   PREDICTION INTERFACE   │
+            │   predict(X) → y         │
+            │   classes_ → [L,M,H]     │
+            └──────────────────────────┘
+```
+
+### Model Selection Workflow
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. EXPERIMENTATION PHASE                               │
+│  python ml/experiment_future_skills_models.py          │
+│                                                         │
+│  Tests multiple algorithms:                            │
+│  • RandomForest (baseline)                             │
+│  • LogisticRegression                                   │
+│  • XGBoost / LightGBM (optional)                       │
+│                                                         │
+│  Outputs: MODEL_COMPARISON.md                          │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│  2. SELECTION CRITERIA                                  │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │ ✅ F1-Score (Primary)         Target: >0.95     │  │
+│  │ ✅ CV Stability               Std < 0.01        │  │
+│  │ ✅ Interpretability           Feature import.   │  │
+│  │ ✅ Training Time              < 1 min           │  │
+│  │ ✅ Dependencies               Minimal deps      │  │
+│  └─────────────────────────────────────────────────┘  │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│  3. CURRENT SELECTION: RandomForest                     │
+│                                                         │
+│  Rationale:                                             │
+│  • F1: 0.986 (excellent)                               │
+│  • CV: 0.9929 ± 0.0087 (stable)                        │
+│  • Feature importance available                         │
+│  • Pure sklearn (no extra deps)                        │
+│  • Training: 0.19s (fast)                              │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│  4. ALTERNATIVE: LogisticRegression                     │
+│                                                         │
+│  Could replace if:                                      │
+│  • Need faster inference (0.02s vs 0.19s)              │
+│  • Simpler model preferred                              │
+│  • F1: 0.9862 (slightly better)                       │
+│  • Trade-off: Less interpretable                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Model Replacement Process
+
+```bash
+# 1. Update model in training script
+vim ml/train_future_skills_model.py
+# Change: clf = RandomForestClassifier(...)
+# To:     clf = YourNewModel(...)
+
+# 2. Retrain with new model
+python ml/train_future_skills_model.py --version v2
+
+# 3. Compare performance
+python ml/experiment_future_skills_models.py
+
+# 4. Update registry
+vim ml/MODEL_REGISTRY.md
+
+# 5. Deploy (no API changes needed)
+cp ml/future_skills_model_v2.pkl ml/future_skills_model.pkl
+
+# 6. Restart application
+# Model automatically reloaded on next prediction
+```
+
+**Key Point**: The entire swap requires **zero API changes** because the interface `(level, score)` remains constant.
+
+---
+
 **Created**: 2025-11-27  
+**Updated**: 2025-11-27 (Added model extensibility section)  
 **Purpose**: Visual reference for MLOps pipeline architecture

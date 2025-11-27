@@ -5,3 +5,9 @@ shap>=0.44.0
 lime>=0.2.0.1
 matplotlib>=3.7.0
 seaborn>=0.12.0
+
+# Optional: Advanced gradient boosting models
+# Uncomment to enable XGBoost and LightGBM in experiments
+# Note: XGBoost on macOS requires: brew install libomp
+# xgboost>=2.0.0
+# lightgbm>=4.0.0
