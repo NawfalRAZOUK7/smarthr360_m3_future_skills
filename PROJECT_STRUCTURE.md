@@ -337,6 +337,39 @@ make ml-compare
 - [ ] Redis caching layer
 - [ ] Elasticsearch for search
 
+## 📝 Documentation Naming Convention
+
+To maintain consistency and clarity, the project follows a logical documentation naming pattern:
+
+### Root Level Documentation
+
+- **UPPERCASE.md** - Important, must-read documents
+  - `README.md` - Project introduction and quick start
+  - `CHANGELOG.md` - Version history and changes
+  - `PROJECT_STRUCTURE.md` - Architecture and structure overview
+  - `PHASE_10_VALIDATION_REPORT.md` - Milestone reports
+
+### Subdirectory Documentation
+
+- **lowercase.md** - Regular guides and tutorials
+  - `docs/overview.md` - General overview
+  - `docs/development/quick_commands.md` - Development guides
+  - `docs/deployment/docker.md` - Deployment instructions
+  - `docs/api/endpoints.md` - API documentation
+
+### Milestone Documentation
+
+- **UPPERCASE.md** - Historical tracking and milestone documents
+  - `docs/milestones/MT1_COMPLETION.md` - Milestone tracking
+  - `docs/milestones/LT1_COMPLETION_SUMMARY.md` - Learning track summaries
+
+### Rationale
+
+- **Instant Recognition**: Uppercase indicates high-priority documents
+- **Logical Grouping**: Similar document types share naming conventions
+- **Developer Experience**: Clear hierarchy for onboarding
+- **Industry Standard**: Aligns with common open-source practices
+
 ## 🤝 Contributing
 
 1. Follow the code style guidelines
