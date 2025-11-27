@@ -1,5 +1,7 @@
 {
-    "workbench.colorCustomizations": {
-        "editorInfo.foreground": "#0080ff6a"
-    }
+  "workbench.colorCustomizations": {
+    "editorInfo.foreground": "#0080ff6a"
+  },
+  "codecov.token": "c7d0b1f7-4779-49ef-86f8-323e7e2d545f",
+  "codecov.apiUrl": "https://codecov.io"
 }
