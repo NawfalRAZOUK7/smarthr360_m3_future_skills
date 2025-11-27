@@ -71,7 +71,12 @@ def load_dataset(csv_path: Path) -> pd.DataFrame:
     return df
 
 
-def build_pipeline(categorical_features, numeric_features) -> Pipeline:
+def build_pipeline(
+    categorical_features,
+    numeric_features,
+    n_estimators: int = 200,
+    random_state: int = 42,
+) -> Pipeline:
     """
     Construit un pipeline complet :
       - ColumnTransformer (OneHot + StandardScaler)
@@ -91,8 +96,8 @@ def build_pipeline(categorical_features, numeric_features) -> Pipeline:
     )
 
     clf = RandomForestClassifier(
-        n_estimators=200,
-        random_state=42,
+        n_estimators=n_estimators,
+        random_state=random_state,
         class_weight="balanced",
         n_jobs=-1,
     )
@@ -102,10 +107,73 @@ def build_pipeline(categorical_features, numeric_features) -> Pipeline:
             ("preprocess", preprocessor),
             ("clf", clf),
         ],
-        memory='auto'  # Cache transformers for better performance
+        memory='auto'  # Cache transformers for better performance  # noqa: S106 - Not a password
     )
 
     return pipeline
+
+
+def _prepare_features(df: pd.DataFrame, feature_cols: list, target_col: str) -> tuple:
+    """Prepare features and target, handling missing columns."""
+    available_features = [c for c in feature_cols if c in df.columns]
+    missing_cols = [c for c in feature_cols if c not in df.columns]
+
+    if missing_cols:
+        print(f"[WARN] Colonnes manquantes (ignorées) : {missing_cols}")
+
+    if not available_features:
+        raise ValueError("Aucune feature disponible dans le dataset!")
+
+    X = df[available_features].copy()
+    y = df[target_col].copy()
+
+    return X, y, available_features
+
+
+def _identify_feature_types(df: pd.DataFrame, available_features: list) -> tuple:
+    """Identify categorical and numeric features dynamically."""
+    categorical_features = []
+    numeric_features = []
+
+    for col in available_features:
+        if df[col].dtype == 'object' or df[col].dtype.name == 'category':
+            categorical_features.append(col)
+        else:
+            numeric_features.append(col)
+
+    return categorical_features, numeric_features
+
+
+def _check_class_imbalance(y: pd.Series) -> float:
+    """Check for class imbalance and print warnings."""
+    class_counts = y.value_counts()
+    imbalance_ratio = class_counts.max() / class_counts.min()
+    print(f"[INFO] Ratio de déséquilibre : {imbalance_ratio:.2f}")
+    if imbalance_ratio > 3:
+        print("[WARN] Déséquilibre des classes détecté. Utilisation de class_weight='balanced'")
+    return imbalance_ratio
+
+
+def _compute_per_class_metrics(cm: np.ndarray) -> dict:
+    """Calculate per-class metrics from confusion matrix."""
+    per_class_metrics = {}
+    print("\nPrécision par classe :")
+    for i, level in enumerate(["LOW", "MEDIUM", "HIGH"]):
+        if cm.sum(axis=1)[i] > 0:
+            class_accuracy = cm[i, i] / cm.sum(axis=1)[i]
+            support_count = int(cm.sum(axis=1)[i])
+            per_class_metrics[level] = {
+                "accuracy": round(float(class_accuracy), 4),
+                "support": support_count
+            }
+            print(f"  {level}: {class_accuracy:.2%} (support: {support_count})")
+        else:
+            per_class_metrics[level] = {
+                "accuracy": 0.0,
+                "support": 0
+            }
+            print(f"  {level}: N/A (no samples)")
+    return per_class_metrics
 
 
 def train_model(
@@ -148,28 +216,11 @@ def train_model(
     ]
     target_col = "future_need_level"
 
-    # Check for missing columns and use available ones
-    available_features = [c for c in feature_cols if c in df.columns]
-    missing_cols = [c for c in feature_cols if c not in df.columns]
+    # Prepare features and target
+    X, y, available_features = _prepare_features(df, feature_cols, target_col)
 
-    if missing_cols:
-        print(f"[WARN] Colonnes manquantes (ignorées) : {missing_cols}")
-
-    if not available_features:
-        raise ValueError("Aucune feature disponible dans le dataset!")
-
-    X = df[available_features].copy()
-    y = df[target_col].copy()
-
-    # Identify categorical and numeric features dynamically
-    categorical_features = []
-    numeric_features = []
-
-    for col in available_features:
-        if df[col].dtype == 'object' or df[col].dtype.name == 'category':
-            categorical_features.append(col)
-        else:
-            numeric_features.append(col)
+    # Identify feature types
+    categorical_features, numeric_features = _identify_feature_types(df, available_features)
 
     print(f"[INFO] Features catégorielles : {categorical_features}")
     print(f"[INFO] Features numériques : {numeric_features}")
@@ -178,11 +229,7 @@ def train_model(
     print(y.value_counts())
 
     # Check for class imbalance
-    class_counts = y.value_counts()
-    imbalance_ratio = class_counts.max() / class_counts.min()
-    print(f"[INFO] Ratio de déséquilibre : {imbalance_ratio:.2f}")
-    if imbalance_ratio > 3:
-        print("[WARN] Déséquilibre des classes détecté. Utilisation de class_weight='balanced'")
+    _check_class_imbalance(y)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
@@ -194,30 +241,12 @@ def train_model(
 
     print(f"[INFO] Taille train : {len(X_train)}, test : {len(X_test)}")
 
-    # Build pipeline with custom n_estimators
-    categorical_transformer = OneHotEncoder(handle_unknown="ignore")
-    numeric_transformer = StandardScaler()
-
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("cat", categorical_transformer, categorical_features),
-            ("num", numeric_transformer, numeric_features),
-        ]
-    )
-
-    clf = RandomForestClassifier(
+    # Build and train pipeline
+    pipeline = build_pipeline(
+        categorical_features=categorical_features,
+        numeric_features=numeric_features,
         n_estimators=n_estimators,
         random_state=random_state,
-        class_weight="balanced",
-        n_jobs=-1,
-    )
-
-    pipeline = Pipeline(
-        steps=[
-            ("preprocess", preprocessor),
-            ("clf", clf),
-        ],
-        memory='auto'  # Cache transformers for better performance
     )
 
     print(f"[INFO] Entraînement du modèle RandomForestClassifier (n_estimators={n_estimators})...")
@@ -232,7 +261,7 @@ def train_model(
 
     # Compute metrics
     accuracy = accuracy_score(y_test, y_pred)
-    precision, recall, f1, support = precision_recall_fscore_support(
+    precision, recall, f1, _ = precision_recall_fscore_support(
         y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"], average="weighted"
     )
 
@@ -243,31 +272,22 @@ def train_model(
     cm = confusion_matrix(y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"])
     print(cm)
 
-    # Calculate per-class metrics
-    per_class_metrics = {}
-    print("\nPrécision par classe :")
-    for i, level in enumerate(["LOW", "MEDIUM", "HIGH"]):
-        if cm.sum(axis=1)[i] > 0:
-            class_accuracy = cm[i, i] / cm.sum(axis=1)[i]
-            per_class_metrics[level] = {
-                "accuracy": round(float(class_accuracy), 4),
-                "support": int(support[i])
-            }
-            print(f"  {level}: {class_accuracy:.2%} (support: {support[i]})")
+    # Calculate per-class metrics using helper function
+    per_class_metrics = _compute_per_class_metrics(cm)
 
     # Feature importance
-    clf = pipeline.named_steps["clf"]
+    clf = pipeline.named_steps["clf"]  # noqa: PD011 - sklearn pipeline access pattern
     print(f"[INFO] Classes apprises par le modèle : {clf.classes_}")
 
     feature_importance_dict = {}
     if hasattr(clf, 'feature_importances_'):
         print("\n[INFO] Importance des features :")
-        preprocessor = pipeline.named_steps["preprocess"]
+        preprocessor = pipeline.named_steps["preprocess"]  # noqa: PD011 - sklearn pipeline access pattern
 
         # Get feature names after preprocessing
         cat_features = []
         if categorical_features:
-            cat_transformer = preprocessor.named_transformers_['cat']
+            cat_transformer = preprocessor.named_transformers_['cat']  # noqa: PD011 - sklearn pipeline access pattern
             if hasattr(cat_transformer, 'get_feature_names_out'):
                 cat_features = cat_transformer.get_feature_names_out(categorical_features).tolist()
 

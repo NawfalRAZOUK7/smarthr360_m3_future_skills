@@ -67,7 +67,7 @@ def update_settings_file(model_version: str, model_path: Path):
     with open(settings_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
-    print(f"✅ settings.py mis à jour:")
+    print("✅ settings.py mis à jour:")
     print(f"   - FUTURE_SKILLS_MODEL_VERSION = 'ml_random_forest_{model_version}'")
     print(f"   - FUTURE_SKILLS_MODEL_PATH = BASE_DIR / 'ml' / '{model_filename}'")
     return True
@@ -219,7 +219,7 @@ def main():
         print("\n⚠️  ATTENTION: Redémarrez le serveur Django pour appliquer les changements!")
     else:
         print("\n💡 Pour déployer ce modèle en production, mettez à jour manuellement:")
-        print(f"   - config/settings.py:")
+        print("   - config/settings.py:")
         print(f"     FUTURE_SKILLS_MODEL_VERSION = 'ml_random_forest_{args.version}'")
         print(f"     FUTURE_SKILLS_MODEL_PATH = BASE_DIR / 'ml' / '{model_path.name}'")
 
@@ -228,7 +228,7 @@ def main():
     print("="*60)
     print(f"📦 Modèle: {model_path}")
     print(f"📊 Métadonnées: {metadata_path}")
-    print(f"📋 Registre: ml/MODEL_REGISTRY.md")
+    print("📋 Registre: ml/MODEL_REGISTRY.md")
     print("="*60)
 
     return 0
