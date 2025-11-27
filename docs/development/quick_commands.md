@@ -8,155 +8,316 @@ source .venv/bin/activate  # Mac/Linux
 # ou
 .venv\Scripts\activate  # Windows
 
+# Configuration automatique (nouvelle installation)
+make setup
+# ou
+./scripts/setup_dev.sh
+
 # Lancer le serveur
-python manage.py runserver
+make serve
+# ou
+python manage.py runserver --settings=config.settings.development
+```
+
+## 📦 Installation
+
+```bash
+# Installer les dépendances de production
+make install
+
+# Installer les dépendances de développement
+make install-dev
+
+# Installer les dépendances ML
+make install-ml
+
+# Configuration complète de l'environnement de développement
+make setup
 ```
 
 ## 🧪 Tests
 
 ```bash
-# Exécuter tous les tests du module
-python manage.py test future_skills
+# Tous les tests avec couverture
+make test
 
-# Tests avec couverture
-coverage run manage.py test future_skills
-coverage report
-coverage html  # Génère htmlcov/index.html
+# Tests unitaires uniquement
+make test-unit
 
-# Ouvrir le rapport HTML
-open htmlcov/index.html  # Mac
+# Tests d'intégration
+make test-integration
+
+# Tests end-to-end
+make test-e2e
+
+# Tests rapides (exclure les tests lents)
+make test-fast
+
+# Tests ML spécifiques
+make test-ml
+
+# Tests API
+make test-api
+
+# Ré-exécuter les tests échoués
+make test-failed
+
+# Rapport de couverture détaillé
+make coverage
+
+# Avec les scripts utilitaires
+./scripts/run_tests.sh all          # Tous les tests
+./scripts/run_tests.sh unit         # Tests unitaires
+./scripts/run_tests.sh integration  # Tests d'intégration
+./scripts/run_tests.sh fast         # Tests rapides
+```
+
+## 🎨 Qualité du code
+
+```bash
+# Vérifier le formatage et la qualité
+make lint
+
+# Formater automatiquement le code
+make format
+
+# Vérifications système Django
+make check
+
+# Exécuter les hooks pre-commit
+make pre-commit
 # ou
-xdg-open htmlcov/index.html  # Linux
-# ou
-start htmlcov/index.html  # Windows
+pre-commit run --all-files
+
+# Vérification rapide avant commit
+make quick-check  # format + lint + tests rapides
 ```
 
 ## 🗄️ Base de données
 
 ```bash
-# Créer/Appliquer les migrations
-python manage.py makemigrations
-python manage.py migrate
+# Créer les migrations
+make makemigrations
+# ou
+python manage.py makemigrations --settings=config.settings.development
+
+# Appliquer les migrations
+make migrate
+# ou
+python manage.py migrate --settings=config.settings.development
 
 # Charger les données de démonstration
-python manage.py loaddata future_skills_demo
-
-# Créer un superutilisateur
-python manage.py createsuperuser
-
-# Shell Django
-python manage.py shell
-```
-
-## 🔧 Commandes personnalisées
-
-```bash
-# Initialiser les données de démo
-python manage.py seed_future_skills
+make seed-data
+# ou
+python manage.py seed_future_skills --settings=config.settings.development
 
 # Recalculer les prédictions
-python manage.py recalculate_future_skills
+make recalculate
+# ou
+python manage.py recalculate_future_skills --settings=config.settings.development
 
-# Exporter le dataset pour l'entraînement ML
-python manage.py export_future_skills_dataset
+# Créer un superutilisateur
+make createsuperuser
+# ou
+python manage.py createsuperuser --settings=config.settings.development
+
+# Shell Django
+make shell
+# ou
+python manage.py shell --settings=config.settings.development
+```
+
+## 🐳 Docker
+
+```bash
+# Construire les images Docker
+make docker-build
+
+# Démarrer l'environnement de développement
+make docker-up
+
+# Arrêter les conteneurs
+make docker-down
+
+# Démarrer l'environnement de production
+make docker-prod
+
+# Voir les logs
+make docker-logs
+# ou
+./scripts/docker_build.sh logs web
+
+# Ouvrir un shell dans le conteneur web
+make docker-shell
+# ou
+./scripts/docker_build.sh shell
+
+# Exécuter les tests dans Docker
+make docker-test
+
+# Nettoyer les ressources Docker
+make docker-clean
+# ou
+./scripts/docker_build.sh clean
+
+# Avec les scripts utilitaires
+./scripts/docker_build.sh dev     # Démarrer dev
+./scripts/docker_build.sh prod    # Démarrer prod
+./scripts/docker_build.sh status  # Statut des conteneurs
 ```
 
 ## 🤖 Machine Learning
 
 ```bash
-# Entraîner le modèle ML
-python ml/train_future_skills_model.py
+# Préparer le dataset
+make ml-prepare
+# ou
+./scripts/ml_train.sh prepare
 
-# Avec paramètres personnalisés
-python ml/train_future_skills_model.py \
-  --dataset ml/future_skills_dataset.csv \
-  --output ml/future_skills_model.pkl \
-  --test-size 0.2
+# Exécuter les expériences de modèles
+make ml-experiment
+# ou
+./scripts/ml_train.sh experiment
 
-# Évaluer et comparer les performances (ML vs Règles)
-python ml/evaluate_future_skills_models.py
+# Évaluer les modèles entraînés
+make ml-evaluate
+# ou
+./scripts/ml_train.sh evaluate
 
-# Avec paramètres personnalisés
-python ml/evaluate_future_skills_models.py \
-  --dataset ml/future_skills_dataset.csv \
-  --model ml/future_skills_model.pkl \
-  --output docs/COMPARISON_REPORT.md \
-  --json-output ml/evaluation_results.json
+# Entraîner un modèle spécifique
+make ml-train MODEL_VERSION=v2
+# ou
+./scripts/ml_train.sh train random_forest
 
-# Workflow complet ML
-python manage.py export_future_skills_dataset && \
-python ml/train_future_skills_model.py && \
-python ml/evaluate_future_skills_models.py
-```
+# Comparer les performances des modèles
+make ml-compare
+# ou
+./scripts/ml_train.sh compare
 
-## 🔍 Explainability (LT-1)
+# Pipeline complet de réentraînement
+make ml-retrain
+# ou
+./scripts/ml_train.sh retrain
 
-```bash
-# Installer les dépendances d'explicabilité
-pip install -r requirements_ml.txt
+# Analyse d'explicabilité
+make ml-explainability
+# ou
+./scripts/ml_train.sh explainability
 
-# Lancer le notebook d'analyse SHAP/LIME
-jupyter notebook ml/explainability_analysis.ipynb
+# Générer des prédictions pour un employé
+./scripts/ml_train.sh predict <employee_id>
 
-# Vérifier que SHAP est disponible
-python -c "import shap; print(f'SHAP version: {shap.__version__}')"
-
-# Tester l'ExplanationEngine
-python manage.py shell
->>> from future_skills.services.explanation_engine import ExplanationEngine, SHAP_AVAILABLE
->>> print(f"SHAP disponible: {SHAP_AVAILABLE}")
-
-# Recalculer avec génération d'explications
-python manage.py shell
->>> from future_skills.services.prediction_engine import recalculate_predictions
->>> total = recalculate_predictions(horizon_years=5, generate_explanations=True)
-
-# Vérifier les explications en DB
->>> from future_skills.models import FutureSkillPrediction
->>> count = FutureSkillPrediction.objects.filter(explanation__isnull=False).count()
->>> print(f"Prédictions avec explication: {count}")
-```
-
-**Documentation complète** : `docs/LT1_EXPLAINABILITY_GUIDE.md`  
-**Commandes rapides** : `docs/LT1_QUICK_COMMANDS.md`
-
-## 📊 Administration
-
-```bash
-# Accéder à l'admin Django
-# URL : http://localhost:8000/admin/
+# Surveiller les performances
+./scripts/ml_train.sh monitor
 ```
 
 ## 🧹 Nettoyage
 
 ```bash
-# Supprimer les fichiers de migration (attention !)
-find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
-find . -path "*/migrations/*.pyc" -delete
+# Nettoyer les fichiers temporaires
+make clean
 
-# Supprimer la base de données SQLite (réinitialisation complète)
-rm db.sqlite3
+# Nettoyer les fichiers cache Python
+make clean-pyc
 
-# Supprimer les fichiers de cache Python
-find . -type d -name "__pycache__" -exec rm -r {} +
-find . -type f -name "*.pyc" -delete
+# Nettoyer les artefacts de tests
+make clean-test
 
-# Supprimer les rapports de couverture
-rm -rf htmlcov .coverage
+# Nettoyer les fichiers de modèles ML (attention!)
+make clean-models
+
+# Nettoyage complet
+make clean-all
 ```
 
-## 📦 Dépendances
+## 🔄 Workflows rapides
 
 ```bash
+# Vérification rapide avant commit
+make quick-check  # format + lint + tests rapides
+
+# Simulation complète du CI
+make ci  # install + migrate + lint + test
+
+# Cycle de développement
+make dev  # migrate + seed-data + serve
+
+# Vérifications avant déploiement en production
+make prod-check  # lint + test + docker-build
+```
+
+## 📚 Documentation et ressources
+
+```bash
+# Afficher l'aide du Makefile
+make help
+
+# Documentation des scripts
+cat scripts/README.md
+
+# Documentation des tests
+cat tests/README.md
+
+# Documentation ML
+cat ml/README.md
+cat ml/docs/quick_reference.md
+
+# Architecture du projet
+cat docs/architecture/
+```
+
+## 🔗 Liens utiles
+
+### Documentation
+
+- [Guide de développement](../README.md)
+- [Documentation de l'architecture](../architecture/)
+- [Documentation de l'API](../api/)
+- [Guide de déploiement](../deployment/)
+- [Documentation ML](../../ml/README.md)
+- [Guide des tests](../../tests/README.md)
+- [Guide des scripts](../../scripts/README.md)
+
+### Accès web
+
+- **Application**: http://localhost:8000/
+- **Admin Django**: http://localhost:8000/admin/
+- **API**: http://localhost:8000/api/
+- **Documentation API**: http://localhost:8000/api/docs/
+
+### Commandes avancées
+
+```bash
+# Utiliser un settings spécifique
+DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
+
+# Exécuter des tests spécifiques
+pytest tests/integration/test_prediction_flow.py::TestPredictionFlow::test_complete_prediction_flow -v
+
+# Générer un rapport de couverture spécifique
+pytest --cov=future_skills/services --cov-report=html
+
+# Pre-commit pour des fichiers spécifiques
+pre-commit run black --files future_skills/models.py
+
+# Jupyter notebooks
+jupyter notebook ml/notebooks/dataset_analysis.ipynb
+jupyter notebook ml/notebooks/explainability_analysis.ipynb
+```
+
 # Installer les dépendances
+
 pip install -r requirements.txt
 
 # Mettre à jour les dépendances
+
 pip list --outdated
 
 # Geler les dépendances actuelles
+
 pip freeze > requirements.txt
-```
+
+````
 
 ## 🔍 Vérifications
 
@@ -169,7 +330,7 @@ python manage.py makemigrations --dry-run --verbosity 3
 
 # Afficher les migrations appliquées
 python manage.py showmigrations
-```
+````
 
 ## 🌐 API Testing
 
