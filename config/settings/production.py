@@ -5,7 +5,7 @@ This configuration is optimized for production deployment with security enabled.
 """
 
 import os
-from .base import *  # noqa: F403 - Standard Django settings pattern
+from .base import *  # noqa: F403,S2208 - Standard Django settings pattern
 
 # Debug mode MUST be False in production
 DEBUG = False
