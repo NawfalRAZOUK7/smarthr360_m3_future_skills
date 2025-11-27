@@ -1,11 +1,11 @@
-# future_skills/views.py
+# future_skills/api/views.py
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from .models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation
+from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation
 from .serializers import (
     FutureSkillPredictionSerializer,
     MarketTrendSerializer,
@@ -13,9 +13,9 @@ from .serializers import (
     HRInvestmentRecommendationSerializer,
 )
 
-from .services.prediction_engine import recalculate_predictions
-from .permissions import IsHRStaff, IsHRStaffOrManager
-from .services.recommendation_engine import generate_recommendations_from_predictions
+from ..services.prediction_engine import recalculate_predictions
+from ..permissions import IsHRStaff, IsHRStaffOrManager
+from ..services.recommendation_engine import generate_recommendations_from_predictions
 
 
 class FutureSkillPredictionListAPIView(APIView):

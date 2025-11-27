@@ -1,8 +1,8 @@
-# future_skills/serializers.py
+# future_skills/api/serializers.py
 
 from rest_framework import serializers
 
-from .models import (
+from ..models import (
     Skill,
     JobRole,
     MarketTrend,

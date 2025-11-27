@@ -20,6 +20,6 @@ from django.urls import path, include  # ⬅️ très important : ajouter includ
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Module 3 - future skills
-    path('api/', include('future_skills.urls')),  # ⬅️ ajoute cette ligne
+    # Module 3 - future skills API
+    path('api/', include('future_skills.api.urls')),  # ⬅️ updated to use api subpackage
 ]
