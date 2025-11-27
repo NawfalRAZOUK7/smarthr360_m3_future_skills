@@ -230,21 +230,29 @@ def print_metrics_summary(metrics: Dict[str, Any]):
     print(f"{'='*70}\n")
 
 
-def generate_comparison_report(
-    rules_metrics: Dict[str, Any],
-    ml_metrics: Dict[str, Any],
-    output_path: Path,
-):
-    """Generate a detailed comparison report."""
+def _compare_metric(rules_val: float, ml_val: float) -> tuple:
+    """Compare a single metric between rule-based and ML model.
     
-    report_lines = []
+    Returns: (difference, percentage_difference, winner_label)
+    """
+    diff = ml_val - rules_val
+    diff_pct = (diff / rules_val * 100) if rules_val > 0 else 0
     
-    report_lines.append("# 📊 ML vs Rule-Based Engine - Performance Comparison Report")
-    report_lines.append("")
-    report_lines.append(f"**Generated:** {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    report_lines.append("")
+    if abs(diff) < 0.01:
+        winner = "🤝 Tie"
+    elif diff > 0:
+        winner = "🤖 ML Model"
+    else:
+        winner = "📐 Rules"
     
-    # Overall comparison
+    return diff, diff_pct, winner
+
+
+def _add_overall_comparison(report_lines: list, rules_metrics: dict, ml_metrics: dict) -> tuple:
+    """Add overall performance comparison section.
+    
+    Returns: (ml_wins, rules_wins, ties)
+    """
     report_lines.append("## 1. Overall Performance Comparison")
     report_lines.append("")
     report_lines.append("| Metric | Rule-Based | ML Model | Difference | Winner |")
@@ -256,18 +264,20 @@ def generate_comparison_report(
         ("F1 (Weighted)", "f1_weighted"),
     ]
     
+    ml_wins = rules_wins = ties = 0
+    
     for metric_name, metric_key in metrics_to_compare:
         rules_val = rules_metrics[metric_key]
         ml_val = ml_metrics[metric_key]
-        diff = ml_val - rules_val
-        diff_pct = (diff / rules_val * 100) if rules_val > 0 else 0
+        diff, diff_pct, winner = _compare_metric(rules_val, ml_val)
         
+        # Count wins
         if abs(diff) < 0.01:
-            winner = "🤝 Tie"
+            ties += 1
         elif diff > 0:
-            winner = "🤖 ML Model"
+            ml_wins += 1
         else:
-            winner = "📐 Rules"
+            rules_wins += 1
         
         report_lines.append(
             f"| {metric_name} | {rules_val:.4f} | {ml_val:.4f} | "
@@ -275,8 +285,11 @@ def generate_comparison_report(
         )
     
     report_lines.append("")
-    
-    # Per-class comparison
+    return ml_wins, rules_wins, ties
+
+
+def _add_per_class_comparison(report_lines: list, rules_metrics: dict, ml_metrics: dict):
+    """Add per-class F1-score comparison section."""
     report_lines.append("## 2. Per-Class F1-Score Comparison")
     report_lines.append("")
     report_lines.append("| Class | Rule-Based | ML Model | Difference | Winner |")
@@ -285,15 +298,7 @@ def generate_comparison_report(
     for label in LABEL_ORDER:
         rules_f1 = rules_metrics["per_class"][label]["f1_score"]
         ml_f1 = ml_metrics["per_class"][label]["f1_score"]
-        diff = ml_f1 - rules_f1
-        diff_pct = (diff / rules_f1 * 100) if rules_f1 > 0 else 0
-        
-        if abs(diff) < 0.01:
-            winner = "🤝 Tie"
-        elif diff > 0:
-            winner = "🤖 ML Model"
-        else:
-            winner = "📐 Rules"
+        diff, diff_pct, winner = _compare_metric(rules_f1, ml_f1)
         
         report_lines.append(
             f"| {label} | {rules_f1:.4f} | {ml_f1:.4f} | "
@@ -301,8 +306,10 @@ def generate_comparison_report(
         )
     
     report_lines.append("")
-    
-    # Confusion matrices
+
+
+def _add_confusion_matrices(report_lines: list, rules_metrics: dict, ml_metrics: dict):
+    """Add confusion matrices section."""
     report_lines.append("## 3. Confusion Matrices")
     report_lines.append("")
     
@@ -317,37 +324,31 @@ def generate_comparison_report(
             report_lines.append(f"| **{label}** | {cm[i][0]} | {cm[i][1]} | {cm[i][2]} |")
         
         report_lines.append("")
-    
-    # Discussion
+
+
+def _add_discussion_section(
+    report_lines: list, 
+    rules_metrics: dict, 
+    ml_metrics: dict, 
+    ml_wins: int, 
+    rules_wins: int, 
+    metrics_count: int
+):
+    """Add discussion and analysis section."""
     report_lines.append("## 4. Discussion & Analysis")
     report_lines.append("")
-    
-    # Determine overall winner
-    ml_wins = 0
-    rules_wins = 0
-    ties = 0
-    
-    for _, metric_key in metrics_to_compare:
-        diff = ml_metrics[metric_key] - rules_metrics[metric_key]
-        if abs(diff) < 0.01:
-            ties += 1
-        elif diff > 0:
-            ml_wins += 1
-        else:
-            rules_wins += 1
-    
     report_lines.append("### 4.1 Overall Assessment")
     report_lines.append("")
     
     if ml_wins > rules_wins:
         report_lines.append(
             f"**🤖 ML Model Advantage:** The ML model outperforms the rule-based engine "
-            f"on {ml_wins} out of {len(metrics_to_compare)} key metrics."
+            f"on {ml_wins} out of {metrics_count} key metrics."
         )
     elif rules_wins > ml_wins:
         report_lines.append(
             f"**📐 Rule-Based Advantage:** The rule-based engine outperforms the ML model "
-            f"on {rules_wins} out of {len(metrics_to_compare)} key metrics."
+            f"on {rules_wins} out of {metrics_count} key metrics."
         )
     else:
         report_lines.append(
@@ -357,13 +358,14 @@ def generate_comparison_report(
     
     report_lines.append("")
     
+    # ML advantages
     report_lines.append("### 4.2 When ML is Better")
     report_lines.append("")
     
     ml_advantages = []
     for label in LABEL_ORDER:
         diff = ml_metrics["per_class"][label]["f1_score"] - rules_metrics["per_class"][label]["f1_score"]
-        if diff > 0.02:  # Significant improvement
+        if diff > 0.02:
             ml_advantages.append(f"- **{label} class:** +{diff:.4f} F1-score improvement")
     
     if ml_advantages:
@@ -373,6 +375,7 @@ def generate_comparison_report(
     
     report_lines.append("")
     
+    # Similar performance
     report_lines.append("### 4.3 When Performance is Similar")
     report_lines.append("")
     
@@ -389,6 +392,7 @@ def generate_comparison_report(
     
     report_lines.append("")
     
+    # Limitations
     report_lines.append("### 4.4 Limitations & Considerations")
     report_lines.append("")
     report_lines.append("⚠️ **Important Context:**")
@@ -399,8 +403,17 @@ def generate_comparison_report(
     report_lines.append("4. **ML Complexity:** ML model requires training data and periodic retraining")
     report_lines.append("5. **Production Use:** Consider using ML when significant performance gains justify complexity")
     report_lines.append("")
-    
-    # Recommendations
+
+
+def _add_recommendations(
+    report_lines: list, 
+    rules_metrics: dict, 
+    ml_metrics: dict, 
+    ml_wins: int, 
+    rules_wins: int, 
+    metrics_count: int
+):
+    """Add recommendations section."""
     report_lines.append("## 5. Recommendations")
     report_lines.append("")
     
@@ -408,7 +421,7 @@ def generate_comparison_report(
         report_lines.append("### ✅ Recommend ML Model for Production")
         report_lines.append("")
         report_lines.append("**Reasons:**")
-        report_lines.append(f"- Superior performance on {ml_wins}/{len(metrics_to_compare)} key metrics")
+        report_lines.append(f"- Superior performance on {ml_wins}/{metrics_count} key metrics")
         report_lines.append(f"- Overall accuracy improvement: {(ml_metrics['accuracy'] - rules_metrics['accuracy']):.4f}")
         report_lines.append("")
         report_lines.append("**Next Steps:**")
@@ -427,6 +440,37 @@ def generate_comparison_report(
         report_lines.append("- Use ML model for specific classes where it excels")
         report_lines.append("- Collect more diverse training data")
         report_lines.append("- Enhance rule-based engine with domain expertise")
+
+
+def generate_comparison_report(
+    rules_metrics: Dict[str, Any],
+    ml_metrics: Dict[str, Any],
+    output_path: Path,
+):
+    """Generate a detailed comparison report."""
+    
+    report_lines = []
+    
+    report_lines.append("# 📊 ML vs Rule-Based Engine - Performance Comparison Report")
+    report_lines.append("")
+    report_lines.append(f"**Generated:** {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    report_lines.append("")
+    
+    # Overall comparison
+    ml_wins, rules_wins, ties = _add_overall_comparison(report_lines, rules_metrics, ml_metrics)
+    metrics_count = ml_wins + rules_wins + ties
+    
+    # Per-class comparison
+    _add_per_class_comparison(report_lines, rules_metrics, ml_metrics)
+    
+    # Confusion matrices
+    _add_confusion_matrices(report_lines, rules_metrics, ml_metrics)
+    
+    # Discussion
+    _add_discussion_section(report_lines, rules_metrics, ml_metrics, ml_wins, rules_wins, metrics_count)
+    
+    # Recommendations
+    _add_recommendations(report_lines, rules_metrics, ml_metrics, ml_wins, rules_wins, metrics_count)
     
     report_lines.append("")
     report_lines.append("---")
