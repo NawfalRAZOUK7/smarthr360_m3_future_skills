@@ -162,27 +162,42 @@ def recalculate_predictions(
     Returns the total number of predictions created/updated.
     """
 
+    logger.info("========================================")
+    logger.info("🚀 Starting prediction recalculation...")
+    logger.info("Horizon: %s years | Triggered by: %s", horizon_years, run_by or "system")
+    
     total_predictions = 0
 
     job_roles = JobRole.objects.all()
     skills = Skill.objects.all()
+    
+    logger.info("Dataset size: %s job roles × %s skills = %s combinations",
+                job_roles.count(), skills.count(), job_roles.count() * skills.count())
 
     # Decide which engine to use
     use_ml_flag = getattr(settings, "FUTURE_SKILLS_USE_ML", False)
     ml_model = None
     use_ml_effective = False
 
+    logger.info("Configuration: FUTURE_SKILLS_USE_ML=%s", use_ml_flag)
+    
     if use_ml_flag:
         ml_model = FutureSkillsModel.instance()
         if ml_model.is_available():
             use_ml_effective = True
+            logger.info("✅ ML model loaded and available for predictions")
         else:
             logger.warning(
-                "recalculate_predictions: FUTURE_SKILLS_USE_ML=True mais le modèle "
-                "ML n'est pas disponible. Fallback sur le moteur de règles."
+                "⚠️  FUTURE_SKILLS_USE_ML=True but ML model is not available. "
+                "Falling back to rule-based engine (rules_v1)."
             )
+            logger.warning("Check that model file exists at: %s",
+                          getattr(settings, "FUTURE_SKILLS_MODEL_PATH", "N/A"))
+    else:
+        logger.info("Using rule-based engine as per configuration")
 
     engine_label = "ml_random_forest_v1" if use_ml_effective else "rules_v1"
+    logger.info("🔧 Engine selected: %s", engine_label)
 
     for job in job_roles:
         for skill in skills:
@@ -240,6 +255,7 @@ def recalculate_predictions(
             "FUTURE_SKILLS_MODEL_VERSION",
             "unknown",
         )
+        logger.info("Model version: %s", params["model_version"])
     else:
         # If rule-based, ensure we don't keep a stale model_version
         params.pop("model_version", None)
@@ -253,5 +269,10 @@ def recalculate_predictions(
         run_by=run_by,
         parameters=params,
     )
+    
+    logger.info("✅ Prediction recalculation completed successfully")
+    logger.info("Total predictions created/updated: %s", total_predictions)
+    logger.info("Engine used: %s | Horizon: %s years", engine_label, horizon_years)
+    logger.info("========================================")
 
     return total_predictions

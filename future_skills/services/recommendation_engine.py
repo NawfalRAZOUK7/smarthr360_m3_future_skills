@@ -96,31 +96,44 @@ def generate_recommendations_from_predictions(horizon_years: int = 5) -> int:
     Returns the number of recommendations created/updated.
     """
 
+    logger.info("========================================")
+    logger.info("📊 Starting recommendation generation...")
+    logger.info("Horizon: %s years", horizon_years)
+
     queryset = FutureSkillPrediction.objects.filter(horizon_years=horizon_years)
+    total_available = queryset.count()
+    logger.info("Total predictions available: %s", total_available)
 
     # Normal case: use only HIGH predictions
     high_predictions = queryset.filter(level=FutureSkillPrediction.LEVEL_HIGH)
+    high_count = high_predictions.count()
 
     if high_predictions.exists():
         target_predictions = high_predictions
         logger.info(
-            "Génération de recommandations à partir de %s prédictions HIGH (horizon=%s).",
-            high_predictions.count(),
-            horizon_years,
+            "✅ Found %s HIGH level predictions (normal mode)",
+            high_count,
         )
+        logger.info("Generating recommendations from HIGH predictions only")
     else:
         # Fallback: if no HIGH, pick the top-scoring predictions.
         # This does NOT change the behaviour when HIGH exists,
         # thus stays compatible with the tests that expect only HIGH
         # to be used in the normal path.
         target_predictions = queryset.order_by("-score")[:3]
+        fallback_count = target_predictions.count()
         logger.warning(
-            "Aucune prédiction HIGH trouvée pour horizon=%s, fallback sur top %s scores.",
+            "⚠️  No HIGH predictions found for horizon=%s years",
             horizon_years,
-            target_predictions.count(),
+        )
+        logger.warning(
+            "Fallback mode activated: using top %s predictions by score",
+            fallback_count,
         )
 
     total = 0
+    priority_stats = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    action_stats = {"HIRING": 0, "TRAINING": 0}
 
     for prediction in target_predictions:
         job_role = prediction.job_role
@@ -128,6 +141,10 @@ def generate_recommendations_from_predictions(horizon_years: int = 5) -> int:
 
         priority = _choose_priority_from_level(prediction.level)
         action = _choose_recommended_action(job_role, skill)
+        
+        # Track statistics
+        priority_stats[priority] = priority_stats.get(priority, 0) + 1
+        action_stats[action] = action_stats.get(action, 0) + 1
 
         rationale = (
             prediction.rationale
@@ -151,18 +168,24 @@ def generate_recommendations_from_predictions(horizon_years: int = 5) -> int:
         total += 1
 
         logger.debug(
-            "Recommendation %s pour skill=%s, job_role=%s, horizon=%s (created=%s)",
+            "Recommendation %s for skill=%s, job_role=%s, priority=%s, action=%s (created=%s)",
             obj.id,
             skill.name,
             job_role.name if job_role else None,
-            horizon_years,
+            priority,
+            action,
             created,
         )
 
-    logger.info(
-        "Génération des recommandations terminée : %s recommandation(s) pour horizon=%s.",
-        total,
-        horizon_years,
-    )
+    logger.info("✅ Recommendation generation completed successfully")
+    logger.info("Total recommendations created/updated: %s", total)
+    logger.info("Priority distribution: HIGH=%s, MEDIUM=%s, LOW=%s",
+                priority_stats.get("HIGH", 0),
+                priority_stats.get("MEDIUM", 0),
+                priority_stats.get("LOW", 0))
+    logger.info("Action distribution: HIRING=%s, TRAINING=%s",
+                action_stats.get("HIRING", 0),
+                action_stats.get("TRAINING", 0))
+    logger.info("========================================")
 
     return total

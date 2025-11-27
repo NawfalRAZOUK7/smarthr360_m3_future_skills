@@ -1,0 +1,30 @@
+[INFO] 2025-11-27 09:36:00 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: ========================================
+[INFO] 2025-11-27 09:36:00 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: 🚀 Starting prediction recalculation...
+[INFO] 2025-11-27 09:36:00 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Horizon: 5 years | Triggered by: system
+[INFO] 2025-11-27 09:36:00 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Dataset size: 17 job roles × 21 skills = 357 combinations
+[INFO] 2025-11-27 09:36:00 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Configuration: FUTURE_SKILLS_USE_ML=True
+[INFO] 2025-11-27 09:36:01 future_skills.ml_model ml_model._load: FutureSkillsModel: modèle ML chargé depuis /Users/nawfalrazouk/smarthr360_m3_future_skills/ml/future_skills_model.pkl
+[INFO] 2025-11-27 09:36:01 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: ✅ ML model loaded and available for predictions
+[INFO] 2025-11-27 09:36:01 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: 🔧 Engine selected: ml_random_forest_v1
+[INFO] 2025-11-27 09:36:41 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: ========================================
+[INFO] 2025-11-27 09:36:41 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: 🚀 Starting prediction recalculation...
+[INFO] 2025-11-27 09:36:41 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Horizon: 5 years | Triggered by: system
+[INFO] 2025-11-27 09:36:41 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Dataset size: 17 job roles × 21 skills = 357 combinations
+[INFO] 2025-11-27 09:36:41 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Configuration: FUTURE_SKILLS_USE_ML=False
+[INFO] 2025-11-27 09:36:41 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Using rule-based engine as per configuration
+[INFO] 2025-11-27 09:36:41 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: 🔧 Engine selected: rules_v1
+[INFO] 2025-11-27 09:36:42 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: ✅ Prediction recalculation completed successfully
+[INFO] 2025-11-27 09:36:42 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Total predictions created/updated: 357
+[INFO] 2025-11-27 09:36:42 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Engine used: rules_v1 | Horizon: 5 years
+[INFO] 2025-11-27 09:36:42 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: ========================================
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: ========================================
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: 📊 Starting recommendation generation...
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: Horizon: 5 years
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: Total predictions available: 357
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: ✅ Found 4 HIGH level predictions (normal mode)
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: Generating recommendations from HIGH predictions only
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: ✅ Recommendation generation completed successfully
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: Total recommendations created/updated: 4
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: Priority distribution: HIGH=4, MEDIUM=0, LOW=0
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: Action distribution: HIRING=3, TRAINING=1
+[INFO] 2025-11-27 09:37:20 future_skills.services.recommendation_engine recommendation_engine.generate_recommendations_from_predictions: ========================================
