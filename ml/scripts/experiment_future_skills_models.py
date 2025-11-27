@@ -276,7 +276,8 @@ def train_and_evaluate_model(
         steps=[
             ("preprocess", preprocessor),
             ("clf", model_config["estimator"]),
-        ]
+        ],
+        memory='auto'  # Cache transformers for better performance
     )
 
     # Train
