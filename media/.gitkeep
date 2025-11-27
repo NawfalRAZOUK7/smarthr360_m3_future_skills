@@ -1,0 +1,17 @@
+# Media Directory
+
+This directory stores user-uploaded files (images, documents, etc.).
+
+## Purpose
+
+- Contains user uploads
+- Served by Nginx in production
+- Managed by Django's FileField/ImageField
+
+## Security
+
+- Files are served through Nginx with proper headers
+- Maximum upload size controlled by Django and Nginx settings
+- Content type validation performed by Django
+
+**Note:** This directory is excluded from Git (except this .gitkeep file) as it contains user-generated content.
