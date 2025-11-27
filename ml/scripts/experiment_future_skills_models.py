@@ -522,8 +522,8 @@ def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[
 
 
 def main():
-    base_dir = Path(__file__).resolve().parent
-    default_csv = base_dir / "future_skills_dataset.csv"
+    base_dir = Path(__file__).resolve().parent.parent
+    default_csv = base_dir / "data" / "future_skills_dataset.csv"
 
     parser = argparse.ArgumentParser(
         description="Expérimente plusieurs modèles ML pour Future Skills."
@@ -537,7 +537,7 @@ def main():
     parser.add_argument(
         "--output",
         type=str,
-        default=str(base_dir / "experiment_results.json"),
+        default=str(base_dir / "results" / "experiment_results.json"),
         help="Chemin de sortie des résultats JSON.",
     )
     parser.add_argument(

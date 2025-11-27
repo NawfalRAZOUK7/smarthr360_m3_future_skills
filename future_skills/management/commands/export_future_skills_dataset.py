@@ -209,7 +209,7 @@ class Command(BaseCommand):
             "--output",
             type=str,
             default=None,
-            help="Chemin du fichier CSV de sortie (par défaut: BASE_DIR/ml/future_skills_dataset.csv).",
+            help="Chemin du fichier CSV de sortie (par défaut: BASE_DIR/ml/data/future_skills_dataset.csv).",
         )
 
     def handle(self, *args, **options):
@@ -219,9 +219,9 @@ class Command(BaseCommand):
         # Déterminer le chemin de sortie
         output_path = options["output"]
         if not output_path:
-            ml_dir = os.path.join(settings.BASE_DIR, "ml")
-            os.makedirs(ml_dir, exist_ok=True)
-            output_path = os.path.join(ml_dir, "future_skills_dataset.csv")
+            ml_data_dir = os.path.join(settings.BASE_DIR, "ml", "data")
+            os.makedirs(ml_data_dir, exist_ok=True)
+            output_path = os.path.join(ml_data_dir, "future_skills_dataset.csv")
 
         self.stdout.write(self.style.WARNING(f"Export du dataset vers : {output_path}"))
 
