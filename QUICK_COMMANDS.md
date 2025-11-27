@@ -89,6 +89,37 @@ python ml/train_future_skills_model.py && \
 python ml/evaluate_future_skills_models.py
 ```
 
+## 🔍 Explainability (LT-1)
+
+```bash
+# Installer les dépendances d'explicabilité
+pip install -r requirements_ml.txt
+
+# Lancer le notebook d'analyse SHAP/LIME
+jupyter notebook ml/explainability_analysis.ipynb
+
+# Vérifier que SHAP est disponible
+python -c "import shap; print(f'SHAP version: {shap.__version__}')"
+
+# Tester l'ExplanationEngine
+python manage.py shell
+>>> from future_skills.services.explanation_engine import ExplanationEngine, SHAP_AVAILABLE
+>>> print(f"SHAP disponible: {SHAP_AVAILABLE}")
+
+# Recalculer avec génération d'explications
+python manage.py shell
+>>> from future_skills.services.prediction_engine import recalculate_predictions
+>>> total = recalculate_predictions(horizon_years=5, generate_explanations=True)
+
+# Vérifier les explications en DB
+>>> from future_skills.models import FutureSkillPrediction
+>>> count = FutureSkillPrediction.objects.filter(explanation__isnull=False).count()
+>>> print(f"Prédictions avec explication: {count}")
+```
+
+**Documentation complète** : `docs/LT1_EXPLAINABILITY_GUIDE.md`  
+**Commandes rapides** : `docs/LT1_QUICK_COMMANDS.md`
+
 ## 📊 Administration
 
 ```bash
