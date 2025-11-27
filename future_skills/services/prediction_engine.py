@@ -5,6 +5,7 @@ This module provides:
 - Optional integration with a trained ML model (Phase 2).
 - A recalculate_predictions(...) function used by management commands
   and API views to refresh FutureSkillPrediction records.
+- Prediction logging for long-term monitoring and drift detection.
 
 ⚠️ IMPORTANT:
 - The public API of this module is recalculate_predictions(...) and
@@ -13,7 +14,9 @@ This module provides:
 
 from __future__ import annotations
 
+import json
 import logging
+from datetime import datetime
 from typing import Tuple, Dict, Any
 
 from django.conf import settings
@@ -40,6 +43,63 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Prediction Logging for Drift Detection
+# ---------------------------------------------------------------------------
+
+
+def _log_prediction_for_monitoring(
+    job_role_id: int,
+    skill_id: int,
+    predicted_level: str,
+    score: float,
+    engine: str,
+    model_version: str = None,
+    features: Dict[str, float] = None,
+):
+    """
+    Log prediction details to a dedicated file for long-term monitoring.
+    
+    This enables:
+    - Data drift detection (comparing feature distributions over time)
+    - Model performance tracking
+    - Comparison between predictions and actual HR decisions
+    
+    Logs are anonymized (using IDs instead of names) and stored in JSON format.
+    """
+    # Only log if monitoring is enabled (default: True)
+    if not getattr(settings, 'FUTURE_SKILLS_ENABLE_MONITORING', True):
+        return
+    
+    log_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "job_role_id": job_role_id,
+        "skill_id": skill_id,
+        "predicted_level": predicted_level,
+        "score": round(score, 2),
+        "engine": engine,
+        "model_version": model_version,
+        "features": features or {},
+    }
+    
+    # Write to monitoring log file
+    try:
+        monitoring_log_path = getattr(
+            settings, 
+            'FUTURE_SKILLS_MONITORING_LOG',
+            settings.BASE_DIR / "logs" / "predictions_monitoring.jsonl"
+        )
+        
+        # Ensure logs directory exists
+        monitoring_log_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(monitoring_log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(log_entry) + '\n')
+    
+    except Exception as exc:
+        logger.warning(f"Failed to write monitoring log: {exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -302,6 +362,22 @@ def recalculate_predictions(
                 defaults=defaults,
             )
             total_predictions += 1
+            
+            # Log prediction for monitoring and drift detection
+            _log_prediction_for_monitoring(
+                job_role_id=job.id,
+                skill_id=skill.id,
+                predicted_level=level,
+                score=score_0_100,
+                engine=engine_label,
+                model_version=getattr(settings, "FUTURE_SKILLS_MODEL_VERSION", None) if use_ml_effective else None,
+                features={
+                    "trend_score": trend_score,
+                    "internal_usage": internal_usage,
+                    "training_requests": training_requests,
+                    "scarcity_index": scarcity_index,
+                }
+            )
 
     # Build parameters for PredictionRun
     params: Dict[str, Any] = parameters.copy() if isinstance(parameters, dict) else {}
