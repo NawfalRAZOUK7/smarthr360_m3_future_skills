@@ -173,7 +173,6 @@ class TestDataPipelineFlow:
         assert sample_skill.name not in remove_response.data['skills']
 
 
-@pytest.mark.skip(reason="PredictionEngine class not yet available as importable class")
 @pytest.mark.django_db
 @pytest.mark.integration
 @pytest.mark.ml

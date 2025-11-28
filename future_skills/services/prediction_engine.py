@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Tuple, Dict, Any
 
 from django.conf import settings
@@ -43,6 +44,172 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Unified Prediction Engine Class (Section 5.1)
+# ---------------------------------------------------------------------------
+
+
+class PredictionEngine:
+    """
+    Unified prediction engine that can use either rules-based or ML models.
+    
+    Usage:
+        engine = PredictionEngine()
+        predictions = engine.predict(job_role_id, skill_id, horizon_years)
+    """
+    
+    def __init__(self, use_ml=None, model_path=None):
+        """
+        Initialize the prediction engine.
+        
+        Args:
+            use_ml: If True, use ML model. If None, use settings.FUTURE_SKILLS_USE_ML
+            model_path: Path to ML model file. If None, use settings.FUTURE_SKILLS_MODEL_PATH
+        """
+        self.use_ml = use_ml if use_ml is not None else getattr(settings, 'FUTURE_SKILLS_USE_ML', False)
+        self.model_path = model_path or getattr(settings, 'FUTURE_SKILLS_MODEL_PATH', None)
+        self.model = None
+        self.explanation_engine = None
+        
+        if self.use_ml:
+            self._load_model()
+    
+    def _load_model(self):
+        """Load the ML model from disk."""
+        if not self.model_path or not Path(self.model_path).exists():
+            logger.warning(f"ML model not found at {self.model_path}. Using rules-based engine.")
+            self.use_ml = False
+            return
+        
+        try:
+            self.model = FutureSkillsModel.load(self.model_path)
+            logger.info(f"ML model loaded successfully from {self.model_path}")
+            
+            if EXPLANATION_ENGINE_AVAILABLE:
+                self.explanation_engine = ExplanationEngine(self.model)
+                logger.info("Explanation engine initialized")
+        except Exception as e:
+            logger.error(f"Failed to load ML model: {e}. Falling back to rules-based engine.")
+            self.use_ml = False
+    
+    def predict(self, job_role_id: int, skill_id: int, horizon_years: int) -> Tuple[float, str, str, Dict]:
+        """
+        Generate a prediction for a given job role, skill, and horizon.
+        
+        Args:
+            job_role_id: ID of the JobRole
+            skill_id: ID of the Skill
+            horizon_years: Prediction horizon in years
+        
+        Returns:
+            Tuple of (score, level, rationale, explanation)
+        """
+        if self.use_ml and self.model:
+            return self._predict_ml(job_role_id, skill_id, horizon_years)
+        else:
+            return self._predict_rules(job_role_id, skill_id, horizon_years)
+    
+    def _predict_ml(self, job_role_id, skill_id, horizon_years):
+        """Use ML model for prediction."""
+        # Get job role and skill objects
+        job_role = JobRole.objects.get(pk=job_role_id)
+        skill = Skill.objects.get(pk=skill_id)
+        
+        # Extract features using existing helper functions
+        trend_score = _find_relevant_trend(job_role, skill)
+        internal_usage = _estimate_internal_usage(job_role, skill)
+        training_requests = _estimate_training_requests(job_role, skill)
+        scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
+        
+        # Get prediction from ML model
+        level, score = self.model.predict_level(
+            job_role_name=job_role.name,
+            skill_name=skill.name,
+            trend_score=trend_score,
+            internal_usage=internal_usage,
+            training_requests=training_requests,
+            scarcity_index=scarcity_index,
+        )
+        
+        rationale = f"ML prediction based on {horizon_years}-year horizon"
+        
+        # Generate explanation
+        explanation = {}
+        if self.explanation_engine:
+            try:
+                explanation = self.explanation_engine.generate_explanation(
+                    job_role_name=job_role.name,
+                    skill_name=skill.name,
+                    trend_score=trend_score,
+                    internal_usage=internal_usage,
+                    training_requests=training_requests,
+                    scarcity_index=scarcity_index,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to generate explanation: {e}")
+        
+        return score, level, rationale, explanation
+    
+    def _predict_rules(self, job_role_id, skill_id, horizon_years):
+        """Use rules-based engine for prediction."""
+        # Get job role and skill objects
+        job_role = JobRole.objects.get(pk=job_role_id)
+        skill = Skill.objects.get(pk=skill_id)
+        
+        # Extract features using existing helper functions
+        trend_score = _find_relevant_trend(job_role, skill)
+        internal_usage = _estimate_internal_usage(job_role, skill)
+        training_requests = _estimate_training_requests(job_role, skill)
+        scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
+        
+        # Use rules-based engine
+        level, score = calculate_level(
+            trend_score=trend_score,
+            internal_usage=internal_usage,
+            training_requests=training_requests,
+        )
+        
+        rationale = (
+            f"Prédiction basée sur les tendances marché (score={trend_score:.2f}), "
+            f"l'utilisation interne estimée (score={internal_usage:.2f}), "
+            f"les demandes de formation (~{training_requests:.1f}) "
+            f"et l'indice de rareté (~{scarcity_index:.2f}). "
+            f"Moteur utilisé : rules_v1."
+        )
+        explanation = {}
+        
+        return score, level, rationale, explanation
+    
+    def batch_predict(self, predictions_data: list) -> list:
+        """
+        Generate predictions for multiple job_role/skill/horizon combinations.
+        
+        Args:
+            predictions_data: List of dicts with keys: job_role_id, skill_id, horizon_years
+        
+        Returns:
+            List of prediction results
+        """
+        results = []
+        for data in predictions_data:
+            score, level, rationale, explanation = self.predict(
+                data['job_role_id'],
+                data['skill_id'],
+                data['horizon_years']
+            )
+            results.append({
+                'job_role_id': data['job_role_id'],
+                'skill_id': data['skill_id'],
+                'horizon_years': data['horizon_years'],
+                'score': score,
+                'level': level,
+                'rationale': rationale,
+                'explanation': explanation
+            })
+        
+        return results
 
 
 # ---------------------------------------------------------------------------
