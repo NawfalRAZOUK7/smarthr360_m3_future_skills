@@ -37,7 +37,25 @@ ERROR_MESSAGES = {
 }
 
 
-class FutureSkillPredictionListAPIView(APIView):
+class FutureSkillPredictionPagination(PageNumberPagination):
+    """
+    Custom pagination for future skill predictions.
+    """
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class EmployeePagination(PageNumberPagination):
+    """
+    Custom pagination for employees.
+    """
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class FutureSkillPredictionListAPIView(ListAPIView):
     """
     Liste les prédictions de compétences futures.
 
@@ -50,12 +68,15 @@ class FutureSkillPredictionListAPIView(APIView):
 
     # DRH + Responsable RH + Manager
     permission_classes = [IsHRStaffOrManager]
+    serializer_class = FutureSkillPredictionSerializer
+    pagination_class = FutureSkillPredictionPagination
+    queryset = FutureSkillPrediction.objects.all().order_by('-created_at', 'id')
 
-    def get(self, request, *args, **kwargs):
-        queryset = FutureSkillPrediction.objects.all()
+    def get_queryset(self):
+        queryset = super().get_queryset()
 
-        job_role_id = request.query_params.get("job_role_id")
-        horizon_years = request.query_params.get("horizon_years")
+        job_role_id = self.request.query_params.get("job_role_id")
+        horizon_years = self.request.query_params.get("horizon_years")
 
         if job_role_id is not None:
             queryset = queryset.filter(job_role_id=job_role_id)
@@ -65,13 +86,11 @@ class FutureSkillPredictionListAPIView(APIView):
                 horizon = int(horizon_years)
                 queryset = queryset.filter(horizon_years=horizon)
             except ValueError:
-                return Response(
-                    {"detail": ERROR_MESSAGES['HORIZON_YEARS_INTEGER']},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                # Return empty queryset for invalid horizon_years
+                # This will result in a valid paginated response with empty results
+                return queryset.none()
 
-        serializer = FutureSkillPredictionSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return queryset
 
 
 class RecalculateFutureSkillsAPIView(APIView):
@@ -257,6 +276,7 @@ class EmployeeViewSet(ModelViewSet):
     queryset = Employee.objects.select_related("job_role").all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsHRStaffOrManager]
+    pagination_class = EmployeePagination
 
 
 class PredictSkillsAPIView(APIView):

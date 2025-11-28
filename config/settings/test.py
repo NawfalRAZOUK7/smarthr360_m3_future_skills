@@ -57,6 +57,13 @@ FUTURE_SKILLS_ENABLE_MONITORING = False  # Disable monitoring in tests
 # CORS - allow all for tests
 CORS_ALLOW_ALL_ORIGINS = True
 
+# REST Framework settings for tests
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # inherit from base
+    'PAGE_SIZE': 10,
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+}
+
 # Security settings - relaxed for tests
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
