@@ -34,7 +34,10 @@ help:
 	@echo "  make test-integration     Run integration tests"
 	@echo "  make test-e2e             Run end-to-end tests"
 	@echo "  make test-fast            Run fast tests (exclude slow)"
-	@echo "  make test-ml              Run ML-specific tests"
+	@echo "  make test-ml              Run all ML tests with coverage"
+	@echo "  make test-ml-slow         Run slow ML tests (performance tests)"
+	@echo "  make test-ml-unit         Run ML unit tests only"
+	@echo "  make test-ml-integration  Run ML integration tests only"
 	@echo "  make test-api             Run API tests"
 	@echo "  make test-failed          Re-run last failed tests"
 	@echo "  make coverage             Generate detailed coverage report"
@@ -134,7 +137,19 @@ test-fast:
 
 test-ml:
 	@echo "$(BLUE)🧪 Running ML tests...$(NC)"
-	pytest -v -m "ml"
+	pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills.services.prediction_engine --cov=ml --cov-report=html --cov-report=term-missing
+
+test-ml-slow:
+	@echo "$(BLUE)🧪 Running slow ML tests...$(NC)"
+	pytest ml/tests/ tests/integration/test_ml_integration.py -v -m slow --cov=future_skills.services.prediction_engine --cov=ml --cov-report=term-missing
+
+test-ml-unit:
+	@echo "$(BLUE)🧪 Running ML unit tests only...$(NC)"
+	pytest ml/tests/ -v --cov=ml --cov-report=term-missing
+
+test-ml-integration:
+	@echo "$(BLUE)🧪 Running ML integration tests only...$(NC)"
+	pytest tests/integration/test_ml_integration.py -v --cov=future_skills.services.prediction_engine --cov-report=term-missing
 
 test-api:
 	@echo "$(BLUE)🧪 Running API tests...$(NC)"
