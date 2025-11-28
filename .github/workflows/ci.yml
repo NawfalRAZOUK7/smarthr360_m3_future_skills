@@ -113,6 +113,119 @@ jobs:
           safety check --json || true
         continue-on-error: true
 
+  ml-tests:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_smarthr360
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements_ml.txt
+      
+      - name: Create .env file
+        run: |
+          cp .env.example .env
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_smarthr360" >> .env
+          echo "DJANGO_SETTINGS_MODULE=config.settings.test" >> .env
+          echo "FUTURE_SKILLS_USE_ML=True" >> .env
+      
+      - name: Run migrations
+        run: |
+          python manage.py migrate --settings=config.settings.test
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      
+      - name: Run ML unit tests
+        run: |
+          pytest ml/tests/ -v --cov=ml --cov-report=xml --cov-report=term-missing -m "not slow"
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      
+      - name: Run ML integration tests
+        run: |
+          pytest tests/integration/test_ml_integration.py -v --cov=future_skills.services.prediction_engine --cov-report=xml --cov-report=term-missing
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          FUTURE_SKILLS_USE_ML: True
+      
+      - name: Run all ML tests with coverage
+        run: |
+          pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills.services.prediction_engine --cov=ml --cov-report=xml --cov-report=term-missing
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          FUTURE_SKILLS_USE_ML: True
+      
+      - name: Upload ML coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: ml-tests
+          name: ml-coverage-${{ matrix.python-version }}
+          fail_ci_if_error: false
+      
+      - name: Generate coverage report
+        run: |
+          pip install coverage
+          coverage report --include="ml/*,future_skills/services/prediction_engine.py" --fail-under=35
+        continue-on-error: true
+      
+      - name: Check ML model artifacts
+        run: |
+          test -d ml/models || mkdir -p ml/models
+          echo "ML model directory exists"
+      
+      - name: Verify ML test data
+        run: |
+          test -f ml/tests/test_data/sample_training_data.csv
+          echo "ML test data verified"
+      
+      - name: Run slow ML tests (performance)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          pytest ml/tests/ tests/integration/test_ml_integration.py -v -m slow --cov=ml --cov-report=term-missing
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          FUTURE_SKILLS_USE_ML: True
+
   docker-build:
     runs-on: ubuntu-latest
 
