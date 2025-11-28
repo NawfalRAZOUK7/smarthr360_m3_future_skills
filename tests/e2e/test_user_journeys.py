@@ -99,7 +99,10 @@ class TestSkillManagementJourney:
         response = admin_client.get(predictions_url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert isinstance(response.data, list)
+        # Handle paginated response
+        data = response.data
+        results = data.get('results', data) if isinstance(data, dict) else data
+        assert isinstance(results, list)
 
         # Step 4: Check HR recommendations
         recommendations_url = reverse('hr-investment-recommendations-list')
