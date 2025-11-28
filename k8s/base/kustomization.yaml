@@ -1,0 +1,51 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: smarthr360
+
+resources:
+  - 00-namespace.yaml
+  - 01-configmap.yaml
+  - 02-secrets.yaml
+  - 03-persistent-volumes.yaml
+  - 10-postgres.yaml
+  - 11-redis.yaml
+  - 20-api-deployment.yaml
+  - 21-celery-worker.yaml
+  - 22-celery-beat.yaml
+  - 30-ingress.yaml
+  - 40-hpa.yaml
+  - 50-network-policies.yaml
+  - 60-rbac-pdb.yaml
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: smarthr360
+  app.kubernetes.io/managed-by: kustomize
+
+# Images to be patched by overlays
+images:
+  - name: smarthr360-api
+    newName: your-registry/smarthr360
+    newTag: latest
+  - name: smarthr360-celery
+    newName: your-registry/smarthr360-celery
+    newTag: latest
+  - name: smarthr360-nginx
+    newName: your-registry/smarthr360-nginx
+    newTag: latest
+
+# ConfigMap generator for environment-specific configs
+configMapGenerator:
+  - name: smarthr360-config
+    behavior: merge
+    literals:
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - LOG_LEVEL=INFO
+
+# Secret generator (values will be overridden by overlays)
+secretGenerator:
+  - name: smarthr360-secrets
+    behavior: replace
+    envs:
+      - secrets.env

@@ -66,17 +66,14 @@ jobs:
       - name: Run linting - Black
         run: |
           black --check --diff .
-        continue-on-error: true
 
       - name: Run linting - Flake8
         run: |
           flake8 future_skills/ config/ ml/ --max-line-length=120 --exclude=migrations,__pycache__,.venv
-        continue-on-error: true
 
       - name: Run linting - isort
         run: |
           isort --check-only --diff .
-        continue-on-error: true
 
       - name: Run tests with coverage
         run: |
