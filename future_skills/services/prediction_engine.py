@@ -54,16 +54,16 @@ logger = logging.getLogger(__name__)
 class PredictionEngine:
     """
     Unified prediction engine that can use either rules-based or ML models.
-    
+
     Usage:
         engine = PredictionEngine()
         predictions = engine.predict(job_role_id, skill_id, horizon_years)
     """
-    
+
     def __init__(self, use_ml=None, model_path=None):
         """
         Initialize the prediction engine.
-        
+
         Args:
             use_ml: If True, use ML model. If None, use settings.FUTURE_SKILLS_USE_ML
             model_path: Path to ML model file. If None, use settings.FUTURE_SKILLS_MODEL_PATH
@@ -72,37 +72,36 @@ class PredictionEngine:
         self.model_path = model_path or getattr(settings, 'FUTURE_SKILLS_MODEL_PATH', None)
         self.model = None
         self.explanation_engine = None
-        
+
         if self.use_ml:
             self._load_model()
-    
+
     def _load_model(self):
-        """Load the ML model from disk."""
-        if not self.model_path or not Path(self.model_path).exists():
-            logger.warning(f"ML model not found at {self.model_path}. Using rules-based engine.")
-            self.use_ml = False
-            return
-        
+        """Load the ML model using FutureSkillsModel.instance()."""
         try:
-            self.model = FutureSkillsModel.load(self.model_path)
-            logger.info(f"ML model loaded successfully from {self.model_path}")
-            
-            if EXPLANATION_ENGINE_AVAILABLE:
-                self.explanation_engine = ExplanationEngine(self.model)
-                logger.info("Explanation engine initialized")
+            self.model = FutureSkillsModel.instance()
+            if self.model.is_available():
+                logger.info("ML model loaded successfully")
+
+                if EXPLANATION_ENGINE_AVAILABLE:
+                    self.explanation_engine = ExplanationEngine(self.model)
+                    logger.info("Explanation engine initialized")
+            else:
+                logger.warning("ML model not available. Using rules-based engine.")
+                self.use_ml = False
         except Exception as e:
             logger.error(f"Failed to load ML model: {e}. Falling back to rules-based engine.")
             self.use_ml = False
-    
+
     def predict(self, job_role_id: int, skill_id: int, horizon_years: int) -> Tuple[float, str, str, Dict]:
         """
         Generate a prediction for a given job role, skill, and horizon.
-        
+
         Args:
             job_role_id: ID of the JobRole
             skill_id: ID of the Skill
             horizon_years: Prediction horizon in years
-        
+
         Returns:
             Tuple of (score, level, rationale, explanation)
         """
@@ -110,19 +109,19 @@ class PredictionEngine:
             return self._predict_ml(job_role_id, skill_id, horizon_years)
         else:
             return self._predict_rules(job_role_id, skill_id, horizon_years)
-    
+
     def _predict_ml(self, job_role_id, skill_id, horizon_years):
         """Use ML model for prediction."""
         # Get job role and skill objects
         job_role = JobRole.objects.get(pk=job_role_id)
         skill = Skill.objects.get(pk=skill_id)
-        
+
         # Extract features using existing helper functions
         trend_score = _find_relevant_trend(job_role, skill)
         internal_usage = _estimate_internal_usage(job_role, skill)
         training_requests = _estimate_training_requests(job_role, skill)
         scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
-        
+
         # Get prediction from ML model
         level, score = self.model.predict_level(
             job_role_name=job_role.name,
@@ -132,9 +131,9 @@ class PredictionEngine:
             training_requests=training_requests,
             scarcity_index=scarcity_index,
         )
-        
+
         rationale = f"ML prediction based on {horizon_years}-year horizon"
-        
+
         # Generate explanation
         explanation = {}
         if self.explanation_engine:
@@ -149,28 +148,28 @@ class PredictionEngine:
                 )
             except Exception as e:
                 logger.warning(f"Failed to generate explanation: {e}")
-        
+
         return score, level, rationale, explanation
-    
+
     def _predict_rules(self, job_role_id, skill_id, horizon_years):
         """Use rules-based engine for prediction."""
         # Get job role and skill objects
         job_role = JobRole.objects.get(pk=job_role_id)
         skill = Skill.objects.get(pk=skill_id)
-        
+
         # Extract features using existing helper functions
         trend_score = _find_relevant_trend(job_role, skill)
         internal_usage = _estimate_internal_usage(job_role, skill)
         training_requests = _estimate_training_requests(job_role, skill)
         scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
-        
+
         # Use rules-based engine
         level, score = calculate_level(
             trend_score=trend_score,
             internal_usage=internal_usage,
             training_requests=training_requests,
         )
-        
+
         rationale = (
             f"Prédiction basée sur les tendances marché (score={trend_score:.2f}), "
             f"l'utilisation interne estimée (score={internal_usage:.2f}), "
@@ -179,16 +178,16 @@ class PredictionEngine:
             f"Moteur utilisé : rules_v1."
         )
         explanation = {}
-        
+
         return score, level, rationale, explanation
-    
+
     def batch_predict(self, predictions_data: list) -> list:
         """
         Generate predictions for multiple job_role/skill/horizon combinations.
-        
+
         Args:
             predictions_data: List of dicts with keys: job_role_id, skill_id, horizon_years
-        
+
         Returns:
             List of prediction results
         """
@@ -208,7 +207,7 @@ class PredictionEngine:
                 'rationale': rationale,
                 'explanation': explanation
             })
-        
+
         return results
 
 
@@ -228,18 +227,18 @@ def _log_prediction_for_monitoring(
 ):
     """
     Log prediction details to a dedicated file for long-term monitoring.
-    
+
     This enables:
     - Data drift detection (comparing feature distributions over time)
     - Model performance tracking
     - Comparison between predictions and actual HR decisions
-    
+
     Logs are anonymized (using IDs instead of names) and stored in JSON format.
     """
     # Only log if monitoring is enabled (default: True)
     if not getattr(settings, 'FUTURE_SKILLS_ENABLE_MONITORING', True):
         return
-    
+
     log_entry = {
         "timestamp": datetime.now().isoformat(),
         "job_role_id": job_role_id,
@@ -250,21 +249,21 @@ def _log_prediction_for_monitoring(
         "model_version": model_version,
         "features": features or {},
     }
-    
+
     # Write to monitoring log file
     try:
         monitoring_log_path = getattr(
-            settings, 
+            settings,
             'FUTURE_SKILLS_MONITORING_LOG',
             settings.BASE_DIR / "logs" / "predictions_monitoring.jsonl"
         )
-        
+
         # Ensure logs directory exists
         monitoring_log_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         with open(monitoring_log_path, 'a', encoding='utf-8') as f:
             f.write(json.dumps(log_entry) + '\n')
-    
+
     except Exception as exc:
         logger.warning(f"Failed to write monitoring log: {exc}")
 
@@ -387,17 +386,20 @@ def recalculate_predictions(
 ) -> int:
     """Recalculate all FutureSkillPrediction entries for all (JobRole, Skill).
 
+    Now uses PredictionEngine internally for unified prediction logic.
+
     Behaviour:
-    - If settings.FUTURE_SKILLS_USE_ML is True and the ML model is available,
-      use the trained ML pipeline (FutureSkillsModel) to predict (level, score).
-    - Otherwise, fall back to the simple rule-based engine (calculate_level).
+    - Creates a PredictionEngine instance that automatically detects whether
+      to use ML or rules-based predictions based on settings
+    - Uses batch_predict() for efficient processing of all predictions
+    - Maintains backward compatibility with existing function signature
 
     A PredictionRun is created to trace:
     - which engine was used (rules_v1 vs ml_random_forest_v1)
     - the horizon_years
     - who triggered the run (run_by)
     - optional parameters (trigger = api/management_command, etc.).
-    
+
     Args:
         horizon_years: Horizon de prédiction en années (défaut: 5)
         run_by: Utilisateur ayant déclenché le recalcul (optionnel)
@@ -410,148 +412,96 @@ def recalculate_predictions(
     logger.info("========================================")
     logger.info("🚀 Starting prediction recalculation...")
     logger.info("Horizon: %s years | Triggered by: %s", horizon_years, run_by or "system")
-    
-    total_predictions = 0
+
+    # Initialize PredictionEngine (auto-detects ML vs rules-based)
+    engine = PredictionEngine()
 
     job_roles = JobRole.objects.all()
     skills = Skill.objects.all()
-    
+
     logger.info("Dataset size: %s job roles × %s skills = %s combinations",
                 job_roles.count(), skills.count(), job_roles.count() * skills.count())
 
-    # Decide which engine to use
-    use_ml_flag = getattr(settings, "FUTURE_SKILLS_USE_ML", False)
-    ml_model = None
-    use_ml_effective = False
-
-    logger.info("Configuration: FUTURE_SKILLS_USE_ML=%s", use_ml_flag)
-    
-    if use_ml_flag:
-        ml_model = FutureSkillsModel.instance()
-        if ml_model.is_available():
-            use_ml_effective = True
-            logger.info("✅ ML model loaded and available for predictions")
-        else:
-            logger.warning(
-                "⚠️  FUTURE_SKILLS_USE_ML=True but ML model is not available. "
-                "Falling back to rule-based engine (rules_v1)."
-            )
-            logger.warning("Check that model file exists at: %s",
-                          getattr(settings, "FUTURE_SKILLS_MODEL_PATH", "N/A"))
-    else:
-        logger.info("Using rule-based engine as per configuration")
-
-    engine_label = "ml_random_forest_v1" if use_ml_effective else "rules_v1"
+    # Determine engine label for logging
+    engine_label = "ml_random_forest_v1" if engine.use_ml else "rules_v1"
     logger.info("🔧 Engine selected: %s", engine_label)
-    
-    # Initialize explanation engine if requested and available
-    explanation_engine = None
-    if generate_explanations and use_ml_effective and EXPLANATION_ENGINE_AVAILABLE:
-        try:
-            explanation_engine = ExplanationEngine(ml_model)
-            if explanation_engine.is_available():
-                logger.info("✅ Explanation engine initialized (SHAP)")
-            else:
-                logger.warning("⚠️  Explanation engine not available, skipping explanations")
-                explanation_engine = None
-        except Exception as exc:
-            logger.warning("⚠️  Failed to initialize explanation engine: %s", exc)
-            explanation_engine = None
-    elif generate_explanations and not use_ml_effective:
-        logger.warning("⚠️  Explanations only available with ML model, skipping")
-    elif generate_explanations and not EXPLANATION_ENGINE_AVAILABLE:
-        logger.warning("⚠️  Explanation engine not installed, skipping")
 
-    for job in job_roles:
+    # Prepare batch prediction data
+    predictions_data = []
+    for job_role in job_roles:
         for skill in skills:
-            trend_score = _find_relevant_trend(job, skill)
-            internal_usage = _estimate_internal_usage(job, skill)
-            training_requests = _estimate_training_requests(job, skill)
-            scarcity_index = _estimate_scarcity_index(job, skill, internal_usage)
+            predictions_data.append({
+                'job_role_id': job_role.id,
+                'skill_id': skill.id,
+                'horizon_years': horizon_years
+            })
 
-            if use_ml_effective:
-                # Use the trained ML model
-                level, score_0_100 = ml_model.predict_level(
-                    job_role_name=job.name,
-                    skill_name=skill.name,
-                    trend_score=trend_score,
-                    internal_usage=internal_usage,
-                    training_requests=training_requests,
-                    scarcity_index=scarcity_index,
-                )
-            else:
-                # Fallback to rule-based engine
-                level, score_0_100 = calculate_level(
-                    trend_score=trend_score,
-                    internal_usage=internal_usage,
-                    training_requests=training_requests,
-                )
+    logger.info("Prepared %s predictions for batch processing", len(predictions_data))
 
-            rationale = (
-                f"Prédiction basée sur les tendances marché (score={trend_score:.2f}), "
-                f"l'utilisation interne estimée (score={internal_usage:.2f}), "
-                f"les demandes de formation (~{training_requests:.1f}) "
-                f"et l'indice de rareté (~{scarcity_index:.2f}). "
-                f"Moteur utilisé : {engine_label}."
-            )
-            
-            # Generate explanation if requested and available
-            explanation_data = None
-            if explanation_engine is not None:
-                try:
-                    explanation_data = explanation_engine.generate_explanation(
-                        job_role_name=job.name,
-                        skill_name=skill.name,
-                        trend_score=trend_score,
-                        internal_usage=internal_usage,
-                        training_requests=training_requests,
-                        scarcity_index=scarcity_index,
-                    )
-                except Exception as exc:
-                    logger.warning(
-                        "Failed to generate explanation for %s × %s: %s",
-                        job.name, skill.name, exc
-                    )
+    # Use batch prediction for efficiency
+    results = engine.batch_predict(predictions_data)
 
-            defaults = {
-                "score": score_0_100,
-                "level": level,
-                "rationale": rationale,
+    total_predictions = 0
+
+    # Save results to database
+    for result in results:
+        job_role_id = result['job_role_id']
+        skill_id = result['skill_id']
+
+        score = result['score']
+        level = result['level']
+        rationale = result['rationale']
+        explanation = result['explanation']
+
+        # Get job role and skill objects for database operations
+        job_role = JobRole.objects.get(id=job_role_id)
+        skill = Skill.objects.get(id=skill_id)
+
+        defaults = {
+            "score": score,
+            "level": level,
+            "rationale": rationale,
+        }
+
+        if explanation:
+            defaults["explanation"] = explanation
+
+        FutureSkillPrediction.objects.update_or_create(
+            job_role=job_role,
+            skill=skill,
+            horizon_years=horizon_years,
+            defaults=defaults,
+        )
+        total_predictions += 1
+
+        # Extract features for monitoring (reconstruct from prediction flow)
+        trend_score = _find_relevant_trend(job_role, skill)
+        internal_usage = _estimate_internal_usage(job_role, skill)
+        training_requests = _estimate_training_requests(job_role, skill)
+        scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
+
+        # Log prediction for monitoring and drift detection
+        _log_prediction_for_monitoring(
+            job_role_id=job_role.id,
+            skill_id=skill.id,
+            predicted_level=level,
+            score=score,
+            engine=engine_label,
+            model_version=getattr(settings, "FUTURE_SKILLS_MODEL_VERSION", None) if engine.use_ml else None,
+            features={
+                "trend_score": trend_score,
+                "internal_usage": internal_usage,
+                "training_requests": training_requests,
+                "scarcity_index": scarcity_index,
             }
-            
-            if explanation_data is not None:
-                defaults["explanation"] = explanation_data
-
-            FutureSkillPrediction.objects.update_or_create(
-                job_role=job,
-                skill=skill,
-                horizon_years=horizon_years,
-                defaults=defaults,
-            )
-            total_predictions += 1
-            
-            # Log prediction for monitoring and drift detection
-            _log_prediction_for_monitoring(
-                job_role_id=job.id,
-                skill_id=skill.id,
-                predicted_level=level,
-                score=score_0_100,
-                engine=engine_label,
-                model_version=getattr(settings, "FUTURE_SKILLS_MODEL_VERSION", None) if use_ml_effective else None,
-                features={
-                    "trend_score": trend_score,
-                    "internal_usage": internal_usage,
-                    "training_requests": training_requests,
-                    "scarcity_index": scarcity_index,
-                }
-            )
+        )
 
     # Build parameters for PredictionRun
     params: Dict[str, Any] = parameters.copy() if isinstance(parameters, dict) else {}
     params["engine"] = engine_label  # always reflect the engine actually used
     params.setdefault("horizon_years", horizon_years)
 
-    if use_ml_effective:
+    if engine.use_ml:
         params["model_version"] = getattr(
             settings,
             "FUTURE_SKILLS_MODEL_VERSION",
@@ -571,10 +521,12 @@ def recalculate_predictions(
         run_by=run_by,
         parameters=params,
     )
-    
+
     logger.info("✅ Prediction recalculation completed successfully")
     logger.info("Total predictions created/updated: %s", total_predictions)
     logger.info("Engine used: %s | Horizon: %s years", engine_label, horizon_years)
     logger.info("========================================")
+
+    return total_predictions
 
     return total_predictions
