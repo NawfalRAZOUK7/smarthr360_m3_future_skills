@@ -1,6 +1,7 @@
 # Feature 4 — Employee Skill Management
 
 ## Overview
+
 Feature 4 implements comprehensive skill management for employees, allowing HR staff to track, add, and remove skills from employee profiles.
 
 ## Two Implementation Approaches
@@ -8,6 +9,7 @@ Feature 4 implements comprehensive skill management for employees, allowing HR s
 The system now supports **both** approaches simultaneously:
 
 ### 1. JSONField Approach (Original - `current_skills`)
+
 - **Field**: `Employee.current_skills` (JSONField)
 - **Storage**: Skills stored as list of strings `["Python", "Django", "React"]`
 - **Pros**:
@@ -17,6 +19,7 @@ The system now supports **both** approaches simultaneously:
   - Good for prototyping
 
 ### 2. ManyToMany Approach (Advanced - `skills`)
+
 - **Field**: `Employee.skills` (ManyToManyField)
 - **Storage**: Normalized relationship with intermediate table
 - **Pros**:
@@ -31,6 +34,7 @@ The system now supports **both** approaches simultaneously:
 All three endpoints work with the ManyToMany approach:
 
 ### Add Skill to Employee
+
 ```http
 POST /api/employees/{id}/add-skill/
 Content-Type: application/json
@@ -41,6 +45,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Skill \"Python\" added successfully",
@@ -49,6 +54,7 @@ Content-Type: application/json
 ```
 
 ### Remove Skill from Employee
+
 ```http
 POST /api/employees/{id}/remove-skill/
 Content-Type: application/json
@@ -59,6 +65,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Skill \"Python\" removed successfully",
@@ -67,6 +74,7 @@ Content-Type: application/json
 ```
 
 ### Update All Employee Skills
+
 ```http
 PUT /api/employees/{id}/skills/
 Content-Type: application/json
@@ -77,6 +85,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Skills updated successfully",
@@ -87,17 +96,18 @@ Content-Type: application/json
 ## Implementation Details
 
 ### Models (Section 4.5)
+
 ```python
 class Employee(models.Model):
     # ... existing fields ...
-    
+
     # Option A: JSONField (simple)
     current_skills = models.JSONField(
         default=list,
         blank=True,
         help_text="Liste des compétences actuelles de l'employé"
     )
-    
+
     # Option B: ManyToMany (advanced, normalized)
     skills = models.ManyToManyField(
         Skill,
@@ -110,15 +120,16 @@ class Employee(models.Model):
 ### ViewSet Actions (Sections 4.2 & 4.5)
 
 #### Add Skill
+
 ```python
 @action(detail=True, methods=['post'], url_path='add-skill')
 def add_skill(self, request, pk=None):
     employee = self.get_object()
     skill = Skill.objects.get(pk=skill_id)
-    
+
     if skill not in employee.skills.all():
         employee.skills.add(skill)  # ManyToMany method
-    
+
     return Response({
         'message': f'Skill "{skill.name}" added successfully',
         'skills': [s.name for s in employee.skills.all()]
@@ -126,15 +137,16 @@ def add_skill(self, request, pk=None):
 ```
 
 #### Remove Skill
+
 ```python
 @action(detail=True, methods=['post'], url_path='remove-skill')
 def remove_skill(self, request, pk=None):
     employee = self.get_object()
     skill = Skill.objects.get(pk=skill_id)
-    
+
     if skill in employee.skills.all():
         employee.skills.remove(skill)  # ManyToMany method
-    
+
     return Response({
         'message': f'Skill "{skill.name}" removed successfully',
         'skills': [s.name for s in employee.skills.all()]
@@ -142,15 +154,16 @@ def remove_skill(self, request, pk=None):
 ```
 
 #### Update Skills
+
 ```python
 @action(detail=True, methods=['put'], url_path='skills')
 def update_skills(self, request, pk=None):
     employee = self.get_object()
     skill_ids = request.data.get('skill_ids', [])
-    
+
     skills = Skill.objects.filter(id__in=skill_ids)
     employee.skills.set(skills)  # ManyToMany method (replaces all)
-    
+
     return Response({
         'message': 'Skills updated successfully',
         'skills': [s.name for s in employee.skills.all()]
@@ -166,6 +179,7 @@ router.register(r"employees", EmployeeViewSet, basename="employee")
 ```
 
 **Generated URL names:**
+
 - `employee-list`: `/api/employees/`
 - `employee-detail`: `/api/employees/{id}/`
 - `employee-add-skill`: `/api/employees/{id}/add-skill/`
@@ -175,6 +189,7 @@ router.register(r"employees", EmployeeViewSet, basename="employee")
 ## Serializers (Section 4.1)
 
 ### AddSkillToEmployeeSerializer
+
 ```python
 class AddSkillToEmployeeSerializer(serializers.Serializer):
     skill_id = serializers.IntegerField()
@@ -186,12 +201,14 @@ class AddSkillToEmployeeSerializer(serializers.Serializer):
 ```
 
 ### RemoveSkillFromEmployeeSerializer
+
 ```python
 class RemoveSkillFromEmployeeSerializer(serializers.Serializer):
     skill_id = serializers.IntegerField()
 ```
 
 ### UpdateEmployeeSkillsSerializer
+
 ```python
 class UpdateEmployeeSkillsSerializer(serializers.Serializer):
     current_skills = serializers.ListField(
@@ -209,18 +226,18 @@ def test_skill_tracking_flow(admin_client, sample_employee, sample_skill):
     url = reverse('employee-add-skill', kwargs={'pk': sample_employee.id})
     data = {'skill_id': sample_skill.id}
     response = admin_client.post(url, data, format='json')
-    
+
     assert response.status_code == 200
     assert sample_skill.name in response.data['skills']
-    
+
     # Verify persistence
     sample_employee.refresh_from_db()
     assert sample_skill in sample_employee.skills.all()
-    
+
     # Remove skill
     remove_url = reverse('employee-remove-skill', kwargs={'pk': sample_employee.id})
     remove_response = admin_client.post(remove_url, data, format='json')
-    
+
     assert remove_response.status_code == 200
     assert sample_skill.name not in remove_response.data['skills']
 ```
@@ -236,6 +253,7 @@ python manage.py migrate
 ```
 
 **Migration 0009_employee_skills:**
+
 - Creates `future_skills_employee_skills` intermediate table
 - Columns: `id`, `employee_id`, `skill_id`
 - Indexes on both foreign keys
@@ -243,6 +261,7 @@ python manage.py migrate
 ## Permissions
 
 All skill management endpoints require:
+
 - **Permission**: `IsHRStaffOrManager`
 - **Authentication**: Required (token or session)
 
@@ -303,12 +322,14 @@ response = requests.put(
 ## Recommendations
 
 ### When to use JSONField (`current_skills`)
+
 - Simple projects or prototypes
 - When skills are just display labels
 - No complex queries needed
 - Maximum flexibility
 
 ### When to use ManyToMany (`skills`)
+
 - Production applications
 - Need data integrity constraints
 - Complex queries (e.g., "find all employees with skill X")
@@ -323,18 +344,19 @@ The ManyToMany relationship can be extended with a through model:
 class EmployeeSkill(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
-    
+
     # Metadata
     proficiency_level = models.CharField(max_length=20)  # Beginner, Intermediate, Advanced
     acquired_date = models.DateField()
     certification = models.CharField(max_length=200, blank=True)
     years_experience = models.FloatField()
-    
+
     class Meta:
         unique_together = ('employee', 'skill')
 ```
 
 Then update the model:
+
 ```python
 class Employee(models.Model):
     skills = models.ManyToManyField(

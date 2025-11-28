@@ -352,21 +352,21 @@ class EmployeeViewSet(ModelViewSet):
         """
         employee = self.get_object()
         skill_ids = request.data.get('skill_ids', [])
-        
+
         if not isinstance(skill_ids, list):
             return Response(
-                {'error': 'skill_ids must be a list'}, 
+                {'error': 'skill_ids must be a list'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Validate all skill IDs exist
         skills = Skill.objects.filter(id__in=skill_ids)
         if skills.count() != len(skill_ids):
             return Response(
-                {'error': 'One or more invalid skill IDs'}, 
+                {'error': 'One or more invalid skill IDs'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Replace all skills using ManyToMany .set() method
         employee.skills.set(skills)
 
