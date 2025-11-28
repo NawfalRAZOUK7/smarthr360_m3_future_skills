@@ -8,20 +8,20 @@ This module provides:
 Usage:
     # Initialize engine
     engine = PredictionEngine()
-    
+
     # Single prediction
     score, level, rationale, explanation = engine.predict(
         job_role_id=1,
         skill_id=5,
         horizon_years=5
     )
-    
+
     # Batch prediction
     results = engine.batch_predict([
         {'job_role_id': 1, 'skill_id': 5, 'horizon_years': 5},
         {'job_role_id': 2, 'skill_id': 6, 'horizon_years': 3},
     ])
-    
+
     # Use in management command or API
     from future_skills.services.prediction_engine import recalculate_predictions
     total = recalculate_predictions(horizon_years=5)
