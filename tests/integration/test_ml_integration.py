@@ -24,12 +24,12 @@ class TestMLIntegration:
     def test_prediction_endpoint_uses_ml(self, authenticated_client, sample_employee, sample_future_skill_prediction, settings):
         """Test that prediction endpoint can use ML model."""
         settings.FUTURE_SKILLS_USE_ML = True
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         response = authenticated_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
         # Response might be empty if no predictions exist for employee's job role
         assert isinstance(response.data, list)
@@ -37,12 +37,12 @@ class TestMLIntegration:
     def test_prediction_endpoint_uses_rules(self, authenticated_client, sample_employee, sample_future_skill_prediction, settings):
         """Test that prediction endpoint works with rules-based engine."""
         settings.FUTURE_SKILLS_USE_ML = False
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         response = authenticated_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
         # Response might be empty if no predictions exist for employee's job role
         assert isinstance(response.data, list)
@@ -50,12 +50,12 @@ class TestMLIntegration:
     def test_recalculate_with_ml(self, admin_client, settings):
         """Test that recalculate endpoint works with ML."""
         settings.FUTURE_SKILLS_USE_ML = True
-        
+
         url = reverse('future-skills-recalculate')
         data = {'horizon_years': 5}
-        
+
         response = admin_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
         assert 'total_predictions' in response.data
         assert response.data['total_predictions'] >= 0
@@ -63,12 +63,12 @@ class TestMLIntegration:
     def test_recalculate_with_rules(self, admin_client, settings):
         """Test that recalculate endpoint works with rules-based engine."""
         settings.FUTURE_SKILLS_USE_ML = False
-        
+
         url = reverse('future-skills-recalculate')
         data = {'horizon_years': 5}
-        
+
         response = admin_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
         assert 'total_predictions' in response.data
         assert response.data['total_predictions'] >= 0
@@ -77,17 +77,17 @@ class TestMLIntegration:
         """Test switching between ML and rules-based predictions."""
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         # First request with ML
         settings.FUTURE_SKILLS_USE_ML = True
         response_ml = authenticated_client.post(url, data, format='json')
         assert response_ml.status_code == status.HTTP_200_OK
-        
+
         # Second request with rules
         settings.FUTURE_SKILLS_USE_ML = False
         response_rules = authenticated_client.post(url, data, format='json')
         assert response_rules.status_code == status.HTTP_200_OK
-        
+
         # Both should return valid list responses
         assert isinstance(response_ml.data, list)
         assert isinstance(response_rules.data, list)
@@ -102,14 +102,14 @@ class TestMLPredictionQuality:
     def test_ml_predictions_have_valid_scores(self, authenticated_client, sample_employee, settings):
         """Test that ML predictions return valid scores."""
         settings.FUTURE_SKILLS_USE_ML = True
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         response = authenticated_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Check each prediction has valid score
         if isinstance(response.data, list) and len(response.data) > 0:
             for prediction in response.data:
@@ -120,14 +120,14 @@ class TestMLPredictionQuality:
     def test_ml_predictions_have_levels(self, authenticated_client, sample_employee, settings):
         """Test that ML predictions return valid priority levels."""
         settings.FUTURE_SKILLS_USE_ML = True
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         response = authenticated_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
-        
+
         valid_levels = ['HIGH', 'MEDIUM', 'LOW']
         if isinstance(response.data, list) and len(response.data) > 0:
             for prediction in response.data:
@@ -137,17 +137,17 @@ class TestMLPredictionQuality:
     def test_ml_predictions_consistency(self, authenticated_client, sample_employee, settings):
         """Test that ML predictions are consistent for same input."""
         settings.FUTURE_SKILLS_USE_ML = True
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         # Make two identical requests
         response1 = authenticated_client.post(url, data, format='json')
         response2 = authenticated_client.post(url, data, format='json')
-        
+
         assert response1.status_code == status.HTTP_200_OK
         assert response2.status_code == status.HTTP_200_OK
-        
+
         # Predictions should be consistent (same length at minimum)
         assert len(response1.data) == len(response2.data)
 
@@ -161,20 +161,20 @@ class TestMLRecalculationIntegration:
     def test_recalculation_creates_predictions(self, admin_client, sample_job_role, sample_skill, settings):
         """Test that recalculation creates FutureSkillPrediction records."""
         from future_skills.models import FutureSkillPrediction
-        
+
         settings.FUTURE_SKILLS_USE_ML = False  # Use rules for predictability
-        
+
         # Clear existing predictions
         FutureSkillPrediction.objects.all().delete()
-        
+
         url = reverse('future-skills-recalculate')
         data = {'horizon_years': 5}
-        
+
         response = admin_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
         assert response.data['total_predictions'] > 0
-        
+
         # Verify predictions were created
         predictions = FutureSkillPrediction.objects.filter(horizon_years=5)
         assert predictions.exists()
@@ -183,37 +183,37 @@ class TestMLRecalculationIntegration:
     def test_recalculation_with_different_horizons(self, admin_client, settings):
         """Test recalculation with different horizon years."""
         settings.FUTURE_SKILLS_USE_ML = False
-        
+
         url = reverse('future-skills-recalculate')
-        
+
         # Test different horizons
         horizons = [3, 5, 7]
         for horizon in horizons:
             data = {'horizon_years': horizon}
             response = admin_client.post(url, data, format='json')
-            
+
             assert response.status_code == status.HTTP_200_OK
             assert 'total_predictions' in response.data
 
     def test_recalculation_updates_existing_predictions(self, admin_client, sample_future_skill_prediction, settings):
         """Test that recalculation updates existing predictions."""
         from future_skills.models import FutureSkillPrediction
-        
+
         settings.FUTURE_SKILLS_USE_ML = False
-        
+
         # Get initial prediction
         initial_prediction = FutureSkillPrediction.objects.get(
             id=sample_future_skill_prediction.id
         )
         initial_score = initial_prediction.score
-        
+
         url = reverse('future-skills-recalculate')
         data = {'horizon_years': sample_future_skill_prediction.horizon_years}
-        
+
         response = admin_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Prediction should still exist (updated, not duplicated)
         updated_prediction = FutureSkillPrediction.objects.get(
             job_role=sample_future_skill_prediction.job_role,
@@ -233,12 +233,12 @@ class TestMLErrorHandling:
         """Test that system handles missing ML model gracefully."""
         settings.FUTURE_SKILLS_USE_ML = True
         settings.FUTURE_SKILLS_MODEL_PATH = Path('/nonexistent/model.pkl')
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         response = authenticated_client.post(url, data, format='json')
-        
+
         # Should either succeed with fallback to rules or return meaningful error
         assert response.status_code in [
             status.HTTP_200_OK,  # Fallback to rules
@@ -248,12 +248,12 @@ class TestMLErrorHandling:
     def test_invalid_employee_id(self, authenticated_client, settings):
         """Test prediction with invalid employee ID."""
         settings.FUTURE_SKILLS_USE_ML = True
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': 99999}
-        
+
         response = authenticated_client.post(url, data, format='json')
-        
+
         assert response.status_code in [
             status.HTTP_400_BAD_REQUEST,
             status.HTTP_404_NOT_FOUND
@@ -262,12 +262,12 @@ class TestMLErrorHandling:
     def test_recalculate_with_invalid_horizon(self, admin_client, settings):
         """Test recalculation with invalid horizon years."""
         settings.FUTURE_SKILLS_USE_ML = False
-        
+
         url = reverse('future-skills-recalculate')
         data = {'horizon_years': -1}  # Invalid negative horizon
-        
+
         response = admin_client.post(url, data, format='json')
-        
+
         # Should return error for invalid input
         assert response.status_code in [
             status.HTTP_400_BAD_REQUEST,
@@ -285,16 +285,16 @@ class TestMLPerformanceIntegration:
     def test_batch_prediction_performance(self, authenticated_client, db, settings):
         """Test ML predictions for multiple employees."""
         from future_skills.models import Employee, JobRole
-        
+
         settings.FUTURE_SKILLS_USE_ML = False  # Use rules for speed
-        
+
         # Create a job role
         job_role = JobRole.objects.create(
             name='Software Engineer',
             department='Engineering',
             description='Develops software'
         )
-        
+
         # Create multiple employees
         employees = []
         for i in range(5):
@@ -307,16 +307,16 @@ class TestMLPerformanceIntegration:
                 current_skills=['Python', 'Django']
             )
             employees.append(employee)
-        
+
         url = reverse('futureskill-predict-skills')
-        
+
         # Make predictions for each employee
         responses = []
         for employee in employees:
             data = {'employee_id': employee.id}
             response = authenticated_client.post(url, data, format='json')
             responses.append(response)
-        
+
         # All should succeed
         for response in responses:
             assert response.status_code == status.HTTP_200_OK
@@ -324,16 +324,16 @@ class TestMLPerformanceIntegration:
     def test_concurrent_recalculations(self, admin_client, settings):
         """Test multiple recalculation requests."""
         settings.FUTURE_SKILLS_USE_ML = False
-        
+
         url = reverse('future-skills-recalculate')
         data = {'horizon_years': 5}
-        
+
         # Make multiple requests
         responses = []
         for _ in range(3):
             response = admin_client.post(url, data, format='json')
             responses.append(response)
-        
+
         # All should succeed
         for response in responses:
             assert response.status_code == status.HTTP_200_OK
@@ -352,14 +352,14 @@ class TestMLMonitoringIntegration:
         settings.FUTURE_SKILLS_ENABLE_MONITORING = True
         log_file = tmp_path / "predictions.jsonl"
         settings.FUTURE_SKILLS_MONITORING_LOG = log_file
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         response = authenticated_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Note: Logging happens at prediction engine level, not directly in view
         # This test verifies the integration doesn't break with monitoring enabled
 
@@ -367,10 +367,10 @@ class TestMLMonitoringIntegration:
         """Test that monitoring can be disabled without breaking predictions."""
         settings.FUTURE_SKILLS_USE_ML = False
         settings.FUTURE_SKILLS_ENABLE_MONITORING = False
-        
+
         url = reverse('futureskill-predict-skills')
         data = {'employee_id': sample_employee.id}
-        
+
         response = authenticated_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK

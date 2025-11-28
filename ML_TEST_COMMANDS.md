@@ -25,11 +25,13 @@ make test-ml-slow
 ### 1. Run All ML Tests (Recommended)
 
 **Command:**
+
 ```bash
 make test-ml
 ```
 
 **What it runs:**
+
 ```bash
 pytest -v -m ml \
   --cov=future_skills.services.prediction_engine \
@@ -39,6 +41,7 @@ pytest -v -m ml \
 ```
 
 **Includes:**
+
 - All 70 ML unit tests (ml/tests/)
 - All 18 ML integration tests (tests/integration/test_ml_integration.py)
 - **Total: 88 tests**
@@ -46,6 +49,7 @@ pytest -v -m ml \
 - HTML coverage report in `htmlcov/`
 
 **Expected Output:**
+
 ```
 88 passed in ~8.3s
 Coverage: 37%
@@ -56,11 +60,13 @@ Coverage: 37%
 ### 2. Run ML Unit Tests Only
 
 **Command:**
+
 ```bash
 make test-ml-unit
 ```
 
 **What it runs:**
+
 ```bash
 pytest ml/tests/ -v \
   --cov=ml \
@@ -68,12 +74,14 @@ pytest ml/tests/ -v \
 ```
 
 **Includes:**
+
 - test_model_training.py (32 tests)
 - test_prediction_quality.py (26 tests)
 - test_model_monitoring.py (12 tests)
 - **Total: 70 tests**
 
 **Expected Output:**
+
 ```
 70 passed in ~6.8s
 ```
@@ -83,11 +91,13 @@ pytest ml/tests/ -v \
 ### 3. Run ML Integration Tests Only
 
 **Command:**
+
 ```bash
 make test-ml-integration
 ```
 
 **What it runs:**
+
 ```bash
 pytest tests/integration/test_ml_integration.py -v \
   --cov=future_skills.services.prediction_engine \
@@ -95,6 +105,7 @@ pytest tests/integration/test_ml_integration.py -v \
 ```
 
 **Includes:**
+
 - TestMLIntegration (5 tests)
 - TestMLPredictionQuality (3 tests)
 - TestMLRecalculationIntegration (3 tests)
@@ -104,6 +115,7 @@ pytest tests/integration/test_ml_integration.py -v \
 - **Total: 18 tests**
 
 **Expected Output:**
+
 ```
 18 passed in ~3.1s
 ```
@@ -113,11 +125,13 @@ pytest tests/integration/test_ml_integration.py -v \
 ### 4. Run Slow ML Tests
 
 **Command:**
+
 ```bash
 make test-ml-slow
 ```
 
 **What it runs:**
+
 ```bash
 pytest -v -m "ml and slow" \
   --cov=future_skills.services.prediction_engine \
@@ -126,11 +140,13 @@ pytest -v -m "ml and slow" \
 ```
 
 **Includes:**
+
 - Performance tests (batch predictions, concurrent operations)
 - Tests marked with `@pytest.mark.slow`
 - Large dataset processing tests
 
 **Use Case:**
+
 - Pre-deployment performance validation
 - Performance regression testing
 - Not run in CI/CD by default
@@ -142,6 +158,7 @@ pytest -v -m "ml and slow" \
 For more control, use pytest directly:
 
 ### Run All ML Tests
+
 ```bash
 pytest -v -m ml \
   --cov=future_skills.services.prediction_engine \
@@ -151,6 +168,7 @@ pytest -v -m ml \
 ```
 
 ### Run Specific Test File
+
 ```bash
 # Training tests
 pytest ml/tests/test_model_training.py -v
@@ -166,6 +184,7 @@ pytest tests/integration/test_ml_integration.py -v
 ```
 
 ### Run Specific Test Class
+
 ```bash
 # Run all tests in TestModelTraining
 pytest ml/tests/test_model_training.py::TestModelTraining -v
@@ -175,6 +194,7 @@ pytest tests/integration/test_ml_integration.py::TestMLIntegration -v
 ```
 
 ### Run Specific Test Method
+
 ```bash
 # Run single test
 pytest ml/tests/test_model_training.py::TestModelTraining::test_train_model_success -v
@@ -184,6 +204,7 @@ pytest ml/tests/test_prediction_quality.py::TestPredictionQuality::test_predict_
 ```
 
 ### Run with Different Markers
+
 ```bash
 # Run only fast ML tests
 pytest -v -m "ml and not slow"
@@ -200,12 +221,14 @@ pytest -v -m "ml and api"
 ## Coverage Reports
 
 ### Generate HTML Coverage Report
+
 ```bash
 make test-ml
 # Open htmlcov/index.html in browser
 ```
 
 ### Generate JSON Coverage Report
+
 ```bash
 pytest -v -m ml \
   --cov=future_skills.services.prediction_engine \
@@ -215,6 +238,7 @@ pytest -v -m ml \
 ```
 
 ### View Coverage Summary
+
 ```bash
 pytest -v -m ml \
   --cov=future_skills.services.prediction_engine \
@@ -227,16 +251,19 @@ pytest -v -m ml \
 ## Test Filtering Examples
 
 ### Skip Slow Tests
+
 ```bash
 pytest ml/tests/ -v -m "not slow"
 ```
 
 ### Run Only Integration Tests
+
 ```bash
 pytest tests/integration/ -v -m integration
 ```
 
 ### Run Tests by Keyword
+
 ```bash
 # Run tests with "prediction" in name
 pytest ml/tests/ -v -k prediction
@@ -255,6 +282,7 @@ pytest ml/tests/ -v -k quality
 ### CI/CD Pipeline Commands
 
 **Fast CI (Pull Requests):**
+
 ```bash
 # Run fast ML tests only
 pytest -v -m "ml and not slow" \
@@ -264,6 +292,7 @@ pytest -v -m "ml and not slow" \
 ```
 
 **Full CI (Main Branch):**
+
 ```bash
 # Run all ML tests including slow
 pytest -v -m ml \
@@ -278,6 +307,7 @@ pytest -v -m ml \
 ## Troubleshooting
 
 ### Test Discovery Issues
+
 ```bash
 # List all ML tests without running
 pytest --collect-only -m ml
@@ -287,6 +317,7 @@ pytest --collect-only ml/tests/test_model_training.py
 ```
 
 ### Debug Mode
+
 ```bash
 # Run with print statements visible
 pytest ml/tests/ -v -s
@@ -296,6 +327,7 @@ pytest ml/tests/ -v --pdb
 ```
 
 ### Verbose Output
+
 ```bash
 # Maximum verbosity
 pytest ml/tests/ -vv
@@ -305,6 +337,7 @@ pytest ml/tests/ -v --tb=long
 ```
 
 ### Re-run Failed Tests
+
 ```bash
 # Run only last failed tests
 pytest --lf -v
@@ -319,20 +352,20 @@ pytest --ff -v
 
 ### Current Status (Feature 6 Complete)
 
-| Test Suite | Tests | Status | Time |
-|------------|-------|--------|------|
-| ML Unit Tests | 70 | ✅ 100% | ~6.8s |
-| ML Integration Tests | 18 | ✅ 100% | ~3.1s |
-| **Total ML Tests** | **88** | **✅ 100%** | **~8.3s** |
+| Test Suite           | Tests  | Status      | Time      |
+| -------------------- | ------ | ----------- | --------- |
+| ML Unit Tests        | 70     | ✅ 100%     | ~6.8s     |
+| ML Integration Tests | 18     | ✅ 100%     | ~3.1s     |
+| **Total ML Tests**   | **88** | **✅ 100%** | **~8.3s** |
 
 ### Coverage Metrics
 
-| Module | Coverage |
-|--------|----------|
-| ml.training_service | 85% |
-| ml.prediction_engine | 78% |
-| future_skills.services.prediction_engine | 28% |
-| **Overall ML Coverage** | **37%** |
+| Module                                   | Coverage |
+| ---------------------------------------- | -------- |
+| ml.training_service                      | 85%      |
+| ml.prediction_engine                     | 78%      |
+| future_skills.services.prediction_engine | 28%      |
+| **Overall ML Coverage**                  | **37%**  |
 
 ---
 

@@ -16,13 +16,17 @@ Quick commands and information for ML testing in CI/CD pipelines.
 ## What Runs When
 
 ### On Pull Request
+
 ✅ Fast ML tests (88 tests, ~8-10s)
+
 - ML unit tests (70 tests)
 - ML integration tests (18 tests)
 - Excludes slow performance tests
 
 ### On Push to Main
+
 ✅ All ML tests including slow (90 tests, ~15-20s)
+
 - All fast tests
 - Performance tests (2 tests)
 - Batch prediction benchmarks
@@ -63,6 +67,7 @@ pytest ml/tests/ tests/integration/test_ml_integration.py -v -m slow
 ## Environment Variables
 
 Required in CI:
+
 ```bash
 DJANGO_SETTINGS_MODULE=config.settings.test
 SECRET_KEY=${{ secrets.SECRET_KEY }}
@@ -77,7 +82,8 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_smarthr360
 **Minimum:** 35%  
 **Current:** 37%  
 **Modules:**
-- ml/* (all ML code)
+
+- ml/\* (all ML code)
 - future_skills/services/prediction_engine.py
 
 ---
@@ -85,11 +91,13 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_smarthr360
 ## Quick Debugging
 
 ### View logs
+
 ```
 GitHub → Actions → Failed workflow → ml-tests job → Failed step
 ```
 
 ### Reproduce locally
+
 ```bash
 export DJANGO_SETTINGS_MODULE=config.settings.test
 export FUTURE_SKILLS_USE_ML=True
@@ -97,6 +105,7 @@ pytest ml/tests/ tests/integration/test_ml_integration.py -v
 ```
 
 ### Check specific Python version
+
 ```bash
 pyenv install 3.11.7
 pyenv local 3.11.7
@@ -135,6 +144,7 @@ Add to README.md:
 ## Next Steps
 
 After setup:
+
 1. ✅ Push changes to trigger workflow
 2. ✅ Check Actions tab for results
 3. ✅ Add CODECOV_TOKEN secret (optional)
