@@ -1,0 +1,78 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: production
+  namespace: argocd
+spec:
+  description: SmartHR360 Production Project
+
+  sourceRepos:
+    - https://github.com/NawfalRAZOUK7/smarthr360_m3_future_skills.git
+
+  destinations:
+    - namespace: smarthr360
+      server: https://kubernetes.default.svc
+    - namespace: smarthr360-*
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: ""
+      kind: PersistentVolume
+    - group: networking.k8s.io
+      kind: IngressClass
+    - group: storage.k8s.io
+      kind: StorageClass
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Deny certain operations
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+
+  # Orphaned resources
+  orphanedResources:
+    warn: true
+
+  # Sync windows for production (maintenance windows)
+  syncWindows:
+    - kind: allow
+      schedule: "0 2-4 * * *" # Allow syncs between 2 AM - 4 AM
+      duration: 2h
+      applications:
+        - smarthr360-production
+      manualSync: true
+    - kind: deny
+      schedule: "0 8-18 * * 1-5" # Block syncs during business hours
+      duration: 10h
+      applications:
+        - smarthr360-production
+
+  roles:
+    - name: admin
+      description: Full admin access
+      policies:
+        - p, proj:production:admin, applications, *, production/*, allow
+      groups:
+        - prod-admins
+
+    - name: deployer
+      description: Can deploy but not delete
+      policies:
+        - p, proj:production:deployer, applications, sync, production/*, allow
+        - p, proj:production:deployer, applications, get, production/*, allow
+      groups:
+        - prod-deployers
+
+    - name: readonly
+      description: Read-only access
+      policies:
+        - p, proj:production:readonly, applications, get, production/*, allow
+      groups:
+        - prod-viewers

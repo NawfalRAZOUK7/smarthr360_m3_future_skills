@@ -1,0 +1,168 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: smarthr360
+
+bases:
+  - ../../base
+
+# Production environment labels
+commonLabels:
+  environment: production
+  app.kubernetes.io/environment: production
+
+# Production images (use specific version tags, never 'latest')
+images:
+  - name: smarthr360-api
+    newName: ghcr.io/nawfalrazouk7/smarthr360-api
+    # newTag will be set by CI/CD pipeline
+  - name: smarthr360-celery
+    newName: ghcr.io/nawfalrazouk7/smarthr360-celery
+    # newTag will be set by CI/CD pipeline
+  - name: smarthr360-nginx
+    newName: ghcr.io/nawfalrazouk7/smarthr360-nginx
+    # newTag will be set by CI/CD pipeline
+
+# Production configuration
+configMapGenerator:
+  - name: smarthr360-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=WARNING
+      - ALLOWED_HOSTS=smarthr360.com,api.smarthr360.com,www.smarthr360.com
+      - CORS_ALLOWED_ORIGINS=https://smarthr360.com,https://www.smarthr360.com
+      - FUTURE_SKILLS_USE_ML=true
+      - CELERY_TASK_ALWAYS_EAGER=false
+      - SECURE_SSL_REDIRECT=true
+      - SESSION_COOKIE_SECURE=true
+      - CSRF_COOKIE_SECURE=true
+
+# Production resource allocation
+patches:
+  - target:
+      kind: Deployment
+      name: smarthr360-api
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 1Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 500m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 2Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 1000m
+      # Add production-specific probes
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds
+        value: 60
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/initialDelaySeconds
+        value: 30
+
+  - target:
+      kind: Deployment
+      name: smarthr360-celery-worker
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 1Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 500m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 3Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 1500m
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: smarthr360-api-hpa
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 10
+      - op: replace
+        path: /spec/metrics/0/resource/target/averageUtilization
+        value: 70
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: smarthr360-celery-worker-hpa
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 8
+
+# Production ingress with strict security
+patchesStrategicMerge:
+  - ingress-patch.yaml
+
+# Full PVC sizes for production
+patchesJson6902:
+  - target:
+      version: v1
+      kind: PersistentVolumeClaim
+      name: postgres-pvc
+    patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 100Gi
+      - op: replace
+        path: /spec/storageClassName
+        value: fast-ssd
+
+  - target:
+      version: v1
+      kind: PersistentVolumeClaim
+      name: media-pvc
+    patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 50Gi
+
+  - target:
+      version: v1
+      kind: PersistentVolumeClaim
+      name: ml-models-pvc
+    patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 20Gi
+
+  - target:
+      version: v1
+      kind: PersistentVolumeClaim
+      name: logs-pvc
+    patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 30Gi
+
+# Production pod disruption budget
+- target:
+    kind: PodDisruptionBudget
+    name: smarthr360-api-pdb
+  patch: |-
+    - op: replace
+      path: /spec/minAvailable
+      value: 2

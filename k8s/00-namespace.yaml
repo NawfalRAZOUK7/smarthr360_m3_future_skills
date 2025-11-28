@@ -1,0 +1,11 @@
+# ==============================================================================
+# Namespace Configuration
+# ==============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smarthr360
+  labels:
+    name: smarthr360
+    environment: production
+    app: smarthr360-future-skills
