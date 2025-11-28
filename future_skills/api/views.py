@@ -288,82 +288,91 @@ class EmployeeViewSet(ModelViewSet):
     @action(detail=True, methods=['post'], url_path='add-skill')
     def add_skill(self, request, pk=None):
         """
-        Add a skill to an employee's current_skills list.
+        Add a skill to an employee's skills ManyToMany relationship.
         POST /api/employees/{id}/add-skill/
         Body: {"skill_id": 5}
         """
         employee = self.get_object()
         serializer = AddSkillToEmployeeSerializer(data=request.data)
-        
+
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         skill_id = serializer.validated_data['skill_id']
         skill = Skill.objects.get(pk=skill_id)
-        
-        # Add skill name to current_skills if not already present
-        if skill.name not in employee.current_skills:
-            employee.current_skills.append(skill.name)
-            employee.save()
+
+        # Add skill using ManyToMany .add() method
+        if skill not in employee.skills.all():
+            employee.skills.add(skill)
             return Response({
                 'message': f'Skill "{skill.name}" added successfully',
-                'current_skills': employee.current_skills
+                'skills': [s.name for s in employee.skills.all()]
             }, status=status.HTTP_200_OK)
         else:
             return Response({
                 'message': f'Skill "{skill.name}" already exists',
-                'current_skills': employee.current_skills
+                'skills': [s.name for s in employee.skills.all()]
             }, status=status.HTTP_200_OK)
-    
+
     @action(detail=True, methods=['post'], url_path='remove-skill')
     def remove_skill(self, request, pk=None):
         """
-        Remove a skill from an employee's current_skills list.
+        Remove a skill from an employee's skills ManyToMany relationship.
         POST /api/employees/{id}/remove-skill/
         Body: {"skill_id": 5}
         """
         employee = self.get_object()
         serializer = RemoveSkillFromEmployeeSerializer(data=request.data)
-        
+
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         skill_id = serializer.validated_data['skill_id']
         skill = Skill.objects.get(pk=skill_id)
-        
-        # Remove skill name from current_skills
-        if skill.name in employee.current_skills:
-            employee.current_skills.remove(skill.name)
-            employee.save()
+
+        # Remove skill using ManyToMany .remove() method
+        if skill in employee.skills.all():
+            employee.skills.remove(skill)
             return Response({
                 'message': f'Skill "{skill.name}" removed successfully',
-                'current_skills': employee.current_skills
+                'skills': [s.name for s in employee.skills.all()]
             }, status=status.HTTP_200_OK)
         else:
             return Response({
                 'message': f'Skill "{skill.name}" not found in employee skills',
-                'current_skills': employee.current_skills
+                'skills': [s.name for s in employee.skills.all()]
             }, status=status.HTTP_404_NOT_FOUND)
-    
+
     @action(detail=True, methods=['put'], url_path='skills')
     def update_skills(self, request, pk=None):
         """
-        Replace all employee skills at once.
+        Replace all employee skills at once using ManyToMany .set().
         PUT /api/employees/{id}/skills/
-        Body: {"current_skills": ["Python", "Django", "React"]}
+        Body: {"skill_ids": [1, 2, 3]}
         """
         employee = self.get_object()
-        serializer = UpdateEmployeeSkillsSerializer(data=request.data)
+        skill_ids = request.data.get('skill_ids', [])
         
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not isinstance(skill_ids, list):
+            return Response(
+                {'error': 'skill_ids must be a list'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-        employee.current_skills = serializer.validated_data['current_skills']
-        employee.save()
+        # Validate all skill IDs exist
+        skills = Skill.objects.filter(id__in=skill_ids)
+        if skills.count() != len(skill_ids):
+            return Response(
+                {'error': 'One or more invalid skill IDs'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
+        # Replace all skills using ManyToMany .set() method
+        employee.skills.set(skills)
+
         return Response({
             'message': 'Skills updated successfully',
-            'current_skills': employee.current_skills
+            'skills': [s.name for s in employee.skills.all()]
         }, status=status.HTTP_200_OK)
 
 

@@ -151,26 +151,26 @@ class TestDataPipelineFlow:
         assert response.data['email'] == data['email']
 
     def test_skill_tracking_flow(self, admin_client, sample_employee, sample_skill):
-        """Test tracking skill assignments to employees."""
+        """Test tracking skill assignments to employees using ManyToMany relationship."""
         # Add skill to employee
         url = reverse('employee-add-skill', kwargs={'pk': sample_employee.id})
         data = {'skill_id': sample_skill.id}
-        
+
         response = admin_client.post(url, data, format='json')
-        
+
         assert response.status_code == status.HTTP_200_OK
-        assert sample_skill.name in response.data['current_skills']
-        
-        # Verify employee was updated
+        assert sample_skill.name in response.data['skills']
+
+        # Verify employee was updated using ManyToMany relationship
         sample_employee.refresh_from_db()
-        assert sample_skill.name in sample_employee.current_skills
-        
+        assert sample_skill in sample_employee.skills.all()
+
         # Remove skill
         remove_url = reverse('employee-remove-skill', kwargs={'pk': sample_employee.id})
         remove_response = admin_client.post(remove_url, data, format='json')
-        
+
         assert remove_response.status_code == status.HTTP_200_OK
-        assert sample_skill.name not in remove_response.data['current_skills']
+        assert sample_skill.name not in remove_response.data['skills']
 
 
 @pytest.mark.skip(reason="PredictionEngine class not yet available as importable class")
