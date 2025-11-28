@@ -102,10 +102,12 @@ class FutureSkillsListAPITests(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         data = response.json()
+        # Handle paginated response
+        results = data.get('results', data) if isinstance(data, dict) else data
         # On doit avoir au moins une prédiction
-        self.assertTrue(len(data) > 0)
+        self.assertTrue(len(results) > 0)
         # Verif champs principaux
-        first = data[0]
+        first = results[0]
         self.assertIn("job_role", first)
         self.assertIn("skill", first)
         self.assertIn("horizon_years", first)
@@ -163,7 +165,7 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
     def test_recalculate_with_ml_unavailable_fallback_to_rules(self):
         """
         Test du endpoint POST /api/future-skills/recalculate/ avec ML indisponible.
-        
+
         Test : FUTURE_SKILLS_USE_ML = True mais modèle ML non disponible.
         Résultat attendu :
         - Réponse 200 OK
@@ -189,10 +191,10 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
                 # Vérifications de la réponse HTTP
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
                 data = response.json()
-                
+
                 self.assertIn("total_predictions", data)
                 self.assertIn("horizon_years", data)
-                
+
                 expected = JobRole.objects.count() * Skill.objects.count()
                 self.assertEqual(data["total_predictions"], expected)
                 self.assertEqual(data["horizon_years"], 5)
@@ -200,16 +202,16 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
                 # Vérifier le dernier PredictionRun créé
                 last_run = PredictionRun.objects.order_by("-run_date").first()
                 self.assertIsNotNone(last_run)
-                
+
                 # ✅ Vérifier que le bon utilisateur est tracé
                 self.assertEqual(last_run.run_by, self.user_drh)
-                
+
                 # ✅ Vérifier que les paramètres reflètent le fallback
                 self.assertIsInstance(last_run.parameters, dict)
                 self.assertEqual(last_run.parameters.get("trigger"), "api")
                 self.assertEqual(last_run.parameters.get("horizon_years"), 5)
                 self.assertEqual(last_run.parameters.get("engine"), "rules_v1")
-                
+
                 # ✅ Le champ model_version ne doit PAS être présent en mode fallback
                 self.assertNotIn("model_version", last_run.parameters)
 
