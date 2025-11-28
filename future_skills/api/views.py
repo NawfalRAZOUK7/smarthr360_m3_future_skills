@@ -5,10 +5,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
 
-from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation, Employee, TrainingRun
+from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation, Employee, TrainingRun, Skill
 from .serializers import (
     FutureSkillPredictionSerializer,
     MarketTrendSerializer,
@@ -24,6 +25,9 @@ from .serializers import (
     TrainingRunDetailSerializer,
     TrainModelRequestSerializer,
     TrainModelResponseSerializer,
+    AddSkillToEmployeeSerializer,
+    RemoveSkillFromEmployeeSerializer,
+    UpdateEmployeeSkillsSerializer,
 )
 
 from ..services.prediction_engine import recalculate_predictions
@@ -272,11 +276,95 @@ class EmployeeViewSet(ModelViewSet):
     - GET /api/employees/{id}/ - Get employee detail
     - PUT/PATCH /api/employees/{id}/ - Update employee
     - DELETE /api/employees/{id}/ - Delete employee
+    - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+    - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+    - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
     """
     queryset = Employee.objects.select_related("job_role").all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsHRStaffOrManager]
     pagination_class = EmployeePagination
+
+    @action(detail=True, methods=['post'], url_path='add-skill')
+    def add_skill(self, request, pk=None):
+        """
+        Add a skill to an employee's current_skills list.
+        POST /api/employees/{id}/add-skill/
+        Body: {"skill_id": 5}
+        """
+        employee = self.get_object()
+        serializer = AddSkillToEmployeeSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        skill_id = serializer.validated_data['skill_id']
+        skill = Skill.objects.get(pk=skill_id)
+        
+        # Add skill name to current_skills if not already present
+        if skill.name not in employee.current_skills:
+            employee.current_skills.append(skill.name)
+            employee.save()
+            return Response({
+                'message': f'Skill "{skill.name}" added successfully',
+                'current_skills': employee.current_skills
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'message': f'Skill "{skill.name}" already exists',
+                'current_skills': employee.current_skills
+            }, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'], url_path='remove-skill')
+    def remove_skill(self, request, pk=None):
+        """
+        Remove a skill from an employee's current_skills list.
+        POST /api/employees/{id}/remove-skill/
+        Body: {"skill_id": 5}
+        """
+        employee = self.get_object()
+        serializer = RemoveSkillFromEmployeeSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        skill_id = serializer.validated_data['skill_id']
+        skill = Skill.objects.get(pk=skill_id)
+        
+        # Remove skill name from current_skills
+        if skill.name in employee.current_skills:
+            employee.current_skills.remove(skill.name)
+            employee.save()
+            return Response({
+                'message': f'Skill "{skill.name}" removed successfully',
+                'current_skills': employee.current_skills
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'message': f'Skill "{skill.name}" not found in employee skills',
+                'current_skills': employee.current_skills
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['put'], url_path='skills')
+    def update_skills(self, request, pk=None):
+        """
+        Replace all employee skills at once.
+        PUT /api/employees/{id}/skills/
+        Body: {"current_skills": ["Python", "Django", "React"]}
+        """
+        employee = self.get_object()
+        serializer = UpdateEmployeeSkillsSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        employee.current_skills = serializer.validated_data['current_skills']
+        employee.save()
+        
+        return Response({
+            'message': 'Skills updated successfully',
+            'current_skills': employee.current_skills
+        }, status=status.HTTP_200_OK)
 
 
 class PredictSkillsAPIView(APIView):
