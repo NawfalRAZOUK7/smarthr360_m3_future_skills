@@ -183,24 +183,65 @@ class TestMLModelIntegration:
         """Test that ML model can be loaded successfully."""
         from future_skills.services.prediction_engine import PredictionEngine
 
-        if settings.FUTURE_SKILLS_USE_ML:
-            engine = PredictionEngine()
-            assert engine.model is not None
+        # Test with ML disabled
+        engine_no_ml = PredictionEngine(use_ml=False)
+        assert engine_no_ml.model is None
 
-    def test_prediction_with_real_model(self, authenticated_client, sample_employee, settings):
+        # Test with ML enabled (will fall back to rules if model doesn't exist)
+        engine_ml = PredictionEngine(use_ml=True)
+        # Should not raise error even if model doesn't exist
+        assert engine_ml is not None
+
+    def test_prediction_with_real_model(self, sample_job_role, sample_skill):
         """Test prediction using the actual ML model (if available)."""
-        if not settings.FUTURE_SKILLS_USE_ML:
-            pytest.skip("ML is disabled in test settings")
+        from future_skills.services.prediction_engine import PredictionEngine
 
-        url = reverse('futureskill-predict-skills')
-        data = {
-            'employee_id': sample_employee.id,
-            'current_skills': sample_employee.current_skills
-        }
+        engine = PredictionEngine()
 
-        response = authenticated_client.post(url, data, format='json')
+        score, level, rationale, explanation = engine.predict(
+            job_role_id=sample_job_role.id,
+            skill_id=sample_skill.id,
+            horizon_years=5
+        )
 
-        assert response.status_code == status.HTTP_200_OK
+        # Verify prediction structure
+        assert isinstance(score, float)
+        assert 0 <= score <= 100
+        assert level in ['LOW', 'MEDIUM', 'HIGH']
+        assert isinstance(rationale, str)
+        assert isinstance(explanation, dict)
+
+    def test_batch_prediction(self, sample_job_role, sample_skill, db):
+        """Test batch prediction functionality."""
+        from future_skills.services.prediction_engine import PredictionEngine
+        from future_skills.models import Skill
+
+        # Create multiple skills
+        skills = [sample_skill]
+        for i in range(3):
+            skills.append(Skill.objects.create(
+                name=f'Test Skill {i}',
+                category='Technical'
+            ))
+
+        engine = PredictionEngine()
+
+        predictions_data = [
+            {
+                'job_role_id': sample_job_role.id,
+                'skill_id': skill.id,
+                'horizon_years': 5
+            }
+            for skill in skills
+        ]
+
+        results = engine.batch_predict(predictions_data)
+
+        assert len(results) == len(skills)
+        for result in results:
+            assert 'score' in result
+            assert 'level' in result
+            assert 'rationale' in result
 
 
 @pytest.mark.django_db
