@@ -1,0 +1,1832 @@
+openapi: 3.0.3
+info:
+  title: SmartHR360 Future Skills API
+  version: 1.0.0
+  description: "Comprehensive API for SmartHR360 Future Skills prediction system.\n\n##
+    Features\n\n### Prediction System\n- **ML-Powered Predictions**: Machine learning
+    models for future skill requirements\n- **Rules-Based Fallback**: Reliable fallback
+    when ML is unavailable\n- **Batch Processing**: Efficient bulk predictions for
+    large datasets\n- **Real-time Recalculation**: On-demand prediction updates\n\n###
+    Training & MLOps\n- **Model Training**: Async training with Celery integration\n-
+    **Version Control**: Track model versions and performance\n- **Monitoring**: Comprehensive
+    logging and drift detection\n- **Explainability**: SHAP-based explanations for
+    predictions\n\n### HR Management\n- **Employee Management**: Full CRUD operations
+    with skill tracking\n- **Bulk Import**: CSV/Excel file import with validation\n-
+    **Skill Recommendations**: Personalized training recommendations\n- **Investment
+    Planning**: HR investment recommendations based on predictions\n\n### Analytics
+    & Reporting\n- **Market Trends**: Industry skill trend analysis\n- **Economic
+    Reports**: Economic indicators and impact\n- **Performance Metrics**: Model accuracy
+    and coverage metrics\n\n## Authentication\n\nAll endpoints require authentication.
+    Use Session or Basic Authentication.\n\n### Permissions\n- **HR Staff** (DRH/Responsable
+    RH): Full access including recalculation and training\n- **Manager**: Read access
+    to predictions and team data\n- **Authenticated**: Limited read access\n\n## Rate
+    Limiting\n\nNo rate limiting currently applied. Consider implementing for production.\n
+    \   "
+paths:
+  /api/employees/:
+    get:
+      operationId: employees_list
+      description: |-
+        ViewSet for Employee CRUD operations.
+
+        Provides:
+        - GET /api/employees/ - List all employees
+        - POST /api/employees/ - Create new employee
+        - GET /api/employees/{id}/ - Get employee detail
+        - PUT/PATCH /api/employees/{id}/ - Update employee
+        - DELETE /api/employees/{id}/ - Delete employee
+        - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+        - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+        - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - employees
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEmployeeList'
+          description: ''
+    post:
+      operationId: employees_create
+      description: |-
+        ViewSet for Employee CRUD operations.
+
+        Provides:
+        - GET /api/employees/ - List all employees
+        - POST /api/employees/ - Create new employee
+        - GET /api/employees/{id}/ - Get employee detail
+        - PUT/PATCH /api/employees/{id}/ - Update employee
+        - DELETE /api/employees/{id}/ - Delete employee
+        - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+        - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+        - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/employees/{id}/:
+    patch:
+      operationId: employees_partial_update
+      description: |-
+        ViewSet for Employee CRUD operations.
+
+        Provides:
+        - GET /api/employees/ - List all employees
+        - POST /api/employees/ - Create new employee
+        - GET /api/employees/{id}/ - Get employee detail
+        - PUT/PATCH /api/employees/{id}/ - Update employee
+        - DELETE /api/employees/{id}/ - Delete employee
+        - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+        - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+        - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Employé.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    get:
+      operationId: employees_retrieve
+      description: |-
+        ViewSet for Employee CRUD operations.
+
+        Provides:
+        - GET /api/employees/ - List all employees
+        - POST /api/employees/ - Create new employee
+        - GET /api/employees/{id}/ - Get employee detail
+        - PUT/PATCH /api/employees/{id}/ - Update employee
+        - DELETE /api/employees/{id}/ - Delete employee
+        - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+        - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+        - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Employé.
+        required: true
+      tags:
+      - employees
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    put:
+      operationId: employees_update
+      description: |-
+        ViewSet for Employee CRUD operations.
+
+        Provides:
+        - GET /api/employees/ - List all employees
+        - POST /api/employees/ - Create new employee
+        - GET /api/employees/{id}/ - Get employee detail
+        - PUT/PATCH /api/employees/{id}/ - Update employee
+        - DELETE /api/employees/{id}/ - Delete employee
+        - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+        - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+        - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Employé.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    delete:
+      operationId: employees_destroy
+      description: |-
+        ViewSet for Employee CRUD operations.
+
+        Provides:
+        - GET /api/employees/ - List all employees
+        - POST /api/employees/ - Create new employee
+        - GET /api/employees/{id}/ - Get employee detail
+        - PUT/PATCH /api/employees/{id}/ - Update employee
+        - DELETE /api/employees/{id}/ - Delete employee
+        - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+        - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+        - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Employé.
+        required: true
+      tags:
+      - employees
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/employees/{id}/add-skill/:
+    post:
+      operationId: employees_add_skill_create
+      description: |-
+        Add a skill to an employee's skills ManyToMany relationship.
+        POST /api/employees/{id}/add-skill/
+        Body: {"skill_id": 5}
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Employé.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/employees/{id}/remove-skill/:
+    post:
+      operationId: employees_remove_skill_create
+      description: |-
+        Remove a skill from an employee's skills ManyToMany relationship.
+        POST /api/employees/{id}/remove-skill/
+        Body: {"skill_id": 5}
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Employé.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/employees/{id}/skills/:
+    put:
+      operationId: employees_skills_update
+      description: |-
+        Replace all employee skills at once using ManyToMany .set().
+        PUT /api/employees/{id}/skills/
+        Body: {"skill_ids": [1, 2, 3]}
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Employé.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/future-skills/:
+    get:
+      operationId: future_skills_list
+      description: "Retrieve a paginated list of future skill predictions with optional
+        filters.\n\n    **Permissions**: HR Staff or Manager\n\n    **Filters**:\n
+        \   - `job_role_id`: Filter by specific job role\n    - `horizon_years`: Filter
+        by prediction horizon (e.g., 3, 5, 10 years)\n\n    **Pagination**: Results
+        are paginated with 10 items per page by default.\n    Use `page` and `page_size`
+        query parameters to control pagination.\n\n    **Example**: `/api/future-skills/?job_role_id=1&horizon_years=5&page=1&page_size=20`\n
+        \   "
+      summary: List future skill predictions
+      parameters:
+      - in: query
+        name: horizon_years
+        schema:
+          type: integer
+        description: Filter by prediction horizon in years (e.g., 3, 5, 10)
+      - in: query
+        name: job_role_id
+        schema:
+          type: integer
+        description: Filter predictions for a specific job role ID
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number for pagination
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Number of items per page (max 100)
+      tags:
+      - Predictions
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFutureSkillPredictionList'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/future-skills/recalculate/:
+    post:
+      operationId: future_skills_recalculate_create
+      description: "Trigger a complete recalculation of all future skill predictions
+        using ML or rules engine.\n\n    **Permissions**: HR Staff only (DRH/Responsable
+        RH)\n\n    **Process**:\n    1. Recalculates predictions for all job role
+        × skill combinations\n    2. Uses ML model if available, falls back to rules
+        engine\n    3. Generates HR investment recommendations for HIGH predictions\n
+        \   4. Creates a PredictionRun record for traceability\n\n    **Use Cases**:\n
+        \   - After training a new ML model\n    - When market trends or economic
+        data changes\n    - Periodic updates (monthly/quarterly)\n    - When switching
+        between ML and rules engine\n\n    **Performance**: May take several seconds
+        for large datasets (500+ combinations).\n    Consider using async execution
+        for production.\n\n    **Example Request**:\n    ```json\n    {\n      \"horizon_years\":
+        5\n    }\n    ```\n    "
+      summary: Recalculate all predictions
+      tags:
+      - Predictions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                horizon_years:
+                  type: integer
+                  description: Prediction horizon in years
+                  default: 5
+                  example: 5
+            examples:
+              Default5-yearHorizon:
+                value:
+                  horizon_years: 5
+                summary: Default 5-year horizon
+              10-yearStrategicPlanning:
+                value:
+                  horizon_years: 10
+                summary: 10-year strategic planning
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  horizon_years:
+                    type: integer
+                  total_predictions:
+                    type: integer
+                  total_recommendations:
+                    type: integer
+                example:
+                  horizon_years: 5
+                  total_predictions: 357
+                  total_recommendations: 42
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/market-trends/:
+    get:
+      operationId: market_trends_retrieve
+      description: |-
+        Liste les tendances marché utilisées pour alimenter le module 3.
+
+        Filtres possibles :
+          - year
+          - sector
+        Exemple :
+          GET /api/market-trends/?year=2025&sector=Tech
+      tags:
+      - market-trends
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/economic-reports/:
+    get:
+      operationId: economic_reports_retrieve
+      description: |-
+        Liste les rapports / indicateurs économiques utilisés par le module 3.
+
+        Filtres possibles :
+          - year
+          - sector
+          - indicator (contient)
+      tags:
+      - economic-reports
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/hr-investment-recommendations/:
+    get:
+      operationId: hr_investment_recommendations_retrieve
+      description: |-
+        Liste les recommandations RH générées à partir des prédictions
+        de compétences futures.
+
+        Filtres :
+          - horizon_years
+          - skill_id
+          - job_role_id
+          - priority_level
+      tags:
+      - hr-investment-recommendations
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/predict-skills/:
+    post:
+      operationId: predict_skills_create
+      description: |-
+        Generate skill predictions for a specific employee.
+
+        POST /api/predict-skills/
+        Body: {
+            "employee_id": 1,
+            "current_skills": ["Python", "Django"],  # optional override
+            "department": "Engineering"  # optional override
+        }
+
+        Returns: List of predicted skills with scores and levels
+      tags:
+      - predict-skills
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/recommend-skills/:
+    post:
+      operationId: recommend_skills_create
+      description: |-
+        Generate personalized skill recommendations for an employee.
+
+        POST /api/recommend-skills/
+        Body: {
+            "employee_id": 1,
+            "exclude_current": true
+        }
+
+        Returns: List of recommended skills (excluding current skills if specified)
+      tags:
+      - recommend-skills
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bulk-predict/:
+    post:
+      operationId: bulk_predict_create
+      description: |-
+        Generate predictions for multiple employees at once.
+
+        POST /api/bulk-predict/
+        Body: {
+            "employee_ids": [1, 2, 3, 4, 5]
+        }
+
+        Returns: Predictions for each employee
+      tags:
+      - bulk-predict
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bulk-import/employees/:
+    post:
+      operationId: bulk_import_employees_create
+      description: |-
+        Bulk import/update employees from JSON data with automatic prediction generation.
+
+        This endpoint allows HR staff (DRH/Responsable RH) to create or update multiple
+        employees in a single API call. The operation is performed within a database
+        transaction to ensure data consistency.
+
+        **Endpoint:** `POST /api/bulk-import/employees/`
+
+        **Authentication:** Required (Token/Session)
+
+        **Permissions:** IsHRStaff (DRH or Responsable RH groups only)
+
+        **Request Body (JSON):**
+        ```json
+        {
+            "employees": [
+                {
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "email": "john.doe@company.com",
+                    "job_role_id": 1,
+                    "skills": ["Python", "Django", "REST API"]
+                },
+                {
+                    "first_name": "Jane",
+                    "last_name": "Smith",
+                    "email": "jane.smith@company.com",
+                    "job_role_id": 2,
+                    "skills": ["JavaScript", "React", "Node.js"]
+                }
+            ],
+            "auto_predict": true,
+            "horizon_years": 5
+        }
+        ```
+
+        **Request Parameters:**
+        - `employees` (required): List of employee objects to import
+          - `first_name` (required): Employee's first name
+          - `last_name` (required): Employee's last name
+          - `email` (required): Unique email address
+          - `job_role_id` (required): Valid JobRole ID
+          - `skills` (optional): List of skill names
+        - `auto_predict` (optional, default=true): Generate predictions after import
+        - `horizon_years` (optional, default=5): Prediction horizon in years
+
+        **Success Response (201 CREATED):**
+        ```json
+        {
+            "status": "success",
+            "created": 5,
+            "updated": 0,
+            "failed": 0,
+            "errors": [],
+            "predictions_generated": true,
+            "total_predictions": 15
+        }
+        ```
+
+        **Partial Success Response (207 MULTI-STATUS):**
+        ```json
+        {
+            "status": "partial_success",
+            "created": 3,
+            "updated": 1,
+            "failed": 2,
+            "errors": [
+                {
+                    "row": 2,
+                    "email": "duplicate@company.com",
+                    "error": "Employee with this email already exists"
+                },
+                {
+                    "row": 5,
+                    "email": "invalid@company.com",
+                    "error": "Job role with ID 999 does not exist"
+                }
+            ],
+            "predictions_generated": true,
+            "total_predictions": 12
+        }
+        ```
+
+        **Error Response (400 BAD REQUEST):**
+        ```json
+        {
+            "employees": [
+                "This field is required."
+            ]
+        }
+        ```
+
+        **Behavior:**
+        - Checks for existing employees by email
+        - Creates new employees if email doesn't exist
+        - Updates existing employees if email matches
+        - Validates job_role_id existence before processing
+        - Detects duplicate emails within the batch
+        - Generates predictions for all job roles after successful import
+        - Returns detailed error information for failed rows
+        - Uses transaction.atomic() for data integrity
+
+        **Example cURL:**
+        ```bash
+        curl -X POST http://localhost:8000/api/bulk-import/employees/       -H "Authorization: Bearer YOUR_TOKEN"       -H "Content-Type: application/json"       -d @employees.json
+        ```
+
+        **See Also:**
+        - BulkEmployeeUploadAPIView for file upload support
+        - BulkEmployeeImportSerializer for validation details
+        - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
+      tags:
+      - bulk-import
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bulk-upload/employees/:
+    post:
+      operationId: bulk_upload_employees_create
+      description: |-
+        File upload endpoint for bulk employee import from CSV/Excel/JSON files.
+
+        This endpoint allows HR staff to upload CSV, Excel, or JSON files containing
+        employee data for bulk import. Files are validated, parsed, and processed
+        using the same logic as BulkEmployeeImportAPIView.
+
+        **Endpoint:** `POST /api/bulk-upload/employees/`
+
+        **Authentication:** Required (Token/Session)
+
+        **Permissions:** IsHRStaff (DRH or Responsable RH groups only)
+
+        **Content-Type:** `multipart/form-data`
+
+        **Form Parameters:**
+        - `file` (required): File to upload (CSV/Excel/JSON)
+          - Max size: 10 MB
+          - Extensions: .csv, .xlsx, .xls, .json
+          - MIME types: text/csv, application/vnd.ms-excel,
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,
+            application/json
+        - `auto_predict` (optional, default=true): Generate predictions after import
+        - `horizon_years` (optional, default=5): Prediction horizon in years
+
+        **Supported File Formats:**
+
+        1. **CSV Format (.csv):**
+        ```csv
+        first_name,last_name,email,job_role_id,skills
+        John,Doe,john.doe@company.com,1,"Python;Django;REST API"
+        Jane,Smith,jane.smith@company.com,2,"JavaScript;React;Node.js"
+        ```
+
+        2. **Excel Format (.xlsx, .xls):**
+        Same columns as CSV, but in Excel spreadsheet format
+
+        3. **JSON Format (.json):**
+        ```json
+        [
+            {
+                "first_name": "John",
+                "last_name": "Doe",
+                "email": "john.doe@company.com",
+                "job_role_id": 1,
+                "skills": ["Python", "Django", "REST API"]
+            },
+            {
+                "first_name": "Jane",
+                "last_name": "Smith",
+                "email": "jane.smith@company.com",
+                "job_role_id": 2,
+                "skills": ["JavaScript", "React", "Node.js"]
+            }
+        ]
+        ```
+
+        **Skill Format Support (CSV/Excel):**
+        - Semicolon-separated: `"Python;Django;REST API"`
+        - Comma-separated: `"Python,Django,REST API"`
+        - JSON array string: `"["Python", "Django", "REST API"]"`
+
+        **Success Response (201 CREATED):**
+        ```json
+        {
+            "status": "success",
+            "message": "File uploaded and processed successfully",
+            "filename": "employees.csv",
+            "created": 5,
+            "updated": 0,
+            "failed": 0,
+            "errors": [],
+            "predictions_generated": true,
+            "total_predictions": 15
+        }
+        ```
+
+        **File Validation Errors (400 BAD REQUEST):**
+        ```json
+        {
+            "error": "File size exceeds 10MB limit"
+        }
+        ```
+        ```json
+        {
+            "error": "Invalid file type. Allowed: .csv, .xlsx, .xls, .json"
+        }
+        ```
+        ```json
+        {
+            "error": "MIME type text/plain not allowed"
+        }
+        ```
+
+        **Parsing Errors (400 BAD REQUEST):**
+        ```json
+        {
+            "status": "error",
+            "message": "File parsing failed",
+            "errors": [
+                {
+                    "row": 3,
+                    "error": "Missing required field: email"
+                },
+                {
+                    "row": 7,
+                    "error": "Invalid email format"
+                }
+            ]
+        }
+        ```
+
+        **Behavior:**
+        - Validates file size (max 10MB)
+        - Validates file extension (.csv, .xlsx, .xls, .json)
+        - Validates MIME type for security
+        - Parses file using appropriate parser (CSV/Excel/JSON)
+        - Handles multiple encoding formats (UTF-8, Latin-1)
+        - Creates/updates employees based on email
+        - Generates predictions after successful import
+        - Returns detailed error information per row
+        - Uses transaction.atomic() for data integrity
+
+        **Example cURL (CSV):**
+        ```bash
+        curl -X POST http://localhost:8000/api/bulk-upload/employees/       -H "Authorization: Bearer YOUR_TOKEN"       -F "file=@employees.csv"
+        ```
+
+        **Example cURL (Excel):**
+        ```bash
+        curl -X POST http://localhost:8000/api/bulk-upload/employees/       -H "Authorization: Bearer YOUR_TOKEN"       -F "file=@employees.xlsx"       -F "auto_predict=true"       -F "horizon_years=10"
+        ```
+
+        **Example Python Requests:**
+        ```python
+        import requests
+
+        url = 'http://localhost:8000/api/bulk-upload/employees/'
+        headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+        files = {'file': open('employees.csv', 'rb')}
+        data = {'auto_predict': 'true', 'horizon_years': '5'}
+
+        response = requests.post(url, headers=headers, files=files, data=data)
+        print(response.json())
+        ```
+
+        **Template File:**
+        A sample CSV template is available at:
+        `future_skills/services/employees_import_template.csv`
+
+        **See Also:**
+        - BulkEmployeeImportAPIView for JSON data import
+        - file_parser.py module for parsing implementation
+        - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
+      tags:
+      - bulk-upload
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/training/train/:
+    post:
+      operationId: training_train_create
+      description: "Train a new machine learning model for future skill predictions.\n\n
+        \   **Permissions**: HR Staff only (DRH/Responsable RH)\n\n    **Execution
+        Modes**:\n\n    1. **Synchronous** (default, `async_training=false`):\n       -
+        Training executes immediately in the request\n       - Returns complete metrics
+        when finished\n       - Suitable for small datasets or development\n       -
+        May timeout on large datasets\n\n    2. **Asynchronous** (`async_training=true`):\n
+        \      - Training executes in background via Celery\n       - Returns immediately
+        with task ID\n       - Check status via `/api/training/runs/{id}/`\n       -
+        Recommended for production and large datasets\n\n    **Training Process**:\n
+        \   1. Loads and validates dataset\n    2. Performs train/test split\n    3.
+        Trains Random Forest classifier with hyperparameters\n    4. Evaluates on
+        test set (accuracy, precision, recall, F1)\n    5. Saves model to `ml/models/`
+        directory\n    6. Records metrics in TrainingRun\n\n    **Hyperparameters**:\n
+        \   - `n_estimators`: Number of trees (default: 100)\n    - `max_depth`: Maximum
+        tree depth (default: 15)\n    - `min_samples_split`: Min samples to split
+        node (default: 5)\n    - `min_samples_leaf`: Min samples at leaf (default:
+        2)\n    - `random_state`: Random seed (default: 42)\n\n    **Model Versioning**:\n
+        \   Provide a descriptive version string (e.g., \"v2.1_optimized\", \"prod_2024_q4\").\n
+        \   If omitted, auto-generates timestamp-based version.\n\n    **Example Request
+        (Sync)**:\n    ```json\n    {\n      \"dataset_path\": \"ml/data/future_skills_dataset.csv\",\n
+        \     \"test_split\": 0.2,\n      \"hyperparameters\": {\n        \"n_estimators\":
+        150,\n        \"max_depth\": 20\n      },\n      \"model_version\": \"v2.1_production\",\n
+        \     \"notes\": \"Optimized model for Q4 2024\",\n      \"async_training\":
+        false\n    }\n    ```\n\n    **Example Request (Async)**:\n    ```json\n    {\n
+        \     \"dataset_path\": \"ml/data/future_skills_dataset.csv\",\n      \"test_split\":
+        0.2,\n      \"async_training\": true,\n      \"model_version\": \"v2.2_background\"\n
+        \   }\n    ```\n    "
+      summary: Train new ML model
+      tags:
+      - Training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainModelRequestRequest'
+            examples:
+              SynchronousTrainingWithCustomHyperparameters:
+                value:
+                  dataset_path: ml/data/future_skills_dataset.csv
+                  test_split: 0.2
+                  hyperparameters:
+                    n_estimators: 150
+                    max_depth: 20
+                    min_samples_split: 5
+                  model_version: v2.1_prod
+                  notes: Production model with enhanced parameters
+                  async_training: false
+                summary: Synchronous training with custom hyperparameters
+              AsynchronousBackgroundTraining:
+                value:
+                  dataset_path: ml/data/future_skills_dataset.csv
+                  test_split: 0.25
+                  async_training: true
+                  model_version: v3.0_background
+                  notes: Large dataset training in background
+                summary: Asynchronous background training
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TrainModelRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrainModelRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainModelResponse'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainModelResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/training/start/:
+    post:
+      operationId: training_start_create
+      description: "Train a new machine learning model for future skill predictions.\n\n
+        \   **Permissions**: HR Staff only (DRH/Responsable RH)\n\n    **Execution
+        Modes**:\n\n    1. **Synchronous** (default, `async_training=false`):\n       -
+        Training executes immediately in the request\n       - Returns complete metrics
+        when finished\n       - Suitable for small datasets or development\n       -
+        May timeout on large datasets\n\n    2. **Asynchronous** (`async_training=true`):\n
+        \      - Training executes in background via Celery\n       - Returns immediately
+        with task ID\n       - Check status via `/api/training/runs/{id}/`\n       -
+        Recommended for production and large datasets\n\n    **Training Process**:\n
+        \   1. Loads and validates dataset\n    2. Performs train/test split\n    3.
+        Trains Random Forest classifier with hyperparameters\n    4. Evaluates on
+        test set (accuracy, precision, recall, F1)\n    5. Saves model to `ml/models/`
+        directory\n    6. Records metrics in TrainingRun\n\n    **Hyperparameters**:\n
+        \   - `n_estimators`: Number of trees (default: 100)\n    - `max_depth`: Maximum
+        tree depth (default: 15)\n    - `min_samples_split`: Min samples to split
+        node (default: 5)\n    - `min_samples_leaf`: Min samples at leaf (default:
+        2)\n    - `random_state`: Random seed (default: 42)\n\n    **Model Versioning**:\n
+        \   Provide a descriptive version string (e.g., \"v2.1_optimized\", \"prod_2024_q4\").\n
+        \   If omitted, auto-generates timestamp-based version.\n\n    **Example Request
+        (Sync)**:\n    ```json\n    {\n      \"dataset_path\": \"ml/data/future_skills_dataset.csv\",\n
+        \     \"test_split\": 0.2,\n      \"hyperparameters\": {\n        \"n_estimators\":
+        150,\n        \"max_depth\": 20\n      },\n      \"model_version\": \"v2.1_production\",\n
+        \     \"notes\": \"Optimized model for Q4 2024\",\n      \"async_training\":
+        false\n    }\n    ```\n\n    **Example Request (Async)**:\n    ```json\n    {\n
+        \     \"dataset_path\": \"ml/data/future_skills_dataset.csv\",\n      \"test_split\":
+        0.2,\n      \"async_training\": true,\n      \"model_version\": \"v2.2_background\"\n
+        \   }\n    ```\n    "
+      summary: Train new ML model
+      tags:
+      - Training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainModelRequestRequest'
+            examples:
+              SynchronousTrainingWithCustomHyperparameters:
+                value:
+                  dataset_path: ml/data/future_skills_dataset.csv
+                  test_split: 0.2
+                  hyperparameters:
+                    n_estimators: 150
+                    max_depth: 20
+                    min_samples_split: 5
+                  model_version: v2.1_prod
+                  notes: Production model with enhanced parameters
+                  async_training: false
+                summary: Synchronous training with custom hyperparameters
+              AsynchronousBackgroundTraining:
+                value:
+                  dataset_path: ml/data/future_skills_dataset.csv
+                  test_split: 0.25
+                  async_training: true
+                  model_version: v3.0_background
+                  notes: Large dataset training in background
+                summary: Asynchronous background training
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TrainModelRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrainModelRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainModelResponse'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainModelResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/training/runs/:
+    get:
+      operationId: training_runs_list
+      description: "Retrieve a paginated list of all model training runs with metrics
+        and status.\n\n    **Permissions**: HR Staff or Manager\n\n    **Filters**:\n
+        \   - `status`: Filter by training status (RUNNING, COMPLETED, FAILED)\n    -
+        `trained_by`: Filter by username who initiated training\n    - `page`: Page
+        number for pagination\n    - `page_size`: Number of items per page (max 100)\n\n
+        \   **Use Cases**:\n    - Monitor ongoing training jobs\n    - Review historical
+        training results\n    - Compare model versions and performance\n    - Audit
+        training activities\n\n    **Example**: `/api/training/runs/?status=COMPLETED&trained_by=admin&page=1`\n
+        \   "
+      summary: List all training runs
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Items per page (max 100)
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - COMPLETED
+          - FAILED
+          - RUNNING
+        description: Filter by status (RUNNING, COMPLETED, FAILED)
+      - in: query
+        name: trained_by
+        schema:
+          type: string
+        description: Filter by username who initiated training
+      tags:
+      - Training
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTrainingRunList'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/training/runs/{id}/:
+    get:
+      operationId: training_runs_retrieve
+      description: "Retrieve detailed information about a specific training run.\n\n
+        \   **Permissions**: HR Staff or Manager\n\n    **Returns**:\n    - **Basic
+        Info**: ID, version, status, timestamps\n    - **Performance Metrics**: Accuracy,
+        precision, recall, F1 score\n    - **Per-Class Metrics**: Detailed metrics
+        for each prediction level (HIGH, MEDIUM, LOW)\n    - **Model Configuration**:
+        Hyperparameters used during training\n    - **Dataset Info**: Sample counts,
+        feature list, train/test split\n    - **Error Details**: Error messages if
+        training failed\n    - **Execution Info**: Duration, trained by user\n\n    **Use
+        Cases**:\n    - Review specific model performance\n    - Debug failed training
+        runs\n    - Compare hyperparameter configurations\n    - Audit model versioning
+        and traceability\n\n    **Example**: `/api/training/runs/42/`\n    "
+      summary: Get training run details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Training
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingRunDetail'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+components:
+  schemas:
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        department:
+          type: string
+          description: 'Département de l''employé (ex : IT, RH, Finance...).'
+          maxLength: 150
+        position:
+          type: string
+          description: 'Poste actuel de l''employé (ex : Developer, Manager...).'
+          maxLength: 150
+        job_role:
+          allOf:
+          - $ref: '#/components/schemas/JobRole'
+          readOnly: true
+        current_skills:
+          description: 'Liste des compétences actuelles de l''employé (ex : [''Python'',
+            ''Django'']).'
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - department
+      - email
+      - id
+      - job_role
+      - name
+      - position
+    EmployeeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        department:
+          type: string
+          minLength: 1
+          description: 'Département de l''employé (ex : IT, RH, Finance...).'
+          maxLength: 150
+        position:
+          type: string
+          minLength: 1
+          description: 'Poste actuel de l''employé (ex : Developer, Manager...).'
+          maxLength: 150
+        job_role_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        current_skills:
+          description: 'Liste des compétences actuelles de l''employé (ex : [''Python'',
+            ''Django'']).'
+      required:
+      - department
+      - email
+      - name
+      - position
+    FutureSkillPrediction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        job_role:
+          allOf:
+          - $ref: '#/components/schemas/JobRole'
+          readOnly: true
+        skill:
+          allOf:
+          - $ref: '#/components/schemas/Skill'
+          readOnly: true
+        horizon_years:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 'Horizon de prédiction en années (ex : 3, 5...).'
+        score:
+          type: number
+          format: double
+          description: Score de besoin futur (0–100).
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          description: |-
+            Niveau de criticité : LOW / MEDIUM / HIGH.
+
+            * `LOW` - Low
+            * `MEDIUM` - Medium
+            * `HIGH` - High
+        rationale:
+          type: string
+          nullable: true
+          description: Explication textuelle de la prédiction (pour le DRH).
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - horizon_years
+      - id
+      - job_role
+      - level
+      - score
+      - skill
+    JobRole:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        department:
+          type: string
+          nullable: true
+          description: 'Département ou direction (ex : IT, RH, Finance...).'
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+          description: Description optionnelle du rôle.
+      required:
+      - id
+      - name
+    JobRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        department:
+          type: string
+          nullable: true
+          description: 'Département ou direction (ex : IT, RH, Finance...).'
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+          description: Description optionnelle du rôle.
+      required:
+      - name
+    LevelEnum:
+      enum:
+      - LOW
+      - MEDIUM
+      - HIGH
+      type: string
+      description: |-
+        * `LOW` - Low
+        * `MEDIUM` - Medium
+        * `HIGH` - High
+    PaginatedEmployeeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employee'
+    PaginatedFutureSkillPredictionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FutureSkillPrediction'
+    PaginatedTrainingRunList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrainingRun'
+    PatchedEmployeeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        department:
+          type: string
+          minLength: 1
+          description: 'Département de l''employé (ex : IT, RH, Finance...).'
+          maxLength: 150
+        position:
+          type: string
+          minLength: 1
+          description: 'Poste actuel de l''employé (ex : Developer, Manager...).'
+          maxLength: 150
+        job_role_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        current_skills:
+          description: 'Liste des compétences actuelles de l''employé (ex : [''Python'',
+            ''Django'']).'
+    Skill:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        category:
+          type: string
+          nullable: true
+          description: 'Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)'
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          description: Description optionnelle de la compétence.
+      required:
+      - id
+      - name
+    StatusEnum:
+      enum:
+      - RUNNING
+      - COMPLETED
+      - FAILED
+      type: string
+      description: |-
+        * `RUNNING` - Running
+        * `COMPLETED` - Completed
+        * `FAILED` - Failed
+    TrainModelRequestRequest:
+      type: object
+      description: |-
+        Request serializer for training a new model.
+
+        Section 2.5: Added async_training parameter for Celery background tasks.
+      properties:
+        dataset_path:
+          type: string
+          minLength: 1
+          default: ml/data/future_skills_dataset.csv
+          description: Path to the training dataset CSV file
+        test_split:
+          type: number
+          format: double
+          maximum: 0.5
+          minimum: 0.1
+          default: 0.2
+          description: Test set split ratio (0.1 to 0.5)
+        hyperparameters:
+          description: Model hyperparameters (n_estimators, max_depth, etc.)
+        model_version:
+          type: string
+          description: Version identifier (auto-generated if not provided)
+        notes:
+          type: string
+          description: Optional notes about this training run
+        async_training:
+          type: boolean
+          default: false
+          description: Use Celery for background training (Section 2.5)
+    TrainModelResponse:
+      type: object
+      description: |-
+        Response serializer for training endpoint.
+
+        Section 2.5: Added task_id for async Celery tasks.
+      properties:
+        training_run_id:
+          type: integer
+          description: ID of the created TrainingRun record
+        status:
+          type: string
+          description: Training status (RUNNING, COMPLETED, FAILED)
+        message:
+          type: string
+          description: Human-readable status message
+        model_version:
+          type: string
+          description: Version identifier of the trained model
+        metrics:
+          description: Training metrics (if completed synchronously)
+        task_id:
+          type: string
+          description: Celery task ID (if async_training=true)
+      required:
+      - message
+      - model_version
+      - status
+      - training_run_id
+    TrainingRun:
+      type: object
+      description: Serializer for TrainingRun model - read-only for listing.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        run_date:
+          type: string
+          format: date-time
+          readOnly: true
+        model_version:
+          type: string
+          readOnly: true
+          description: Version identifier for the trained model (e.g., 'v1', 'v2.1').
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+          description: |-
+            Current status of the training run.
+
+            * `RUNNING` - Running
+            * `COMPLETED` - Completed
+            * `FAILED` - Failed
+        accuracy:
+          type: number
+          format: double
+          readOnly: true
+          description: Overall accuracy on test set (0.0 to 1.0).
+        precision:
+          type: number
+          format: double
+          readOnly: true
+          description: Weighted average precision on test set.
+        recall:
+          type: number
+          format: double
+          readOnly: true
+          description: Weighted average recall on test set.
+        f1_score:
+          type: number
+          format: double
+          readOnly: true
+          description: Weighted average F1-score on test set.
+        training_duration_seconds:
+          type: number
+          format: double
+          readOnly: true
+          description: Total training duration in seconds.
+        trained_by_username:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - accuracy
+      - f1_score
+      - id
+      - model_version
+      - precision
+      - recall
+      - run_date
+      - status
+      - trained_by_username
+      - training_duration_seconds
+    TrainingRunDetail:
+      type: object
+      description: Detailed serializer for TrainingRun - includes all fields.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        run_date:
+          type: string
+          format: date-time
+          readOnly: true
+        model_version:
+          type: string
+          readOnly: true
+          description: Version identifier for the trained model (e.g., 'v1', 'v2.1').
+        model_path:
+          type: string
+          readOnly: true
+          description: File system path where the model was saved.
+        dataset_path:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Path to the training dataset CSV file.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+          description: |-
+            Current status of the training run.
+
+            * `RUNNING` - Running
+            * `COMPLETED` - Completed
+            * `FAILED` - Failed
+        error_message:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Error message if training failed.
+        accuracy:
+          type: number
+          format: double
+          readOnly: true
+          description: Overall accuracy on test set (0.0 to 1.0).
+        precision:
+          type: number
+          format: double
+          readOnly: true
+          description: Weighted average precision on test set.
+        recall:
+          type: number
+          format: double
+          readOnly: true
+          description: Weighted average recall on test set.
+        f1_score:
+          type: number
+          format: double
+          readOnly: true
+          description: Weighted average F1-score on test set.
+        total_samples:
+          type: integer
+          readOnly: true
+          description: Total number of samples in the dataset.
+        train_samples:
+          type: integer
+          readOnly: true
+          description: Number of samples in training set.
+        test_samples:
+          type: integer
+          readOnly: true
+          description: Number of samples in test set.
+        test_split:
+          type: number
+          format: double
+          readOnly: true
+          description: Test set split ratio (e.g., 0.2 = 20% test).
+        n_estimators:
+          type: integer
+          readOnly: true
+          description: Number of trees in RandomForest classifier.
+        random_state:
+          type: integer
+          readOnly: true
+          description: Random seed for reproducibility.
+        hyperparameters:
+          readOnly: true
+          description: All hyperparameters used for this training run (consolidated
+            view).
+        training_duration_seconds:
+          type: number
+          format: double
+          readOnly: true
+          description: Total training duration in seconds.
+        per_class_metrics:
+          readOnly: true
+          description: Per-class accuracy and support counts (LOW, MEDIUM, HIGH).
+        features_used:
+          readOnly: true
+          description: List of features used for training.
+        trained_by_username:
+          type: string
+          readOnly: true
+          nullable: true
+        notes:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Additional notes or comments about this training run.
+      required:
+      - accuracy
+      - dataset_path
+      - error_message
+      - f1_score
+      - features_used
+      - hyperparameters
+      - id
+      - model_path
+      - model_version
+      - n_estimators
+      - notes
+      - per_class_metrics
+      - precision
+      - random_state
+      - recall
+      - run_date
+      - status
+      - test_samples
+      - test_split
+      - total_samples
+      - train_samples
+      - trained_by_username
+      - training_duration_seconds
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+tags:
+- name: Predictions
+  description: Future skill predictions and recalculation
+- name: Training
+  description: ML model training and management
+- name: Employees
+  description: Employee management and skill tracking
+- name: Analytics
+  description: Market trends and economic reports
+- name: Recommendations
+  description: HR investment and skill recommendations
+- name: Bulk Operations
+  description: Batch processing and file imports

@@ -32,15 +32,17 @@ SmartHR360 M3 Future Skills is an AI-powered future skills prediction and recomm
 - **Dual Prediction Engines**: ML and rules-based engines with automatic fallback
 - **Model Training & Evaluation**: Complete MLOps pipeline with versioning
 - **Explainable AI**: SHAP/LIME-based explanations for predictions
+- **Interactive API Documentation**: OpenAPI/Swagger UI with comprehensive endpoint documentation
 
 ### Technology Stack
 
 - **Backend**: Django 5.2, Django REST Framework 3.16
 - **ML Framework**: scikit-learn 1.7, pandas 2.3, numpy 2.2
 - **Explainability**: SHAP 0.44, LIME
+- **API Documentation**: drf-spectacular 0.29 (OpenAPI 3.0, Swagger UI, ReDoc)
 - **Database**: SQLite (dev), PostgreSQL 15+ (prod)
 - **Testing**: pytest 9.0, pytest-django, pytest-cov
-- **CI/CD**: GitHub Actions
+- **CI/CD**: GitHub Actions (6 jobs, Python 3.11/3.12 matrix)
 - **Code Quality**: flake8, mypy, black, isort
 
 ---
@@ -280,10 +282,53 @@ SmartHR360 M3 Future Skills is an AI-powered future skills prediction and recomm
 
 ## 📡 API Documentation
 
+### Interactive Documentation
+
+#### Swagger UI (OpenAPI 3.0)
+
+- **URL**: `/api/docs/`
+- **Features**:
+  - Complete endpoint listing with descriptions
+  - Request/response schemas
+  - Try-it-out functionality
+  - Authentication support
+  - Example requests and responses
+  - Parameter documentation
+- **Tags**: Predictions, Training, Employees, Analytics, Recommendations, Bulk Operations
+
+#### ReDoc
+
+- **URL**: `/api/redoc/`
+- **Features**:
+  - Clean, responsive design
+  - Comprehensive schema documentation
+  - Search functionality
+  - Print-friendly format
+
+#### OpenAPI Schema
+
+- **URL**: `/api/schema/`
+- **Format**: YAML (OpenAPI 3.0)
+- **Size**: 1832 lines, 59KB
+- **Use Cases**: Code generation, API testing, documentation generators, third-party integrations
+
+### Documentation Guide
+
+**File**: `docs/API_DOCUMENTATION.md` (comprehensive 400+ line guide)
+
+- **Sections**:
+  - Base URLs and authentication
+  - Authorization roles (HR Staff, Manager, User)
+  - Core endpoints with examples
+  - Response codes and error handling
+  - Pagination and rate limiting
+  - Code examples (Python, JavaScript, cURL)
+  - Troubleshooting guide
+
 ### Authentication & Permissions
 
-- **Authentication**: Token-based (DRF TokenAuthentication)
-- **Roles**: Admin, HR Manager, Viewer
+- **Authentication**: Session Authentication, Basic Authentication
+- **Roles**: HR Staff (DRH/Responsable RH), Manager, Authenticated User
 - **Permissions**: Role-based access control (RBAC)
 - **Documentation**: `USERS_PERMISSIONS_DOCUMENTATION.md`
 
@@ -292,10 +337,17 @@ SmartHR360 M3 Future Skills is an AI-powered future skills prediction and recomm
 #### Future Skills Prediction
 
 - `GET /api/future-skills/` - List predictions
+  - **Query Params**: job_role_id, horizon_years, page, page_size
+  - **Permissions**: Authenticated users (filtered by role)
+  - **OpenAPI**: ✅ Fully documented with examples
+  
 - `GET /api/future-skills/{id}/` - Prediction detail
+  
 - `POST /api/future-skills/recalculate/` - Trigger recalculation
-- **Filters**: job_role, horizon_years, level
-- **Pagination**: 20 items per page (configurable)
+  - **Request Body**: horizon_years (integer, default: 5)
+  - **Permissions**: HR Staff only
+  - **Process**: Recalculate all predictions, generate recommendations, create PredictionRun
+  - **OpenAPI**: ✅ Fully documented with 2 examples (5-year, 10-year)
 
 #### Market Trends
 
@@ -312,9 +364,18 @@ SmartHR360 M3 Future Skills is an AI-powered future skills prediction and recomm
 #### Model Training
 
 - `POST /api/training/train/` - Train new model
+  - **Request Body**: dataset_path, test_split, hyperparameters, model_version, notes, async_training
+  - **Permissions**: HR Staff only
+  - **Modes**: Synchronous (immediate) or Asynchronous (Celery background)
+  - **OpenAPI**: ✅ Fully documented with sync/async examples, hyperparameters, 6-step process
+  
 - `GET /api/training/runs/` - List training runs
+  - **Query Params**: status (RUNNING/COMPLETED/FAILED), trained_by, page, page_size
+  - **OpenAPI**: ✅ Fully documented with filters and use cases
+  
 - `GET /api/training/runs/{id}/` - Training run detail
-- **Filters**: status, model_version, date range
+  - **Response**: Metrics, per-class metrics, hyperparameters, dataset info, errors
+  - **OpenAPI**: ✅ Fully documented with detailed response structure
 
 #### Employees
 

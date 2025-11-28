@@ -8,6 +8,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 
 from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation, Employee, TrainingRun, Skill
 from .serializers import (
@@ -59,6 +61,58 @@ class EmployeePagination(PageNumberPagination):
     max_page_size = 100
 
 
+@extend_schema(
+    tags=['Predictions'],
+    summary='List future skill predictions',
+    description='''Retrieve a paginated list of future skill predictions with optional filters.
+
+    **Permissions**: HR Staff or Manager
+
+    **Filters**:
+    - `job_role_id`: Filter by specific job role
+    - `horizon_years`: Filter by prediction horizon (e.g., 3, 5, 10 years)
+
+    **Pagination**: Results are paginated with 10 items per page by default.
+    Use `page` and `page_size` query parameters to control pagination.
+
+    **Example**: `/api/future-skills/?job_role_id=1&horizon_years=5&page=1&page_size=20`
+    ''',
+    parameters=[
+        OpenApiParameter(
+            name='job_role_id',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Filter predictions for a specific job role ID',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='horizon_years',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Filter by prediction horizon in years (e.g., 3, 5, 10)',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='page',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Page number for pagination',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='page_size',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Number of items per page (max 100)',
+            required=False,
+        ),
+    ],
+    responses={
+        200: FutureSkillPredictionSerializer(many=True),
+        401: OpenApiTypes.OBJECT,
+        403: OpenApiTypes.OBJECT,
+    },
+)
 class FutureSkillPredictionListAPIView(ListAPIView):
     """
     Liste les prédictions de compétences futures.
@@ -97,6 +151,79 @@ class FutureSkillPredictionListAPIView(ListAPIView):
         return queryset
 
 
+@extend_schema(
+    tags=['Predictions'],
+    summary='Recalculate all predictions',
+    description='''Trigger a complete recalculation of all future skill predictions using ML or rules engine.
+
+    **Permissions**: HR Staff only (DRH/Responsable RH)
+
+    **Process**:
+    1. Recalculates predictions for all job role × skill combinations
+    2. Uses ML model if available, falls back to rules engine
+    3. Generates HR investment recommendations for HIGH predictions
+    4. Creates a PredictionRun record for traceability
+
+    **Use Cases**:
+    - After training a new ML model
+    - When market trends or economic data changes
+    - Periodic updates (monthly/quarterly)
+    - When switching between ML and rules engine
+
+    **Performance**: May take several seconds for large datasets (500+ combinations).
+    Consider using async execution for production.
+
+    **Example Request**:
+    ```json
+    {
+      "horizon_years": 5
+    }
+    ```
+    ''',
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'horizon_years': {
+                    'type': 'integer',
+                    'description': 'Prediction horizon in years',
+                    'default': 5,
+                    'example': 5,
+                }
+            }
+        }
+    },
+    examples=[
+        OpenApiExample(
+            'Default 5-year horizon',
+            value={'horizon_years': 5},
+            request_only=True,
+        ),
+        OpenApiExample(
+            '10-year strategic planning',
+            value={'horizon_years': 10},
+            request_only=True,
+        ),
+    ],
+    responses={
+        200: {
+            'type': 'object',
+            'properties': {
+                'horizon_years': {'type': 'integer'},
+                'total_predictions': {'type': 'integer'},
+                'total_recommendations': {'type': 'integer'},
+            },
+            'example': {
+                'horizon_years': 5,
+                'total_predictions': 357,
+                'total_recommendations': 42,
+            }
+        },
+        400: OpenApiTypes.OBJECT,
+        401: OpenApiTypes.OBJECT,
+        403: OpenApiTypes.OBJECT,
+    },
+)
 class RecalculateFutureSkillsAPIView(APIView):
     """
     Recalcule toutes les prédictions FutureSkillPrediction
@@ -1245,6 +1372,110 @@ class TrainingRunPagination(PageNumberPagination):
     max_page_size = 100
 
 
+@extend_schema(
+    tags=['Training'],
+    summary='Train new ML model',
+    description='''Train a new machine learning model for future skill predictions.
+
+    **Permissions**: HR Staff only (DRH/Responsable RH)
+
+    **Execution Modes**:
+
+    1. **Synchronous** (default, `async_training=false`):
+       - Training executes immediately in the request
+       - Returns complete metrics when finished
+       - Suitable for small datasets or development
+       - May timeout on large datasets
+
+    2. **Asynchronous** (`async_training=true`):
+       - Training executes in background via Celery
+       - Returns immediately with task ID
+       - Check status via `/api/training/runs/{id}/`
+       - Recommended for production and large datasets
+
+    **Training Process**:
+    1. Loads and validates dataset
+    2. Performs train/test split
+    3. Trains Random Forest classifier with hyperparameters
+    4. Evaluates on test set (accuracy, precision, recall, F1)
+    5. Saves model to `ml/models/` directory
+    6. Records metrics in TrainingRun
+
+    **Hyperparameters**:
+    - `n_estimators`: Number of trees (default: 100)
+    - `max_depth`: Maximum tree depth (default: 15)
+    - `min_samples_split`: Min samples to split node (default: 5)
+    - `min_samples_leaf`: Min samples at leaf (default: 2)
+    - `random_state`: Random seed (default: 42)
+
+    **Model Versioning**:
+    Provide a descriptive version string (e.g., "v2.1_optimized", "prod_2024_q4").
+    If omitted, auto-generates timestamp-based version.
+
+    **Example Request (Sync)**:
+    ```json
+    {
+      "dataset_path": "ml/data/future_skills_dataset.csv",
+      "test_split": 0.2,
+      "hyperparameters": {
+        "n_estimators": 150,
+        "max_depth": 20
+      },
+      "model_version": "v2.1_production",
+      "notes": "Optimized model for Q4 2024",
+      "async_training": false
+    }
+    ```
+
+    **Example Request (Async)**:
+    ```json
+    {
+      "dataset_path": "ml/data/future_skills_dataset.csv",
+      "test_split": 0.2,
+      "async_training": true,
+      "model_version": "v2.2_background"
+    }
+    ```
+    ''',
+    request=TrainModelRequestSerializer,
+    examples=[
+        OpenApiExample(
+            'Synchronous training with custom hyperparameters',
+            value={
+                'dataset_path': 'ml/data/future_skills_dataset.csv',
+                'test_split': 0.2,
+                'hyperparameters': {
+                    'n_estimators': 150,
+                    'max_depth': 20,
+                    'min_samples_split': 5
+                },
+                'model_version': 'v2.1_prod',
+                'notes': 'Production model with enhanced parameters',
+                'async_training': False
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Asynchronous background training',
+            value={
+                'dataset_path': 'ml/data/future_skills_dataset.csv',
+                'test_split': 0.25,
+                'async_training': True,
+                'model_version': 'v3.0_background',
+                'notes': 'Large dataset training in background'
+            },
+            request_only=True,
+        ),
+    ],
+    responses={
+        200: TrainModelResponseSerializer,
+        201: TrainModelResponseSerializer,
+        400: OpenApiTypes.OBJECT,
+        401: OpenApiTypes.OBJECT,
+        403: OpenApiTypes.OBJECT,
+        500: OpenApiTypes.OBJECT,
+    },
+)
 class TrainModelAPIView(APIView):
     """
     Train a new ML model (synchronous or asynchronous execution).
@@ -1531,6 +1762,64 @@ class TrainModelAPIView(APIView):
             )
 
 
+@extend_schema(
+    tags=['Training'],
+    summary='List all training runs',
+    description='''Retrieve a paginated list of all model training runs with metrics and status.
+
+    **Permissions**: HR Staff or Manager
+
+    **Filters**:
+    - `status`: Filter by training status (RUNNING, COMPLETED, FAILED)
+    - `trained_by`: Filter by username who initiated training
+    - `page`: Page number for pagination
+    - `page_size`: Number of items per page (max 100)
+
+    **Use Cases**:
+    - Monitor ongoing training jobs
+    - Review historical training results
+    - Compare model versions and performance
+    - Audit training activities
+
+    **Example**: `/api/training/runs/?status=COMPLETED&trained_by=admin&page=1`
+    ''',
+    parameters=[
+        OpenApiParameter(
+            name='status',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by status (RUNNING, COMPLETED, FAILED)',
+            required=False,
+            enum=['RUNNING', 'COMPLETED', 'FAILED'],
+        ),
+        OpenApiParameter(
+            name='trained_by',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by username who initiated training',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='page',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Page number',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='page_size',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Items per page (max 100)',
+            required=False,
+        ),
+    ],
+    responses={
+        200: TrainingRunSerializer(many=True),
+        401: OpenApiTypes.OBJECT,
+        403: OpenApiTypes.OBJECT,
+    },
+)
 class TrainingRunListAPIView(ListAPIView):
     """
     List all training runs with pagination.
@@ -1568,6 +1857,37 @@ class TrainingRunListAPIView(ListAPIView):
         return queryset
 
 
+@extend_schema(
+    tags=['Training'],
+    summary='Get training run details',
+    description='''Retrieve detailed information about a specific training run.
+
+    **Permissions**: HR Staff or Manager
+
+    **Returns**:
+    - **Basic Info**: ID, version, status, timestamps
+    - **Performance Metrics**: Accuracy, precision, recall, F1 score
+    - **Per-Class Metrics**: Detailed metrics for each prediction level (HIGH, MEDIUM, LOW)
+    - **Model Configuration**: Hyperparameters used during training
+    - **Dataset Info**: Sample counts, feature list, train/test split
+    - **Error Details**: Error messages if training failed
+    - **Execution Info**: Duration, trained by user
+
+    **Use Cases**:
+    - Review specific model performance
+    - Debug failed training runs
+    - Compare hyperparameter configurations
+    - Audit model versioning and traceability
+
+    **Example**: `/api/training/runs/42/`
+    ''',
+    responses={
+        200: TrainingRunDetailSerializer,
+        401: OpenApiTypes.OBJECT,
+        403: OpenApiTypes.OBJECT,
+        404: OpenApiTypes.OBJECT,
+    },
+)
 class TrainingRunDetailAPIView(RetrieveAPIView):
     """
     Get detailed information about a specific training run.
