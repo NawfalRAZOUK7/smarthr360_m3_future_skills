@@ -27,12 +27,14 @@ The `.github/workflows/ci.yml` file contains three main jobs:
 ### Triggers
 
 The ML tests run on:
+
 - **Push** to `main` or `develop` branches
 - **Pull requests** to `main` or `develop` branches
 
 ### Matrix Strategy
 
 Tests run on multiple Python versions:
+
 ```yaml
 strategy:
   matrix:
@@ -44,6 +46,7 @@ This ensures compatibility across supported Python versions.
 ### Services
 
 PostgreSQL database for integration tests:
+
 ```yaml
 services:
   postgres:
@@ -63,12 +66,14 @@ services:
 ### 1. Environment Setup
 
 **Checkout code:**
+
 ```yaml
 - name: Checkout code
   uses: actions/checkout@v4
 ```
 
 **Set up Python:**
+
 ```yaml
 - name: Set up Python ${{ matrix.python-version }}
   uses: actions/setup-python@v5
@@ -78,6 +83,7 @@ services:
 ```
 
 **Install system dependencies:**
+
 ```yaml
 - name: Install system dependencies
   run: |
@@ -88,6 +94,7 @@ services:
 ### 2. Python Dependencies
 
 **Install all required packages:**
+
 ```yaml
 - name: Install Python dependencies
   run: |
@@ -97,6 +104,7 @@ services:
 ```
 
 **What gets installed:**
+
 - Django and REST framework
 - scikit-learn, pandas, numpy
 - pytest and testing tools
@@ -105,6 +113,7 @@ services:
 ### 3. Configuration
 
 **Create environment file:**
+
 ```yaml
 - name: Create .env file
   run: |
@@ -115,6 +124,7 @@ services:
 ```
 
 **Run database migrations:**
+
 ```yaml
 - name: Run migrations
   run: |
@@ -126,6 +136,7 @@ services:
 ### 4. ML Unit Tests
 
 **Fast unit tests only:**
+
 ```yaml
 - name: Run ML unit tests
   run: |
@@ -140,6 +151,7 @@ services:
 ```
 
 **What it tests:**
+
 - Model training (32 tests)
 - Prediction quality (26 tests)
 - Monitoring (12 tests)
@@ -148,6 +160,7 @@ services:
 ### 5. ML Integration Tests
 
 **API integration tests:**
+
 ```yaml
 - name: Run ML integration tests
   run: |
@@ -162,6 +175,7 @@ services:
 ```
 
 **What it tests:**
+
 - ML/rules engine switching (18 tests)
 - API endpoint integration
 - Error handling
@@ -170,6 +184,7 @@ services:
 ### 6. Complete ML Test Suite
 
 **All ML tests with coverage:**
+
 ```yaml
 - name: Run all ML tests with coverage
   run: |
@@ -185,6 +200,7 @@ services:
 ```
 
 **Total coverage:**
+
 - 88 ML tests (70 unit + 18 integration)
 - Combined coverage report
 - XML format for Codecov
@@ -192,6 +208,7 @@ services:
 ### 7. Coverage Upload
 
 **Upload to Codecov:**
+
 ```yaml
 - name: Upload ML coverage to Codecov
   uses: codecov/codecov-action@v5
@@ -204,6 +221,7 @@ services:
 ```
 
 **Features:**
+
 - Separate ML test flag
 - Per-Python-version reports
 - Non-blocking (continue on error)
@@ -211,6 +229,7 @@ services:
 ### 8. Coverage Validation
 
 **Check coverage threshold:**
+
 ```yaml
 - name: Generate coverage report
   run: |
@@ -226,6 +245,7 @@ services:
 ### 9. Artifact Verification
 
 **Check ML model directory:**
+
 ```yaml
 - name: Check ML model artifacts
   run: |
@@ -234,6 +254,7 @@ services:
 ```
 
 **Verify test data:**
+
 ```yaml
 - name: Verify ML test data
   run: |
@@ -244,6 +265,7 @@ services:
 ### 10. Performance Tests (Main Branch Only)
 
 **Slow tests on main:**
+
 ```yaml
 - name: Run slow ML tests (performance)
   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -259,6 +281,7 @@ services:
 ```
 
 **When it runs:**
+
 - Only on pushes to `main` branch
 - Includes batch prediction tests
 - Includes concurrent operation tests
@@ -272,6 +295,7 @@ services:
 Configure in GitHub repository settings:
 
 1. **SECRET_KEY**
+
    - Django secret key for testing
    - Path: Settings → Secrets → Actions
    - Generate: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`
@@ -284,6 +308,7 @@ Configure in GitHub repository settings:
 ### Environment Variables in Workflow
 
 Set automatically in CI:
+
 ```bash
 DJANGO_SETTINGS_MODULE=config.settings.test
 SECRET_KEY=${{ secrets.SECRET_KEY }}
@@ -346,11 +371,13 @@ All PR Checks
 ### Codecov Integration
 
 **What gets uploaded:**
+
 - `coverage.xml` - Combined coverage data
 - Flags: `ml-tests` - Separate ML coverage
 - Matrix: Per-Python-version reports
 
 **View coverage:**
+
 1. Visit: https://codecov.io/gh/NawfalRAZOUK7/smarthr360_m3_future_skills
 2. Filter by: `ml-tests` flag
 3. Compare: Python 3.11 vs 3.12
@@ -358,11 +385,13 @@ All PR Checks
 ### Coverage Threshold
 
 **Current threshold:** 35%
+
 ```yaml
 coverage report --fail-under=35
 ```
 
 **Coverage breakdown:**
+
 - ml.training_service: 85%
 - ml.prediction_engine: 78%
 - future_skills.services.prediction_engine: 75%
@@ -375,6 +404,7 @@ coverage report --fail-under=35
 ### 1. Parallel Execution
 
 Tests run in parallel across Python versions:
+
 ```
 Python 3.11        Python 3.12
     ↓                  ↓
@@ -388,6 +418,7 @@ Total time: ~8-10s (not 16-20s)
 ### 2. Smart Caching
 
 **Pip cache:**
+
 ```yaml
 cache: "pip"
 ```
@@ -395,6 +426,7 @@ cache: "pip"
 Caches installed packages between runs.
 
 **Benefits:**
+
 - Faster dependency installation
 - Reduced network usage
 - Consistent package versions
@@ -402,11 +434,13 @@ Caches installed packages between runs.
 ### 3. Test Markers
 
 **Fast tests in PR:**
+
 ```bash
 pytest -m "not slow"
 ```
 
 **All tests on main:**
+
 ```bash
 pytest  # Includes slow tests
 ```
@@ -414,11 +448,13 @@ pytest  # Includes slow tests
 ### 4. Fail Fast
 
 **Continue on non-critical failures:**
+
 ```yaml
 continue-on-error: true
 ```
 
 Used for:
+
 - Coverage threshold checks
 - Optional validations
 
@@ -436,27 +472,35 @@ Used for:
 ### Common Issues
 
 **Issue 1: Import errors**
+
 ```
 ModuleNotFoundError: No module named 'sklearn'
 ```
+
 **Fix:** Check `requirements_ml.txt` installed
 
 **Issue 2: Database connection**
+
 ```
 django.db.utils.OperationalError: could not connect
 ```
+
 **Fix:** Check PostgreSQL service running
 
 **Issue 3: Missing test data**
+
 ```
 FileNotFoundError: ml/tests/test_data/sample_training_data.csv
 ```
+
 **Fix:** Ensure test data committed to repo
 
 **Issue 4: Coverage below threshold**
+
 ```
 Coverage failure: total of 32% is less than fail-under=35%
 ```
+
 **Fix:** Add more tests or adjust threshold
 
 ### Local Reproduction
@@ -561,11 +605,13 @@ docker run --rm \
 ### GitHub Checks
 
 **Automatic on PR:**
+
 - ✅ All ML tests passing
 - ✅ Coverage threshold met
 - ✅ No critical failures
 
 **Status badges:**
+
 ```markdown
 ![CI Status](https://github.com/NawfalRAZOUK7/smarthr360_m3_future_skills/workflows/CI/badge.svg)
 ```
@@ -573,6 +619,7 @@ docker run --rm \
 ### Codecov Status
 
 **On PR:**
+
 - Coverage diff shown
 - New uncovered lines highlighted
 - Trend graph displayed
@@ -580,18 +627,20 @@ docker run --rm \
 ### Failure Notifications
 
 **Email notifications:**
+
 - Test failures on main
 - Coverage drops below threshold
 - Build errors
 
 **Slack integration (optional):**
+
 ```yaml
 - name: Notify Slack
   if: failure()
   uses: 8398a7/action-slack@v3
   with:
     status: ${{ job.status }}
-    channel: '#ml-alerts'
+    channel: "#ml-alerts"
 ```
 
 ---
@@ -600,19 +649,20 @@ docker run --rm \
 
 ### Current Performance
 
-| Metric | Value |
-|--------|-------|
-| Total ML tests | 88 |
-| Fast tests | 70 unit + 18 integration |
-| Slow tests | 2 performance |
-| PR test time | ~8-10s |
-| Main test time | ~15-20s |
-| Coverage | 37% |
-| Python versions | 2 (3.11, 3.12) |
+| Metric          | Value                    |
+| --------------- | ------------------------ |
+| Total ML tests  | 88                       |
+| Fast tests      | 70 unit + 18 integration |
+| Slow tests      | 2 performance            |
+| PR test time    | ~8-10s                   |
+| Main test time  | ~15-20s                  |
+| Coverage        | 37%                      |
+| Python versions | 2 (3.11, 3.12)           |
 
 ### Historical Trends
 
 Track over time:
+
 - Test count growth
 - Coverage improvement
 - Execution time changes
@@ -625,21 +675,25 @@ Track over time:
 ### Planned Improvements
 
 1. **Model artifact caching**
+
    - Cache trained models
    - Skip training in tests
    - Faster test execution
 
 2. **Parallel test execution**
+
    - pytest-xdist
    - Multiple workers
    - Halve execution time
 
 3. **Nightly performance tests**
+
    - Comprehensive benchmarks
    - Large dataset tests
    - Memory profiling
 
 4. **Coverage improvements**
+
    - Target: 50% overall
    - Focus: Prediction engine
    - Add: Edge case tests
@@ -658,8 +712,9 @@ Track over time:
 **Symptom:** Tests exceed 30-minute limit
 
 **Solution:**
+
 ```yaml
-timeout-minutes: 45  # Increase if needed
+timeout-minutes: 45 # Increase if needed
 ```
 
 ### Flaky Tests
@@ -667,6 +722,7 @@ timeout-minutes: 45  # Increase if needed
 **Symptom:** Intermittent failures
 
 **Solution:**
+
 ```bash
 # Re-run failed tests
 pytest --lf -v
@@ -680,6 +736,7 @@ pytest --reruns 3 -v
 **Symptom:** OOM errors
 
 **Solution:**
+
 ```yaml
 # Increase swap space
 - name: Increase swap
@@ -695,6 +752,7 @@ pytest --reruns 3 -v
 **Symptom:** Package version mismatches
 
 **Solution:**
+
 ```bash
 # Lock dependencies
 pip freeze > requirements-lock.txt
@@ -710,21 +768,25 @@ pip install -r requirements-lock.txt
 The CI/CD pipeline provides:
 
 ✅ **Comprehensive ML testing**
+
 - 88 tests across 2 Python versions
 - Unit + integration coverage
 - Performance tests on main
 
 ✅ **Fast feedback**
+
 - ~8-10s for PR tests
 - Parallel execution
 - Smart test markers
 
 ✅ **Quality gates**
+
 - 35% coverage minimum
 - All tests must pass
 - Automated reporting
 
 ✅ **Easy debugging**
+
 - Detailed logs
 - Local reproduction
 - Common fixes documented
