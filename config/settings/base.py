@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',  # << ajoute ça
+    'drf_spectacular',  # OpenAPI documentation
 
     # Apps projet
     'future_skills',   # ⬅️ ajoute cette ligne
@@ -146,6 +147,71 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# drf-spectacular settings for OpenAPI documentation
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'SmartHR360 Future Skills API',
+    'DESCRIPTION': '''Comprehensive API for SmartHR360 Future Skills prediction system.
+
+## Features
+
+### Prediction System
+- **ML-Powered Predictions**: Machine learning models for future skill requirements
+- **Rules-Based Fallback**: Reliable fallback when ML is unavailable
+- **Batch Processing**: Efficient bulk predictions for large datasets
+- **Real-time Recalculation**: On-demand prediction updates
+
+### Training & MLOps
+- **Model Training**: Async training with Celery integration
+- **Version Control**: Track model versions and performance
+- **Monitoring**: Comprehensive logging and drift detection
+- **Explainability**: SHAP-based explanations for predictions
+
+### HR Management
+- **Employee Management**: Full CRUD operations with skill tracking
+- **Bulk Import**: CSV/Excel file import with validation
+- **Skill Recommendations**: Personalized training recommendations
+- **Investment Planning**: HR investment recommendations based on predictions
+
+### Analytics & Reporting
+- **Market Trends**: Industry skill trend analysis
+- **Economic Reports**: Economic indicators and impact
+- **Performance Metrics**: Model accuracy and coverage metrics
+
+## Authentication
+
+All endpoints require authentication. Use Session or Basic Authentication.
+
+### Permissions
+- **HR Staff** (DRH/Responsable RH): Full access including recalculation and training
+- **Manager**: Read access to predictions and team data
+- **Authenticated**: Limited read access
+
+## Rate Limiting
+
+No rate limiting currently applied. Consider implementing for production.
+    ''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True,
+    },
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SORT_OPERATIONS': False,
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+    'TAGS': [
+        {'name': 'Predictions', 'description': 'Future skill predictions and recalculation'},
+        {'name': 'Training', 'description': 'ML model training and management'},
+        {'name': 'Employees', 'description': 'Employee management and skill tracking'},
+        {'name': 'Analytics', 'description': 'Market trends and economic reports'},
+        {'name': 'Recommendations', 'description': 'HR investment and skill recommendations'},
+        {'name': 'Bulk Operations', 'description': 'Batch processing and file imports'},
+    ],
 }
 
 # --- Module 3 : Future Skills / Machine Learning ---

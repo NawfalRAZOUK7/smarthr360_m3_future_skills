@@ -361,3 +361,22 @@ weighted avg     0.9867    0.9861    0.9862        72
 [WARNING] 2025-11-28 09:23:11 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
 [WARNING] 2025-11-28 09:23:25 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
 [WARNING] 2025-11-28 09:34:45 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 10:44:22 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 10:45:15 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 10:47:01 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 10:47:16 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 10:47:52 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[INFO] 2025-11-28 10:47:52 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: ========================================
+[INFO] 2025-11-28 10:47:52 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: 🚀 Starting prediction recalculation...
+[INFO] 2025-11-28 10:47:52 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Horizon: 5 years | Triggered by: system
+[INFO] 2025-11-28 10:47:54 future_skills.ml_model ml_model._load: FutureSkillsModel: modèle ML chargé depuis /Users/nawfalrazouk/smarthr360_m3_future_skills/ml/models/future_skills_model.pkl
+[INFO] 2025-11-28 10:47:54 future_skills.services.prediction_engine prediction_engine._load_model: ML model loaded successfully
+[INFO] 2025-11-28 10:47:54 future_skills.services.prediction_engine prediction_engine._load_model: Explanation engine initialized
+[INFO] 2025-11-28 10:47:54 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Dataset size: 17 job roles × 21 skills = 357 combinations
+[INFO] 2025-11-28 10:47:54 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: 🔧 Engine selected: ml_random_forest_v1
+[INFO] 2025-11-28 10:47:54 future_skills.services.prediction_engine prediction_engine.recalculate_predictions: Prepared 357 predictions for batch processing
+[WARNING] 2025-11-28 10:48:15 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 10:51:01 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 10:51:18 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 10:51:53 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 14:10:42 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
