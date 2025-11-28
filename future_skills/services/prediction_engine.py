@@ -1,15 +1,35 @@
 """Prediction engine for Future Skills (Module 3).
 
 This module provides:
-- A simple rule-based engine (Phase 1).
-- Optional integration with a trained ML model (Phase 2).
-- A recalculate_predictions(...) function used by management commands
-  and API views to refresh FutureSkillPrediction records.
-- Prediction logging for long-term monitoring and drift detection.
+- A PredictionEngine class for ML and rules-based predictions
+- A recalculate_predictions() function for batch updates
+- Prediction logging for monitoring and drift detection
+
+Usage:
+    # Initialize engine
+    engine = PredictionEngine()
+    
+    # Single prediction
+    score, level, rationale, explanation = engine.predict(
+        job_role_id=1,
+        skill_id=5,
+        horizon_years=5
+    )
+    
+    # Batch prediction
+    results = engine.batch_predict([
+        {'job_role_id': 1, 'skill_id': 5, 'horizon_years': 5},
+        {'job_role_id': 2, 'skill_id': 6, 'horizon_years': 3},
+    ])
+    
+    # Use in management command or API
+    from future_skills.services.prediction_engine import recalculate_predictions
+    total = recalculate_predictions(horizon_years=5)
 
 ⚠️ IMPORTANT:
-- The public API of this module is recalculate_predictions(...) and
-  calculate_level(...). Existing callers/tests should continue to work.
+- The public API is PredictionEngine, recalculate_predictions(), and calculate_level()
+- PredictionEngine auto-detects ML vs rules-based from settings
+- Existing callers/tests continue to work with backward compatibility
 """
 
 from __future__ import annotations
