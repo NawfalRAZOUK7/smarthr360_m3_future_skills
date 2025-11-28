@@ -462,7 +462,7 @@ class Employee(models.Model):
         blank=True,
         help_text="Liste des compétences actuelles de l'employé (ex : ['Python', 'Django'])."
     )
-    
+
     # Option B: Use ManyToMany instead of JSONField (advanced, more normalized)
     skills = models.ManyToManyField(
         Skill,
@@ -470,7 +470,7 @@ class Employee(models.Model):
         related_name='employees',
         help_text="Skills possessed by this employee"
     )
-    
+
     date_joined = models.DateTimeField(auto_now_add=True)
 
     class Meta:
