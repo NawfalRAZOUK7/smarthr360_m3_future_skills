@@ -150,17 +150,27 @@ class TestDataPipelineFlow:
         assert response.data['name'] == data['name']
         assert response.data['email'] == data['email']
 
-    @pytest.mark.skip(reason="employee-add-skill endpoint not yet implemented")
-    def test_skill_tracking_flow(self, admin_client, sample_employee, sample_future_skill):
+    def test_skill_tracking_flow(self, admin_client, sample_employee, sample_skill):
         """Test tracking skill assignments to employees."""
         # Add skill to employee
         url = reverse('employee-add-skill', kwargs={'pk': sample_employee.id})
-        data = {'skill_id': sample_future_skill.id}
-
+        data = {'skill_id': sample_skill.id}
+        
         response = admin_client.post(url, data, format='json')
-
-        # Adjust based on actual API
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_201_CREATED]
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert sample_skill.name in response.data['current_skills']
+        
+        # Verify employee was updated
+        sample_employee.refresh_from_db()
+        assert sample_skill.name in sample_employee.current_skills
+        
+        # Remove skill
+        remove_url = reverse('employee-remove-skill', kwargs={'pk': sample_employee.id})
+        remove_response = admin_client.post(remove_url, data, format='json')
+        
+        assert remove_response.status_code == status.HTTP_200_OK
+        assert sample_skill.name not in remove_response.data['current_skills']
 
 
 @pytest.mark.skip(reason="PredictionEngine class not yet available as importable class")
