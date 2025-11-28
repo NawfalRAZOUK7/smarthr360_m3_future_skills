@@ -514,3 +514,43 @@ class TrainModelResponseSerializer(serializers.Serializer):
         required=False,
         help_text="Celery task ID (if async_training=true)"
     )
+
+
+# ============================================================================
+# Skill Assignment Serializers (Section 4.1)
+# ============================================================================
+
+class AddSkillToEmployeeSerializer(serializers.Serializer):
+    """
+    Serializer for adding a skill to an employee.
+
+    Validates that the skill_id exists before assignment.
+    """
+    skill_id = serializers.IntegerField(required=True)
+
+    def validate_skill_id(self, value):
+        from ..models import Skill
+        try:
+            Skill.objects.get(pk=value)
+        except Skill.DoesNotExist:
+            raise serializers.ValidationError(f"Skill with id {value} does not exist.")
+        return value
+
+
+class RemoveSkillFromEmployeeSerializer(serializers.Serializer):
+    """
+    Serializer for removing a skill from an employee.
+    """
+    skill_id = serializers.IntegerField(required=True)
+
+
+class UpdateEmployeeSkillsSerializer(serializers.Serializer):
+    """
+    Serializer for updating all employee skills at once.
+
+    Replaces the entire current_skills list with the provided skills.
+    """
+    current_skills = serializers.ListField(
+        child=serializers.CharField(),
+        allow_empty=True
+    )
