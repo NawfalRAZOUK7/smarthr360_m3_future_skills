@@ -4,19 +4,19 @@ kind: Kustomization
 namespace: smarthr360
 
 resources:
-  - 00-namespace.yaml
-  - 01-configmap.yaml
-  - 02-secrets.yaml
-  - 03-persistent-volumes.yaml
-  - 10-postgres.yaml
-  - 11-redis.yaml
-  - 20-api-deployment.yaml
-  - 21-celery-worker.yaml
-  - 22-celery-beat.yaml
-  - 30-ingress.yaml
-  - 40-hpa.yaml
-  - 50-network-policies.yaml
-  - 60-rbac-pdb.yaml
+  - ../00-namespace.yaml
+  - ../01-configmap.yaml
+  - ../02-secrets.yaml
+  - ../03-persistent-volumes.yaml
+  - ../10-postgres.yaml
+  - ../11-redis.yaml
+  - ../20-api-deployment.yaml
+  - ../21-celery-worker.yaml
+  - ../22-celery-beat.yaml
+  - ../30-ingress.yaml
+  - ../40-hpa.yaml
+  - ../50-network-policies.yaml
+  - ../60-rbac-pdb.yaml
 
 # Common labels applied to all resources
 commonLabels:
