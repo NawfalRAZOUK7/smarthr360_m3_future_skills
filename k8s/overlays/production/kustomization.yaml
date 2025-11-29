@@ -154,11 +154,11 @@ patchesJson6902:
         path: /spec/resources/requests/storage
         value: 30Gi
 
-# Production pod disruption budget
-- target:
-    kind: PodDisruptionBudget
-    name: smarthr360-api-pdb
-  patch: |-
-    - op: replace
-      path: /spec/minAvailable
-      value: 2
+  # Production pod disruption budget
+  - target:
+      kind: PodDisruptionBudget
+      name: smarthr360-api-pdb
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 2
