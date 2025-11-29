@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 import structlog
-from django.conf import settings
 
 
 # ============================================================================
@@ -66,16 +65,26 @@ def censor_sensitive_data(logger: Any, method_name: str, event_dict: Dict[str, A
 # STRUCTLOG CONFIGURATION
 # ============================================================================
 
-def get_structlog_config(use_json: bool = True) -> Dict[str, Any]:
+def get_structlog_config(use_json: bool = True, base_dir: Path = None) -> Dict[str, Any]:
     """
     Get structlog configuration.
 
     Args:
         use_json: If True, use JSON formatter. If False, use colored console.
+        base_dir: Base directory for log files. If None, uses /tmp for container environments.
 
     Returns:
         Dict containing structlog configuration
     """
+    # Use /tmp for logs in container environments if base_dir not provided
+    if base_dir is None:
+        log_dir = Path('/tmp/logs')
+    else:
+        log_dir = base_dir / 'logs'
+
+    # Ensure log directory exists
+    log_dir.mkdir(parents=True, exist_ok=True)
+
     timestamper = structlog.processors.TimeStamper(fmt='iso')
 
     shared_processors = [
@@ -128,14 +137,14 @@ def get_structlog_config(use_json: bool = True) -> Dict[str, Any]:
             'file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'json',
-                'filename': os.path.join(settings.BASE_DIR, 'logs', 'application.log'),
+                'filename': str(log_dir / 'application.log'),
                 'maxBytes': 10485760,  # 10MB
                 'backupCount': 10,
             },
             'error_file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'json',
-                'filename': os.path.join(settings.BASE_DIR, 'logs', 'error.log'),
+                'filename': str(log_dir / 'error.log'),
                 'maxBytes': 10485760,  # 10MB
                 'backupCount': 10,
                 'level': 'ERROR',

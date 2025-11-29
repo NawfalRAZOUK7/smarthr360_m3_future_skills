@@ -521,7 +521,10 @@ import os
 
 # Setup structured logging
 # This will be initialized in wsgi.py and asgi.py
-LOGGING = get_structlog_config(use_json=os.getenv('ENVIRONMENT', 'development').lower() == 'production')
+LOGGING = get_structlog_config(
+    use_json=os.getenv('ENVIRONMENT', 'development').lower() == 'production',
+    base_dir=BASE_DIR
+)
 
 # ============================================================================
 # ELASTIC APM CONFIGURATION
