@@ -1,0 +1,107 @@
+# Celery & Background Tasks Monitoring Dependencies
+# Install with: pip install -r requirements_celery.txt
+
+# ============================================================================
+# CELERY MONITORING & MANAGEMENT
+# ============================================================================
+
+# Flower - Real-time web-based monitoring for Celery
+flower>=2.0.1
+
+# Celery Exporter - Prometheus metrics for Celery
+# celery-exporter>=1.5.0  # Optional: Prometheus metrics (has Rust build issues)
+
+# django-celery-results - Store task results in Django database
+django-celery-results>=2.5.1
+
+# django-celery-beat - Database-backed periodic task scheduler
+django-celery-beat>=2.5.0
+
+# ============================================================================
+# MONITORING & OBSERVABILITY
+# ============================================================================
+
+# Prometheus client for custom metrics
+prometheus-client>=0.19.0
+
+# Structlog for structured logging
+structlog>=24.1.0
+python-json-logger>=2.0.7
+
+# Sentry for error tracking (optional)
+sentry-sdk>=1.40.0
+
+# ============================================================================
+# RETRY & RESILIENCE
+# ============================================================================
+
+# Tenacity for advanced retry strategies
+tenacity>=8.2.3
+
+# Circuit breaker pattern
+pybreaker>=1.0.1
+
+# Rate limiting
+ratelimit>=2.2.1
+
+# ============================================================================
+# TASK MANAGEMENT
+# ============================================================================
+
+# Redis for better queue management
+redis>=5.0.1
+hiredis>=2.2.3  # C parser for Redis, faster performance
+
+# Kombu - Messaging library used by Celery
+kombu>=5.3.4
+
+# ============================================================================
+# TESTING & DEVELOPMENT
+# ============================================================================
+
+# Celery testing utilities
+pytest-celery>=0.0.0
+celery[pytest]>=5.3.4
+
+# Freezegun for time-based testing
+freezegun>=1.4.0
+
+# ============================================================================
+# OPTIONAL: ADDITIONAL BROKERS (if not using Redis)
+# ============================================================================
+
+# RabbitMQ support (alternative to Redis)
+# amqp>=5.2.0
+# librabbitmq>=2.0.0
+
+# Amazon SQS support
+# kombu[sqs]>=5.3.4
+# boto3>=1.34.0
+
+# ============================================================================
+# DOCUMENTATION
+# ============================================================================
+#
+# Installation:
+#   pip install -r requirements_celery.txt
+#
+# Key Components:
+#   - Flower: http://localhost:5555 (web monitoring)
+#   - Prometheus metrics: http://localhost:9808/metrics
+#   - django-celery-results: Task results in database
+#   - django-celery-beat: Scheduled tasks in database
+#
+# Usage:
+#   # Start Celery worker with monitoring
+#   celery -A config worker --loglevel=info --concurrency=4
+#
+#   # Start Flower monitoring
+#   celery -A config flower --port=5555
+#
+#   # Start Celery Beat scheduler
+#   celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+#
+#   # Start Prometheus exporter
+#   celery-exporter --broker redis://localhost:6379/0
+#
+# ============================================================================
