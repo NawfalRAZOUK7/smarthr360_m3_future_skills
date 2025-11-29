@@ -82,10 +82,6 @@ patches:
         path: /spec/maxReplicas
         value: 3
 
-# Dev-specific ingress (different domain)
-patchesStrategicMerge:
-  - ingress-patch.yaml
-
 # PVC size adjustments for dev
 patchesJson6902:
   - target:

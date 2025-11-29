@@ -77,10 +77,6 @@ patches:
         path: /spec/maxReplicas
         value: 5
 
-# Staging ingress
-patchesStrategicMerge:
-  - ingress-patch.yaml
-
 # PVC sizes for staging
 patchesJson6902:
   - target:

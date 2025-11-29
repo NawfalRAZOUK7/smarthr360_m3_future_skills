@@ -113,10 +113,6 @@ patches:
         path: /spec/maxReplicas
         value: 8
 
-# Production ingress with strict security
-patchesStrategicMerge:
-  - ingress-patch.yaml
-
 # Full PVC sizes for production
 patchesJson6902:
   - target:
