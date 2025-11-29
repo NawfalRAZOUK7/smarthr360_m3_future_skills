@@ -10,7 +10,7 @@ Please migrate to v2: /api/v2/
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from ..views import (
+from .views import (
     FutureSkillPredictionListAPIView,
     RecalculateFutureSkillsAPIView,
     MarketTrendListAPIView,
