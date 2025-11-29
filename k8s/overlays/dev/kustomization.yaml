@@ -26,8 +26,9 @@ images:
 # Dev-specific configuration
 configMapGenerator:
   - name: smarthr360-config
-    behavior: create
+    behavior: merge
     literals:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
       - ENVIRONMENT=development
       - DEBUG=true
       - LOG_LEVEL=DEBUG
