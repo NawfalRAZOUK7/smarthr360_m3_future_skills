@@ -20,11 +20,11 @@ resources:
 # Images to be patched by overlays
 images:
   - name: smarthr360-api
-    newName: your-registry/smarthr360
-    newTag: latest
+    newName: ghcr.io/nawfalrazouk7/smarthr360-api
+    newTag: main
   - name: smarthr360-celery
-    newName: your-registry/smarthr360-celery
-    newTag: latest
+    newName: ghcr.io/nawfalrazouk7/smarthr360-celery
+    newTag: main
   - name: smarthr360-nginx
-    newName: your-registry/smarthr360-nginx
-    newTag: latest
+    newName: ghcr.io/nawfalrazouk7/smarthr360-nginx
+    newTag: main

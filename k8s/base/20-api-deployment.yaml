@@ -62,7 +62,7 @@ spec:
               echo "Redis is ready!"
       containers:
         - name: api
-          image: your-registry/smarthr360:latest # Replace with your image
+          image: ghcr.io/nawfalrazouk7/smarthr360-api:main
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
