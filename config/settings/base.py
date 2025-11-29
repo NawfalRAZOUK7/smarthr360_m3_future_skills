@@ -555,17 +555,4 @@ HEALTH_CHECK = {
     'DISK_USAGE_MAX': 90,  # Percent
     'MEMORY_MIN': 100,  # MB
 }
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'WARNING',
-    },
-}
+
