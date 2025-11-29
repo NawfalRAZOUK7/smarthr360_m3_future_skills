@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smarthr360-config
+  namespace: smarthr360-dev
+data:
+  # Django Settings
+  DJANGO_SETTINGS_MODULE: "config.settings.development"
+  DEBUG: "true"
+  ENVIRONMENT: "development"
+
+  # Database Configuration
+  DB_NAME: "smarthr360"
+  DB_PORT: "5432"
+
+  # Redis Configuration
+  REDIS_PORT: "6379"
+  CELERY_RESULT_BACKEND: "django-db"
+
+  # Application Settings
+  ALLOWED_HOSTS: "dev.smarthr360.com,localhost,127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+
+  # ML Settings
+  FUTURE_SKILLS_USE_ML: "false"
+  ML_MODEL_PATH: "/app/ml/models"
+
+  # Security Settings (relaxed for dev)
+  SECURE_SSL_REDIRECT: "false"
+  SESSION_COOKIE_SECURE: "false"
+  CSRF_COOKIE_SECURE: "false"
+  SECURE_HSTS_SECONDS: "0"
+
+  # Monitoring
+  ENABLE_PROMETHEUS: "false"
+  ENABLE_HEALTH_CHECKS: "true"
+
+  # Auto Migration
+  AUTO_MIGRATE: "true"
+
+  # Gunicorn Settings (smaller for dev)
+  GUNICORN_WORKERS: "2"
+  GUNICORN_THREADS: "2"
+  GUNICORN_TIMEOUT: "120"
+
+  # Celery Settings
+  CELERY_WORKER_CONCURRENCY: "2"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "1000"
