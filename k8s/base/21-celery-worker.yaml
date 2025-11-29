@@ -61,7 +61,7 @@ spec:
               echo "Redis is ready!"
       containers:
         - name: celery-worker
-          image: your-registry/smarthr360-celery:latest # Replace with your image
+          image: ghcr.io/nawfalrazouk7/smarthr360-celery:main
           imagePullPolicy: Always
           command:
             - celery
