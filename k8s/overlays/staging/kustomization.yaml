@@ -3,31 +3,30 @@ kind: Kustomization
 
 namespace: smarthr360-staging
 
-bases:
+resources:
   - ../../base
+  - configmap-patch.yaml
+  - ingress-patch.yaml
 
 # Staging environment labels
 commonLabels:
   environment: staging
   app.kubernetes.io/environment: staging
 
-# Staging-specific images
+# Staging-specific images (use develop branch builds)
 images:
   - name: smarthr360-api
     newName: ghcr.io/nawfalrazouk7/smarthr360-api
-    newTag: staging
-  - name: smarthr360-celery
-    newName: ghcr.io/nawfalrazouk7/smarthr360-celery
-    newTag: staging
-  - name: smarthr360-nginx
-    newName: ghcr.io/nawfalrazouk7/smarthr360-nginx
-    newTag: staging
+    newTag: develop
 
-# Staging-specific configuration
-configMapGenerator:
-  - name: smarthr360-config
-    behavior: create
-    literals:
+# Increase replicas for staging (more than dev, less than prod)
+replicas:
+  - name: smarthr360-api
+    count: 2
+  - name: smarthr360-celery-worker
+    count: 1
+  - name: smarthr360-celery-beat
+    count: 1
       - ENVIRONMENT=staging
       - DEBUG=false
       - LOG_LEVEL=INFO

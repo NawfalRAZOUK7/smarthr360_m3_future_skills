@@ -1,0 +1,114 @@
+groups:
+  - name: smarthr360_api_alerts
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (environment, pod)
+            /
+            sum(rate(http_requests_total[5m])) by (environment, pod)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High error rate detected in {{ $labels.environment }}"
+          description: "Error rate is {{ $value | humanizePercentage }} in pod {{ $labels.pod }}"
+
+      # API latency
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, environment)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency in {{ $labels.environment }}"
+          description: "95th percentile latency is {{ $value }}s"
+
+      # Pod restarts
+      - alert: PodRestartingFrequently
+        expr: |
+          rate(kube_pod_container_status_restarts_total{namespace=~"smarthr360-.*"}[1h]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Pod {{ $labels.pod }} is restarting frequently"
+          description: "Pod has restarted {{ $value }} times in the last hour"
+
+      # CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{namespace=~"smarthr360-.*"}[5m])) by (pod, namespace)
+          /
+          sum(container_spec_cpu_quota{namespace=~"smarthr360-.*"} / container_spec_cpu_period{namespace=~"smarthr360-.*"}) by (pod, namespace)
+          > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High CPU usage in {{ $labels.namespace }}/{{ $labels.pod }}"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+      # Memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            sum(container_memory_working_set_bytes{namespace=~"smarthr360-.*"}) by (pod, namespace)
+            /
+            sum(container_spec_memory_limit_bytes{namespace=~"smarthr360-.*"}) by (pod, namespace)
+          ) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High memory usage in {{ $labels.namespace }}/{{ $labels.pod }}"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      # Database connections
+      - alert: HighDatabaseConnections
+        expr: |
+          django_db_connections_total > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High database connection count"
+          description: "Database has {{ $value }} active connections"
+
+      # Celery queue size
+      - alert: CeleryQueueBacklog
+        expr: |
+          celery_queue_length > 1000
+        for: 15m
+        labels:
+          severity: warning
+          component: celery
+        annotations:
+          summary: "Celery queue has a large backlog"
+          description: "Queue has {{ $value }} pending tasks"
+
+      # Deployment health
+      - alert: DeploymentReplicasMismatch
+        expr: |
+          kube_deployment_spec_replicas{namespace=~"smarthr360-.*"}
+          !=
+          kube_deployment_status_replicas_available{namespace=~"smarthr360-.*"}
+        for: 15m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Deployment {{ $labels.deployment }} has mismatched replicas"
+          description: "Expected {{ $value }} replicas, but not all are available"
