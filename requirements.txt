@@ -45,7 +45,7 @@ python-dateutil>=2.8.2
 flower>=2.0.1
 django-celery-results>=2.5.1
 django-celery-beat>=2.5.0
-celery-exporter>=1.5.0
+# celery-exporter>=1.5.0  # Optional: Prometheus metrics (has Rust build issues)
 tenacity>=8.2.3
 pybreaker>=1.0.1
 

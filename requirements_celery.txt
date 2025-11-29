@@ -9,7 +9,7 @@
 flower>=2.0.1
 
 # Celery Exporter - Prometheus metrics for Celery
-celery-exporter>=1.5.0
+# celery-exporter>=1.5.0  # Optional: Prometheus metrics (has Rust build issues)
 
 # django-celery-results - Store task results in Django database
 django-celery-results>=2.5.1
