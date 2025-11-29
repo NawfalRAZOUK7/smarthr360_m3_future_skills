@@ -152,14 +152,14 @@ def get_structlog_config(use_json: bool = True, base_dir: Path = None) -> Dict[s
             'security_file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'json',
-                'filename': os.path.join(settings.BASE_DIR, 'logs', 'security.log'),
+                'filename': str(log_dir / 'security.log'),
                 'maxBytes': 10485760,  # 10MB
                 'backupCount': 10,
             },
             'performance_file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'json',
-                'filename': os.path.join(settings.BASE_DIR, 'logs', 'performance.log'),
+                'filename': str(log_dir / 'performance.log'),
                 'maxBytes': 10485760,  # 10MB
                 'backupCount': 10,
             },
@@ -258,10 +258,16 @@ def configure_structlog(use_json: bool = True) -> None:
 # LOGSTASH CONFIGURATION
 # ============================================================================
 
-def get_logstash_handler_config() -> Dict[str, Any]:
+def get_logstash_handler_config(base_dir: Path = None) -> Dict[str, Any]:
     """Get Logstash handler configuration."""
     logstash_host = os.getenv('LOGSTASH_HOST', 'localhost')
     logstash_port = int(os.getenv('LOGSTASH_PORT', '5000'))
+    
+    # Use /tmp for logs in container environments if base_dir not provided
+    if base_dir is None:
+        log_dir = Path('/tmp/logs')
+    else:
+        log_dir = base_dir / 'logs'
 
     return {
         'logstash': {
@@ -269,7 +275,7 @@ def get_logstash_handler_config() -> Dict[str, Any]:
             'transport': 'logstash_async.transport.TcpTransport',
             'host': logstash_host,
             'port': logstash_port,
-            'database_path': os.path.join(settings.BASE_DIR, 'logs', 'logstash.db'),
+            'database_path': str(log_dir / 'logstash.db'),
             'formatter': 'json',
             'level': 'INFO',
         },
@@ -293,14 +299,20 @@ def get_logger(name: str) -> structlog.BoundLogger:
     return structlog.get_logger(name)
 
 
-def setup_logging() -> None:
+def setup_logging(base_dir: Path = None) -> None:
     """
     Setup logging configuration for the application.
     Should be called during application startup.
+    
+    Args:
+        base_dir: Base directory for log files. If None, uses /tmp for container environments.
     """
     # Create logs directory if it doesn't exist
-    logs_dir = Path(settings.BASE_DIR) / 'logs'
-    logs_dir.mkdir(exist_ok=True)
+    if base_dir is None:
+        logs_dir = Path('/tmp/logs')
+    else:
+        logs_dir = base_dir / 'logs'
+    logs_dir.mkdir(parents=True, exist_ok=True)
 
     # Determine if we're in production
     is_production = os.getenv('ENVIRONMENT', 'development').lower() == 'production'
