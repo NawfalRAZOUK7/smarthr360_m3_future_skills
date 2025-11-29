@@ -27,6 +27,9 @@ class RequestLoggingMiddleware(MiddlewareMixin):
     Captures request details, response status, and timing information.
     """
 
+    sync_capable = True
+    async_capable = False
+
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
         self.get_response = get_response
@@ -98,7 +101,7 @@ class CorrelationIdMiddleware:
     """
     Middleware to add correlation ID to requests for distributed tracing.
     Generates a unique ID for each request or uses existing from header.
-    
+
     Uses modern Django middleware pattern with sync_capable/async_capable.
     """
 
@@ -150,6 +153,9 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
     Middleware to monitor and log performance metrics.
     Tracks slow requests and database query counts.
     """
+    
+    sync_capable = True
+    async_capable = False
 
     SLOW_REQUEST_THRESHOLD = 1.0  # seconds
 
@@ -213,6 +219,9 @@ class APMContextMiddleware(MiddlewareMixin):
     Middleware to add user and custom context to APM tools.
     Sets user information and request context for better monitoring.
     """
+    
+    sync_capable = True
+    async_capable = False
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
@@ -247,6 +256,9 @@ class ErrorTrackingMiddleware(MiddlewareMixin):
     Middleware to capture and track errors.
     Sends errors to APM tools with full context.
     """
+    
+    sync_capable = True
+    async_capable = False
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
@@ -299,6 +311,9 @@ class SQLQueryLoggingMiddleware(MiddlewareMixin):
     Middleware to log SQL queries (for development/debugging).
     WARNING: Only enable in development, not production!
     """
+    
+    sync_capable = True
+    async_capable = False
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
@@ -341,6 +356,9 @@ class CustomLogContextMiddleware(MiddlewareMixin):
     Middleware to add custom context to all log messages during request.
     Uses structlog's contextvars to bind context for the request lifecycle.
     """
+    
+    sync_capable = True
+    async_capable = False
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
