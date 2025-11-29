@@ -22,6 +22,8 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
+    # Note: Create 'staging' environment in GitHub Settings > Environments
+    # before using this workflow (no approvers needed for staging)
     environment:
       name: staging
       url: https://staging.smarthr360.com
@@ -198,6 +200,5 @@ jobs:
             Version: ${{ github.sha }}
             URL: https://staging.smarthr360.com
             Triggered by: ${{ github.actor }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

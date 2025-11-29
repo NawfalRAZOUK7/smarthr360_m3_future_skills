@@ -65,6 +65,8 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: validate-production
+    # Note: Create 'production' environment in GitHub Settings > Environments
+    # with required approvers and protection rules before using this workflow
     environment:
       name: production
       url: https://smarthr360.com
@@ -296,7 +298,6 @@ jobs:
             **URL:** https://smarthr360.com
 
             ${{ job.status == 'success' && 'All systems operational ✅' || 'Deployment failed - rollback initiated ⚠️' }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
