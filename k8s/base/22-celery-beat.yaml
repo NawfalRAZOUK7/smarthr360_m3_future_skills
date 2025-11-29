@@ -43,7 +43,7 @@ spec:
               echo "Redis is ready!"
       containers:
         - name: celery-beat
-          image: ghcr.io/nawfalrazouk7/smarthr360-celery:main
+          image: ghcr.io/nawfalrazouk7/smarthr360-api:main
           imagePullPolicy: Always
           command:
             - celery
