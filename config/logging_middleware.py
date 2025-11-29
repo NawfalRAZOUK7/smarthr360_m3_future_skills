@@ -94,21 +94,25 @@ class RequestLoggingMiddleware(MiddlewareMixin):
 # CORRELATION ID MIDDLEWARE
 # ============================================================================
 
-class CorrelationIdMiddleware(MiddlewareMixin):
+class CorrelationIdMiddleware:
     """
     Middleware to add correlation ID to requests for distributed tracing.
     Generates a unique ID for each request or uses existing from header.
+    
+    Uses modern Django middleware pattern with sync_capable/async_capable.
     """
 
     CORRELATION_ID_HEADER = 'X-Correlation-ID'
+    sync_capable = True
+    async_capable = False
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
         self.get_response = get_response
         self.logger = get_logger(__name__)
 
-    def process_request(self, request: HttpRequest) -> None:
-        """Process incoming request."""
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        """Process request and response."""
         # Get correlation ID from header or generate new one
         correlation_id = request.META.get(
             f'HTTP_{self.CORRELATION_ID_HEADER.upper().replace("-", "_")}',
@@ -122,18 +126,19 @@ class CorrelationIdMiddleware(MiddlewareMixin):
         import structlog
         structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
-        """Process outgoing response."""
+        # Get response
+        response = self.get_response(request)
+
         # Add correlation ID to response headers
-        correlation_id = getattr(request, 'correlation_id', None)
-        if correlation_id:
-            response[self.CORRELATION_ID_HEADER] = correlation_id
+        response[self.CORRELATION_ID_HEADER] = correlation_id
 
         # Clear structlog context
-        import structlog
         structlog.contextvars.clear_contextvars()
 
         return response
+
+
+# ============================================================================        return response
 
 
 # ============================================================================
