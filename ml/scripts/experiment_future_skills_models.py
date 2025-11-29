@@ -1,16 +1,16 @@
 # ml/experiment_future_skills_models.py
 
 """
-Script d'expérimentation de différents modèles ML pour Future Skills.
+ML model experimentation script for Future Skills.
 
-Ce script teste plusieurs algorithmes sur le même dataset pour comparer leurs performances :
-- RandomForest (baseline actuelle)
-- XGBoost (gradient boosting optimisé)
-- LightGBM (gradient boosting rapide et efficace)
-- Logistic Regression (modèle linéaire régularisé)
+This script tests multiple ML algorithms on the same dataset to compare their performance:
+- RandomForest (current baseline)
+- XGBoost (optimized gradient boosting)
+- LightGBM (fast and efficient gradient boosting)
+- Logistic Regression (regularized linear model)
 
-Objectif : démontrer l'extensibilité de l'architecture et établir une politique
-de choix de modèle basée sur des métriques objectives.
+Objective: Demonstrate architecture extensibility and establish model selection
+policy based on objective metrics.
 
 Usage:
     python ml/experiment_future_skills_models.py --csv ml/future_skills_dataset.csv
@@ -18,6 +18,7 @@ Usage:
 
 import argparse
 import json
+import logging
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -39,8 +40,14 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
 # Suppress warnings for cleaner output
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 ALLOWED_LEVELS = {"LOW", "MEDIUM", "HIGH"}
 RANDOM_STATE = 42
@@ -76,7 +83,9 @@ def load_dataset(csv_path: Path) -> pd.DataFrame:
     return df
 
 
-def prepare_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, List[str], List[str]]:
+def prepare_data(
+    df: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.Series, List[str], List[str]]:
     """Prepare features and target, identify categorical and numeric features."""
 
     feature_cols = [
@@ -112,7 +121,7 @@ def prepare_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, List[str], 
     numeric_features = []
 
     for col in available_features:
-        if df[col].dtype == 'object' or df[col].dtype.name == 'category':
+        if df[col].dtype == "object" or df[col].dtype.name == "category":
             categorical_features.append(col)
         else:
             numeric_features.append(col)
@@ -120,7 +129,9 @@ def prepare_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, List[str], 
     return X, y, categorical_features, numeric_features
 
 
-def create_preprocessor(categorical_features: List[str], numeric_features: List[str]) -> ColumnTransformer:
+def create_preprocessor(
+    categorical_features: List[str], numeric_features: List[str]
+) -> ColumnTransformer:
     """Create the preprocessing pipeline."""
     categorical_transformer = OneHotEncoder(handle_unknown="ignore")
     numeric_transformer = StandardScaler()
@@ -198,6 +209,7 @@ def get_models_to_test() -> Dict[str, Dict[str, Any]]:
     # Try to import XGBoost
     try:
         import xgboost as xgb
+
         models["XGBoost"] = {
             "estimator": xgb.XGBClassifier(
                 n_estimators=200,
@@ -215,12 +227,15 @@ def get_models_to_test() -> Dict[str, Dict[str, Any]]:
             "description": "Gradient Boosting optimisé - Haute performance",
         }
     except Exception as e:
-        print(f"[WARN] XGBoost non disponible : {type(e).__name__}")
-        print("[INFO] Pour l'utiliser : pip install xgboost && brew install libomp (macOS)")
+        logger.warning(f"XGBoost not available: {type(e).__name__}")
+        logger.info(
+            "To use XGBoost: pip install xgboost && brew install libomp (macOS)"
+        )
 
     # Try to import LightGBM
     try:
         import lightgbm as lgb
+
         models["LightGBM"] = {
             "estimator": lgb.LGBMClassifier(
                 n_estimators=200,
@@ -239,8 +254,8 @@ def get_models_to_test() -> Dict[str, Dict[str, Any]]:
             "description": "Gradient Boosting rapide et efficace en mémoire",
         }
     except Exception as e:
-        print(f"[WARN] LightGBM non disponible : {type(e).__name__}")
-        print("[INFO] Pour l'utiliser : pip install lightgbm")
+        logger.warning(f"LightGBM not available: {type(e).__name__}")
+        logger.info("To use LightGBM: pip install lightgbm")
 
     return models
 
@@ -264,10 +279,10 @@ def train_and_evaluate_model(
     Returns:
         Dictionary with all metrics and model information.
     """
-    print(f"\n{'='*70}")
-    print(f"🔬 Expérimentation : {model_name}")
-    print(f"   Description : {model_config['description']}")
-    print(f"{'='*70}")
+    logger.info(f"\n{'='*70}")
+    logger.info(f"🔬 Experimentation: {model_name}")
+    logger.info(f"   Description: {model_config['description']}")
+    logger.info(f"{'='*70}")
 
     start_time = datetime.now()
 
@@ -277,7 +292,7 @@ def train_and_evaluate_model(
             ("preprocess", preprocessor),
             ("clf", model_config["estimator"]),
         ],
-        memory='auto'  # Cache transformers for better performance
+        memory="auto",  # Cache transformers for better performance
     )
 
     # Train
@@ -293,13 +308,17 @@ def train_and_evaluate_model(
     accuracy = accuracy_score(y_test, y_pred)
 
     # Compute per-class metrics first
-    precision_per_class, recall_per_class, f1_per_class, support = precision_recall_fscore_support(
-        y_test, y_pred, labels=class_labels, average=None
+    precision_per_class, recall_per_class, f1_per_class, support = (
+        precision_recall_fscore_support(
+            y_test, y_pred, labels=class_labels, average=None
+        )
     )
 
     # Compute weighted metrics
-    precision_weighted, recall_weighted, f1_weighted, _ = precision_recall_fscore_support(
-        y_test, y_pred, labels=class_labels, average="weighted"
+    precision_weighted, recall_weighted, f1_weighted, _ = (
+        precision_recall_fscore_support(
+            y_test, y_pred, labels=class_labels, average="weighted"
+        )
     )
 
     # Per-class metrics
@@ -318,7 +337,7 @@ def train_and_evaluate_model(
             }
 
     # Cross-validation score (on train set for comparison)
-    print("[INFO] Cross-validation (5-fold) en cours...")
+    logger.info("Cross-validation (5-fold) in progress...")
     cv_scores = cross_val_score(
         pipeline, X_train, y_train, cv=5, scoring="f1_weighted", n_jobs=-1
     )
@@ -326,37 +345,39 @@ def train_and_evaluate_model(
     cv_std = cv_scores.std()
 
     # Print results
-    print("\n📊 Résultats :")
-    print(f"   • Accuracy        : {accuracy:.4f}")
-    print(f"   • Precision (W)   : {precision_weighted:.4f}")
-    print(f"   • Recall (W)      : {recall_weighted:.4f}")
-    print(f"   • F1-score (W)    : {f1_weighted:.4f}")
-    print(f"   • CV F1-score     : {cv_mean:.4f} (+/- {cv_std:.4f})")
-    print(f"   • Training time   : {training_time:.2f}s")
+    logger.info("\n📊 Results:")
+    logger.info(f"   • Accuracy        : {accuracy:.4f}")
+    logger.info(f"   • Precision (W)   : {precision_weighted:.4f}")
+    logger.info(f"   • Recall (W)      : {recall_weighted:.4f}")
+    logger.info(f"   • F1-score (W)    : {f1_weighted:.4f}")
+    logger.info(f"   • CV F1-score     : {cv_mean:.4f} (+/- {cv_std:.4f})")
+    logger.info(f"   • Training time   : {training_time:.2f}s")
 
-    print("\n📈 Précision par classe :")
+    logger.info("\n📈 Per-class accuracy:")
     for level, metrics in per_class_metrics.items():
-        print(f"   • {level:7s} : {metrics['accuracy']:.2%} (n={metrics['support']})")
+        logger.info(
+            f"   • {level:7s} : {metrics['accuracy']:.2%} (n={metrics['support']})"
+        )
 
     # Classification report
-    print("\n📋 Classification Report :")
-    print(classification_report(y_test, y_pred, digits=4))
+    logger.info("\n📋 Classification Report:")
+    logger.info("\n" + classification_report(y_test, y_pred, digits=4))
 
     # Confusion matrix
-    print("🔲 Matrice de confusion :")
+    logger.info("🔲 Confusion Matrix:")
 
     # Dynamic header based on actual classes
-    header = "   Prédiction → |"
+    header = "   Prediction → |"
     for label in class_labels:
         header += f" {label[:3]:3s} |"
-    print(header)
-    print("   " + "-" * (len(header) - 4))
+    logger.info(header)
+    logger.info("   " + "-" * (len(header) - 4))
 
     for i, level in enumerate(class_labels):
         row = f"   {level:7s}    |"
         for j in range(len(class_labels)):
             row += f" {cm[i, j]:3d} |"
-        print(row)
+        logger.info(row)
 
     # Return all metrics
     results = {
@@ -390,10 +411,10 @@ def save_results(results: List[Dict[str, Any]], output_path: Path):
     }
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(experiment_data, f, indent=2, ensure_ascii=False)
 
-    print(f"\n✅ Résultats sauvegardés dans : {output_path}")
+    logger.info(f"\n✅ Results saved to: {output_path}")
 
 
 def _build_main_comparison_table(sorted_results: list) -> str:
@@ -526,7 +547,9 @@ def _add_recommendations_section(best_model: dict, results: list) -> str:
     return md
 
 
-def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[str]) -> str:
+def generate_comparison_table(
+    results: List[Dict[str, Any]], class_labels: List[str]
+) -> str:
     """Generate a markdown table comparing all models."""
 
     if not results:
@@ -534,9 +557,7 @@ def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[
 
     # Sort by F1-score
     sorted_results = sorted(
-        results,
-        key=lambda x: x["metrics"]["f1_weighted"],
-        reverse=True
+        results, key=lambda x: x["metrics"]["f1_weighted"], reverse=True
     )
 
     md = "# 🔬 Comparaison des Modèles - Future Skills Prediction\n\n"
@@ -580,23 +601,23 @@ def main():
         "--output",
         type=str,
         default=str(base_dir / "results" / "experiment_results.json"),
-        help="Chemin de sortie des résultats JSON.",
+        help="Output path for JSON results.",
     )
     parser.add_argument(
         "--markdown",
         type=str,
         default=str(base_dir / "MODEL_COMPARISON.md"),
-        help="Chemin de sortie du rapport markdown.",
+        help="Output path for markdown report.",
     )
 
     args = parser.parse_args()
 
-    print("="*70)
-    print("🔬 EXPÉRIMENTATION DE MODÈLES - FUTURE SKILLS PREDICTION")
-    print("="*70)
-    print(f"Dataset : {args.csv}")
-    print(f"Random state : {RANDOM_STATE}")
-    print("="*70)
+    logger.info("=" * 70)
+    logger.info("🔬 MODEL EXPERIMENTATION - FUTURE SKILLS PREDICTION")
+    logger.info("=" * 70)
+    logger.info(f"Dataset: {args.csv}")
+    logger.info(f"Random state: {RANDOM_STATE}")
+    logger.info("=" * 70)
 
     # Load and prepare data
     csv_path = Path(args.csv)
@@ -650,6 +671,7 @@ def main():
         except Exception as e:
             print(f"\n❌ Erreur lors de l'entraînement de {model_name} : {e}")
             import traceback
+
             traceback.print_exc()
             continue
 
@@ -666,20 +688,18 @@ def main():
     markdown_content = generate_comparison_table(all_results, class_labels)
 
     markdown_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(markdown_path, 'w', encoding='utf-8') as f:
+    with open(markdown_path, "w", encoding="utf-8") as f:
         f.write(markdown_content)
 
     print(f"✅ Rapport markdown sauvegardé dans : {markdown_path}")
 
     # Print summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("📊 RÉSUMÉ DE L'EXPÉRIMENTATION")
-    print("="*70)
+    print("=" * 70)
 
     sorted_results = sorted(
-        all_results,
-        key=lambda x: x["metrics"]["f1_weighted"],
-        reverse=True
+        all_results, key=lambda x: x["metrics"]["f1_weighted"], reverse=True
     )
 
     print("\n🏆 Classement par F1-score :\n")
@@ -696,11 +716,13 @@ def main():
         f1 = result["metrics"]["f1_weighted"]
         acc = result["metrics"]["accuracy"]
         time = result["training_time_seconds"]
-        print(f"   {medal} {result['model_name']:20s} | F1={f1:.4f} | Acc={acc:.4f} | {time:.2f}s")
+        print(
+            f"   {medal} {result['model_name']:20s} | F1={f1:.4f} | Acc={acc:.4f} | {time:.2f}s"
+        )
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("✅ Expérimentation terminée avec succès!")
-    print("="*70)
+    print("=" * 70)
 
 
 if __name__ == "__main__":

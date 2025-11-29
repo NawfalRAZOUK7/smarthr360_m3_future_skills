@@ -13,4 +13,12 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
+# Initialize Django application
 application = get_wsgi_application()
+
+# Initialize logging and monitoring
+from config.logging_config import setup_logging
+from config.apm_config import initialize_apm
+
+setup_logging()
+initialize_apm()

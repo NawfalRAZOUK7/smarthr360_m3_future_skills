@@ -1,0 +1,48 @@
+# Security & Authentication Requirements
+# =====================================
+# Install with: pip install -r requirements_security.txt
+
+# JWT Authentication
+# ------------------
+djangorestframework-simplejwt>=5.3.1  # JWT authentication for DRF
+PyJWT>=2.8.0                           # JSON Web Token implementation
+
+# CORS & Security Headers
+# -----------------------
+django-cors-headers>=4.3.1             # Cross-Origin Resource Sharing
+django-csp>=3.8                        # Content Security Policy
+django-permissions-policy>=4.19.0      # Permissions-Policy header
+
+# Rate Limiting & Throttling
+# ---------------------------
+django-ratelimit>=4.1.0                # Rate limiting decorator
+django-axes>=6.1.1                     # Login attempt tracking and blocking
+
+# Security Scanning & Auditing
+# -----------------------------
+safety>=3.0.1                          # Dependency vulnerability scanner
+bandit>=1.7.5                          # Python code security scanner
+pip-audit>=2.6.1                       # Audit Python packages for vulnerabilities
+semgrep>=1.45.0                        # Static analysis security testing (SAST)
+
+# Password & Encryption
+# ---------------------
+argon2-cffi>=23.1.0                    # Argon2 password hashing
+cryptography>=41.0.7                   # Cryptographic recipes and primitives
+
+# Security Utilities
+# ------------------
+python-decouple>=3.8                   # Strict separation of settings from code
+django-environ>=0.11.2                 # Environment variable management
+whitenoise>=6.6.0                      # Static file serving with security headers
+
+# Monitoring & Logging
+# --------------------
+django-ipware>=6.0.3                   # IP address detection
+user-agents>=2.2.0                     # User agent parsing
+python-json-logger>=2.0.7              # JSON logging for security events
+
+# API Security
+# ------------
+django-rest-framework-condition>=0.1.1 # ETag and Last-Modified support
+drf-spectacular>=0.27.0                # OpenAPI 3 schema generation with security

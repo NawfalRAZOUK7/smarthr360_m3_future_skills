@@ -23,14 +23,14 @@ class TestPredictionFlow:
         3. ML model generates predictions
         4. Results are returned to user
         """
-        url = reverse('futureskill-predict-skills')
+        url = reverse("futureskill-predict-skills")
         data = {
-            'employee_id': sample_employee.id,
-            'current_skills': sample_employee.current_skills,
-            'department': sample_employee.department
+            "employee_id": sample_employee.id,
+            "current_skills": sample_employee.current_skills,
+            "department": sample_employee.department,
         }
 
-        response = authenticated_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format="json")
 
         # Assert successful response
         assert response.status_code in [status.HTTP_200_OK, status.HTTP_201_CREATED]
@@ -42,29 +42,32 @@ class TestPredictionFlow:
 
     def test_prediction_flow_with_invalid_data(self, authenticated_client):
         """Test prediction flow with invalid input data."""
-        url = reverse('futureskill-predict-skills')
+        url = reverse("futureskill-predict-skills")
         data = {
-            'employee_id': 99999,  # Non-existent employee
-            'current_skills': [],
+            "employee_id": 99999,  # Non-existent employee
+            "current_skills": [],
         }
 
-        response = authenticated_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format="json")
 
         # Should return error status
         assert response.status_code in [
             status.HTTP_400_BAD_REQUEST,
-            status.HTTP_404_NOT_FOUND
+            status.HTTP_404_NOT_FOUND,
         ]
 
     def test_prediction_requires_authentication(self, api_client, sample_employee):
         """Test that prediction endpoint requires authentication."""
-        url = reverse('futureskill-predict-skills')
-        data = {'employee_id': sample_employee.id}
+        url = reverse("futureskill-predict-skills")
+        data = {"employee_id": sample_employee.id}
 
-        response = api_client.post(url, data, format='json')
+        response = api_client.post(url, data, format="json")
 
         # DRF returns 403 when permission check fails (not 401)
-        assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+        assert response.status_code in [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
+        ]
 
     @pytest.mark.slow
     def test_bulk_prediction_flow(self, authenticated_client, db):
@@ -74,22 +77,20 @@ class TestPredictionFlow:
         # Create multiple employees
         employees = [
             Employee.objects.create(
-                name=f'Employee {i}',
-                email=f'employee{i}@example.com',
-                department='Engineering',
-                position='Developer',
-                current_skills=['Python', 'Django']
+                name=f"Employee {i}",
+                email=f"employee{i}@example.com",
+                department="Engineering",
+                position="Developer",
+                current_skills=["Python", "Django"],
             )
             for i in range(5)
         ]
 
         # Assuming bulk prediction endpoint exists
-        url = reverse('futureskill-bulk-predict')
-        data = {
-            'employee_ids': [emp.id for emp in employees]
-        }
+        url = reverse("futureskill-bulk-predict")
+        data = {"employee_ids": [emp.id for emp in employees]}
 
-        response = authenticated_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format="json")
 
         # Assert successful bulk processing
         # Adjust assertions based on actual API response
@@ -101,25 +102,26 @@ class TestPredictionFlow:
 class TestRecommendationFlow:
     """Test complete recommendation flow."""
 
-    def test_get_recommendations_for_employee(self, authenticated_client, sample_employee, sample_future_skill_prediction):
+    def test_get_recommendations_for_employee(
+        self, authenticated_client, sample_employee, sample_future_skill_prediction
+    ):
         """Test getting skill recommendations for an employee."""
-        url = reverse('futureskill-recommend-skills')
-        data = {'employee_id': sample_employee.id}
+        url = reverse("futureskill-recommend-skills")
+        data = {"employee_id": sample_employee.id}
 
-        response = authenticated_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format="json")
 
         # Assert successful response
         assert response.status_code == status.HTTP_200_OK
 
-    def test_recommendation_considers_current_skills(self, authenticated_client, sample_employee):
+    def test_recommendation_considers_current_skills(
+        self, authenticated_client, sample_employee
+    ):
         """Test that recommendations consider employee's current skills."""
-        url = reverse('futureskill-recommend-skills')
-        data = {
-            'employee_id': sample_employee.id,
-            'exclude_current': True
-        }
+        url = reverse("futureskill-recommend-skills")
+        data = {"employee_id": sample_employee.id, "exclude_current": True}
 
-        response = authenticated_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         # Verify no current skills are recommended
@@ -135,42 +137,42 @@ class TestDataPipelineFlow:
 
     def test_employee_creation_flow(self, admin_client):
         """Test complete employee creation workflow."""
-        url = reverse('employee-list')
+        url = reverse("employee-list")
         data = {
-            'name': 'New Employee',
-            'email': 'new.employee@example.com',
-            'department': 'Sales',
-            'position': 'Sales Representative',
-            'current_skills': ['CRM', 'Communication']
+            "name": "New Employee",
+            "email": "new.employee@example.com",
+            "department": "Sales",
+            "position": "Sales Representative",
+            "current_skills": ["CRM", "Communication"],
         }
 
-        response = admin_client.post(url, data, format='json')
+        response = admin_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['name'] == data['name']
-        assert response.data['email'] == data['email']
+        assert response.data["name"] == data["name"]
+        assert response.data["email"] == data["email"]
 
     def test_skill_tracking_flow(self, admin_client, sample_employee, sample_skill):
         """Test tracking skill assignments to employees using ManyToMany relationship."""
         # Add skill to employee
-        url = reverse('employee-add-skill', kwargs={'pk': sample_employee.id})
-        data = {'skill_id': sample_skill.id}
+        url = reverse("employee-add-skill", kwargs={"pk": sample_employee.id})
+        data = {"skill_id": sample_skill.id}
 
-        response = admin_client.post(url, data, format='json')
+        response = admin_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert sample_skill.name in response.data['skills']
+        assert sample_skill.name in response.data["skills"]
 
         # Verify employee was updated using ManyToMany relationship
         sample_employee.refresh_from_db()
         assert sample_skill in sample_employee.skills.all()
 
         # Remove skill
-        remove_url = reverse('employee-remove-skill', kwargs={'pk': sample_employee.id})
-        remove_response = admin_client.post(remove_url, data, format='json')
+        remove_url = reverse("employee-remove-skill", kwargs={"pk": sample_employee.id})
+        remove_response = admin_client.post(remove_url, data, format="json")
 
         assert remove_response.status_code == status.HTTP_200_OK
-        assert sample_skill.name not in remove_response.data['skills']
+        assert sample_skill.name not in remove_response.data["skills"]
 
 
 @pytest.mark.django_db
@@ -199,15 +201,13 @@ class TestMLModelIntegration:
         engine = PredictionEngine()
 
         score, level, rationale, explanation = engine.predict(
-            job_role_id=sample_job_role.id,
-            skill_id=sample_skill.id,
-            horizon_years=5
+            job_role_id=sample_job_role.id, skill_id=sample_skill.id, horizon_years=5
         )
 
         # Verify prediction structure
         assert isinstance(score, float)
         assert 0 <= score <= 100
-        assert level in ['LOW', 'MEDIUM', 'HIGH']
+        assert level in ["LOW", "MEDIUM", "HIGH"]
         assert isinstance(rationale, str)
         assert isinstance(explanation, dict)
 
@@ -219,18 +219,17 @@ class TestMLModelIntegration:
         # Create multiple skills
         skills = [sample_skill]
         for i in range(3):
-            skills.append(Skill.objects.create(
-                name=f'Test Skill {i}',
-                category='Technical'
-            ))
+            skills.append(
+                Skill.objects.create(name=f"Test Skill {i}", category="Technical")
+            )
 
         engine = PredictionEngine()
 
         predictions_data = [
             {
-                'job_role_id': sample_job_role.id,
-                'skill_id': skill.id,
-                'horizon_years': 5
+                "job_role_id": sample_job_role.id,
+                "skill_id": skill.id,
+                "horizon_years": 5,
             }
             for skill in skills
         ]
@@ -239,9 +238,9 @@ class TestMLModelIntegration:
 
         assert len(results) == len(skills)
         for result in results:
-            assert 'score' in result
-            assert 'level' in result
-            assert 'rationale' in result
+            assert "score" in result
+            assert "level" in result
+            assert "rationale" in result
 
 
 @pytest.mark.django_db
@@ -249,18 +248,20 @@ class TestMLModelIntegration:
 class TestPermissionsFlow:
     """Test permission-based workflows."""
 
-    def test_hr_manager_can_access_all_employees(self, api_client, hr_manager, sample_employee):
+    def test_hr_manager_can_access_all_employees(
+        self, api_client, hr_manager, sample_employee
+    ):
         """Test that HR managers can access all employee data."""
         api_client.force_authenticate(user=hr_manager)
 
-        url = reverse('employee-list')
+        url = reverse("employee-list")
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
 
     def test_regular_user_limited_access(self, authenticated_client):
         """Test that regular users have limited access."""
-        url = reverse('employee-list')
+        url = reverse("employee-list")
         response = authenticated_client.get(url)
 
         # Depending on your permissions, this might be 200 or 403
@@ -270,13 +271,13 @@ class TestPermissionsFlow:
         """Test that viewers cannot create new records."""
         api_client.force_authenticate(user=hr_viewer)
 
-        url = reverse('employee-list')
+        url = reverse("employee-list")
         data = {
-            'name': 'Test Employee',
-            'email': 'test@example.com',
-            'department': 'IT'
+            "name": "Test Employee",
+            "email": "test@example.com",
+            "department": "IT",
         }
 
-        response = api_client.post(url, data, format='json')
+        response = api_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_403_FORBIDDEN

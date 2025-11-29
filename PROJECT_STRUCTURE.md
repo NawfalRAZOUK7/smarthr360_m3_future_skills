@@ -24,8 +24,17 @@ smarthr360_m3_future_skills/
 │   ├── architecture/                # Architecture documentation
 │   ├── api/                         # API documentation
 │   ├── deployment/                  # Deployment guides
-│   └── development/                 # Development guides
-│       └── quick_commands.md        # Quick reference commands
+│   ├── development/                 # Development guides
+│   │   └── quick_commands.md        # Quick reference commands
+│   ├── milestones/                  # Feature completion documentation
+│   │   ├── FEATURE_4_COMPLETION.md
+│   │   ├── FEATURE_6_SUMMARY.md
+│   │   ├── PHASE_10_VALIDATION_REPORT.md
+│   │   └── LT*.md / MT*.md          # Long-term and milestone tracking
+│   ├── archive/                     # Archived documentation
+│   ├── ADMIN_GUIDE.md              # Administrator guide
+│   ├── API_DOCUMENTATION.md        # API usage documentation
+│   └── README.md                   # Documentation overview
 ├── future_skills/                   # Main Django app
 │   ├── api/                         # API layer (separated)
 │   │   ├── views.py                 # API views
@@ -67,8 +76,12 @@ smarthr360_m3_future_skills/
 │   │   └── test_user_journeys.py
 │   ├── fixtures/                    # Test fixtures
 │   │   └── common.py
+│   ├── test_training_api.py        # Training API tests
+│   ├── test_training_service.py    # Training service tests
 │   ├── conftest.py                 # Pytest configuration
 │   └── README.md                   # Testing documentation
+├── auto/                            # Auto-generated cache (ignored)
+│   └── joblib/                     # sklearn pipeline cache
 ├── .env.example                     # Environment variables template
 ├── .gitignore                       # Git ignore rules
 ├── .pre-commit-config.yaml         # Pre-commit hooks

@@ -1,0 +1,196 @@
+# Security Commands Makefile
+# ==========================
+# Add these to your main Makefile or use standalone
+
+.PHONY: security-scan security-check security-monitor security-update security-test security-help
+
+# Run full security scan
+security-scan:
+	@echo "Running comprehensive security scan..."
+	./scripts/security_scan.sh
+
+# Quick security checks
+security-check:
+	@echo "Running quick security checks..."
+	@echo "\n1. Checking dependencies for vulnerabilities..."
+	safety check || true
+	@echo "\n2. Running code security analysis..."
+	bandit -r . -ll --exclude '.venv,*/tests/*,*/migrations/*' || true
+	@echo "\n3. Django deployment check..."
+	python manage.py check --deploy || true
+
+# Monitor security events
+security-monitor:
+	@echo "Analyzing security events (last 24 hours)..."
+	python manage.py monitor_security --hours 24
+
+# Monitor with JSON output
+security-monitor-json:
+	python manage.py monitor_security --hours 24 --json
+
+# Update security tools
+security-update:
+	@echo "Updating security scanning tools..."
+	pip install --upgrade safety bandit pip-audit semgrep
+
+# Check for dependency updates
+security-deps-check:
+	@echo "Checking for outdated dependencies..."
+	pip list --outdated
+
+# Update dependencies (development only)
+security-deps-update:
+	@echo "WARNING: This will update all dependencies!"
+	@read -p "Continue? (y/N) " -n 1 -r; \
+	echo; \
+	if [ "$$REPLY" = "y" ] || [ "$$REPLY" = "Y" ]; then \
+		pip install --upgrade -r requirements.txt; \
+	fi
+
+# Test JWT authentication
+security-test-jwt:
+	@echo "Testing JWT authentication flow..."
+	@echo "\n1. Login (get token)..."
+	@curl -X POST http://localhost:8000/api/auth/token/ \
+		-H "Content-Type: application/json" \
+		-d '{"username":"admin","password":"admin"}' \
+		-w "\n\n"
+	@echo "\n2. Test with invalid credentials..."
+	@curl -X POST http://localhost:8000/api/auth/token/ \
+		-H "Content-Type: application/json" \
+		-d '{"username":"invalid","password":"invalid"}' \
+		-w "\n\n"
+
+# Test security headers
+security-test-headers:
+	@echo "Testing security headers..."
+	@curl -I http://localhost:8000/ 2>/dev/null | grep -i -E "(security|x-frame|x-content|strict-transport)"
+
+# Test rate limiting
+security-test-ratelimit:
+	@echo "Testing rate limiting (sending 50 requests)..."
+	@for i in $$(seq 1 50); do \
+		curl -s -o /dev/null -w "%{http_code} " http://localhost:8000/api/health/; \
+	done
+	@echo "\n(Should see 429 if rate limiting is working)"
+
+# Generate new SECRET_KEY
+security-generate-key:
+	@python -c 'from django.core.management.utils import get_random_secret_key; print("\nNew SECRET_KEY:\n" + get_random_secret_key() + "\n")'
+
+# Check failed login attempts (django-axes)
+security-check-lockouts:
+	@echo "Checking locked accounts..."
+	python manage.py axes_list_attempts
+
+# Reset all lockouts
+security-reset-lockouts:
+	@echo "Resetting all account lockouts..."
+	python manage.py axes_reset
+
+# Reset specific user lockout
+security-reset-user:
+	@read -p "Enter username: " username; \
+	python manage.py axes_reset_username $$username
+
+# View security logs (last 50 lines)
+security-logs:
+	@tail -50 logs/security.log
+
+# View security logs (real-time)
+security-logs-live:
+	@tail -f logs/security.log
+
+# View failed authentication attempts
+security-logs-auth-failures:
+	@grep -i "auth_failure\|login_failed" logs/security.log | tail -20
+
+# View suspicious activities
+security-logs-suspicious:
+	@grep -i "suspicious" logs/security.log | tail -20
+
+# Install security dependencies
+security-install:
+	@echo "Installing security dependencies..."
+	pip install -r requirements_security.txt
+
+# Verify security configuration
+security-verify:
+	@echo "Verifying security configuration..."
+	@echo "\n1. Checking if DEBUG is False..."
+	@python -c "from config.settings.base import DEBUG; exit(0 if not DEBUG else 1)" \
+		&& echo "✓ DEBUG=False" || echo "✗ DEBUG=True (INSECURE)"
+	@echo "\n2. Checking SECRET_KEY length..."
+	@python -c "from config.settings.base import SECRET_KEY; exit(0 if len(SECRET_KEY) >= 50 else 1)" \
+		&& echo "✓ SECRET_KEY is strong" || echo "✗ SECRET_KEY is weak"
+	@echo "\n3. Checking ALLOWED_HOSTS..."
+	@python -c "from config.settings.base import ALLOWED_HOSTS; exit(0 if ALLOWED_HOSTS else 1)" \
+		&& echo "✓ ALLOWED_HOSTS configured" || echo "✗ ALLOWED_HOSTS not set"
+	@echo "\n4. Checking HTTPS settings..."
+	@python -c "from config.settings.base import SECURE_SSL_REDIRECT; print('✓ HTTPS enabled' if SECURE_SSL_REDIRECT else '⚠ HTTPS not enforced')" || echo "✗ HTTPS settings missing"
+
+# Pre-deployment security checklist
+security-checklist:
+	@echo "Security Pre-Deployment Checklist"
+	@echo "=================================="
+	@echo ""
+	@python -c "from config.settings.base import DEBUG; print('✓ DEBUG=False' if not DEBUG else '✗ DEBUG=True')"
+	@python -c "from config.settings.base import SECRET_KEY; print('✓ SECRET_KEY is strong' if len(SECRET_KEY) >= 50 else '✗ SECRET_KEY is weak')"
+	@python -c "from config.settings.base import ALLOWED_HOSTS; print('✓ ALLOWED_HOSTS set' if ALLOWED_HOSTS else '✗ ALLOWED_HOSTS empty')"
+	@python -c "from config.settings.base import SECURE_SSL_REDIRECT; print('✓ HTTPS enforced' if SECURE_SSL_REDIRECT else '⚠ HTTPS not enforced')" 2>/dev/null || echo "⚠ HTTPS settings not configured"
+	@echo ""
+	@echo "Run 'make security-scan' for full analysis"
+
+# Incident response - block IP
+security-block-ip:
+	@read -p "Enter IP address to block: " ip; \
+	echo "Blocking IP: $$ip"; \
+	echo "Add this to your firewall/nginx configuration"
+
+# Incident response - disable user
+security-disable-user:
+	@read -p "Enter username to disable: " username; \
+	python manage.py shell -c "from django.contrib.auth.models import User; u = User.objects.get(username='$$username'); u.is_active = False; u.save(); print(f'User {u.username} disabled')"
+
+# Incident response - invalidate all JWT tokens
+security-invalidate-tokens:
+	@echo "WARNING: This will invalidate ALL JWT tokens!"
+	@read -p "Continue? (y/N) " -n 1 -r; \
+	echo; \
+	if [ "$$REPLY" = "y" ] || [ "$$REPLY" = "Y" ]; then \
+		python manage.py shell -c "from rest_framework_simplejwt.token_blacklist.models import OutstandingToken; count = OutstandingToken.objects.all().delete()[0]; print(f'Invalidated {count} tokens')"; \
+	fi
+
+# Help
+security-help:
+	@echo "Security Commands"
+	@echo "================="
+	@echo ""
+	@echo "Scanning:"
+	@echo "  make security-scan           - Run full security scan"
+	@echo "  make security-check          - Quick security checks"
+	@echo "  make security-verify         - Verify security configuration"
+	@echo "  make security-checklist      - Pre-deployment checklist"
+	@echo ""
+	@echo "Monitoring:"
+	@echo "  make security-monitor        - View security event analysis"
+	@echo "  make security-logs           - View security logs (last 50)"
+	@echo "  make security-logs-live      - View security logs (real-time)"
+	@echo "  make security-check-lockouts - Check locked accounts"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make security-test-jwt       - Test JWT authentication"
+	@echo "  make security-test-headers   - Test security headers"
+	@echo "  make security-test-ratelimit - Test rate limiting"
+	@echo ""
+	@echo "Maintenance:"
+	@echo "  make security-update         - Update security tools"
+	@echo "  make security-deps-check     - Check for dependency updates"
+	@echo "  make security-generate-key   - Generate new SECRET_KEY"
+	@echo ""
+	@echo "Incident Response:"
+	@echo "  make security-reset-lockouts - Reset all account lockouts"
+	@echo "  make security-disable-user   - Disable user account"
+	@echo "  make security-invalidate-tokens - Invalidate all JWT tokens"
+	@echo ""
+	@echo "For detailed documentation: docs/SECURITY_GUIDE.md"

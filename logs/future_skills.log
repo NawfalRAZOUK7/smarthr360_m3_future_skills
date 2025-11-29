@@ -380,3 +380,11 @@ weighted avg     0.9867    0.9861    0.9862        72
 [WARNING] 2025-11-28 10:51:18 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
 [WARNING] 2025-11-28 10:51:53 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
 [WARNING] 2025-11-28 14:10:42 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 14:38:22 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 14:43:10 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 14:51:03 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 14:51:11 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 14:52:15 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 14:58:31 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 15:02:55 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap
+[WARNING] 2025-11-28 15:03:11 future_skills.services.explanation_engine explanation_engine.<module>: SHAP non disponible. Les explications détaillées ne seront pas générées. Installez avec: pip install shap

@@ -14,7 +14,7 @@ from future_skills.models import (
     MarketTrend,
     FutureSkillPrediction,
     HRInvestmentRecommendation,
-    PredictionRun,  # ⬅️ ajoute ceci
+    PredictionRun,
 )
 from future_skills.services.prediction_engine import recalculate_predictions
 from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
@@ -24,12 +24,12 @@ User = get_user_model()
 
 class BaseAPITestCase(APITestCase):
     def setUp(self):
-        # Créer groupes pour les rôles
+        # Create groups for roles
         self.group_drh = Group.objects.create(name="DRH")
         self.group_resp_rh = Group.objects.create(name="RESPONSABLE_RH")
         self.group_manager = Group.objects.create(name="MANAGER")
 
-        # Créer des utilisateurs
+        # Create test users
         self.user_no_role = User.objects.create_user(
             username="user_no_role", password="pass1234"
         )
@@ -44,7 +44,7 @@ class BaseAPITestCase(APITestCase):
         )
         self.user_drh.groups.add(self.group_drh)
 
-        # Créer un peu de data pour les prédictions
+        # Create test data for predictions
         self.skill_python = Skill.objects.create(
             name="Python",
             category="Technique",

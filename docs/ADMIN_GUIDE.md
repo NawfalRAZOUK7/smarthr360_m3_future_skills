@@ -55,6 +55,7 @@ As an HR Staff member, you have full access to:
 **URL:** `http://localhost:8000/admin/`
 
 Login with your HR Staff credentials to access:
+
 - Employee management
 - Skill and job role configuration
 - Prediction history
@@ -66,6 +67,7 @@ Login with your HR Staff credentials to access:
 **URL:** `http://localhost:8000/api/docs/`
 
 Interactive API documentation with:
+
 - Try-it-out functionality
 - Request/response examples
 - Authentication testing
@@ -80,6 +82,7 @@ Clean, searchable API documentation for reference.
 ### Understanding Your Role
 
 **HR Staff Permissions:**
+
 - **Full Read Access:** View all predictions, employees, trends, recommendations
 - **Full Write Access:** Create/update/delete employees, trigger recalculations
 - **Training Access:** Train models, manage training runs
@@ -87,11 +90,13 @@ Clean, searchable API documentation for reference.
 - **Configuration:** Switch prediction engines, adjust settings
 
 **What Managers Can Do:**
+
 - View predictions (filtered by their teams)
 - View market trends and analytics
 - Read-only access to employees in their departments
 
 **What Regular Users Can Do:**
+
 - View their own employee profile
 - View public trends and recommendations
 
@@ -182,6 +187,7 @@ curl -X POST http://localhost:8000/api/future-skills/recalculate/ \
 ```
 
 **Response:**
+
 ```json
 {
   "horizon_years": 5,
@@ -250,6 +256,7 @@ View in Django Admin: **Future Skills > Prediction Runs**
 The system uses **Random Forest Classifiers** to predict skill importance levels (HIGH, MEDIUM, LOW).
 
 **Features Used (11 total):**
+
 - Market trend score
 - Internal skill usage count
 - Training requests count
@@ -282,12 +289,14 @@ Train a new model when:
 #### Option 1: Synchronous Training (Small Datasets)
 
 **Use when:**
+
 - Dataset < 1000 rows
 - Need immediate results
 - Testing hyperparameters
 - Development environment
 
 **API Request:**
+
 ```bash
 curl -X POST http://localhost:8000/api/training/train/ \
   -H "Content-Type: application/json" \
@@ -308,6 +317,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
 ```
 
 **Response (Immediate):**
+
 ```json
 {
   "training_run_id": 15,
@@ -318,7 +328,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
     "accuracy": 0.9861,
     "precision": 0.9855,
     "recall": 0.9861,
-    "f1_score": 0.9860,
+    "f1_score": 0.986,
     "training_duration_seconds": 12.45
   }
 }
@@ -327,12 +337,14 @@ curl -X POST http://localhost:8000/api/training/train/ \
 #### Option 2: Asynchronous Training (Large Datasets, Production)
 
 **Use when:**
+
 - Dataset > 1000 rows
 - Production environment
 - Training may take > 30 seconds
 - Don't want to block the API
 
 **API Request:**
+
 ```bash
 curl -X POST http://localhost:8000/api/training/train/ \
   -H "Content-Type: application/json" \
@@ -351,6 +363,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
 ```
 
 **Response (Immediate):**
+
 ```json
 {
   "training_run_id": 16,
@@ -362,6 +375,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
 ```
 
 **Check Status:**
+
 ```bash
 # Check training run status
 curl -X GET http://localhost:8000/api/training/runs/16/ \
@@ -382,35 +396,41 @@ curl -X GET http://localhost:8000/api/training/runs/16/ \
 #### Key Hyperparameters
 
 **1. n_estimators (Default: 100)**
+
 - Number of decision trees in the forest
 - **Higher = More accurate but slower**
 - Recommended range: 50-200
 - Start with 100, increase to 150 if accuracy < 97%
 
 **2. max_depth (Default: 15)**
+
 - Maximum depth of each tree
 - **Higher = More complex, risk overfitting**
 - Recommended range: 10-25
 - Start with 15, increase to 20 for complex patterns
 
 **3. min_samples_split (Default: 5)**
+
 - Minimum samples required to split a node
 - **Higher = More conservative, prevents overfitting**
 - Recommended range: 2-10
 - Start with 5, increase to 8 for noisy data
 
 **4. min_samples_leaf (Default: 2)**
+
 - Minimum samples required at leaf node
 - **Higher = Smoother predictions**
 - Recommended range: 1-5
 
 **5. random_state (Default: 42)**
+
 - Random seed for reproducibility
 - Keep at 42 for consistent results
 
 #### Recommended Configurations
 
 **Balanced (Default):**
+
 ```json
 {
   "n_estimators": 100,
@@ -421,6 +441,7 @@ curl -X GET http://localhost:8000/api/training/runs/16/ \
 ```
 
 **High Accuracy:**
+
 ```json
 {
   "n_estimators": 150,
@@ -431,6 +452,7 @@ curl -X GET http://localhost:8000/api/training/runs/16/ \
 ```
 
 **Fast Training:**
+
 ```json
 {
   "n_estimators": 50,
@@ -441,6 +463,7 @@ curl -X GET http://localhost:8000/api/training/runs/16/ \
 ```
 
 **Production (Balanced + Fast):**
+
 ```json
 {
   "n_estimators": 120,
@@ -455,21 +478,25 @@ curl -X GET http://localhost:8000/api/training/runs/16/ \
 #### Key Metrics
 
 **1. Accuracy (Target: > 95%)**
+
 - Overall correctness of predictions
 - Formula: (Correct Predictions) / (Total Predictions)
 - **Interpretation:** 98% accuracy = 98 out of 100 predictions are correct
 
 **2. Precision (Target: > 95%)**
+
 - Correctness of positive predictions
 - Formula: True Positives / (True Positives + False Positives)
 - **Interpretation:** When model predicts HIGH, it's correct 98% of the time
 
 **3. Recall (Target: > 95%)**
+
 - Coverage of actual positives
 - Formula: True Positives / (True Positives + False Negatives)
 - **Interpretation:** Model catches 98% of actual HIGH skills
 
 **4. F1 Score (Target: > 95%)**
+
 - Harmonic mean of precision and recall
 - Balanced measure of model quality
 - **Interpretation:** 98% F1 = excellent balance between precision and recall
@@ -504,6 +531,7 @@ View performance for each level:
 ```
 
 **Interpreting:**
+
 - HIGH predictions are 99% precise (rarely false positives)
 - HIGH recall of 98% means we catch most HIGH skills
 - All classes perform well (balanced model)
@@ -552,12 +580,14 @@ curl -X GET "http://localhost:8000/api/training/runs/15/" \
 **Format:** `v{major}.{minor}_{environment}_{description}`
 
 **Examples:**
+
 - `v1.0_production` - First production model
 - `v2.1_quarterly` - Q1 2025 quarterly update
 - `v2.3_experimental` - Testing new features
 - `v3.0_prod_retrained` - Major update with retraining
 
 **Best Practice:** Use semantic versioning:
+
 - Major (v1 → v2): Significant changes (new features, algorithm changes)
 - Minor (v2.1 → v2.2): Incremental improvements (hyperparameter tuning)
 - Environment: `production`, `staging`, `dev`, `test`
@@ -567,6 +597,7 @@ curl -X GET "http://localhost:8000/api/training/runs/15/" \
 View all trained models: **ml/MODEL_REGISTRY.md**
 
 Each entry includes:
+
 - Version number
 - Training date
 - Dataset used
@@ -604,12 +635,14 @@ ls -lh ml/models/
 The system logs predictions to **logs/predictions.jsonl** when monitoring is enabled.
 
 **Enable Monitoring:**
+
 ```python
 # In Django settings or .env
 FUTURE_SKILLS_ENABLE_MONITORING=true
 ```
 
 **Log Format:**
+
 ```json
 {
   "timestamp": "2024-11-28T10:15:30Z",
@@ -629,6 +662,7 @@ FUTURE_SKILLS_ENABLE_MONITORING=true
 ```
 
 **Analyzing Logs:**
+
 ```bash
 # Count predictions per level
 grep -o '"prediction": "[^"]*"' logs/predictions.jsonl | sort | uniq -c
@@ -671,6 +705,7 @@ curl -X GET "http://localhost:8000/api/analytics/training-trends/" \
 Recommendations are automatically generated for HIGH predictions during recalculation.
 
 **Via Django Admin:**
+
 1. Navigate to **Future Skills > HR Investment Recommendations**
 2. Filter by:
    - Priority (HIGH, MEDIUM, LOW)
@@ -679,6 +714,7 @@ Recommendations are automatically generated for HIGH predictions during recalcul
    - Created date
 
 **Via API:**
+
 ```bash
 # List all recommendations
 curl -X GET "http://localhost:8000/api/hr-recommendations/" \
@@ -702,13 +738,14 @@ Each recommendation includes:
 - **Action Items:** Specific steps to take
 
 **Example:**
+
 ```
 Skill: Python
 Priority: HIGH
 Expected ROI: 150%
 Estimated Cost: $50,000
 Affected Employees: 25
-Rationale: Critical for 3 job roles (Data Engineer, ML Engineer, Backend Developer). 
+Rationale: Critical for 3 job roles (Data Engineer, ML Engineer, Backend Developer).
            High market demand (+85% trend) and internal usage gap.
 Action Items:
 - Launch Python bootcamp for 25 employees
@@ -721,6 +758,7 @@ Action Items:
 #### Viewing Trends
 
 **Via Django Admin:**
+
 1. Navigate to **Future Skills > Market Trends**
 2. Filter by:
    - Skill
@@ -728,6 +766,7 @@ Action Items:
    - Trend direction (UP, STABLE, DOWN)
 
 **Via API:**
+
 ```bash
 # List market trends
 curl -X GET "http://localhost:8000/api/market-trends/" \
@@ -741,12 +780,14 @@ curl -X GET "http://localhost:8000/api/market-trends/?year=2025" \
 #### Analyzing Trends
 
 **Key Metrics:**
+
 - **Trend Score (0-1):** Market demand intensity
 - **Growth Rate (%):** Year-over-year change
 - **Demand Level:** LOW, MEDIUM, HIGH, CRITICAL
 - **Source:** Industry reports, job postings, surveys
 
 **Interpreting:**
+
 - **Trend Score > 0.8:** Very high demand, invest immediately
 - **Trend Score 0.5-0.8:** Moderate demand, plan training
 - **Trend Score < 0.5:** Low priority, monitor only
@@ -764,23 +805,27 @@ The system supports two prediction engines:
 #### 1. ML Engine (Machine Learning)
 
 **How it works:**
+
 - Uses trained Random Forest model
 - Analyzes 11 features per prediction
 - Provides confidence scores
 - Generates SHAP/LIME explanations
 
 **Advantages:**
+
 - ✅ High accuracy (95-98%)
 - ✅ Adapts to new data
 - ✅ Explainable predictions
 - ✅ Handles complex patterns
 
 **Disadvantages:**
+
 - ❌ Requires training data
 - ❌ Needs periodic retraining
 - ❌ More complex to maintain
 
 **When to use:**
+
 - Production systems with historical data
 - When accuracy is critical
 - After training multiple models
@@ -789,24 +834,28 @@ The system supports two prediction engines:
 #### 2. Rules Engine (Rules-Based)
 
 **How it works:**
+
 - Uses predefined business rules
 - Calculates weighted scores from features
 - No training required
 - Deterministic and transparent
 
 **Advantages:**
+
 - ✅ No training required
 - ✅ Works immediately
 - ✅ Fully transparent
 - ✅ Consistent and predictable
 
 **Disadvantages:**
+
 - ❌ Lower accuracy (~85-90%)
 - ❌ Less adaptive to changes
 - ❌ Manual rule updates needed
 - ❌ May miss complex patterns
 
 **When to use:**
+
 - Initial setup before training data
 - Backup/fallback when ML unavailable
 - Simple, transparent predictions
@@ -828,6 +877,7 @@ print(f'Model Path: {settings.FUTURE_SKILLS_ML_MODEL_PATH}')
 #### Switch to ML Engine
 
 **Method 1: Environment Variable**
+
 ```bash
 # In .env file
 FUTURE_SKILLS_USE_ML=true
@@ -835,6 +885,7 @@ FUTURE_SKILLS_ML_MODEL_PATH=ml/models/future_skills_model_v2.4_production.pkl
 ```
 
 **Method 2: Django Settings**
+
 ```python
 # In config/settings/base.py
 FUTURE_SKILLS_USE_ML = True
@@ -846,12 +897,14 @@ FUTURE_SKILLS_ML_MODEL_PATH = 'ml/models/future_skills_model_v2.4_production.pkl
 #### Switch to Rules Engine
 
 **Method 1: Environment Variable**
+
 ```bash
 # In .env file
 FUTURE_SKILLS_USE_ML=false
 ```
 
 **Method 2: Django Settings**
+
 ```python
 # In config/settings/base.py
 FUTURE_SKILLS_USE_ML = False
@@ -862,12 +915,14 @@ FUTURE_SKILLS_USE_ML = False
 #### Automatic Fallback
 
 The system automatically falls back to rules engine if:
+
 - ML model file doesn't exist
 - Model loading fails
 - Prediction errors occur
 - Model not trained yet
 
 **Check logs for fallback events:**
+
 ```bash
 grep "Falling back to rules" logs/future_skills.log
 ```
@@ -892,13 +947,13 @@ python ml/scripts/evaluate_future_skills_models.py
     "accuracy": 0.9861,
     "precision": 0.9855,
     "recall": 0.9861,
-    "f1_score": 0.9860,
+    "f1_score": 0.986,
     "predictions_per_second": 1250
   },
   "rules_engine": {
-    "accuracy": 0.8750,
+    "accuracy": 0.875,
     "precision": 0.8712,
-    "recall": 0.8750,
+    "recall": 0.875,
     "f1_score": 0.8729,
     "predictions_per_second": 2100
   },
@@ -915,11 +970,13 @@ python ml/scripts/evaluate_future_skills_models.py
 #### Morning Routine
 
 1. **Check Training Status**
+
    - Visit `/api/training/runs/?status=RUNNING`
    - Verify no failed training jobs
    - Review completed runs from overnight
 
 2. **Monitor Predictions**
+
    - Scan prediction logs: `tail -100 logs/predictions.jsonl`
    - Check for errors in: `logs/future_skills.log`
    - Verify engine usage distribution
@@ -932,11 +989,13 @@ python ml/scripts/evaluate_future_skills_models.py
 #### Weekly Tasks
 
 1. **Data Quality Review**
+
    - Update market trends with latest reports
    - Verify employee skill profiles
    - Add new skills or job roles as needed
 
 2. **Performance Analysis**
+
    - Review prediction accuracy trends
    - Compare ML vs rules engine performance
    - Identify areas for improvement
@@ -949,11 +1008,13 @@ python ml/scripts/evaluate_future_skills_models.py
 #### Monthly Tasks
 
 1. **Model Maintenance**
+
    - Retrain model with latest data (if 100+ new samples)
    - Update hyperparameters if performance declined
    - Version and archive old models
 
 2. **Strategic Planning**
+
    - Generate prediction summary reports
    - Present HIGH priority skills to leadership
    - Budget for recommended training programs
@@ -966,11 +1027,13 @@ python ml/scripts/evaluate_future_skills_models.py
 #### Quarterly Tasks
 
 1. **Full System Audit**
+
    - Comprehensive model retraining
    - Recalculate all predictions with new horizons
    - Update market trend data from industry reports
 
 2. **Performance Review**
+
    - Compare predictions vs actual hiring needs
    - Measure ROI of implemented recommendations
    - Adjust prediction parameters if needed
@@ -985,16 +1048,19 @@ python ml/scripts/evaluate_future_skills_models.py
 #### Keep Data Fresh
 
 **Market Trends:**
+
 - Update monthly from industry reports
 - Sources: LinkedIn Talent Insights, Gartner, Forrester
 - Add new emerging skills promptly
 
 **Employee Skills:**
+
 - Regular skill assessments (quarterly)
 - Update after training completions
 - Track certification acquisitions
 
 **Economic Reports:**
+
 - Quarterly industry outlooks
 - Salary benchmarks
 - Hiring difficulty indexes
@@ -1015,16 +1081,19 @@ print(f'Trends in last 30 days: {MarketTrend.objects.filter(created_at__gte=date
 ### Security Best Practices
 
 1. **Protect Training Data**
+
    - Store datasets in secure `ml/data/` directory
    - Don't commit sensitive employee data to Git
    - Use `.gitignore` for `*.csv` files with PII
 
 2. **API Security**
+
    - Always use HTTPS in production
    - Rotate authentication tokens regularly
    - Monitor API access logs
 
 3. **Model Security**
+
    - Version control model registry
    - Backup trained models regularly
    - Test models in staging before production
@@ -1076,6 +1145,7 @@ Always use `async_training=true` in production to avoid timeouts.
 #### 1. Training Fails
 
 **Symptoms:**
+
 - Training run status = FAILED
 - Error in training run details
 - No model file created
@@ -1083,6 +1153,7 @@ Always use `async_training=true` in production to avoid timeouts.
 **Solutions:**
 
 **Check dataset format:**
+
 ```bash
 # Verify CSV has required columns
 head -1 ml/data/future_skills_dataset.csv
@@ -1091,17 +1162,20 @@ head -1 ml/data/future_skills_dataset.csv
 Required columns: `job_role`, `skill`, `level`, `trend_score`, `internal_usage`, `training_requests`, `scarcity_index`, `hiring_difficulty`, `avg_salary_k`, `horizon_years`
 
 **Check file permissions:**
+
 ```bash
 ls -l ml/data/future_skills_dataset.csv
 # Should be readable
 ```
 
 **Check logs:**
+
 ```bash
 tail -100 logs/future_skills.log | grep ERROR
 ```
 
 **Verify dataset size:**
+
 ```bash
 wc -l ml/data/future_skills_dataset.csv
 # Should have at least 100 rows
@@ -1110,12 +1184,14 @@ wc -l ml/data/future_skills_dataset.csv
 #### 2. Predictions Return Empty
 
 **Symptoms:**
+
 - `/api/future-skills/` returns `{"results": []}`
 - No predictions in database
 
 **Solutions:**
 
 **Trigger recalculation:**
+
 ```bash
 curl -X POST http://localhost:8000/api/future-skills/recalculate/ \
   -H "Content-Type: application/json" \
@@ -1124,6 +1200,7 @@ curl -X POST http://localhost:8000/api/future-skills/recalculate/ \
 ```
 
 **Check data exists:**
+
 ```bash
 python manage.py shell -c "
 from future_skills.models import Skill, JobRole
@@ -1133,6 +1210,7 @@ print(f'Job Roles: {JobRole.objects.count()}')
 ```
 
 **Run seed command if empty:**
+
 ```bash
 python manage.py seed_future_skills
 ```
@@ -1140,6 +1218,7 @@ python manage.py seed_future_skills
 #### 3. ML Model Not Loading
 
 **Symptoms:**
+
 - System uses rules engine despite `USE_ML=true`
 - Error: "Model file not found"
 - Log: "Falling back to rules engine"
@@ -1147,11 +1226,13 @@ python manage.py seed_future_skills
 **Solutions:**
 
 **Check model file exists:**
+
 ```bash
 ls -l ml/models/*.pkl ml/models/*.joblib
 ```
 
 **Verify settings:**
+
 ```bash
 python manage.py shell -c "
 from django.conf import settings
@@ -1163,6 +1244,7 @@ print(f'File exists: {os.path.exists(settings.FUTURE_SKILLS_ML_MODEL_PATH)}')
 ```
 
 **Train a new model:**
+
 ```bash
 curl -X POST http://localhost:8000/api/training/train/ \
   -H "Content-Type: application/json" \
@@ -1173,6 +1255,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
 #### 4. Slow API Responses
 
 **Symptoms:**
+
 - API requests take > 5 seconds
 - Timeout errors
 - High CPU usage
@@ -1180,19 +1263,22 @@ curl -X POST http://localhost:8000/api/training/train/ \
 **Solutions:**
 
 **Enable pagination:**
+
 ```bash
 # Add page_size parameter
 curl -X GET "http://localhost:8000/api/future-skills/?page_size=20"
 ```
 
 **Use async training:**
+
 ```json
-{"async_training": true}
+{ "async_training": true }
 ```
 
 **Add database indexes** (see Performance Optimization section)
 
 **Check database size:**
+
 ```bash
 python manage.py shell -c "
 from future_skills.models import FutureSkillPrediction
@@ -1204,12 +1290,14 @@ print(f'Total Predictions: {FutureSkillPrediction.objects.count()}')
 #### 5. Permission Denied
 
 **Symptoms:**
+
 - 403 Forbidden errors
 - "You do not have permission" messages
 
 **Solutions:**
 
 **Verify user role:**
+
 ```bash
 python manage.py shell -c "
 from django.contrib.auth import get_user_model
@@ -1222,6 +1310,7 @@ print(f'Is Superuser: {user.is_superuser}')
 ```
 
 **Add to HR Staff group:**
+
 ```bash
 python manage.py shell -c "
 from django.contrib.auth import get_user_model
@@ -1239,16 +1328,19 @@ print('User added to HR_Staff group')
 #### Log Files
 
 **Application logs:**
+
 ```bash
 tail -f logs/future_skills.log
 ```
 
 **Prediction logs:**
+
 ```bash
 tail -f logs/predictions.jsonl
 ```
 
 **Django logs:**
+
 ```bash
 tail -f logs/django.log
 ```
@@ -1279,16 +1371,19 @@ DEBUG = True
 ### Quick Reference
 
 #### Predictions
+
 - `GET /api/future-skills/` - List predictions
 - `GET /api/future-skills/{id}/` - Get prediction detail
 - `POST /api/future-skills/recalculate/` - Recalculate predictions
 
 #### Training
+
 - `POST /api/training/train/` - Train new model
 - `GET /api/training/runs/` - List training runs
 - `GET /api/training/runs/{id}/` - Get training run details
 
 #### Employees
+
 - `GET /api/employees/` - List employees
 - `POST /api/employees/` - Create employee
 - `GET /api/employees/{id}/` - Get employee detail
@@ -1296,16 +1391,19 @@ DEBUG = True
 - `DELETE /api/employees/{id}/` - Delete employee
 
 #### Market Trends
+
 - `GET /api/market-trends/` - List market trends
 - `GET /api/market-trends/{id}/` - Get trend detail
 
 #### Recommendations
+
 - `GET /api/hr-recommendations/` - List recommendations
 - `GET /api/hr-recommendations/{id}/` - Get recommendation detail
 
 ### Complete Documentation
 
 For full API documentation with examples:
+
 - **Swagger UI:** `/api/docs/`
 - **ReDoc:** `/api/redoc/`
 - **Documentation Guide:** `docs/API_DOCUMENTATION.md`
@@ -1349,11 +1447,13 @@ For full API documentation with examples:
 ### Keyboard Shortcuts
 
 **Swagger UI:**
+
 - `Ctrl/Cmd + K` - Search endpoints
 - `Ctrl/Cmd + Enter` - Execute request
 - `Escape` - Close modals
 
 **Django Admin:**
+
 - `Ctrl/Cmd + S` - Save changes
 - `Ctrl/Cmd + Enter` - Save and continue editing
 
@@ -1366,4 +1466,4 @@ For full API documentation with examples:
 ---
 
 **End of Administrator Guide**  
-*For updates to this guide, check the Git repository or contact the development team.*
+_For updates to this guide, check the Git repository or contact the development team._

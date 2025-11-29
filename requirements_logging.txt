@@ -1,0 +1,43 @@
+# ============================================================================
+# LOGGING & MONITORING DEPENDENCIES
+# SmartHR360 Future Skills Platform
+# ============================================================================
+
+# Structured Logging
+# ----------------------------------------------------------------------------
+structlog>=23.2.0              # Structured logging with context binding
+python-json-logger>=2.0.7      # JSON log formatter (already installed)
+colorlog>=6.8.0                # Colored console logging for development
+
+# Application Performance Monitoring (APM)
+# ----------------------------------------------------------------------------
+elastic-apm>=6.19.0            # Elastic APM for performance monitoring
+sentry-sdk>=1.39.1             # Sentry for error tracking and monitoring
+
+# Log Aggregation & Shipping
+# ----------------------------------------------------------------------------
+python-logstash>=0.4.8         # Logstash handler for centralized logging
+python-logstash-async>=2.5.0   # Async Logstash handler for better performance
+
+# Metrics & Monitoring
+# ----------------------------------------------------------------------------
+prometheus-client>=0.19.0      # Prometheus metrics exporter
+django-prometheus>=2.3.1       # Django Prometheus integration
+
+# Request ID & Correlation
+# ----------------------------------------------------------------------------
+django-log-request-id>=2.1.0   # Request ID tracking for distributed tracing
+
+# Performance Profiling
+# ----------------------------------------------------------------------------
+django-silk>=5.0.4             # Request profiling and monitoring (dev/staging)
+py-spy>=0.3.14                 # Sampling profiler for production
+
+# Health Checks
+# ----------------------------------------------------------------------------
+django-health-check>=3.17.0    # Health check endpoints
+
+# Additional Utilities
+# ----------------------------------------------------------------------------
+psutil>=5.9.6                  # System and process monitoring
+python-dateutil>=2.8.2         # Date utilities for log parsing

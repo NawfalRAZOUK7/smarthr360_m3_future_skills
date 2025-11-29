@@ -1,0 +1,369 @@
+# ============================================================================
+# Makefile.logging
+# SmartHR360 Future Skills Platform - Logging & Monitoring Operations
+# ============================================================================
+
+.PHONY: help logs-setup logs-health logs-analyze logs-errors logs-performance \
+        logs-tail logs-clear metrics-view health-check apm-test logging-help
+
+# Colors for output
+BLUE := \033[0;34m
+GREEN := \033[0;32m
+YELLOW := \033[0;33m
+RED := \033[0;31m
+NC := \033[0m # No Color
+
+# Default target
+help: logging-help
+
+# ============================================================================
+# SETUP & INITIALIZATION
+# ============================================================================
+
+logs-setup: ## Setup logging directories and permissions
+	@echo "$(BLUE)Setting up logging directories...$(NC)"
+	@mkdir -p logs
+	@chmod 755 logs
+	@touch logs/application.log logs/error.log logs/security.log logs/performance.log
+	@chmod 644 logs/*.log
+	@echo "$(GREEN)✓ Logging directories created$(NC)"
+	@echo "$(GREEN)✓ Log files initialized$(NC)"
+
+# ============================================================================
+# LOG VIEWING & ANALYSIS
+# ============================================================================
+
+logs-tail: ## Tail application logs
+	@echo "$(BLUE)Tailing application logs (Ctrl+C to stop)...$(NC)"
+	@tail -f logs/application.log
+
+logs-tail-errors: ## Tail error logs only
+	@echo "$(BLUE)Tailing error logs (Ctrl+C to stop)...$(NC)"
+	@tail -f logs/error.log
+
+logs-tail-security: ## Tail security logs
+	@echo "$(BLUE)Tailing security logs (Ctrl+C to stop)...$(NC)"
+	@tail -f logs/security.log
+
+logs-tail-performance: ## Tail performance logs
+	@echo "$(BLUE)Tailing performance logs (Ctrl+C to stop)...$(NC)"
+	@tail -f logs/performance.log
+
+logs-view: ## View last 100 lines of application logs
+	@echo "$(BLUE)Last 100 lines of application logs:$(NC)"
+	@tail -n 100 logs/application.log
+
+logs-view-errors: ## View last 50 error log entries
+	@echo "$(BLUE)Last 50 error log entries:$(NC)"
+	@tail -n 50 logs/error.log
+
+logs-analyze: ## Analyze logs from last 24 hours
+	@echo "$(BLUE)Analyzing logs from last 24 hours...$(NC)"
+	@python manage.py analyze_logs
+
+logs-analyze-7d: ## Analyze logs from last 7 days
+	@echo "$(BLUE)Analyzing logs from last 7 days...$(NC)"
+	@python manage.py analyze_logs --hours 168
+
+logs-analyze-errors: ## Analyze errors only
+	@echo "$(BLUE)Analyzing errors...$(NC)"
+	@python manage.py analyze_logs --errors-only
+
+logs-analyze-performance: ## Analyze performance metrics
+	@echo "$(BLUE)Analyzing performance metrics...$(NC)"
+	@python manage.py analyze_logs --performance
+
+logs-analyze-json: ## Analyze logs and output JSON
+	@echo "$(BLUE)Analyzing logs (JSON output)...$(NC)"
+	@python manage.py analyze_logs --json
+
+logs-errors: ## Show all errors from last 24 hours
+	@echo "$(BLUE)Errors from last 24 hours:$(NC)"
+	@python manage.py analyze_logs --errors-only
+
+logs-performance: ## Show performance analysis
+	@echo "$(BLUE)Performance analysis:$(NC)"
+	@python manage.py analyze_logs --performance
+
+# ============================================================================
+# LOG MANAGEMENT
+# ============================================================================
+
+logs-clear: ## Clear all log files (with confirmation)
+	@echo "$(RED)WARNING: This will delete all log files!$(NC)"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "$(YELLOW)Clearing log files...$(NC)"; \
+		rm -f logs/*.log logs/*.log.*; \
+		make logs-setup; \
+		echo "$(GREEN)✓ Log files cleared$(NC)"; \
+	else \
+		echo "$(BLUE)Cancelled$(NC)"; \
+	fi
+
+logs-rotate: ## Manually rotate log files
+	@echo "$(BLUE)Rotating log files...$(NC)"
+	@timestamp=$$(date +%Y%m%d_%H%M%S); \
+	for log in logs/*.log; do \
+		if [ -f "$$log" ]; then \
+			cp "$$log" "$$log.$$timestamp"; \
+			> "$$log"; \
+			echo "$(GREEN)✓ Rotated $$log$(NC)"; \
+		fi \
+	done
+	@echo "$(GREEN)✓ Log rotation complete$(NC)"
+
+logs-archive: ## Archive old log files (older than 30 days)
+	@echo "$(BLUE)Archiving old log files...$(NC)"
+	@mkdir -p logs/archive
+	@find logs/ -name "*.log.*" -mtime +30 -exec mv {} logs/archive/ \;
+	@echo "$(GREEN)✓ Old logs archived to logs/archive/$(NC)"
+
+logs-cleanup: ## Delete archived logs older than 90 days
+	@echo "$(BLUE)Cleaning up old archived logs...$(NC)"
+	@find logs/archive/ -name "*.log.*" -mtime +90 -delete
+	@echo "$(GREEN)✓ Old archived logs deleted$(NC)"
+
+logs-size: ## Show log file sizes
+	@echo "$(BLUE)Log file sizes:$(NC)"
+	@du -h logs/*.log 2>/dev/null || echo "No log files found"
+	@echo ""
+	@echo "$(BLUE)Total size:$(NC)"
+	@du -sh logs/ 2>/dev/null || echo "0B"
+
+# ============================================================================
+# HEALTH CHECKS
+# ============================================================================
+
+health-check: ## Run comprehensive health check
+	@echo "$(BLUE)Running health check...$(NC)"
+	@python manage.py health_check
+
+health-check-database: ## Check database health
+	@echo "$(BLUE)Checking database...$(NC)"
+	@python manage.py health_check --check database
+
+health-check-cache: ## Check cache health
+	@echo "$(BLUE)Checking cache...$(NC)"
+	@python manage.py health_check --check cache
+
+health-check-celery: ## Check Celery workers
+	@echo "$(BLUE)Checking Celery workers...$(NC)"
+	@python manage.py health_check --check celery
+
+health-check-disk: ## Check disk usage
+	@echo "$(BLUE)Checking disk usage...$(NC)"
+	@python manage.py health_check --check disk
+
+health-check-memory: ## Check memory usage
+	@echo "$(BLUE)Checking memory usage...$(NC)"
+	@python manage.py health_check --check memory
+
+health-check-json: ## Run health check with JSON output
+	@echo "$(BLUE)Running health check (JSON)...$(NC)"
+	@python manage.py health_check --json
+
+health-api: ## Check health API endpoints
+	@echo "$(BLUE)Checking health API endpoints...$(NC)"
+	@echo "Health check:"
+	@curl -s http://localhost:8000/api/health/ | python -m json.tool || echo "Failed"
+	@echo ""
+	@echo "Readiness check:"
+	@curl -s http://localhost:8000/api/ready/ | python -m json.tool || echo "Failed"
+	@echo ""
+	@echo "Liveness check:"
+	@curl -s http://localhost:8000/api/alive/ | python -m json.tool || echo "Failed"
+
+# ============================================================================
+# METRICS & MONITORING
+# ============================================================================
+
+metrics-view: ## View Prometheus metrics
+	@echo "$(BLUE)Fetching Prometheus metrics...$(NC)"
+	@curl -s http://localhost:8000/metrics
+
+metrics-json: ## View custom metrics in JSON
+	@echo "$(BLUE)Fetching custom metrics...$(NC)"
+	@curl -s http://localhost:8000/api/metrics/ | python -m json.tool
+
+metrics-http: ## View HTTP request metrics
+	@echo "$(BLUE)HTTP request metrics:$(NC)"
+	@curl -s http://localhost:8000/metrics | grep "django_http_requests"
+
+metrics-db: ## View database metrics
+	@echo "$(BLUE)Database metrics:$(NC)"
+	@curl -s http://localhost:8000/metrics | grep "django_db"
+
+metrics-cache: ## View cache metrics
+	@echo "$(BLUE)Cache metrics:$(NC)"
+	@curl -s http://localhost:8000/metrics | grep "django_cache"
+
+# ============================================================================
+# APM & ERROR TRACKING
+# ============================================================================
+
+apm-test-elastic: ## Test Elastic APM connection
+	@echo "$(BLUE)Testing Elastic APM connection...$(NC)"
+	@python -c "import os; \
+	from config.apm_config import get_elastic_apm_config; \
+	config = get_elastic_apm_config(); \
+	if config: \
+		print('✓ Elastic APM configured'); \
+		print(f'  Service: {config[\"SERVICE_NAME\"]}'); \
+		print(f'  Server: {config[\"SERVER_URL\"]}'); \
+		print(f'  Environment: {config[\"ENVIRONMENT\"]}'); \
+	else: \
+		print('✗ Elastic APM not configured');"
+
+apm-test-sentry: ## Test Sentry connection
+	@echo "$(BLUE)Testing Sentry connection...$(NC)"
+	@python -c "import os; \
+	from config.apm_config import get_sentry_config; \
+	config = get_sentry_config(); \
+	if config: \
+		print('✓ Sentry configured'); \
+		print(f'  Environment: {config[\"environment\"]}'); \
+		print(f'  Release: {config[\"release\"]}'); \
+	else: \
+		print('✗ Sentry not configured');"
+
+apm-test-error: ## Send test error to APM
+	@echo "$(BLUE)Sending test error to APM...$(NC)"
+	@python manage.py shell -c "from config.apm_config import capture_exception; \
+	try: \
+		raise Exception('Test error from Makefile'); \
+	except Exception as e: \
+		capture_exception(e, test=True); \
+		print('✓ Test error sent');"
+
+apm-test-message: ## Send test message to APM
+	@echo "$(BLUE)Sending test message to APM...$(NC)"
+	@python manage.py shell -c "from config.apm_config import capture_message; \
+	capture_message('Test message from Makefile', level='info', test=True); \
+	print('✓ Test message sent');"
+
+# ============================================================================
+# MONITORING DASHBOARD
+# ============================================================================
+
+monitor-dashboard: ## Show monitoring dashboard
+	@echo "$(GREEN)╔═══════════════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║              SmartHR360 Monitoring Dashboard                      ║$(NC)"
+	@echo "$(GREEN)╚═══════════════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@echo "$(BLUE)Health Status:$(NC)"
+	@python manage.py health_check --json 2>/dev/null | python -c "import sys, json; data=json.load(sys.stdin); print('  Overall:', '$(GREEN)✓ Healthy$(NC)' if data.get('overall', {}).get('healthy') else '$(RED)✗ Unhealthy$(NC)')" || echo "  $(RED)✗ Unable to check health$(NC)"
+	@echo ""
+	@echo "$(BLUE)Recent Errors (last hour):$(NC)"
+	@python manage.py analyze_logs --hours 1 --errors-only --json 2>/dev/null | python -c "import sys, json; data=json.load(sys.stdin); print(f'  {data.get(\"errors\", {}).get(\"count\", 0)} errors')" || echo "  Unable to analyze logs"
+	@echo ""
+	@echo "$(BLUE)Log File Sizes:$(NC)"
+	@du -h logs/*.log 2>/dev/null | awk '{print "  " $$2 ": " $$1}' || echo "  No logs found"
+	@echo ""
+	@echo "$(BLUE)Endpoints:$(NC)"
+	@echo "  Health:     http://localhost:8000/api/health/"
+	@echo "  Metrics:    http://localhost:8000/metrics"
+	@echo "  API Docs:   http://localhost:8000/api/docs/"
+	@echo ""
+
+monitor-watch: ## Watch monitoring dashboard (refresh every 5s)
+	@watch -n 5 make monitor-dashboard
+
+# ============================================================================
+# STRUCTURED LOGGING TESTS
+# ============================================================================
+
+logs-test: ## Test logging functionality
+	@echo "$(BLUE)Testing logging functionality...$(NC)"
+	@python manage.py shell -c "from config.logging_config import get_logger; \
+	logger = get_logger('test'); \
+	logger.debug('Test debug message', test=True); \
+	logger.info('Test info message', test=True); \
+	logger.warning('Test warning message', test=True); \
+	logger.error('Test error message', test=True); \
+	print('$(GREEN)✓ Test logs written$(NC)')"
+	@echo ""
+	@echo "$(BLUE)Recent test logs:$(NC)"
+	@tail -n 10 logs/application.log | grep test || echo "No test logs found"
+
+logs-test-structured: ## Test structured logging
+	@echo "$(BLUE)Testing structured logging...$(NC)"
+	@python manage.py shell -c "from config.logging_config import get_logger; \
+	logger = get_logger('test'); \
+	logger.info('structured_test', \
+		user_id=123, \
+		action='login', \
+		ip='192.168.1.1', \
+		duration=0.234); \
+	print('$(GREEN)✓ Structured log written$(NC)')"
+
+logs-test-performance: ## Test performance logging decorator
+	@echo "$(BLUE)Testing performance logging...$(NC)"
+	@python manage.py shell -c "from config.logging_config import log_performance; \
+	import time; \
+	@log_performance('test'); \
+	def test_func(): \
+		time.sleep(0.1); \
+		return 'done'; \
+	test_func(); \
+	print('$(GREEN)✓ Performance log written$(NC)')"
+
+# ============================================================================
+# HELP & DOCUMENTATION
+# ============================================================================
+
+logging-help: ## Show this help message
+	@echo "$(GREEN)╔═══════════════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║        SmartHR360 Logging & Monitoring - Make Commands           ║$(NC)"
+	@echo "$(GREEN)╚═══════════════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@echo "$(BLUE)Setup & Initialization:$(NC)"
+	@echo "  make logs-setup              - Setup logging directories"
+	@echo ""
+	@echo "$(BLUE)Log Viewing:$(NC)"
+	@echo "  make logs-tail               - Tail application logs"
+	@echo "  make logs-tail-errors        - Tail error logs"
+	@echo "  make logs-tail-security      - Tail security logs"
+	@echo "  make logs-tail-performance   - Tail performance logs"
+	@echo "  make logs-view               - View last 100 log lines"
+	@echo ""
+	@echo "$(BLUE)Log Analysis:$(NC)"
+	@echo "  make logs-analyze            - Analyze logs (24h)"
+	@echo "  make logs-analyze-7d         - Analyze logs (7d)"
+	@echo "  make logs-analyze-errors     - Analyze errors only"
+	@echo "  make logs-analyze-performance - Analyze performance"
+	@echo "  make logs-errors             - Show recent errors"
+	@echo ""
+	@echo "$(BLUE)Log Management:$(NC)"
+	@echo "  make logs-clear              - Clear all logs"
+	@echo "  make logs-rotate             - Rotate log files"
+	@echo "  make logs-archive            - Archive old logs"
+	@echo "  make logs-cleanup            - Delete old archives"
+	@echo "  make logs-size               - Show log sizes"
+	@echo ""
+	@echo "$(BLUE)Health Checks:$(NC)"
+	@echo "  make health-check            - Run full health check"
+	@echo "  make health-check-database   - Check database"
+	@echo "  make health-check-cache      - Check cache"
+	@echo "  make health-check-celery     - Check Celery"
+	@echo "  make health-api              - Check API endpoints"
+	@echo ""
+	@echo "$(BLUE)Metrics & Monitoring:$(NC)"
+	@echo "  make metrics-view            - View Prometheus metrics"
+	@echo "  make metrics-json            - View JSON metrics"
+	@echo "  make metrics-http            - HTTP metrics"
+	@echo "  make monitor-dashboard       - Show dashboard"
+	@echo ""
+	@echo "$(BLUE)APM & Error Tracking:$(NC)"
+	@echo "  make apm-test-elastic        - Test Elastic APM"
+	@echo "  make apm-test-sentry         - Test Sentry"
+	@echo "  make apm-test-error          - Send test error"
+	@echo ""
+	@echo "$(BLUE)Testing:$(NC)"
+	@echo "  make logs-test               - Test logging"
+	@echo "  make logs-test-structured    - Test structured logs"
+	@echo "  make logs-test-performance   - Test performance logging"
+	@echo ""
+	@echo "$(YELLOW)For complete documentation, see: docs/LOGGING_MONITORING_GUIDE.md$(NC)"
+	@echo ""
