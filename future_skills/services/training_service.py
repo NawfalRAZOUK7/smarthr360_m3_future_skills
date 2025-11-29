@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
 import joblib
+import mlflow
+import mlflow.sklearn
 import pandas as pd
 from django.conf import settings
 from sklearn.compose import ColumnTransformer
@@ -29,6 +31,14 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from future_skills.models import TrainingRun
+from ml.mlflow_config import get_mlflow_config
+from ml.model_versioning import (
+    create_model_version,
+    ModelVersionManager,
+    ModelStage,
+    ModelFramework,
+)
+from ml.monitoring import ModelMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +137,7 @@ class ModelTrainer:
         self.training_end_time: Optional[datetime] = None
         self.training_duration_seconds: float = 0.0
         self.hyperparameters: Dict[str, Any] = {}
+        self.mlflow_run_id: Optional[str] = None  # MLflow run tracking
 
         logger.info(f"ModelTrainer initialized: dataset={dataset_path}, test_split={test_split}")
 
@@ -243,6 +254,7 @@ class ModelTrainer:
     def train(self, **hyperparameters) -> Dict[str, Any]:
         """
         Train the Random Forest model with specified hyperparameters.
+        Integrates with MLflow for experiment tracking.
 
         Args:
             **hyperparameters: Hyperparameters for RandomForestClassifier
@@ -261,10 +273,14 @@ class ModelTrainer:
         if self.X_train is None or self.y_train is None:
             raise TrainingError("Data not loaded. Call load_data() first.")
 
-        logger.info("Starting model training")
+        logger.info("Starting model training with MLflow tracking")
         self.training_start_time = datetime.now()
 
         try:
+            # Initialize MLflow
+            mlflow_config = get_mlflow_config()
+            mlflow_config.setup()
+
             # Default hyperparameters
             self.hyperparameters = {
                 'n_estimators': hyperparameters.get('n_estimators', 200),
@@ -278,27 +294,73 @@ class ModelTrainer:
 
             logger.info(f"Hyperparameters: {self.hyperparameters}")
 
-            # Build pipeline
-            self.model = self._build_pipeline()
+            # Start MLflow run
+            with mlflow_config.start_run(
+                run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                experiment_name="model-training"
+            ) as run:
+                # Log hyperparameters
+                mlflow.log_params(self.hyperparameters)
+                mlflow.log_param("test_split", self.test_split)
+                mlflow.log_param("random_state", self.random_state)
+                mlflow.log_param("dataset_path", str(self.dataset_path))
+                mlflow.log_param("total_samples", len(self.df) if self.df is not None else 0)
+                mlflow.log_param("train_samples", len(self.X_train))
+                mlflow.log_param("test_samples", len(self.X_test))
 
-            # Train
-            logger.info("Fitting model...")
-            self.model.fit(self.X_train, self.y_train)
+                # Build pipeline
+                self.model = self._build_pipeline()
 
-            self.training_end_time = datetime.now()
-            self.training_duration_seconds = (
-                self.training_end_time - self.training_start_time
-            ).total_seconds()
+                # Train
+                logger.info("Fitting model...")
+                self.model.fit(self.X_train, self.y_train)
 
-            logger.info(f"Training completed in {self.training_duration_seconds:.2f}s")
+                self.training_end_time = datetime.now()
+                self.training_duration_seconds = (
+                    self.training_end_time - self.training_start_time
+                ).total_seconds()
 
-            # Evaluate
-            self.metrics = self.evaluate(self.X_test, self.y_test)
+                logger.info(f"Training completed in {self.training_duration_seconds:.2f}s")
 
-            # Feature importance
-            self.feature_importance = self.get_feature_importance()
+                # Log training time
+                mlflow.log_metric("training_duration_seconds", self.training_duration_seconds)
 
-            return self.metrics
+                # Evaluate
+                self.metrics = self.evaluate(self.X_test, self.y_test)
+
+                # Log metrics to MLflow
+                mlflow.log_metrics({
+                    "accuracy": self.metrics['accuracy'],
+                    "precision": self.metrics['precision'],
+                    "recall": self.metrics['recall'],
+                    "f1_score": self.metrics['f1_score'],
+                })
+
+                # Log per-class metrics
+                for level, level_metrics in self.metrics.get('per_class', {}).items():
+                    mlflow.log_metric(f"{level}_accuracy", level_metrics['accuracy'])
+                    mlflow.log_metric(f"{level}_support", level_metrics['support'])
+
+                # Feature importance
+                self.feature_importance = self.get_feature_importance()
+
+                # Log top 10 features
+                if self.feature_importance:
+                    for i, (feat, imp) in enumerate(list(self.feature_importance.items())[:10]):
+                        mlflow.log_metric(f"feature_importance_{i+1}_{feat}", imp)
+
+                # Log model to MLflow
+                mlflow.sklearn.log_model(
+                    self.model,
+                    "model",
+                    registered_model_name="future-skills-model"
+                )
+
+                # Store run_id for later use
+                self.mlflow_run_id = run.info.run_id
+                logger.info(f"MLflow run ID: {self.mlflow_run_id}")
+
+                return self.metrics
 
         except Exception as e:
             self.training_end_time = datetime.now()
@@ -512,16 +574,19 @@ class ModelTrainer:
         model_version: str,
         model_path: str,
         user=None,
-        notes: str = ""
+        notes: str = "",
+        auto_promote: bool = True
     ) -> TrainingRun:
         """
         Save training run to database for MLOps tracking.
+        Integrates with model versioning and promotion logic.
 
         Args:
-            model_version: Version identifier (e.g., 'v1.0', 'production_jan2024')
+            model_version: Version identifier (e.g., 'v1.0.0', 'v1.1.0')
             model_path: Path where model was saved
             user: Django User who initiated training (None for CLI)
             notes: Optional notes about this training run
+            auto_promote: Whether to automatically promote if metrics improve (default: True)
 
         Returns:
             Created TrainingRun instance
@@ -535,6 +600,80 @@ class ModelTrainer:
         try:
             logger.info(f"Saving training run: version={model_version}")
 
+            # Create version metadata
+            version_obj = create_model_version(
+                version_string=model_version,
+                metrics={
+                    "accuracy": self.metrics['accuracy'],
+                    "precision": self.metrics['precision'],
+                    "recall": self.metrics['recall'],
+                    "f1_score": self.metrics['f1_score'],
+                    "training_time": self.training_duration_seconds,
+                },
+                model_path=model_path,
+                framework=ModelFramework.SCIKIT_LEARN,
+                algorithm="RandomForestClassifier",
+                hyperparameters=self.hyperparameters,
+                training_dataset_size=len(self.X_train) if self.X_train is not None else 0,
+                training_features=self.available_features,
+                target_classes=["LOW", "MEDIUM", "HIGH"],
+                mlflow_run_id=getattr(self, 'mlflow_run_id', None),
+                stage=ModelStage.STAGING,  # Start in staging
+                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}"
+            )
+
+            # Register version
+            version_manager = ModelVersionManager()
+            version_manager.register_version(version_obj)
+            logger.info(f"Registered model version: {model_version}")
+
+            # Check if should promote to production
+            promotion_info = None
+            if auto_promote:
+                prod_version = version_manager.get_production_version()
+                if prod_version:
+                    should_promote, reason = version_manager.should_promote(
+                        new_version=version_obj,
+                        current_version=prod_version,
+                        metric_name="f1_score",
+                        improvement_threshold=0.01  # 1% improvement required
+                    )
+
+                    if should_promote:
+                        logger.info(f"Promoting model to production: {reason}")
+
+                        # Update stage
+                        version_obj.metadata.stage = ModelStage.PRODUCTION
+                        version_manager.register_version(version_obj)
+
+                        # Transition in MLflow
+                        mlflow_config = get_mlflow_config()
+                        try:
+                            latest_version = mlflow_config.get_latest_model_version(
+                                model_name="future-skills-model"
+                            )
+                            if latest_version:
+                                mlflow_config.transition_model_stage(
+                                    model_name="future-skills-model",
+                                    version=str(latest_version.version),
+                                    stage="Production",
+                                    archive_existing=True
+                                )
+                                logger.info("Transitioned MLflow model to Production")
+                        except Exception as e:
+                            logger.warning(f"Failed to transition MLflow stage: {e}")
+
+                        promotion_info = reason
+                    else:
+                        logger.info(f"Not promoting model: {reason}")
+                        promotion_info = f"Not promoted: {reason}"
+                else:
+                    logger.info("No existing production model. Auto-promoting first model.")
+                    version_obj.metadata.stage = ModelStage.PRODUCTION
+                    version_manager.register_version(version_obj)
+                    promotion_info = "First model - automatically promoted to production"
+
+            # Create Django TrainingRun record
             training_run = TrainingRun.objects.create(
                 run_date=self.training_start_time or datetime.now(),
                 model_version=model_version,
@@ -554,12 +693,16 @@ class ModelTrainer:
                 per_class_metrics=self.per_class_metrics,
                 features_used=self.available_features,
                 trained_by=user,
-                notes=notes,
+                notes=f"{notes}\n\nMLflow Run ID: {getattr(self, 'mlflow_run_id', 'N/A')}\n{promotion_info or ''}".strip(),
                 status='COMPLETED',
                 hyperparameters=self.hyperparameters,
             )
 
             logger.info(f"Training run saved: ID={training_run.id}")
+
+            if promotion_info:
+                logger.info(f"Promotion: {promotion_info}")
+
             return training_run
 
         except Exception as e:

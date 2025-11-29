@@ -75,3 +75,7 @@ dmypy.json
 .coverage
 coverage.xml
 *.cover
+
+# Joblib cache (sklearn pipeline cache)
+auto/joblib/
+auto/

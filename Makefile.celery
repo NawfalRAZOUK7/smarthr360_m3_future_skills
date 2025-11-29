@@ -1,0 +1,198 @@
+# Celery & Monitoring Commands
+# Add these to your main Makefile or use standalone
+
+.PHONY: celery-worker celery-beat celery-flower celery-monitor celery-stop celery-status celery-purge celery-inspect
+
+# Start Celery worker
+celery-worker:
+	celery -A config worker --loglevel=info --concurrency=4
+
+# Start Celery worker with autoscaling
+celery-worker-auto:
+	celery -A config worker --loglevel=info --autoscale=10,3
+
+# Start Celery worker on specific queues
+celery-worker-training:
+	celery -A config worker --loglevel=info --queues=training --concurrency=2
+
+celery-worker-maintenance:
+	celery -A config worker --loglevel=info --queues=maintenance --concurrency=1
+
+# Start Celery Beat scheduler
+celery-beat:
+	celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+# Start Flower monitoring UI
+celery-flower:
+	celery -A config flower --port=5555
+
+# Start Flower with authentication
+celery-flower-auth:
+	celery -A config flower --port=5555 --basic_auth=admin:smarthr360
+
+# Start all Celery services (requires tmux or separate terminals)
+celery-start-all:
+	@echo "Starting Celery services..."
+	@echo "Terminal 1: Worker"
+	@echo "Terminal 2: Beat"
+	@echo "Terminal 3: Flower"
+	@echo ""
+	@echo "Run these commands in separate terminals:"
+	@echo "  make celery-worker"
+	@echo "  make celery-beat"
+	@echo "  make celery-flower"
+
+# Stop all Celery workers
+celery-stop:
+	pkill -f 'celery.*worker' || true
+	pkill -f 'celery.*beat' || true
+	pkill -f 'celery.*flower' || true
+	@echo "All Celery processes stopped"
+
+# Check Celery worker status
+celery-status:
+	celery -A config inspect stats
+
+# View active tasks
+celery-active:
+	celery -A config inspect active
+
+# View scheduled tasks
+celery-scheduled:
+	celery -A config inspect scheduled
+
+# View registered tasks
+celery-registered:
+	celery -A config inspect registered
+
+# View worker queues
+celery-queues:
+	celery -A config inspect active_queues
+
+# Purge all queues (WARNING: deletes all pending tasks)
+celery-purge:
+	@echo "WARNING: This will delete all pending tasks!"
+	@read -p "Are you sure? (y/N) " -n 1 -r; \
+	echo; \
+	if [ "$$REPLY" = "y" ] || [ "$$REPLY" = "Y" ]; then \
+		celery -A config purge; \
+	else \
+		echo "Cancelled."; \
+	fi
+
+# Monitor Celery events in real-time
+celery-events:
+	celery -A config events
+
+# Inspect worker
+celery-inspect:
+	@echo "Choose an option:"
+	@echo "1. Stats"
+	@echo "2. Active tasks"
+	@echo "3. Scheduled tasks"
+	@echo "4. Registered tasks"
+	@echo "5. Active queues"
+	@read -p "Enter choice (1-5): " choice; \
+	case $$choice in \
+		1) celery -A config inspect stats ;; \
+		2) celery -A config inspect active ;; \
+		3) celery -A config inspect scheduled ;; \
+		4) celery -A config inspect registered ;; \
+		5) celery -A config inspect active_queues ;; \
+		*) echo "Invalid choice" ;; \
+	esac
+
+# Control worker pool
+celery-pool-restart:
+	celery -A config control pool_restart
+
+# Graceful shutdown
+celery-shutdown:
+	celery -A config control shutdown
+
+# Setup Celery monitoring (run migrations, check dependencies)
+celery-setup:
+	@echo "Setting up Celery monitoring..."
+	pip install -q --upgrade flower django-celery-results django-celery-beat tenacity pybreaker
+	python manage.py migrate
+	@echo "Setup complete!"
+
+# Check Celery monitoring dependencies
+celery-check:
+	@echo "Checking Celery monitoring setup..."
+	@python -c "import flower; print('✓ Flower installed')" || echo "✗ Flower not installed"
+	@python -c "import django_celery_results; print('✓ django-celery-results installed')" || echo "✗ django-celery-results not installed"
+	@python -c "import django_celery_beat; print('✓ django-celery-beat installed')" || echo "✗ django-celery-beat not installed"
+	@python -c "import tenacity; print('✓ tenacity installed')" || echo "✗ tenacity not installed"
+	@python -c "import pybreaker; print('✓ pybreaker installed')" || echo "✗ pybreaker not installed"
+	@redis-cli ping > /dev/null 2>&1 && echo "✓ Redis is running" || echo "✗ Redis is not running"
+
+# View Celery logs (if using supervisor)
+celery-logs:
+	tail -f /var/log/celery/worker.log
+
+# Clean up old task executions
+celery-cleanup:
+	python manage.py shell -c "from celery_monitoring.monitoring import cleanup_old_task_executions; print(f'Deleted {cleanup_old_task_executions(days=7)} records')"
+
+# Clean up dead letter queue
+celery-cleanup-dlq:
+	python manage.py shell -c "from celery_monitoring.dead_letter import cleanup_old_dead_letter_tasks; print(f'Deleted {cleanup_old_dead_letter_tasks(days=30)} records')"
+
+# View dead letter queue
+celery-dlq-list:
+	python manage.py shell -c "from celery_monitoring.dead_letter import DeadLetterTask; tasks = DeadLetterTask.objects.filter(reprocessed=False); print(f'Failed tasks: {tasks.count()}'); [print(f'  {t.task_name} - {t.failed_at}') for t in tasks[:10]]"
+
+# Reprocess dead letter queue tasks
+celery-dlq-reprocess:
+	python manage.py shell -c "from celery_monitoring.dead_letter import reprocess_dead_letter_tasks; result = reprocess_dead_letter_tasks(limit=10); print(f'Reprocessed: {result[\"success\"]} success, {result[\"failed\"]} failed')"
+
+# View task performance stats
+celery-stats:
+	python manage.py shell -c "from celery_monitoring.monitoring import get_task_performance_stats; import json; stats = get_task_performance_stats(hours=24); print(json.dumps(stats, indent=2))"
+
+# View slowest tasks
+celery-slowest:
+	python manage.py shell -c "from celery_monitoring.monitoring import get_slowest_tasks; import json; tasks = get_slowest_tasks(limit=10, hours=24); print(json.dumps(tasks, indent=2))"
+
+# Start Prometheus exporter
+celery-prometheus:
+	celery-exporter --broker redis://localhost:6379/0 --port 9808
+
+# Help - show all available commands
+celery-help:
+	@echo "Celery & Monitoring Commands:"
+	@echo ""
+	@echo "Starting Services:"
+	@echo "  make celery-worker          - Start Celery worker"
+	@echo "  make celery-worker-auto     - Start worker with autoscaling"
+	@echo "  make celery-beat            - Start Celery Beat scheduler"
+	@echo "  make celery-flower          - Start Flower monitoring UI"
+	@echo "  make celery-flower-auth     - Start Flower with authentication"
+	@echo ""
+	@echo "Stopping Services:"
+	@echo "  make celery-stop            - Stop all Celery processes"
+	@echo "  make celery-shutdown        - Graceful shutdown"
+	@echo ""
+	@echo "Monitoring:"
+	@echo "  make celery-status          - Worker status"
+	@echo "  make celery-active          - Active tasks"
+	@echo "  make celery-scheduled       - Scheduled tasks"
+	@echo "  make celery-events          - Real-time events"
+	@echo "  make celery-stats           - Performance statistics"
+	@echo "  make celery-slowest         - Slowest tasks"
+	@echo ""
+	@echo "Management:"
+	@echo "  make celery-purge           - Purge all queues"
+	@echo "  make celery-cleanup         - Clean old task executions"
+	@echo "  make celery-cleanup-dlq     - Clean dead letter queue"
+	@echo ""
+	@echo "Dead Letter Queue:"
+	@echo "  make celery-dlq-list        - List failed tasks"
+	@echo "  make celery-dlq-reprocess   - Reprocess failed tasks"
+	@echo ""
+	@echo "Setup:"
+	@echo "  make celery-setup           - Setup Celery monitoring"
+	@echo "  make celery-check           - Check dependencies"
+	@echo ""
+	@echo "For more details, see: docs/CELERY_MONITORING_GUIDE.md"

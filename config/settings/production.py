@@ -93,3 +93,24 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Strict'
 
 print("⚡ Running in PRODUCTION mode")
+
+# Validate production configuration (strict - exit on errors)
+try:
+    from .validators import EnvironmentValidator
+    validator = EnvironmentValidator('production')
+    results = validator.validate_all()
+
+    if not results['valid']:
+        validator.print_results()
+        print("\n❌ CRITICAL: Production configuration validation failed!")
+        print("Fix the errors above before deploying to production.\n")
+        import sys
+        sys.exit(1)
+    elif validator.warnings:
+        print("\n⚠️  Production Configuration Warnings:")
+        for warning in validator.warnings:
+            print(f"  {warning}")
+        print()
+except ImportError:
+    print("⚠️  Warning: Configuration validators not available")
+

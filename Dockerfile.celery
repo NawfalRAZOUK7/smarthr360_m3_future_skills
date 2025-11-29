@@ -1,0 +1,71 @@
+# ==============================================================================
+# Dockerfile for Celery Worker
+# ==============================================================================
+FROM python:3.11-slim
+
+# Set build arguments
+ARG APP_USER=smarthr360
+ARG APP_UID=1000
+ARG APP_GID=1000
+
+# Labels
+LABEL maintainer="SmartHR360 Team" \
+      component="celery-worker" \
+      description="Celery Worker for SmartHR360"
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    C_FORCE_ROOT=1
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    postgresql-client \
+    curl \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -g ${APP_GID} ${APP_USER} && \
+    useradd -u ${APP_UID} -g ${APP_GID} -m -s /bin/bash ${APP_USER}
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt requirements_ml.txt requirements_celery.txt ./
+RUN pip install --no-cache-dir -r requirements.txt \
+    -r requirements_ml.txt \
+    -r requirements_celery.txt
+
+# Copy application
+COPY --chown=${APP_USER}:${APP_USER} . /app
+
+# Create necessary directories
+RUN mkdir -p logs media ml/models ml/data ml/results && \
+    chown -R ${APP_USER}:${APP_USER} /app
+
+# Create entrypoint
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Starting Celery Worker..."\n\
+\n\
+# Wait for broker\n\
+if [ -n "$REDIS_HOST" ]; then\n\
+    echo "Waiting for Redis at $REDIS_HOST:${REDIS_PORT:-6379}..."\n\
+    for i in {1..30}; do\n\
+        nc -z "$REDIS_HOST" "${REDIS_PORT:-6379}" && break\n\
+        echo "Waiting for Redis... ($i/30)"\n\
+        sleep 2\n\
+    done\n\
+fi\n\
+\n\
+echo "Celery Worker is ready!"\n\
+exec "$@"\n\
+' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+
+USER ${APP_USER}
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+CMD ["celery", "-A", "config", "worker", "-l", "info", "--concurrency=4", "--max-tasks-per-child=1000"]

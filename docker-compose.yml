@@ -17,15 +17,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - smarthr360-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: smarthr360_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smarthr360-network
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
     container_name: smarthr360_web
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
+      - ml_models_volume:/app/ml/models
     ports:
       - "8000:8000"
     environment:
@@ -33,14 +54,74 @@ services:
       - DEBUG=True
       - SECRET_KEY=docker-dev-secret-key-change-in-production
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/smarthr360
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
       - ALLOWED_HOSTS=localhost,127.0.0.1
+      - AUTO_MIGRATE=true
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - smarthr360-network
     stdin_open: true
     tty: true
 
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: smarthr360_celery_worker
+    command: celery -A config worker --loglevel=info --concurrency=2
+    volumes:
+      - .:/app
+      - media_volume:/app/media
+      - ml_models_volume:/app/ml/models
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+      - DEBUG=True
+      - SECRET_KEY=docker-dev-secret-key-change-in-production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/smarthr360
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    networks:
+      - smarthr360-network
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: smarthr360_celery_beat
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+      - DEBUG=True
+      - SECRET_KEY=docker-dev-secret-key-change-in-production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/smarthr360
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    networks:
+      - smarthr360-network
+
 volumes:
   postgres_data:
+  redis_data:
   static_volume:
   media_volume:
+  ml_models_volume:
+
+networks:
+  smarthr360-network:
+    driver: bridge

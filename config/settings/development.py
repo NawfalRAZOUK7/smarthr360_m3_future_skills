@@ -71,3 +71,19 @@ FUTURE_SKILLS_USE_ML = config('FUTURE_SKILLS_USE_ML', default=True, cast=bool)
 FUTURE_SKILLS_ENABLE_MONITORING = True
 
 print("🚀 Running in DEVELOPMENT mode")
+
+# Validate configuration (only show warnings, don't exit)
+try:
+    from .validators import EnvironmentValidator
+    validator = EnvironmentValidator('development')
+    validator.validate_all()
+    if validator.warnings:
+        print("\n⚠️  Configuration Warnings:")
+        for warning in validator.warnings[:3]:  # Show first 3
+            print(f"  {warning}")
+        if len(validator.warnings) > 3:
+            print(f"  ... and {len(validator.warnings) - 3} more")
+        print("  Run 'python manage.py validate_config' for full details\n")
+except ImportError:
+    pass  # Validators not available yet
+

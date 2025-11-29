@@ -20,6 +20,7 @@ Usage:
 
 import argparse
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -36,6 +37,12 @@ from sklearn.metrics import (
     precision_recall_fscore_support,
 )
 
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
 # Add the parent directory to sys.path to import Django modules
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
@@ -43,6 +50,7 @@ sys.path.insert(0, str(BASE_DIR))
 # Configure Django settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 import django
+
 django.setup()
 
 from future_skills.services.prediction_engine import calculate_level
@@ -58,6 +66,7 @@ LABEL_ORDER = ["LOW", "MEDIUM", "HIGH"]
 # ---------------------------------------------------------------------------
 # Helper Functions
 # ---------------------------------------------------------------------------
+
 
 def load_dataset(csv_path: Path) -> pd.DataFrame:
     """Load and validate the dataset."""
@@ -81,9 +90,9 @@ def load_dataset(csv_path: Path) -> pd.DataFrame:
     # Filter valid labels
     valid_df = df[df["future_need_level"].isin(LABEL_ORDER)].copy()
 
-    print(f"[INFO] Loaded {len(df)} rows, {len(valid_df)} valid")
+    logger.info(f"Loaded {len(df)} rows, {len(valid_df)} valid")
     if len(valid_df) < len(df):
-        print(f"[WARN] Filtered out {len(df) - len(valid_df)} invalid labels")
+        logger.warning(f"Filtered out {len(df) - len(valid_df)} invalid labels")
 
     return valid_df
 
@@ -94,7 +103,7 @@ def load_ml_model(model_path: Path):
         raise FileNotFoundError(f"ML model not found: {model_path}")
 
     pipeline = joblib.load(model_path)
-    print(f"[INFO] Loaded ML model from {model_path}")
+    logger.info(f"Loaded ML model from {model_path}")
     return pipeline
 
 
@@ -110,7 +119,7 @@ def predict_with_rules(df: pd.DataFrame) -> pd.Series:
         )
         predictions.append(level)
 
-    print(f"[INFO] Generated {len(predictions)} rule-based predictions")
+    logger.info(f"Generated {len(predictions)} rule-based predictions")
     return pd.Series(predictions, index=df.index)
 
 
@@ -135,20 +144,25 @@ def predict_with_ml(df: pd.DataFrame, pipeline) -> pd.Series:
         X = df[available_features].copy()
         predictions = pipeline.predict(X)
 
-        print(f"[INFO] Generated {len(predictions)} ML predictions using {len(available_features)} features")
+        logger.info(
+            f"Generated {len(predictions)} ML predictions using {len(available_features)} features"
+        )
         return pd.Series(predictions, index=df.index)
 
     except Exception as e:
-        print(f"[ERROR] Failed to generate ML predictions: {e}")
+        logger.error(f"Failed to generate ML predictions: {e}")
         # Fallback: try with common feature set
         common_features = [
-            "job_role_name", "skill_name", "trend_score",
-            "internal_usage", "training_requests"
+            "job_role_name",
+            "skill_name",
+            "trend_score",
+            "internal_usage",
+            "training_requests",
         ]
         available = [col for col in common_features if col in df.columns]
 
         if available:
-            print(f"[INFO] Attempting with fallback features: {available}")
+            logger.info(f"Attempting with fallback features: {available}")
             X = df[available].copy()
             predictions = pipeline.predict(X)
             return pd.Series(predictions, index=df.index)
@@ -156,7 +170,9 @@ def predict_with_ml(df: pd.DataFrame, pipeline) -> pd.Series:
             raise
 
 
-def calculate_metrics(y_true: pd.Series, y_pred: pd.Series, name: str) -> Dict[str, Any]:
+def calculate_metrics(
+    y_true: pd.Series, y_pred: pd.Series, name: str
+) -> Dict[str, Any]:
     """Calculate comprehensive metrics for predictions."""
 
     # Overall metrics
@@ -202,32 +218,38 @@ def calculate_metrics(y_true: pd.Series, y_pred: pd.Series, name: str) -> Dict[s
 
 def print_metrics_summary(metrics: Dict[str, Any]):
     """Print a readable summary of metrics."""
-    print(f"\n{'='*70}")
-    print(f" {metrics['name']} - Performance Summary")
-    print(f"{'='*70}")
-    print(f"  Accuracy:      {metrics['accuracy']:.4f}")
-    print(f"  F1 (Macro):    {metrics['f1_macro']:.4f}")
-    print(f"  F1 (Weighted): {metrics['f1_weighted']:.4f}")
-    print("\n  Per-Class Metrics:")
-    print(f"  {'-'*66}")
-    print(f"  {'Class':<10} {'Precision':<12} {'Recall':<12} {'F1-Score':<12} {'Support':<10}")
-    print(f"  {'-'*66}")
+    logger.info("\n" + "=" * 70)
+    logger.info(f" {metrics['name']} - Performance Summary")
+    logger.info("=" * 70)
+    logger.info(f"  Accuracy:      {metrics['accuracy']:.4f}")
+    logger.info(f"  F1 (Macro):    {metrics['f1_macro']:.4f}")
+    logger.info(f"  F1 (Weighted): {metrics['f1_weighted']:.4f}")
+    logger.info("\n  Per-Class Metrics:")
+    logger.info(f"  {'-'*66}")
+    logger.info(
+        f"  {'Class':<10} {'Precision':<12} {'Recall':<12} {'F1-Score':<12} {'Support':<10}"
+    )
+    logger.info(f"  {'-'*66}")
 
     for label in LABEL_ORDER:
         pc = metrics["per_class"][label]
-        print(f"  {label:<10} {pc['precision']:<12.4f} {pc['recall']:<12.4f} "
-              f"{pc['f1_score']:<12.4f} {pc['support']:<10}")
+        logger.info(
+            f"  {label:<10} {pc['precision']:<12.4f} {pc['recall']:<12.4f} "
+            f"{pc['f1_score']:<12.4f} {pc['support']:<10}"
+        )
 
-    print("\n  Confusion Matrix:")
-    print(f"  {'-'*66}")
-    print(f"  {'Actual \\ Pred':<15} {LABEL_ORDER[0]:<10} {LABEL_ORDER[1]:<10} {LABEL_ORDER[2]:<10}")
-    print(f"  {'-'*66}")
+    logger.info("\n  Confusion Matrix:")
+    logger.info(f"  {'-'*66}")
+    logger.info(
+        f"  {'Actual \\ Pred':<15} {LABEL_ORDER[0]:<10} {LABEL_ORDER[1]:<10} {LABEL_ORDER[2]:<10}"
+    )
+    logger.info(f"  {'-'*66}")
 
     cm = metrics["confusion_matrix"]
     for i, label in enumerate(LABEL_ORDER):
-        print(f"  {label:<15} {cm[i][0]:<10} {cm[i][1]:<10} {cm[i][2]:<10}")
+        logger.info(f"  {label:<15} {cm[i][0]:<10} {cm[i][1]:<10} {cm[i][2]:<10}")
 
-    print(f"{'='*70}\n")
+    logger.info("=" * 70 + "\n")
 
 
 def _compare_metric(rules_val: float, ml_val: float) -> tuple:
@@ -248,7 +270,9 @@ def _compare_metric(rules_val: float, ml_val: float) -> tuple:
     return diff, diff_pct, winner
 
 
-def _add_overall_comparison(report_lines: list, rules_metrics: dict, ml_metrics: dict) -> tuple:
+def _add_overall_comparison(
+    report_lines: list, rules_metrics: dict, ml_metrics: dict
+) -> tuple:
     """Add overall performance comparison section.
 
     Returns: (ml_wins, rules_wins, ties)
@@ -288,7 +312,9 @@ def _add_overall_comparison(report_lines: list, rules_metrics: dict, ml_metrics:
     return ml_wins, rules_wins, ties
 
 
-def _add_per_class_comparison(report_lines: list, rules_metrics: dict, ml_metrics: dict):
+def _add_per_class_comparison(
+    report_lines: list, rules_metrics: dict, ml_metrics: dict
+):
     """Add per-class F1-score comparison section."""
     report_lines.append("## 2. Per-Class F1-Score Comparison")
     report_lines.append("")
@@ -313,7 +339,10 @@ def _add_confusion_matrices(report_lines: list, rules_metrics: dict, ml_metrics:
     report_lines.append("## 3. Confusion Matrices")
     report_lines.append("")
 
-    for name, metrics in [("Rule-Based Engine", rules_metrics), ("ML Model", ml_metrics)]:
+    for name, metrics in [
+        ("Rule-Based Engine", rules_metrics),
+        ("ML Model", ml_metrics),
+    ]:
         report_lines.append(f"### {name}")
         report_lines.append("")
         report_lines.append("| Actual \\ Predicted | LOW | MEDIUM | HIGH |")
@@ -321,7 +350,9 @@ def _add_confusion_matrices(report_lines: list, rules_metrics: dict, ml_metrics:
 
         cm = metrics["confusion_matrix"]
         for i, label in enumerate(LABEL_ORDER):
-            report_lines.append(f"| **{label}** | {cm[i][0]} | {cm[i][1]} | {cm[i][2]} |")
+            report_lines.append(
+                f"| **{label}** | {cm[i][0]} | {cm[i][1]} | {cm[i][2]} |"
+            )
 
         report_lines.append("")
 
@@ -332,7 +363,7 @@ def _add_discussion_section(
     ml_metrics: dict,
     ml_wins: int,
     rules_wins: int,
-    metrics_count: int
+    metrics_count: int,
 ):
     """Add discussion and analysis section."""
     report_lines.append("## 4. Discussion & Analysis")
@@ -364,14 +395,21 @@ def _add_discussion_section(
 
     ml_advantages = []
     for label in LABEL_ORDER:
-        diff = ml_metrics["per_class"][label]["f1_score"] - rules_metrics["per_class"][label]["f1_score"]
+        diff = (
+            ml_metrics["per_class"][label]["f1_score"]
+            - rules_metrics["per_class"][label]["f1_score"]
+        )
         if diff > 0.02:
-            ml_advantages.append(f"- **{label} class:** +{diff:.4f} F1-score improvement")
+            ml_advantages.append(
+                f"- **{label} class:** +{diff:.4f} F1-score improvement"
+            )
 
     if ml_advantages:
         report_lines.extend(ml_advantages)
     else:
-        report_lines.append("- No significant per-class advantages detected (threshold: 0.02)")
+        report_lines.append(
+            "- No significant per-class advantages detected (threshold: 0.02)"
+        )
 
     report_lines.append("")
 
@@ -381,9 +419,14 @@ def _add_discussion_section(
 
     similar_classes = []
     for label in LABEL_ORDER:
-        diff = abs(ml_metrics["per_class"][label]["f1_score"] - rules_metrics["per_class"][label]["f1_score"])
+        diff = abs(
+            ml_metrics["per_class"][label]["f1_score"]
+            - rules_metrics["per_class"][label]["f1_score"]
+        )
         if diff <= 0.02:
-            similar_classes.append(f"- **{label} class:** Similar performance (diff: {diff:.4f})")
+            similar_classes.append(
+                f"- **{label} class:** Similar performance (diff: {diff:.4f})"
+            )
 
     if similar_classes:
         report_lines.extend(similar_classes)
@@ -397,11 +440,21 @@ def _add_discussion_section(
     report_lines.append("")
     report_lines.append("⚠️ **Important Context:**")
     report_lines.append("")
-    report_lines.append("1. **Simulated Data:** This evaluation uses simulated/enriched dataset")
-    report_lines.append("2. **Training Set Overlap:** ML model may have seen similar patterns during training")
-    report_lines.append("3. **Rule Transparency:** Rule-based engine is fully interpretable and explainable")
-    report_lines.append("4. **ML Complexity:** ML model requires training data and periodic retraining")
-    report_lines.append("5. **Production Use:** Consider using ML when significant performance gains justify complexity")
+    report_lines.append(
+        "1. **Simulated Data:** This evaluation uses simulated/enriched dataset"
+    )
+    report_lines.append(
+        "2. **Training Set Overlap:** ML model may have seen similar patterns during training"
+    )
+    report_lines.append(
+        "3. **Rule Transparency:** Rule-based engine is fully interpretable and explainable"
+    )
+    report_lines.append(
+        "4. **ML Complexity:** ML model requires training data and periodic retraining"
+    )
+    report_lines.append(
+        "5. **Production Use:** Consider using ML when significant performance gains justify complexity"
+    )
     report_lines.append("")
 
 
@@ -411,7 +464,7 @@ def _add_recommendations(
     ml_metrics: dict,
     ml_wins: int,
     rules_wins: int,
-    metrics_count: int
+    metrics_count: int,
 ):
     """Add recommendations section."""
     report_lines.append("## 5. Recommendations")
@@ -421,8 +474,12 @@ def _add_recommendations(
         report_lines.append("### ✅ Recommend ML Model for Production")
         report_lines.append("")
         report_lines.append("**Reasons:**")
-        report_lines.append(f"- Superior performance on {ml_wins}/{metrics_count} key metrics")
-        report_lines.append(f"- Overall accuracy improvement: {(ml_metrics['accuracy'] - rules_metrics['accuracy']):.4f}")
+        report_lines.append(
+            f"- Superior performance on {ml_wins}/{metrics_count} key metrics"
+        )
+        report_lines.append(
+            f"- Overall accuracy improvement: {(ml_metrics['accuracy'] - rules_metrics['accuracy']):.4f}"
+        )
         report_lines.append("")
         report_lines.append("**Next Steps:**")
         report_lines.append("- Validate on real-world data before deployment")
@@ -453,11 +510,15 @@ def generate_comparison_report(
 
     report_lines.append("# 📊 ML vs Rule-Based Engine - Performance Comparison Report")
     report_lines.append("")
-    report_lines.append(f"**Generated:** {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    report_lines.append(
+        f"**Generated:** {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
     report_lines.append("")
 
     # Overall comparison
-    ml_wins, rules_wins, ties = _add_overall_comparison(report_lines, rules_metrics, ml_metrics)
+    ml_wins, rules_wins, ties = _add_overall_comparison(
+        report_lines, rules_metrics, ml_metrics
+    )
     metrics_count = ml_wins + rules_wins + ties
 
     # Per-class comparison
@@ -467,14 +528,20 @@ def generate_comparison_report(
     _add_confusion_matrices(report_lines, rules_metrics, ml_metrics)
 
     # Discussion
-    _add_discussion_section(report_lines, rules_metrics, ml_metrics, ml_wins, rules_wins, metrics_count)
+    _add_discussion_section(
+        report_lines, rules_metrics, ml_metrics, ml_wins, rules_wins, metrics_count
+    )
 
     # Recommendations
-    _add_recommendations(report_lines, rules_metrics, ml_metrics, ml_wins, rules_wins, metrics_count)
+    _add_recommendations(
+        report_lines, rules_metrics, ml_metrics, ml_wins, rules_wins, metrics_count
+    )
 
     report_lines.append("")
     report_lines.append("---")
-    report_lines.append("*This report was generated automatically by evaluate_future_skills_models.py*")
+    report_lines.append(
+        "*This report was generated automatically by evaluate_future_skills_models.py*"
+    )
 
     # Write report
     report_content = "\n".join(report_lines)
@@ -515,9 +582,9 @@ def main():
 
     args = parser.parse_args()
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print(" Future Skills - ML vs Rules Evaluation")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     # Load dataset
     df = load_dataset(args.dataset)
@@ -576,7 +643,7 @@ def main():
         print("[INFO] Only rule-based metrics calculated")
 
     print("\n✅ Evaluation complete!")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
 
 if __name__ == "__main__":

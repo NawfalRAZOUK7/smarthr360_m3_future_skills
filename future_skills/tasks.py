@@ -6,6 +6,7 @@ Tasks are executed by Celery workers in the background, allowing API
 endpoints to return immediately without blocking.
 
 Section 2.5 - Production-Ready Celery Task Implementation
+Enhanced with advanced retry strategies, monitoring, and error handling.
 """
 
 import logging
@@ -18,12 +19,24 @@ from future_skills.services.training_service import (
     DataLoadError,
     TrainingError
 )
+from celery_monitoring import (
+    retry_with_exponential_backoff,
+    with_circuit_breaker,
+    with_dead_letter_queue,
+    monitor_task,
+    with_timeout,
+    idempotent
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
 @shared_task(bind=True, name='future_skills.train_model')
+@monitor_task(track_memory=True, track_cpu=True)
+@with_timeout(soft_timeout=1500, hard_timeout=1800)  # 25/30 minute limits
+@with_dead_letter_queue(max_retries=3)
+@retry_with_exponential_backoff(max_retries=3, base_delay=120, max_delay=1800)
 def train_model_task(self, training_run_id, dataset_path, test_split, hyperparameters):
     """
     Asynchronous task to train a machine learning model.
@@ -35,6 +48,12 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
     3. Evaluate model performance
     4. Save trained model to disk
     5. Update TrainingRun record with results or errors
+
+    Enhanced with:
+    - Exponential backoff retry (3 retries, 2-30 min delays)
+    - Dead letter queue for permanent failures
+    - Comprehensive monitoring (memory, CPU, execution time)
+    - Timeout protection (25 min soft, 30 min hard)
 
     Args:
         self: Celery task instance (bound task)
@@ -67,8 +86,10 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
     Task Properties:
         - bind=True: Task receives self reference for status updates
         - name: Explicit task name for easy identification in logs
-        - max_retries: Automatic retry on failure (default: 3)
-        - time_limit: 30 minutes (configured in settings)
+        - max_retries: 3 with exponential backoff
+        - time_limit: 30 minutes hard, 25 minutes soft
+        - monitoring: Memory, CPU, Prometheus metrics
+        - resilience: Dead letter queue, circuit breaker ready
     """
     logger.info(
         f"[CELERY] Starting async training task for TrainingRun ID={training_run_id}"
@@ -232,12 +253,20 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
 
 
 @shared_task(name='future_skills.cleanup_old_models')
+@monitor_task(track_memory=False, track_cpu=False)
+@idempotent(timeout=3600)  # Prevent duplicate runs within 1 hour
+@retry_with_exponential_backoff(max_retries=2, base_delay=300)
 def cleanup_old_models_task(days_to_keep=30):
     """
     Periodic task to clean up old model files and training runs.
 
     This task can be scheduled with Celery Beat to run periodically
     (e.g., daily or weekly) to prevent disk space issues.
+
+    Enhanced with:
+    - Idempotency (prevents duplicate runs within 1 hour)
+    - Retry with exponential backoff (2 retries, 5 min delays)
+    - Basic monitoring (no resource tracking for lightweight task)
 
     Args:
         days_to_keep (int): Keep models from the last N days (default: 30)

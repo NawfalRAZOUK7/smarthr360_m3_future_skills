@@ -20,6 +20,15 @@ class Skill(models.Model):
         help_text="Description optionnelle de la compétence."
     )
 
+    class Meta:
+        verbose_name = "Compétence"
+        verbose_name_plural = "Compétences"
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['name']),  # Already unique, helps with lookups
+            models.Index(fields=['category']),  # Category filtering
+        ]
+
     def __str__(self):
         return self.name
 
@@ -41,6 +50,15 @@ class JobRole(models.Model):
         null=True,
         help_text="Description optionnelle du rôle."
     )
+
+    class Meta:
+        verbose_name = "Rôle professionnel"
+        verbose_name_plural = "Rôles professionnels"
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['name']),  # Already unique, helps with lookups
+            models.Index(fields=['department']),  # Department filtering
+        ]
 
     def __str__(self):
         return self.name
@@ -76,6 +94,12 @@ class MarketTrend(models.Model):
         verbose_name = "Tendance marché"
         verbose_name_plural = "Tendances marché"
         ordering = ["-year", "-trend_score"]
+        indexes = [
+            models.Index(fields=['-year']),
+            models.Index(fields=['sector']),
+            models.Index(fields=['-trend_score']),
+            models.Index(fields=['sector', '-year']),  # Composite for sector+year queries
+        ]
 
     def __str__(self):
         return f"{self.title} ({self.year})"
@@ -141,6 +165,17 @@ class FutureSkillPrediction(models.Model):
         verbose_name_plural = "Prédictions de compétences futures"
         # Un couple (job_role, skill, horizon) est logique unique :
         unique_together = ("job_role", "skill", "horizon_years")
+        indexes = [
+            models.Index(fields=['job_role']),
+            models.Index(fields=['skill']),
+            models.Index(fields=['horizon_years']),
+            models.Index(fields=['level']),
+            models.Index(fields=['-score']),
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['job_role', 'horizon_years']),  # Common filter combo
+            models.Index(fields=['skill', 'level']),  # Skill filtering by level
+            models.Index(fields=['horizon_years', '-score']),  # Horizon + top scores
+        ]
 
     def __str__(self):
         return f"{self.job_role} - {self.skill} ({self.horizon_years} ans) [{self.level}]"
@@ -178,6 +213,10 @@ class PredictionRun(models.Model):
         verbose_name = "Exécution de prédiction"
         verbose_name_plural = "Exécutions de prédiction"
         ordering = ["-run_date"]
+        indexes = [
+            models.Index(fields=['-run_date']),
+            models.Index(fields=['run_by']),  # Filter by user who triggered
+        ]
 
     def __str__(self):
         return f"Run du {self.run_date} - {self.total_predictions} prédictions"
@@ -350,6 +389,12 @@ class EconomicReport(models.Model):
         verbose_name = "Rapport économique"
         verbose_name_plural = "Rapports économiques"
         ordering = ["-year", "title"]
+        indexes = [
+            models.Index(fields=['-year']),
+            models.Index(fields=['sector']),
+            models.Index(fields=['indicator']),
+            models.Index(fields=['sector', '-year']),  # Composite for sector+year queries
+        ]
 
     def __str__(self):
         return f"{self.title} ({self.year}) - {self.indicator}"
@@ -428,6 +473,17 @@ class HRInvestmentRecommendation(models.Model):
         ordering = ["-created_at"]
         # Une recommandation par couple (job_role, skill, horizon) est logique :
         unique_together = ("job_role", "skill", "horizon_years")
+        indexes = [
+            models.Index(fields=['skill']),
+            models.Index(fields=['job_role']),
+            models.Index(fields=['horizon_years']),
+            models.Index(fields=['priority_level']),
+            models.Index(fields=['recommended_action']),
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['skill', 'priority_level']),  # Skill by priority
+            models.Index(fields=['job_role', 'horizon_years']),  # Role+horizon combo
+            models.Index(fields=['priority_level', 'recommended_action']),  # Action filtering
+        ]
 
     def __str__(self):
         role = self.job_role.name if self.job_role else "Global"
@@ -477,6 +533,13 @@ class Employee(models.Model):
         verbose_name = "Employé"
         verbose_name_plural = "Employés"
         ordering = ["name"]
+        indexes = [
+            models.Index(fields=['email']),  # Already unique, but index helps lookups
+            models.Index(fields=['department']),
+            models.Index(fields=['job_role']),
+            models.Index(fields=['name']),
+            models.Index(fields=['job_role', 'department']),  # Role+dept queries
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.email})"
