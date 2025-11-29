@@ -11,8 +11,6 @@ commonLabels:
   environment: staging
   app.kubernetes.io/environment: staging
 
-nameSuffix: -staging
-
 # Staging-specific images
 images:
   - name: smarthr360-api
@@ -28,7 +26,7 @@ images:
 # Staging-specific configuration
 configMapGenerator:
   - name: smarthr360-config
-    behavior: merge
+    behavior: create
     literals:
       - ENVIRONMENT=staging
       - DEBUG=false
