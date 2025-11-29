@@ -3,8 +3,9 @@ kind: Kustomization
 
 namespace: smarthr360-dev
 
-bases:
+resources:
   - ../../base
+  - configmap-patch.yaml
 
 # Dev environment labels
 commonLabels:
@@ -15,51 +16,13 @@ commonLabels:
 images:
   - name: smarthr360-api
     newName: ghcr.io/nawfalrazouk7/smarthr360-api
-    newTag: develop
+    newTag: main
   - name: smarthr360-celery
     newName: ghcr.io/nawfalrazouk7/smarthr360-celery
-    newTag: develop
+    newTag: main
   - name: smarthr360-nginx
     newName: ghcr.io/nawfalrazouk7/smarthr360-nginx
-    newTag: develop
-
-# Dev-specific configuration
-configMapGenerator:
-  - name: smarthr360-config
-    behavior: replace
-    literals:
-      - DJANGO_SETTINGS_MODULE=config.settings.development
-      - ENVIRONMENT=development
-      - DEBUG=true
-      - LOG_LEVEL=DEBUG
-      - ALLOWED_HOSTS=dev.smarthr360.com,localhost,127.0.0.1
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000,https://dev.smarthr360.com
-      - FUTURE_SKILLS_USE_ML=false
-      # Database Configuration
-      - DB_NAME=smarthr360
-      - DB_PORT=5432
-      # Redis Configuration
-      - REDIS_PORT=6379
-      - CELERY_RESULT_BACKEND=django-db
-      # Security Settings (relaxed for dev)
-      - SECURE_SSL_REDIRECT=False
-      - SESSION_COOKIE_SECURE=False
-      - CSRF_COOKIE_SECURE=False
-      - SECURE_HSTS_SECONDS=0
-      # Monitoring
-      - ENABLE_PROMETHEUS=False
-      - ENABLE_HEALTH_CHECKS=True
-      # Auto Migration
-      - AUTO_MIGRATE=true
-      # Gunicorn Settings (smaller for dev)
-      - GUNICORN_WORKERS=2
-      - GUNICORN_THREADS=2
-      - GUNICORN_TIMEOUT=120
-      # Celery Settings
-      - CELERY_WORKER_CONCURRENCY=2
-      - CELERY_WORKER_MAX_TASKS_PER_CHILD=1000
-      # ML Settings
-      - ML_MODEL_PATH=/app/ml/models
+    newTag: main
 
 # Resource adjustments for dev (smaller footprint)
 patches:
