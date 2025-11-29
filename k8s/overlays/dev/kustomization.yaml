@@ -91,7 +91,22 @@ patchesJson6902:
     patch: |-
       - op: replace
         path: /spec/resources/requests/storage
-        value: 10Gi
+        value: 1Gi
+      - op: replace
+        path: /spec/storageClassName
+        value: hostpath
+
+  - target:
+      version: v1
+      kind: PersistentVolumeClaim
+      name: redis-pvc
+    patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 1Gi
+      - op: replace
+        path: /spec/storageClassName
+        value: hostpath
 
   - target:
       version: v1
@@ -100,7 +115,22 @@ patchesJson6902:
     patch: |-
       - op: replace
         path: /spec/resources/requests/storage
-        value: 10Gi
+        value: 1Gi
+      - op: replace
+        path: /spec/storageClassName
+        value: hostpath
+
+  - target:
+      version: v1
+      kind: PersistentVolumeClaim
+      name: logs-pvc
+    patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 1Gi
+      - op: replace
+        path: /spec/storageClassName
+        value: hostpath
 
   - target:
       version: v1
@@ -109,4 +139,7 @@ patchesJson6902:
     patch: |-
       - op: replace
         path: /spec/resources/requests/storage
-        value: 5Gi
+        value: 1Gi
+      - op: replace
+        path: /spec/storageClassName
+        value: hostpath
