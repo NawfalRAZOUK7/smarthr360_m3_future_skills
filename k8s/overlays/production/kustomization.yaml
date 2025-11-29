@@ -26,7 +26,7 @@ images:
 # Production configuration
 configMapGenerator:
   - name: smarthr360-config
-    behavior: merge
+    behavior: create
     literals:
       - ENVIRONMENT=production
       - DEBUG=false

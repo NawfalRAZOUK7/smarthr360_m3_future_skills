@@ -18,11 +18,6 @@ resources:
   - 50-network-policies.yaml
   - 60-rbac-pdb.yaml
 
-# Common labels applied to all resources
-commonLabels:
-  app.kubernetes.io/name: smarthr360
-  app.kubernetes.io/managed-by: kustomize
-
 # Images to be patched by overlays
 images:
   - name: smarthr360-api
@@ -34,18 +29,3 @@ images:
   - name: smarthr360-nginx
     newName: your-registry/smarthr360-nginx
     newTag: latest
-
-# ConfigMap generator for environment-specific configs
-configMapGenerator:
-  - name: smarthr360-config
-    behavior: merge
-    literals:
-      - DJANGO_SETTINGS_MODULE=config.settings.production
-      - LOG_LEVEL=INFO
-
-# Secret generator (values will be overridden by overlays)
-secretGenerator:
-  - name: smarthr360-secrets
-    behavior: replace
-    envs:
-      - secrets.env
