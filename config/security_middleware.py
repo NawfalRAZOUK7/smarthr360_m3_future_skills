@@ -199,7 +199,7 @@ class RateLimitMiddleware(MiddlewareMixin):
     """
 
     def __init__(self, get_response):
-        self.get_response = get_response
+        super().__init__(get_response)
         try:
             from django.core.cache import cache
 

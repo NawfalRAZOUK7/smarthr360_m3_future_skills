@@ -32,7 +32,7 @@ class RequestLoggingMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
-        self.get_response = get_response
+        super().__init__(get_response)
         self.logger = get_logger("django.request")
 
     def process_request(self, request: HttpRequest) -> None:
@@ -166,7 +166,7 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
-        self.get_response = get_response
+        super().__init__(get_response)
         self.logger = get_logger("performance")
 
     def process_request(self, request: HttpRequest) -> None:
@@ -233,7 +233,7 @@ class APMContextMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
-        self.get_response = get_response
+        super().__init__(get_response)
 
     def process_request(self, request: HttpRequest) -> None:
         """Process incoming request."""
@@ -274,7 +274,7 @@ class ErrorTrackingMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
-        self.get_response = get_response
+        super().__init__(get_response)
         self.logger = get_logger("django.request")
 
     def process_exception(self, request: HttpRequest, exception: Exception) -> None:
@@ -330,7 +330,7 @@ class SQLQueryLoggingMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
-        self.get_response = get_response
+        super().__init__(get_response)
         self.logger = get_logger("django.db.backends")
 
     def process_response(
@@ -378,7 +378,7 @@ class CustomLogContextMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
-        self.get_response = get_response
+        super().__init__(get_response)
 
     def process_request(self, request: HttpRequest) -> None:
         """Process incoming request."""
