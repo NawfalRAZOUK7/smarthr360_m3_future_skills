@@ -6,7 +6,7 @@ Tests all 8 throttle classes:
 - UserRateThrottle
 - BurstRateThrottle
 - SustainedRateThrottle
-- PremiumUserRateThrottle
+- PremiumUserThrottle
 - MLOperationsThrottle
 - BulkOperationsThrottle
 - HealthCheckThrottle
@@ -25,7 +25,7 @@ from future_skills.api.throttling import (
     BurstRateThrottle,
     HealthCheckThrottle,
     MLOperationsThrottle,
-    PremiumUserRateThrottle,
+    PremiumUserThrottle,
     SustainedRateThrottle,
     UserRateThrottle,
 )
@@ -219,8 +219,8 @@ class SustainedRateThrottleTestCase(BaseThrottleTestCase):
         self.assertFalse(throttle.allow_request(request, None))
 
 
-class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
-    """Test PremiumUserRateThrottle."""
+class PremiumUserThrottleTestCase(BaseThrottleTestCase):
+    """Test PremiumUserThrottle."""
 
     @override_settings(
         REST_FRAMEWORK={
@@ -231,7 +231,7 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
     )
     def test_staff_user_gets_premium_rate(self):
         """Test that staff users get premium rate."""
-        throttle = PremiumUserRateThrottle()
+        throttle = PremiumUserThrottle()
         staff_user = User.objects.create_user(
             username="staff", password="pass", is_staff=True
         )
@@ -242,7 +242,7 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
 
     def test_premium_user_attribute(self):
         """Test users with is_premium attribute get premium rate."""
-        throttle = PremiumUserRateThrottle()
+        throttle = PremiumUserThrottle()
         user = User.objects.create_user(username="premium", password="pass")
 
         # Add is_premium attribute (if model supports it)
@@ -255,7 +255,7 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
 
     def test_regular_user_bypassed(self):
         """Test that regular users bypass premium throttle."""
-        throttle = PremiumUserRateThrottle()
+        throttle = PremiumUserThrottle()
         user = User.objects.create_user(username="regular", password="pass")
         request = self.create_request(user=user)
 
@@ -264,7 +264,7 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
 
     def test_superuser_bypass(self):
         """Test that superusers bypass throttle."""
-        throttle = PremiumUserRateThrottle()
+        throttle = PremiumUserThrottle()
         superuser = User.objects.create_superuser(
             username="admin", password="admin123", email="admin@test.com"
         )
