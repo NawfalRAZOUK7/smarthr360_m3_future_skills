@@ -96,9 +96,10 @@ def update_registry(metadata_path: Path):
     n_estimators = metadata["hyperparameters"]["n_estimators"]
 
     # Create registry entry
-    new_entry = f"| {version} | {date} | future_skills_dataset.csv | {samples} | {
-        accuracy:.2f}% | {
-        f1_score:.4f} | {n_estimators} | Auto-generated |"
+    new_entry = (
+        f"| {version} | {date} | future_skills_dataset.csv | {samples} | "
+        f"{accuracy:.2f}% | {f1_score:.4f} | {n_estimators} | Auto-generated |"
+    )
 
     # Read registry
     with open(registry_path, "r", encoding="utf-8") as f:
