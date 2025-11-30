@@ -13,9 +13,8 @@ from typing import Callable
 from django.http import HttpRequest, HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 
+from config.apm_config import set_custom_context, set_user_context
 from config.logging_config import get_logger
-from config.apm_config import set_user_context, set_custom_context
-
 
 # ============================================================================
 # REQUEST LOGGING MIDDLEWARE

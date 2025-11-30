@@ -13,17 +13,13 @@ Tests cover:
 - Global instance management
 """
 
-import pytest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from ml.mlflow_config import (
-    MLflowConfig,
-    get_mlflow_config,
-    get_mlflow_client,
-    initialize_mlflow,
-)
+import pytest
+
+from ml.mlflow_config import MLflowConfig, get_mlflow_client, get_mlflow_config, initialize_mlflow
 
 
 class TestMLflowConfigInitialization:

@@ -5,10 +5,11 @@ Stores failed tasks for manual inspection and reprocessing.
 Tasks that exceed max retries are sent here instead of being lost.
 """
 
-import logging
 import json
+import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
+
 from django.db import models
 from django.utils import timezone
 

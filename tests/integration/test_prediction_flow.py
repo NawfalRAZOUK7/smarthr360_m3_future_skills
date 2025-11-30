@@ -213,8 +213,8 @@ class TestMLModelIntegration:
 
     def test_batch_prediction(self, sample_job_role, sample_skill, db):
         """Test batch prediction functionality."""
-        from future_skills.services.prediction_engine import PredictionEngine
         from future_skills.models import Skill
+        from future_skills.services.prediction_engine import PredictionEngine
 
         # Create multiple skills
         skills = [sample_skill]

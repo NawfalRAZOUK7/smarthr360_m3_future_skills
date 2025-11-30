@@ -8,7 +8,8 @@ Usage:
 """
 
 from django.core.management.base import BaseCommand
-from config.settings.validators import validate_environment, print_env_info
+
+from config.settings.validators import print_env_info, validate_environment
 
 
 class Command(BaseCommand):

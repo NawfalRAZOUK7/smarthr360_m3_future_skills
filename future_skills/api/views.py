@@ -1,51 +1,26 @@
 # future_skills/api/views.py
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
-from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiParameter,
-    OpenApiExample,
-)
-from drf_spectacular.types import OpenApiTypes
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
-from ..models import (
-    FutureSkillPrediction,
-    MarketTrend,
-    EconomicReport,
-    HRInvestmentRecommendation,
-    Employee,
-    TrainingRun,
-    Skill,
-)
-from .serializers import (
-    FutureSkillPredictionSerializer,
-    MarketTrendSerializer,
-    EconomicReportSerializer,
-    HRInvestmentRecommendationSerializer,
-    EmployeeSerializer,
-    PredictSkillsRequestSerializer,
-    PredictSkillsResponseSerializer,
-    RecommendSkillsRequestSerializer,
-    BulkPredictRequestSerializer,
-    BulkEmployeeImportSerializer,
-    TrainingRunSerializer,
-    TrainingRunDetailSerializer,
-    TrainModelRequestSerializer,
-    TrainModelResponseSerializer,
-    AddSkillToEmployeeSerializer,
-    RemoveSkillFromEmployeeSerializer,
-)
-
-from ..services.prediction_engine import recalculate_predictions
+from ..models import (EconomicReport, Employee, FutureSkillPrediction, HRInvestmentRecommendation, MarketTrend, Skill,
+                      TrainingRun)
 from ..permissions import IsHRStaff, IsHRStaffOrManager
+from ..services.prediction_engine import recalculate_predictions
 from ..services.recommendation_engine import generate_recommendations_from_predictions
-
+from .serializers import (AddSkillToEmployeeSerializer, BulkEmployeeImportSerializer, BulkPredictRequestSerializer,
+                          EconomicReportSerializer, EmployeeSerializer, FutureSkillPredictionSerializer,
+                          HRInvestmentRecommendationSerializer, MarketTrendSerializer, PredictSkillsRequestSerializer,
+                          PredictSkillsResponseSerializer, RecommendSkillsRequestSerializer,
+                          RemoveSkillFromEmployeeSerializer, TrainingRunDetailSerializer, TrainingRunSerializer,
+                          TrainModelRequestSerializer, TrainModelResponseSerializer)
 
 # Error messages constants
 ERROR_MESSAGES = {
@@ -1118,6 +1093,7 @@ class BulkEmployeeUploadAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         import os
+
         from ..services.file_parser import parse_employee_file
 
         # Validate file presence
@@ -1615,11 +1591,8 @@ class TrainModelAPIView(APIView):
         import logging
         from datetime import datetime
         from pathlib import Path
-        from ..services.training_service import (
-            ModelTrainer,
-            DataLoadError,
-            TrainingError,
-        )
+
+        from ..services.training_service import DataLoadError, ModelTrainer, TrainingError
 
         logger = logging.getLogger("future_skills.api.views")
 

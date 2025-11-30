@@ -17,17 +17,12 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
+
 import numpy as np
 import pandas as pd
 
-from ml.monitoring import (
-    PredictionLog,
-    PredictionLogger,
-    ModelMonitor,
-    get_model_monitor,
-    PREDICTION_COUNTER,
-    PREDICTION_LATENCY,
-)
+from ml.monitoring import (PREDICTION_COUNTER, PREDICTION_LATENCY, ModelMonitor, PredictionLog, PredictionLogger,
+                           get_model_monitor)
 
 
 class TestPredictionLog:

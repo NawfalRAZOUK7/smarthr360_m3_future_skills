@@ -18,25 +18,21 @@ Usage:
     python ml/evaluate_future_skills_models.py [--dataset PATH] [--model PATH] [--output PATH]
 """
 
-from future_skills.services.prediction_engine import calculate_level
-import django
 import argparse
 import json
 import logging
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
+import django
 import joblib
 import pandas as pd
-from sklearn.metrics import (
-    accuracy_score,
-    f1_score,
-    classification_report,
-    confusion_matrix,
-    precision_recall_fscore_support,
-)
+from sklearn.metrics import (accuracy_score, classification_report, confusion_matrix, f1_score,
+                             precision_recall_fscore_support)
+
+from future_skills.services.prediction_engine import calculate_level
 
 # Configure logging
 logger = logging.getLogger(__name__)

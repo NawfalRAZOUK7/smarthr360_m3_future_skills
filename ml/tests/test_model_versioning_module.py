@@ -10,19 +10,13 @@ Tests cover:
 - create_model_version helper function
 """
 
-import pytest
 from datetime import datetime
 from unittest.mock import patch
 
-from ml.model_versioning import (
-    ModelStage,
-    ModelFramework,
-    ModelMetrics,
-    ModelMetadata,
-    ModelVersion,
-    ModelVersionManager,
-    create_model_version,
-)
+import pytest
+
+from ml.model_versioning import (ModelFramework, ModelMetadata, ModelMetrics, ModelStage, ModelVersion,
+                                 ModelVersionManager, create_model_version)
 
 
 class TestModelStageEnum:

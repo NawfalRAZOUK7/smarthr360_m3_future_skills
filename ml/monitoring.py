@@ -30,31 +30,29 @@ Usage:
     has_drift = monitor.detect_data_drift(reference_data, current_data)
 """
 
-import logging
 import json
-from collections import deque, defaultdict
+import logging
+from collections import defaultdict, deque
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 
 try:
-    from evidently.report import Report
     from evidently.metric_preset import DataDriftPreset
-    from evidently.metrics import (
-        DatasetDriftMetric,
-        DataDriftTable,
-    )
+    from evidently.metrics import DataDriftTable, DatasetDriftMetric
+    from evidently.report import Report
 
     EVIDENTLY_AVAILABLE = True
 except ImportError:
     EVIDENTLY_AVAILABLE = False
     logging.warning("Evidently not installed. Data drift detection will be limited.")
 
-from prometheus_client import Counter, Gauge, Histogram
 from django.core.cache import cache
+from prometheus_client import Counter, Gauge, Histogram
 
 logger = logging.getLogger(__name__)
 

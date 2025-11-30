@@ -1,8 +1,9 @@
 # Test Training API endpoints (Section 2.4)
 
+from django.contrib.auth.models import Group, User
 from django.test import TestCase
-from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
+
 from future_skills.models import TrainingRun
 
 

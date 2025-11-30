@@ -6,16 +6,17 @@ This module provides JWT (JSON Web Token) authentication for the SmartHR360 API.
 Uses djangorestframework-simplejwt with enhanced security features.
 """
 
+import logging
 from datetime import timedelta
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-import logging
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 logger = logging.getLogger(__name__)
 User = get_user_model()

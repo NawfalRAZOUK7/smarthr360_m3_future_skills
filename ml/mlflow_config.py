@@ -32,14 +32,14 @@ Usage:
 import logging
 import os
 from contextlib import contextmanager
-from pathlib import Path
-from typing import Dict, Optional, Any, List
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import mlflow
-from mlflow.tracking import MlflowClient
-from mlflow.entities import ViewType
 from django.conf import settings
+from mlflow.entities import ViewType
+from mlflow.tracking import MlflowClient
 
 logger = logging.getLogger(__name__)
 

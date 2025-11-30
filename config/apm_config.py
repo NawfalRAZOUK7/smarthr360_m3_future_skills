@@ -9,7 +9,6 @@ error tracking, and performance analysis.
 import os
 from typing import Any, Dict, Optional
 
-
 # ============================================================================
 # ELASTIC APM CONFIGURATION
 # ============================================================================
@@ -140,10 +139,10 @@ def get_sentry_config() -> Optional[Dict[str, Any]]:
 
 def get_sentry_integrations() -> list:
     """Get Sentry integrations."""
-    from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.celery import CeleryIntegration
-    from sentry_sdk.integrations.redis import RedisIntegration
+    from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.logging import LoggingIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
 
     integrations = [
         DjangoIntegration(

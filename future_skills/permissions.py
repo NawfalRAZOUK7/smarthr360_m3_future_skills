@@ -2,7 +2,6 @@
 
 from rest_framework.permissions import BasePermission
 
-
 # On part sur des groupes Django pour représenter les rôles.
 # Tu pourras les créer dans l'admin :
 #  - DRH

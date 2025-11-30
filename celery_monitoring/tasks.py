@@ -5,9 +5,11 @@ These tasks handle cleanup and maintenance of monitoring data.
 """
 
 import logging
+
 from celery import shared_task
-from celery_monitoring.monitoring import cleanup_old_task_executions
+
 from celery_monitoring.dead_letter import cleanup_old_dead_letter_tasks
+from celery_monitoring.monitoring import cleanup_old_task_executions
 
 logger = logging.getLogger(__name__)
 

@@ -5,25 +5,17 @@ Provides Prometheus metrics, task execution tracking, performance monitoring,
 and real-time observability for Celery workers and tasks.
 """
 
+import functools
 import logging
 import time
-import functools
-from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    Summary,
-    Info,
-    generate_latest,
-    REGISTRY,
-)
+from celery import signals
+from celery.states import FAILURE, RECEIVED, RETRY, STARTED, SUCCESS
 from django.db import models
 from django.utils import timezone
-from celery import signals
-from celery.states import SUCCESS, FAILURE, RETRY, STARTED, RECEIVED
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram, Info, Summary, generate_latest
 
 logger = logging.getLogger(__name__)
 
@@ -433,7 +425,7 @@ def get_task_performance_stats(
     Returns:
         dict: Performance statistics
     """
-    from django.db.models import Avg, Min, Max, Count
+    from django.db.models import Avg, Count, Max, Min
 
     cutoff_time = timezone.now() - timedelta(hours=hours)
 

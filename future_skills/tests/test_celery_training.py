@@ -8,10 +8,11 @@ Note: These tests use Celery's eager mode (CELERY_TASK_ALWAYS_EAGER=True)
 to execute tasks synchronously during testing without requiring Redis.
 """
 
+from unittest.mock import MagicMock, patch
+
+from django.contrib.auth.models import Group, User
 from django.test import TestCase
-from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from unittest.mock import patch, MagicMock
 
 from future_skills.models import TrainingRun
 from future_skills.tasks import train_model_task

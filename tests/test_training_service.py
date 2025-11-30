@@ -11,6 +11,7 @@ Or as a standalone test:
 
 import os
 import sys
+
 import django
 
 # Setup Django
@@ -18,11 +19,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 from pathlib import Path
-from future_skills.services.training_service import (
-    ModelTrainer,
-    DataLoadError,
-    TrainingError,
-)
+
+from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
 
 
 def test_training_service():

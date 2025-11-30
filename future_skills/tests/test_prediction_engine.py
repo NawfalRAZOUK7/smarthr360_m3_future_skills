@@ -2,17 +2,8 @@
 
 from django.test import TestCase
 
-from future_skills.models import (
-    Skill,
-    JobRole,
-    MarketTrend,
-    FutureSkillPrediction,
-    PredictionRun,
-)
-from future_skills.services.prediction_engine import (
-    calculate_level,
-    recalculate_predictions,
-)
+from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
+from future_skills.services.prediction_engine import calculate_level, recalculate_predictions
 
 
 class CalculateLevelTests(TestCase):
@@ -161,6 +152,7 @@ class MLFallbackTests(TestCase):
         - PredictionRun.parameters["engine"] == "rules_v1" (fallback)
         """
         from unittest.mock import patch
+
         from django.test import override_settings
 
         with override_settings(FUTURE_SKILLS_USE_ML=True):
@@ -199,7 +191,8 @@ class MLFallbackTests(TestCase):
         - PredictionRun.parameters["engine"] == "ml_random_forest_v1"
         - PredictionRun.parameters["model_version"] est défini
         """
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
+
         from django.test import override_settings
 
         with override_settings(

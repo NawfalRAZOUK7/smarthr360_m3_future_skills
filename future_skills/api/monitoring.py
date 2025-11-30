@@ -4,16 +4,17 @@ API Health Check and Monitoring Endpoints
 Provides endpoints for system health checks, version info, and metrics.
 """
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
+import platform
+import sys
+
+from django.conf import settings
+from django.core.cache import cache
+from django.db import connection
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from django.db import connection
-from django.core.cache import cache
-from django.conf import settings
-from django.utils import timezone
-import sys
-import platform
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 class HealthCheckView(APIView):
@@ -213,12 +214,7 @@ class MetricsView(APIView):
 
     def _get_api_metrics(self):
         """Get API-specific metrics"""
-        from future_skills.models import (
-            Skill,
-            JobRole,
-            FutureSkillPrediction,
-            Employee,
-        )
+        from future_skills.models import Employee, FutureSkillPrediction, JobRole, Skill
 
         return {
             "models": {

@@ -125,7 +125,7 @@ class TestAPIPagination:
         self, authenticated_client, db, sample_job_role, sample_skill
     ):
         """Test that pagination is applied to list endpoints."""
-        from future_skills.models import FutureSkillPrediction, Skill, JobRole
+        from future_skills.models import FutureSkillPrediction, JobRole, Skill
 
         # Create additional skills to ensure we have enough unique combinations
         skills = [sample_skill]

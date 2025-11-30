@@ -2,15 +2,8 @@
 
 from django.test import TestCase
 
-from future_skills.models import (
-    Skill,
-    JobRole,
-    FutureSkillPrediction,
-    HRInvestmentRecommendation,
-)
-from future_skills.services.recommendation_engine import (
-    generate_recommendations_from_predictions,
-)
+from future_skills.models import FutureSkillPrediction, HRInvestmentRecommendation, JobRole, Skill
+from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
 
 
 class RecommendationEngineTests(TestCase):

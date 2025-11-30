@@ -37,18 +37,12 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from typing import Tuple, Dict, Any
+from typing import Any, Dict, Tuple
 
 from django.conf import settings
 
-from future_skills.models import (
-    JobRole,
-    Skill,
-    MarketTrend,
-    FutureSkillPrediction,
-    PredictionRun,
-)
 from future_skills.ml_model import FutureSkillsModel
+from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
 
 logger = logging.getLogger(__name__)
 

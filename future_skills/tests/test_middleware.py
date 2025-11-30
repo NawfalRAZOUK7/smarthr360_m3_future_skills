@@ -10,20 +10,15 @@ Tests:
 """
 
 import time
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
-from django.test import TestCase, RequestFactory
+from django.test import RequestFactory, TestCase
 
-from future_skills.api.middleware import (
-    APIPerformanceMiddleware,
-    APICacheMiddleware,
-    APIDeprecationMiddleware,
-    RequestLoggingMiddleware,
-    CORSHeadersMiddleware,
-)
+from future_skills.api.middleware import (APICacheMiddleware, APIDeprecationMiddleware, APIPerformanceMiddleware,
+                                          CORSHeadersMiddleware, RequestLoggingMiddleware)
 
 User = get_user_model()
 
