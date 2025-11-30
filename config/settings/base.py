@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "health_check.storage",
     # Project apps
     "future_skills",
+    "celery_monitoring",
 ]
 
 MIDDLEWARE = [
