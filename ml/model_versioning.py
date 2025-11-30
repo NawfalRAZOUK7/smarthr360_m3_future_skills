@@ -219,9 +219,14 @@ class ModelVersion:
 
     @classmethod
     def from_string(cls, version_string: str) -> 'ModelVersion':
-        """Create ModelVersion from string."""
+        """Create ModelVersion from string.
+
+        Supports both standard SemVer format (1.0.0) and 'v' prefixed format (v1.0.0).
+        """
         try:
-            parsed = semver.VersionInfo.parse(version_string)
+            # Strip leading 'v' or 'V' prefix if present
+            cleaned_version = version_string.lstrip('vV')
+            parsed = semver.VersionInfo.parse(cleaned_version)
             return cls(
                 major=parsed.major,
                 minor=parsed.minor,

@@ -480,7 +480,7 @@ class TestTrainingRunTracking:
         mock_training_run.objects.create.return_value = MagicMock()
 
         trainer.save_training_run(
-            model_version="v1.0-test",
+            model_version="1.0.0-test",
             model_path=str(model_path),
             notes="Test training run"
         )
@@ -490,7 +490,7 @@ class TestTrainingRunTracking:
         call_kwargs = mock_training_run.objects.create.call_args[1]
 
         # Check required fields
-        assert call_kwargs['model_version'] == "v1.0-test"
+        assert call_kwargs['model_version'] == "1.0.0-test"
         assert call_kwargs['model_path'] == str(model_path)
         assert 'accuracy' in call_kwargs
         assert 'f1_score' in call_kwargs
