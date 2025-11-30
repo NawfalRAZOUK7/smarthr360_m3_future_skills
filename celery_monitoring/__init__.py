@@ -13,10 +13,11 @@ Features:
 - Rate limiting
 
 Usage:
-    from celery_monitoring.retry_strategies import (
+    from celery_monitoring import (
         retry_with_exponential_backoff,
         with_circuit_breaker,
-        with_dead_letter_queue
+        with_dead_letter_queue,
+        monitor_task
     )
 
     @shared_task
@@ -25,6 +26,20 @@ Usage:
         # Task implementation
         pass
 """
+
+# Import monitor_task from monitoring module to make it available at package level
+from celery_monitoring.monitoring import monitor_task
+
+__all__ = [
+    'retry_with_exponential_backoff',
+    'with_circuit_breaker',
+    'with_dead_letter_queue',
+    'rate_limit',
+    'with_timeout',
+    'idempotent',
+    'with_advanced_retry',
+    'monitor_task',
+]
 
 import functools
 import logging
