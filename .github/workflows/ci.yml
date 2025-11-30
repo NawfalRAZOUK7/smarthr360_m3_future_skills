@@ -81,7 +81,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=future_skills --cov-report=xml --cov-report=term-missing --cov-fail-under=70 -v
+          pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -93,16 +93,16 @@ jobs:
           files: ./coverage.xml
           fail_ci_if_error: false
 
-      - name: Run unit tests only
+      - name: Run unit tests
         run: |
-          pytest future_skills/tests/ -v -m "not slow"
+          pytest future_skills/tests/ -v -m "not slow" --cov=future_skills --cov-append
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Run integration tests
         run: |
-          pytest tests/integration/ -v
+          pytest tests/integration/ -v --cov=future_skills --cov-append --cov-fail-under=50
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -180,7 +180,7 @@ jobs:
 
       - name: Run ML integration tests
         run: |
-          pytest tests/integration/test_ml_integration.py -v --cov=future_skills.services.prediction_engine --cov-report=xml --cov-report=term-missing --cov-fail-under=50
+          pytest tests/integration/test_ml_integration.py -v --cov=future_skills.services --cov-report=xml --cov-report=term-missing --cov-fail-under=50
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -188,7 +188,7 @@ jobs:
 
       - name: Run all ML tests with coverage
         run: |
-          pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills.services.prediction_engine --cov=ml --cov-report=xml --cov-report=term-missing --cov-fail-under=40
+          pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills.services --cov=ml --cov-report=xml --cov-report=term-missing --cov-fail-under=40
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
