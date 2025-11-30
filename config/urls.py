@@ -59,8 +59,8 @@ urlpatterns = [
     # API Versioning
     path("api/v1/", include("future_skills.api.v1_urls", namespace="v1")),
     path("api/v2/", include("future_skills.api.v2_urls", namespace="v2")),
-    # Backward compatibility - redirect to v2
-    path("api/", include("future_skills.api.v2_urls")),
+    # Base API URLs (includes all non-versioned endpoints)
+    path("api/", include("future_skills.api.urls")),
     # API Documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
