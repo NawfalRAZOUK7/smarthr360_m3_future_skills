@@ -6,11 +6,9 @@ import random
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import Avg
 
 from future_skills.models import JobRole, Skill, MarketTrend, EconomicReport
 from future_skills.services.prediction_engine import (
-    _find_relevant_trend,
     _estimate_internal_usage,
     _estimate_training_requests,
     calculate_level,

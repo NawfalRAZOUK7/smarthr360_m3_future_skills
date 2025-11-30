@@ -62,7 +62,7 @@ class TestPredictionQuality:
 
         # Store all scores and levels
         scores = [p[0] for p in predictions.values()]
-        levels = [p[1] for p in predictions.values()]
+        [p[1] for p in predictions.values()]
 
         # At least verify predictions were generated for all horizons
         assert len(predictions) == 4, "Should have predictions for all 4 horizons"

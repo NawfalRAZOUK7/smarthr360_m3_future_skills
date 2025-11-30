@@ -8,16 +8,14 @@ logging, and integration with Django's TrainingRun model for MLOps tracking.
 """
 
 import logging
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Any
 
 import joblib
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-from django.conf import settings
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
@@ -38,7 +36,6 @@ from ml.model_versioning import (
     ModelStage,
     ModelFramework,
 )
-from ml.monitoring import ModelMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -46,19 +43,13 @@ logger = logging.getLogger(__name__)
 class ModelTrainerError(Exception):
     """Base exception for ModelTrainer errors."""
 
-    pass
-
 
 class DataLoadError(ModelTrainerError):
     """Exception raised when data loading fails."""
 
-    pass
-
 
 class TrainingError(ModelTrainerError):
     """Exception raised when model training fails."""
-
-    pass
 
 
 class ModelTrainer:
@@ -364,7 +355,7 @@ class ModelTrainer:
                     for i, (feat, imp) in enumerate(
                         list(self.feature_importance.items())[:10]
                     ):
-                        mlflow.log_metric(f"feature_importance_{i+1}_{feat}", imp)
+                        mlflow.log_metric(f"feature_importance_{i + 1}_{feat}", imp)
 
                 # Log model to MLflow
                 mlflow.sklearn.log_model(
@@ -576,7 +567,7 @@ class ModelTrainer:
             # Log top 10
             logger.info("Top 10 important features:")
             for i, (feat, imp) in enumerate(list(sorted_importance.items())[:10]):
-                logger.info(f"  {i+1}. {feat}: {imp:.4f}")
+                logger.info(f"  {i + 1}. {feat}: {imp:.4f}")
 
             return sorted_importance
 

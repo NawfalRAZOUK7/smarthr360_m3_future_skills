@@ -24,7 +24,6 @@ Usage:
     celery -A config flower --port=5555 --db=flower.db --persistent=True
 """
 
-import os
 from decouple import config
 
 # ============================================================================

@@ -14,10 +14,9 @@ Tests cover:
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, call
-from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
 from ml.mlflow_config import (
     MLflowConfig,

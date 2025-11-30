@@ -13,16 +13,12 @@ Tests all 8 throttle classes:
 """
 
 import time
-from unittest.mock import patch, Mock
+from unittest.mock import Mock
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase, RequestFactory, override_settings
-from django.http import HttpRequest
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 
 from future_skills.api.throttling import (
     AnonRateThrottle,

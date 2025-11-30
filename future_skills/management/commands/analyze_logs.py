@@ -5,9 +5,8 @@ Analyzes application logs for errors, performance issues, and patterns.
 
 import json
 import os
-from collections import defaultdict, Counter
+from collections import Counter
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Dict, List, Any
 
 from django.core.management.base import BaseCommand

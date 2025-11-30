@@ -13,7 +13,6 @@ Usage:
     python manage.py train_future_skills_model --test-split 0.25 --random-state 123
 """
 
-import sys
 from datetime import datetime
 from pathlib import Path
 import importlib.util

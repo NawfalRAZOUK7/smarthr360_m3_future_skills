@@ -21,7 +21,6 @@ from future_skills.services.training_service import (
 )
 from celery_monitoring import (
     retry_with_exponential_backoff,
-    with_circuit_breaker,
     with_dead_letter_queue,
     monitor_task,
     with_timeout,
@@ -284,7 +283,6 @@ def cleanup_old_models_task(days_to_keep=30):
     import os
     from datetime import timedelta
     from django.utils import timezone
-    from pathlib import Path
 
     logger.info(f"[CELERY] Starting cleanup task (keeping last {days_to_keep} days)")
 

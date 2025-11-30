@@ -11,7 +11,7 @@ from datetime import timedelta
 import os
 import json
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 
 
 class Command(BaseCommand):
@@ -164,7 +164,7 @@ class Command(BaseCommand):
 
             timestamp = parser.parse(timestamp_str)
             return timestamp >= cutoff
-        except:
+        except Exception:
             # If can't parse, include it
             return True
 
@@ -235,7 +235,16 @@ class Command(BaseCommand):
             )
             for event in analysis["recent_auth_failures"][-5:]:
                 self.stdout.write(
-                    f"  {event.get('asctime', 'N/A')}: {event.get('username', 'unknown')} from {event.get('ip_address', 'unknown')}"
+                    f"  {
+                        event.get(
+                            'asctime',
+                            'N/A')}: {
+                        event.get(
+                            'username',
+                            'unknown')} from {
+                        event.get(
+                            'ip_address',
+                            'unknown')}"
                 )
 
         self.stdout.write("\n")

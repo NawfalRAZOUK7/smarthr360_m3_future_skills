@@ -10,13 +10,9 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from decouple import config
-
 
 class ConfigValidationError(Exception):
     """Raised when configuration validation fails."""
-
-    pass
 
 
 class EnvironmentValidator:
@@ -294,12 +290,10 @@ class EnvironmentValidator:
     def _validate_development(self, config, Csv, BASE_DIR):
         """Validate development-specific settings."""
         # No strict requirements for development
-        pass
 
     def _validate_test(self, config, Csv, BASE_DIR):
         """Validate test-specific settings."""
         # Test environment should use simpler backends
-        pass
 
     def print_results(self):
         """Print validation results to console."""

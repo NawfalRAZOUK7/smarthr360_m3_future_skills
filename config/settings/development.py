@@ -17,7 +17,7 @@ DEVELOPMENT_APPS = []
 
 # Django Extensions (optional - install with: pip install django-extensions)
 try:
-    import django_extensions
+    pass
 
     DEVELOPMENT_APPS.append("django_extensions")
 except ImportError:
@@ -30,7 +30,7 @@ MIDDLEWARE += []
 
 # Debug toolbar configuration (optional - install with: pip install django-debug-toolbar)
 try:
-    import debug_toolbar
+    pass
 
     INSTALLED_APPS += ["debug_toolbar"]
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")

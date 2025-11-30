@@ -10,18 +10,16 @@ Tests:
 - Deprecation warnings
 """
 
-import time
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.test import TestCase, override_settings
-from django.urls import reverse
+from django.test import override_settings
 
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
-from future_skills.models import Skill, JobRole, Employee, FutureSkillPrediction
+from future_skills.models import Skill, JobRole
 
 User = get_user_model()
 
@@ -221,7 +219,7 @@ class PerformanceMonitoringTestCase(APITestCase):
         """Test that slow requests are logged."""
         # Mock a slow response
         with patch("time.time", side_effect=[0, 2.0]):  # 2 second response
-            response = self.client.get("/api/v2/predictions/")
+            self.client.get("/api/v2/predictions/")
 
         # Verify warning was logged
         self.assertTrue(mock_logger.warning.called)
@@ -259,7 +257,7 @@ class CachingTestCase(APITestCase):
         job_role = JobRole.objects.create(name="Test Role")
 
         # Next GET should be cache miss
-        response = self.client.get("/api/v2/predictions/")
+        self.client.get("/api/v2/predictions/")
         # Note: Actual invalidation depends on implementation
 
     def test_cache_control_headers(self):
@@ -419,7 +417,7 @@ class RequestLoggingTestCase(APITestCase):
     @patch("future_skills.api.middleware.logger")
     def test_request_logging(self, mock_logger):
         """Test that requests are logged."""
-        response = self.client.get("/api/v2/predictions/")
+        self.client.get("/api/v2/predictions/")
 
         # Verify info was logged
         self.assertTrue(mock_logger.info.called)
@@ -434,7 +432,7 @@ class RequestLoggingTestCase(APITestCase):
     def test_error_logging(self, mock_logger):
         """Test that errors are logged."""
         # Request to non-existent endpoint
-        response = self.client.get("/api/v2/nonexistent/")
+        self.client.get("/api/v2/nonexistent/")
 
         # Some logging should occur
         self.assertTrue(

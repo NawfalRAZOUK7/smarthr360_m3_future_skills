@@ -3,14 +3,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import (
     extend_schema,
-    extend_schema_view,
     OpenApiParameter,
     OpenApiExample,
 )
@@ -42,7 +40,6 @@ from .serializers import (
     TrainModelResponseSerializer,
     AddSkillToEmployeeSerializer,
     RemoveSkillFromEmployeeSerializer,
-    UpdateEmployeeSkillsSerializer,
 )
 
 from ..services.prediction_engine import recalculate_predictions
@@ -1145,7 +1142,7 @@ class BulkEmployeeUploadAPIView(APIView):
                     "errors": [
                         {
                             "field": "file",
-                            "error": f"File size exceeds maximum limit of {self.MAX_FILE_SIZE / (1024*1024):.1f}MB",
+                            "error": f"File size exceeds maximum limit of {self.MAX_FILE_SIZE / (1024 * 1024):.1f}MB",
                         }
                     ],
                 },

@@ -13,12 +13,10 @@ Run with:
     pytest ml/tests/test_monitoring_module.py -v
 """
 
-import pytest
 import json
-import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import numpy as np
 import pandas as pd
 
@@ -29,8 +27,6 @@ from ml.monitoring import (
     get_model_monitor,
     PREDICTION_COUNTER,
     PREDICTION_LATENCY,
-    MODEL_ACCURACY_GAUGE,
-    DRIFT_DETECTED,
 )
 
 

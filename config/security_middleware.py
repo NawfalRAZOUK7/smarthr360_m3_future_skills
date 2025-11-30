@@ -10,7 +10,6 @@ from django.http import JsonResponse
 from django.conf import settings
 import logging
 import time
-import json
 from ipware import get_client_ip
 import user_agents
 
@@ -204,7 +203,7 @@ class RateLimitMiddleware(MiddlewareMixin):
             from django.core.cache import cache
 
             self.cache = cache
-        except:
+        except Exception:
             self.cache = None
 
     def process_request(self, request):

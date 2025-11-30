@@ -6,7 +6,6 @@ Checks system health, dependencies, and application status.
 from django.core.management.base import BaseCommand
 from django.db import connection
 from django.core.cache import cache
-import requests
 import time
 import sys
 from typing import Dict, Any

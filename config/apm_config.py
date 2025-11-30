@@ -9,8 +9,6 @@ error tracking, and performance analysis.
 import os
 from typing import Any, Dict, Optional
 
-from django.conf import settings
-
 
 # ============================================================================
 # ELASTIC APM CONFIGURATION
@@ -142,7 +140,6 @@ def get_sentry_config() -> Optional[Dict[str, Any]]:
 
 def get_sentry_integrations() -> list:
     """Get Sentry integrations."""
-    import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.celery import CeleryIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
@@ -246,8 +243,7 @@ def initialize_apm() -> None:
     elastic_config = get_elastic_apm_config()
     if elastic_config:
         try:
-            import elasticapm
-            from elasticapm.contrib.django.middleware import TracingMiddleware
+            pass
 
             # Elastic APM is configured via Django settings
             # No need to initialize here, just log

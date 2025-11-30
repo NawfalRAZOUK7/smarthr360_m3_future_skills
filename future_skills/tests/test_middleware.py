@@ -10,12 +10,12 @@ Tests:
 """
 
 import time
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import patch, Mock
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
-from django.test import TestCase, RequestFactory, override_settings
+from django.test import TestCase, RequestFactory
 
 from future_skills.api.middleware import (
     APIPerformanceMiddleware,
@@ -63,7 +63,7 @@ class APIPerformanceMiddlewareTestCase(TestCase):
 
         # Mock slow response
         with patch("time.time", side_effect=[0, 2.0]):  # 2 second response
-            response = self.middleware(request)
+            self.middleware(request)
 
         # Verify warning was logged
         mock_logger.warning.assert_called()
@@ -404,7 +404,7 @@ class CORSHeadersMiddlewareTestCase(TestCase):
         admin_request = self.factory.get("/admin/")
 
         api_response = self.middleware(api_request)
-        admin_response = self.middleware(admin_request)
+        self.middleware(admin_request)
 
         self.assertIn("Access-Control-Allow-Origin", api_response)
         # May or may not be in admin response depending on implementation

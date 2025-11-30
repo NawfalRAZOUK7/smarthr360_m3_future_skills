@@ -12,8 +12,6 @@ Run with:
 
 import pytest
 import json
-from pathlib import Path
-from django.conf import settings
 from future_skills.services.prediction_engine import _log_prediction_for_monitoring
 
 

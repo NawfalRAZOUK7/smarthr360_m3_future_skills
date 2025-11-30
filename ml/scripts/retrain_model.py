@@ -22,9 +22,9 @@ from pathlib import Path
 
 def run_command(cmd: list, description: str) -> int:
     """Execute a shell command and return exit code."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"🔄 {description}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Commande: {' '.join(cmd)}\n")
 
     result = subprocess.run(cmd, capture_output=False)
@@ -96,7 +96,9 @@ def update_registry(metadata_path: Path):
     n_estimators = metadata["hyperparameters"]["n_estimators"]
 
     # Create registry entry
-    new_entry = f"| {version} | {date} | future_skills_dataset.csv | {samples} | {accuracy:.2f}% | {f1_score:.4f} | {n_estimators} | Auto-generated |"
+    new_entry = f"| {version} | {date} | future_skills_dataset.csv | {samples} | {
+        accuracy:.2f}% | {
+        f1_score:.4f} | {n_estimators} | Auto-generated |"
 
     # Read registry
     with open(registry_path, "r", encoding="utf-8") as f:
@@ -209,9 +211,9 @@ def main():
         return 1
 
     # Step 3: Update registry and optionally settings
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("📝 Étape 3/3: Mise à jour de la documentation")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     metadata_path = model_path.with_suffix(".json")
 
