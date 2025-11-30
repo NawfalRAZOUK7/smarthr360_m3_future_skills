@@ -7,11 +7,12 @@ import os
 import sys
 
 # Setup paths first
-sys.path.insert(0, '/Users/nawfalrazouk/smarthr360_m3_future_skills')
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+sys.path.insert(0, "/Users/nawfalrazouk/smarthr360_m3_future_skills")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 # Setup Django
 import django
+
 django.setup()
 
 # Now import Django models
@@ -25,20 +26,20 @@ def create_test_user():
     print("\n1️⃣  Creating test user...")
 
     # Get or create DRH group
-    drh_group, _ = Group.objects.get_or_create(name='DRH')
+    drh_group, _ = Group.objects.get_or_create(name="DRH")
 
     # Create or get user
     user, created = User.objects.get_or_create(
-        username='test_hr_staff',
+        username="test_hr_staff",
         defaults={
-            'email': 'hr@test.com',
-            'is_staff': True,
-            'is_active': True,
-        }
+            "email": "hr@test.com",
+            "is_staff": True,
+            "is_active": True,
+        },
     )
 
     if created:
-        user.set_password('testpass123')
+        user.set_password("testpass123")
         user.save()
         user.groups.add(drh_group)
         print(f"   ✅ Created user: {user.username}")
@@ -53,7 +54,7 @@ def test_training_run_list(client):
     """Test GET /api/training/runs/"""
     print("\n2️⃣  Testing TrainingRunListAPIView...")
 
-    response = client.get('/api/training/runs/')
+    response = client.get("/api/training/runs/")
 
     print(f"   Status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
@@ -62,9 +63,11 @@ def test_training_run_list(client):
     print(f"   Total runs: {data['count']}")
     print(f"   Results in page: {len(data['results'])}")
 
-    if data['results']:
-        first_run = data['results'][0]
-        print(f"   First run: {first_run['model_version']} (status: {first_run['status']})")
+    if data["results"]:
+        first_run = data["results"][0]
+        print(
+            f"   First run: {first_run['model_version']} (status: {first_run['status']})"
+        )
 
     print("   ✅ List endpoint works!")
 
@@ -80,7 +83,7 @@ def test_training_run_detail(client):
         print("   ⚠️  No training runs in database, skipping detail test")
         return
 
-    response = client.get(f'/api/training/runs/{training_run.id}/')
+    response = client.get(f"/api/training/runs/{training_run.id}/")
 
     print(f"   Status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
@@ -108,16 +111,12 @@ def test_train_model(client):
             "max_depth": 10,
         },
         "model_version": "api_test_v1",
-        "notes": "Test training via API"
+        "notes": "Test training via API",
     }
 
     print(f"   Request: {request_data}")
 
-    response = client.post(
-        '/api/training/train/',
-        data=request_data,
-        format='json'
-    )
+    response = client.post("/api/training/train/", data=request_data, format="json")
 
     print(f"   Status: {response.status_code}")
 
@@ -129,21 +128,25 @@ def test_train_model(client):
         print(f"   Model Version: {data['model_version']}")
         print(f"   Message: {data['message']}")
 
-        if 'metrics' in data:
-            metrics = data['metrics']
+        if "metrics" in data:
+            metrics = data["metrics"]
             print(f"   Accuracy: {metrics['accuracy']:.2%}")
             print(f"   F1-Score: {metrics['f1_score']:.2%}")
             print(f"   Training Duration: {metrics['training_duration_seconds']:.3f}s")
 
         # Verify in database
-        training_run = TrainingRun.objects.get(id=data['training_run_id'])
-        assert training_run.status == 'COMPLETED', f"Expected COMPLETED, got {training_run.status}"
+        training_run = TrainingRun.objects.get(id=data["training_run_id"])
+        assert (
+            training_run.status == "COMPLETED"
+        ), f"Expected COMPLETED, got {training_run.status}"
         print(f"   ✅ TrainingRun record verified in database")
 
     else:
         print(f"   ❌ Training failed!")
         print(f"   Response: {response.json()}")
-        raise AssertionError(f"Training endpoint failed with status {response.status_code}")
+        raise AssertionError(
+            f"Training endpoint failed with status {response.status_code}"
+        )
 
 
 def test_train_model_with_invalid_data(client):
@@ -157,11 +160,7 @@ def test_train_model_with_invalid_data(client):
         }
     }
 
-    response = client.post(
-        '/api/training/train/',
-        data=request_data,
-        format='json'
-    )
+    response = client.post("/api/training/train/", data=request_data, format="json")
 
     print(f"   Status: {response.status_code}")
     assert response.status_code == 400, f"Expected 400, got {response.status_code}"
@@ -176,7 +175,7 @@ def test_filtering(client):
     print("\n6️⃣  Testing filtering in TrainingRunListAPIView...")
 
     # Filter by status
-    response = client.get('/api/training/runs/?status=COMPLETED')
+    response = client.get("/api/training/runs/?status=COMPLETED")
     print(f"   Status: {response.status_code}")
     assert response.status_code == 200
 
@@ -184,9 +183,11 @@ def test_filtering(client):
     print(f"   Completed runs: {data['count']}")
 
     # Verify all results have COMPLETED status
-    if data['results']:
-        statuses = [r['status'] for r in data['results']]
-        assert all(s == 'COMPLETED' for s in statuses), "Not all results have COMPLETED status"
+    if data["results"]:
+        statuses = [r["status"] for r in data["results"]]
+        assert all(
+            s == "COMPLETED" for s in statuses
+        ), "Not all results have COMPLETED status"
         print("   ✅ Status filter works!")
     else:
         print("   ⚠️  No completed runs to verify filter")
@@ -223,9 +224,10 @@ def main():
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

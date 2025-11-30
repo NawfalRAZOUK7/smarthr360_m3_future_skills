@@ -14,11 +14,16 @@ import sys
 import django
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 from pathlib import Path
-from future_skills.services.training_service import ModelTrainer, DataLoadError, TrainingError
+from future_skills.services.training_service import (
+    ModelTrainer,
+    DataLoadError,
+    TrainingError,
+)
+
 
 def test_training_service():
     """Test the ModelTrainer service."""
@@ -38,16 +43,16 @@ def test_training_service():
         # Initialize trainer
         print("\n1️⃣  Initializing ModelTrainer...")
         trainer = ModelTrainer(
-            dataset_path=str(dataset_path),
-            test_split=0.2,
-            random_state=42
+            dataset_path=str(dataset_path), test_split=0.2, random_state=42
         )
         print("✅ Trainer initialized")
 
         # Load data
         print("\n2️⃣  Loading data...")
         trainer.load_data()
-        print(f"✅ Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test")
+        print(
+            f"✅ Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test"
+        )
         print(f"   Features: {len(trainer.available_features)}")
         print(f"   Categorical: {trainer.categorical_features}")
         print(f"   Numeric: {trainer.numeric_features}")
@@ -80,7 +85,7 @@ def test_training_service():
         training_run = trainer.save_training_run(
             model_version="test_service_v1",
             model_path=str(model_path),
-            notes="Test run from training_service.py"
+            notes="Test run from training_service.py",
         )
         print(f"✅ Training run saved: ID={training_run.id}")
         print(f"   Status: {training_run.status}")
@@ -104,6 +109,7 @@ def test_training_service():
     except Exception as e:
         print(f"\n❌ Unexpected Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

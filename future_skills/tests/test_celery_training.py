@@ -27,13 +27,11 @@ class CeleryTrainingTest(TestCase):
         Set up test user with DRH permissions and authenticated API client.
         """
         # Create DRH group
-        self.drh_group = Group.objects.create(name='DRH')
+        self.drh_group = Group.objects.create(name="DRH")
 
         # Create test user
         self.user = User.objects.create_user(
-            username='test_drh',
-            password='testpass123',
-            email='drh@test.com'
+            username="test_drh", password="testpass123", email="drh@test.com"
         )
         self.user.groups.add(self.drh_group)
 
@@ -46,33 +44,30 @@ class CeleryTrainingTest(TestCase):
         Test that API accepts async_training parameter and returns 202 when true.
         """
         # Mock the Celery task to prevent actual execution
-        with patch('future_skills.tasks.train_model_task') as mock_task:
+        with patch("future_skills.tasks.train_model_task") as mock_task:
             # Configure mock to return a task object
             mock_task_instance = MagicMock()
-            mock_task_instance.id = 'test-task-id-12345'
+            mock_task_instance.id = "test-task-id-12345"
             mock_task.delay.return_value = mock_task_instance
 
             # Make API request with async_training=true
             response = self.client.post(
-                '/api/training/train/',
+                "/api/training/train/",
                 {
-                    'async_training': True,
-                    'hyperparameters': {
-                        'n_estimators': 20,
-                        'max_depth': 5
-                    },
-                    'model_version': 'test_async_v1',
-                    'notes': 'Testing async training'
+                    "async_training": True,
+                    "hyperparameters": {"n_estimators": 20, "max_depth": 5},
+                    "model_version": "test_async_v1",
+                    "notes": "Testing async training",
                 },
-                format='json'
+                format="json",
             )
 
             # Verify response
             self.assertEqual(response.status_code, 202)  # 202 ACCEPTED
-            self.assertEqual(response.data['status'], 'RUNNING')
-            self.assertIn('task_id', response.data)
-            self.assertEqual(response.data['task_id'], 'test-task-id-12345')
-            self.assertIn('Training started in background', response.data['message'])
+            self.assertEqual(response.data["status"], "RUNNING")
+            self.assertIn("task_id", response.data)
+            self.assertEqual(response.data["task_id"], "test-task-id-12345")
+            self.assertIn("Training started in background", response.data["message"])
 
             # Verify Celery task was called
             mock_task.delay.assert_called_once()
@@ -82,25 +77,22 @@ class CeleryTrainingTest(TestCase):
         Test that API still supports synchronous training when async_training=false.
         """
         response = self.client.post(
-            '/api/training/train/',
+            "/api/training/train/",
             {
-                'async_training': False,
-                'hyperparameters': {
-                    'n_estimators': 20,
-                    'max_depth': 5
-                },
-                'model_version': 'test_sync_v1',
-                'notes': 'Testing sync training'
+                "async_training": False,
+                "hyperparameters": {"n_estimators": 20, "max_depth": 5},
+                "model_version": "test_sync_v1",
+                "notes": "Testing sync training",
             },
-            format='json'
+            format="json",
         )
 
         # Should return 201 (created) for successful sync training
         self.assertIn(response.status_code, [201, 400, 500])
 
         if response.status_code == 201:
-            self.assertIn(response.data['status'], ['COMPLETED', 'FAILED'])
-            self.assertIn('metrics', response.data)
+            self.assertIn(response.data["status"], ["COMPLETED", "FAILED"])
+            self.assertIn("metrics", response.data)
 
     def test_celery_task_direct_execution(self):
         """
@@ -110,13 +102,13 @@ class CeleryTrainingTest(TestCase):
         """
         # Create a TrainingRun record with all required fields
         training_run = TrainingRun.objects.create(
-            model_version='test_celery_direct',
-            dataset_path='ml/data/future_skills_dataset.csv',
-            model_path='',
+            model_version="test_celery_direct",
+            dataset_path="ml/data/future_skills_dataset.csv",
+            model_path="",
             test_split=0.2,
-            status='RUNNING',
+            status="RUNNING",
             trained_by=self.user,
-            hyperparameters={'n_estimators': 20, 'max_depth': 5},
+            hyperparameters={"n_estimators": 20, "max_depth": 5},
             accuracy=0.0,
             precision=0.0,
             recall=0.0,
@@ -124,26 +116,26 @@ class CeleryTrainingTest(TestCase):
             total_samples=0,
             train_samples=0,
             test_samples=0,
-            training_duration_seconds=0.0
+            training_duration_seconds=0.0,
         )
 
         # Execute the task directly (in eager mode)
         try:
             result = train_model_task(
                 training_run_id=training_run.id,
-                dataset_path='ml/data/future_skills_dataset.csv',
+                dataset_path="ml/data/future_skills_dataset.csv",
                 test_split=0.2,
-                hyperparameters={'n_estimators': 20, 'max_depth': 5}
+                hyperparameters={"n_estimators": 20, "max_depth": 5},
             )
 
             # Verify result
-            self.assertEqual(result['status'], 'COMPLETED')
-            self.assertEqual(result['training_run_id'], training_run.id)
-            self.assertIn('accuracy', result)
+            self.assertEqual(result["status"], "COMPLETED")
+            self.assertEqual(result["training_run_id"], training_run.id)
+            self.assertIn("accuracy", result)
 
             # Verify database was updated
             training_run.refresh_from_db()
-            self.assertEqual(training_run.status, 'COMPLETED')
+            self.assertEqual(training_run.status, "COMPLETED")
             self.assertGreater(training_run.accuracy, 0.0)
 
         except Exception as e:
@@ -156,13 +148,13 @@ class CeleryTrainingTest(TestCase):
         """
         # Create a TrainingRun with invalid dataset path and all required fields
         training_run = TrainingRun.objects.create(
-            model_version='test_error_handling',
-            dataset_path='nonexistent/path.csv',
-            model_path='',
+            model_version="test_error_handling",
+            dataset_path="nonexistent/path.csv",
+            model_path="",
             test_split=0.2,
-            status='RUNNING',
+            status="RUNNING",
             trained_by=self.user,
-            hyperparameters={'n_estimators': 20},
+            hyperparameters={"n_estimators": 20},
             accuracy=0.0,
             precision=0.0,
             recall=0.0,
@@ -170,7 +162,7 @@ class CeleryTrainingTest(TestCase):
             total_samples=0,
             train_samples=0,
             test_samples=0,
-            training_duration_seconds=0.0
+            training_duration_seconds=0.0,
         )
 
         # Execute the task (should fail)
@@ -178,16 +170,16 @@ class CeleryTrainingTest(TestCase):
             with self.assertRaises(Exception):
                 train_model_task(
                     training_run_id=training_run.id,
-                    dataset_path='nonexistent/path.csv',
+                    dataset_path="nonexistent/path.csv",
                     test_split=0.2,
-                    hyperparameters={'n_estimators': 20}
+                    hyperparameters={"n_estimators": 20},
                 )
 
             # Verify database was updated with failure
             training_run.refresh_from_db()
-            self.assertEqual(training_run.status, 'FAILED')
+            self.assertEqual(training_run.status, "FAILED")
             self.assertIsNotNone(training_run.error_message)
-            self.assertIn('Data loading failed', training_run.error_message)
+            self.assertIn("Data loading failed", training_run.error_message)
 
         except Exception:
             self.skipTest("Redis not available for Celery task execution")
@@ -197,23 +189,23 @@ class CeleryTrainingTest(TestCase):
         Test that API returns 503 if Celery is unavailable.
         """
         # Mock Celery task to raise an exception
-        with patch('future_skills.tasks.train_model_task') as mock_task:
+        with patch("future_skills.tasks.train_model_task") as mock_task:
             mock_task.delay.side_effect = Exception("Redis connection refused")
 
             response = self.client.post(
-                '/api/training/train/',
+                "/api/training/train/",
                 {
-                    'async_training': True,
-                    'hyperparameters': {'n_estimators': 20},
-                    'model_version': 'test_celery_fail'
+                    "async_training": True,
+                    "hyperparameters": {"n_estimators": 20},
+                    "model_version": "test_celery_fail",
                 },
-                format='json'
+                format="json",
             )
 
             # Should return 503 (service unavailable)
             self.assertEqual(response.status_code, 503)
-            self.assertEqual(response.data['status'], 'FAILED')
-            self.assertIn('Redis/Celery', response.data['message'])
+            self.assertEqual(response.data["status"], "FAILED")
+            self.assertIn("Redis/Celery", response.data["message"])
 
     def test_training_run_created_before_async_dispatch(self):
         """
@@ -221,25 +213,25 @@ class CeleryTrainingTest(TestCase):
         """
         initial_count = TrainingRun.objects.count()
 
-        with patch('future_skills.tasks.train_model_task') as mock_task:
+        with patch("future_skills.tasks.train_model_task") as mock_task:
             mock_task_instance = MagicMock()
-            mock_task_instance.id = 'task-123'
+            mock_task_instance.id = "task-123"
             mock_task.delay.return_value = mock_task_instance
 
             response = self.client.post(
-                '/api/training/train/',
+                "/api/training/train/",
                 {
-                    'async_training': True,
-                    'hyperparameters': {'n_estimators': 20},
-                    'model_version': 'test_run_creation'
+                    "async_training": True,
+                    "hyperparameters": {"n_estimators": 20},
+                    "model_version": "test_run_creation",
                 },
-                format='json'
+                format="json",
             )
 
             # Verify TrainingRun was created
             self.assertEqual(TrainingRun.objects.count(), initial_count + 1)
 
             # Verify it has RUNNING status
-            training_run = TrainingRun.objects.latest('id')
-            self.assertEqual(training_run.status, 'RUNNING')
-            self.assertEqual(training_run.model_version, 'test_run_creation')
+            training_run = TrainingRun.objects.latest("id")
+            self.assertEqual(training_run.status, "RUNNING")
+            self.assertEqual(training_run.model_version, "test_run_creation")

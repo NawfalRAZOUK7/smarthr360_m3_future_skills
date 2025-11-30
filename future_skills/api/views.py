@@ -8,10 +8,23 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    OpenApiExample,
+)
 from drf_spectacular.types import OpenApiTypes
 
-from ..models import FutureSkillPrediction, MarketTrend, EconomicReport, HRInvestmentRecommendation, Employee, TrainingRun, Skill
+from ..models import (
+    FutureSkillPrediction,
+    MarketTrend,
+    EconomicReport,
+    HRInvestmentRecommendation,
+    Employee,
+    TrainingRun,
+    Skill,
+)
 from .serializers import (
     FutureSkillPredictionSerializer,
     MarketTrendSerializer,
@@ -39,7 +52,7 @@ from ..services.recommendation_engine import generate_recommendations_from_predi
 
 # Error messages constants
 ERROR_MESSAGES = {
-    'HORIZON_YEARS_INTEGER': 'horizon_years must be an integer.',
+    "HORIZON_YEARS_INTEGER": "horizon_years must be an integer.",
 }
 
 
@@ -47,8 +60,9 @@ class FutureSkillPredictionPagination(PageNumberPagination):
     """
     Custom pagination for future skill predictions.
     """
+
     page_size = 10
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 100
 
 
@@ -56,15 +70,16 @@ class EmployeePagination(PageNumberPagination):
     """
     Custom pagination for employees.
     """
+
     page_size = 10
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 100
 
 
 @extend_schema(
-    tags=['Predictions'],
-    summary='List future skill predictions',
-    description='''Retrieve a paginated list of future skill predictions with optional filters.
+    tags=["Predictions"],
+    summary="List future skill predictions",
+    description="""Retrieve a paginated list of future skill predictions with optional filters.
 
     **Permissions**: HR Staff or Manager
 
@@ -76,34 +91,34 @@ class EmployeePagination(PageNumberPagination):
     Use `page` and `page_size` query parameters to control pagination.
 
     **Example**: `/api/future-skills/?job_role_id=1&horizon_years=5&page=1&page_size=20`
-    ''',
+    """,
     parameters=[
         OpenApiParameter(
-            name='job_role_id',
+            name="job_role_id",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Filter predictions for a specific job role ID',
+            description="Filter predictions for a specific job role ID",
             required=False,
         ),
         OpenApiParameter(
-            name='horizon_years',
+            name="horizon_years",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Filter by prediction horizon in years (e.g., 3, 5, 10)',
+            description="Filter by prediction horizon in years (e.g., 3, 5, 10)",
             required=False,
         ),
         OpenApiParameter(
-            name='page',
+            name="page",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Page number for pagination',
+            description="Page number for pagination",
             required=False,
         ),
         OpenApiParameter(
-            name='page_size',
+            name="page_size",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Number of items per page (max 100)',
+            description="Number of items per page (max 100)",
             required=False,
         ),
     ],
@@ -128,7 +143,7 @@ class FutureSkillPredictionListAPIView(ListAPIView):
     permission_classes = [IsHRStaffOrManager]
     serializer_class = FutureSkillPredictionSerializer
     pagination_class = FutureSkillPredictionPagination
-    queryset = FutureSkillPrediction.objects.all().order_by('-created_at', 'id')
+    queryset = FutureSkillPrediction.objects.all().order_by("-created_at", "id")
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -152,9 +167,9 @@ class FutureSkillPredictionListAPIView(ListAPIView):
 
 
 @extend_schema(
-    tags=['Predictions'],
-    summary='Recalculate all predictions',
-    description='''Trigger a complete recalculation of all future skill predictions using ML or rules engine.
+    tags=["Predictions"],
+    summary="Recalculate all predictions",
+    description="""Trigger a complete recalculation of all future skill predictions using ML or rules engine.
 
     **Permissions**: HR Staff only (DRH/Responsable RH)
 
@@ -179,45 +194,45 @@ class FutureSkillPredictionListAPIView(ListAPIView):
       "horizon_years": 5
     }
     ```
-    ''',
+    """,
     request={
-        'application/json': {
-            'type': 'object',
-            'properties': {
-                'horizon_years': {
-                    'type': 'integer',
-                    'description': 'Prediction horizon in years',
-                    'default': 5,
-                    'example': 5,
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "horizon_years": {
+                    "type": "integer",
+                    "description": "Prediction horizon in years",
+                    "default": 5,
+                    "example": 5,
                 }
-            }
+            },
         }
     },
     examples=[
         OpenApiExample(
-            'Default 5-year horizon',
-            value={'horizon_years': 5},
+            "Default 5-year horizon",
+            value={"horizon_years": 5},
             request_only=True,
         ),
         OpenApiExample(
-            '10-year strategic planning',
-            value={'horizon_years': 10},
+            "10-year strategic planning",
+            value={"horizon_years": 10},
             request_only=True,
         ),
     ],
     responses={
         200: {
-            'type': 'object',
-            'properties': {
-                'horizon_years': {'type': 'integer'},
-                'total_predictions': {'type': 'integer'},
-                'total_recommendations': {'type': 'integer'},
+            "type": "object",
+            "properties": {
+                "horizon_years": {"type": "integer"},
+                "total_predictions": {"type": "integer"},
+                "total_recommendations": {"type": "integer"},
             },
-            'example': {
-                'horizon_years': 5,
-                'total_predictions': 357,
-                'total_recommendations': 42,
-            }
+            "example": {
+                "horizon_years": 5,
+                "total_predictions": 357,
+                "total_recommendations": 42,
+            },
         },
         400: OpenApiTypes.OBJECT,
         401: OpenApiTypes.OBJECT,
@@ -245,7 +260,7 @@ class RecalculateFutureSkillsAPIView(APIView):
             horizon_years = int(horizon_years)
         except (TypeError, ValueError):
             return Response(
-                {"detail": ERROR_MESSAGES['HORIZON_YEARS_INTEGER']},
+                {"detail": ERROR_MESSAGES["HORIZON_YEARS_INTEGER"]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -310,6 +325,7 @@ class MarketTrendListAPIView(APIView):
         serializer = MarketTrendSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class EconomicReportListAPIView(APIView):
     """
     Liste les rapports / indicateurs économiques utilisés par le module 3.
@@ -348,6 +364,7 @@ class EconomicReportListAPIView(APIView):
         serializer = EconomicReportSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class HRInvestmentRecommendationListAPIView(APIView):
     """
     Liste les recommandations RH générées à partir des prédictions
@@ -363,7 +380,9 @@ class HRInvestmentRecommendationListAPIView(APIView):
     permission_classes = [IsHRStaffOrManager]
 
     def get(self, request, *args, **kwargs):
-        queryset = HRInvestmentRecommendation.objects.select_related("skill", "job_role")
+        queryset = HRInvestmentRecommendation.objects.select_related(
+            "skill", "job_role"
+        )
 
         horizon_years = request.query_params.get("horizon_years")
         skill_id = request.query_params.get("skill_id")
@@ -376,7 +395,7 @@ class HRInvestmentRecommendationListAPIView(APIView):
                 queryset = queryset.filter(horizon_years=h)
             except ValueError:
                 return Response(
-                    {"detail": ERROR_MESSAGES['HORIZON_YEARS_INTEGER']},
+                    {"detail": ERROR_MESSAGES["HORIZON_YEARS_INTEGER"]},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -407,12 +426,13 @@ class EmployeeViewSet(ModelViewSet):
     - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
     - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
     """
+
     queryset = Employee.objects.select_related("job_role").all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsHRStaffOrManager]
     pagination_class = EmployeePagination
 
-    @action(detail=True, methods=['post'], url_path='add-skill')
+    @action(detail=True, methods=["post"], url_path="add-skill")
     def add_skill(self, request, pk=None):
         """
         Add a skill to an employee's skills ManyToMany relationship.
@@ -425,23 +445,29 @@ class EmployeeViewSet(ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        skill_id = serializer.validated_data['skill_id']
+        skill_id = serializer.validated_data["skill_id"]
         skill = Skill.objects.get(pk=skill_id)
 
         # Add skill using ManyToMany .add() method
         if skill not in employee.skills.all():
             employee.skills.add(skill)
-            return Response({
-                'message': f'Skill "{skill.name}" added successfully',
-                'skills': [s.name for s in employee.skills.all()]
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "message": f'Skill "{skill.name}" added successfully',
+                    "skills": [s.name for s in employee.skills.all()],
+                },
+                status=status.HTTP_200_OK,
+            )
         else:
-            return Response({
-                'message': f'Skill "{skill.name}" already exists',
-                'skills': [s.name for s in employee.skills.all()]
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "message": f'Skill "{skill.name}" already exists',
+                    "skills": [s.name for s in employee.skills.all()],
+                },
+                status=status.HTTP_200_OK,
+            )
 
-    @action(detail=True, methods=['post'], url_path='remove-skill')
+    @action(detail=True, methods=["post"], url_path="remove-skill")
     def remove_skill(self, request, pk=None):
         """
         Remove a skill from an employee's skills ManyToMany relationship.
@@ -454,23 +480,29 @@ class EmployeeViewSet(ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        skill_id = serializer.validated_data['skill_id']
+        skill_id = serializer.validated_data["skill_id"]
         skill = Skill.objects.get(pk=skill_id)
 
         # Remove skill using ManyToMany .remove() method
         if skill in employee.skills.all():
             employee.skills.remove(skill)
-            return Response({
-                'message': f'Skill "{skill.name}" removed successfully',
-                'skills': [s.name for s in employee.skills.all()]
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "message": f'Skill "{skill.name}" removed successfully',
+                    "skills": [s.name for s in employee.skills.all()],
+                },
+                status=status.HTTP_200_OK,
+            )
         else:
-            return Response({
-                'message': f'Skill "{skill.name}" not found in employee skills',
-                'skills': [s.name for s in employee.skills.all()]
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {
+                    "message": f'Skill "{skill.name}" not found in employee skills',
+                    "skills": [s.name for s in employee.skills.all()],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-    @action(detail=True, methods=['put'], url_path='skills')
+    @action(detail=True, methods=["put"], url_path="skills")
     def update_skills(self, request, pk=None):
         """
         Replace all employee skills at once using ManyToMany .set().
@@ -478,29 +510,32 @@ class EmployeeViewSet(ModelViewSet):
         Body: {"skill_ids": [1, 2, 3]}
         """
         employee = self.get_object()
-        skill_ids = request.data.get('skill_ids', [])
+        skill_ids = request.data.get("skill_ids", [])
 
         if not isinstance(skill_ids, list):
             return Response(
-                {'error': 'skill_ids must be a list'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "skill_ids must be a list"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Validate all skill IDs exist
         skills = Skill.objects.filter(id__in=skill_ids)
         if skills.count() != len(skill_ids):
             return Response(
-                {'error': 'One or more invalid skill IDs'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "One or more invalid skill IDs"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Replace all skills using ManyToMany .set() method
         employee.skills.set(skills)
 
-        return Response({
-            'message': 'Skills updated successfully',
-            'skills': [s.name for s in employee.skills.all()]
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "message": "Skills updated successfully",
+                "skills": [s.name for s in employee.skills.all()],
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class PredictSkillsAPIView(APIView):
@@ -516,42 +551,44 @@ class PredictSkillsAPIView(APIView):
 
     Returns: List of predicted skills with scores and levels
     """
+
     permission_classes = [IsHRStaffOrManager]
 
     def post(self, request, *args, **kwargs):
         # Validate input
         input_serializer = PredictSkillsRequestSerializer(data=request.data)
         if not input_serializer.is_valid():
-            return Response(
-                input_serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Get employee
-        employee_id = input_serializer.validated_data['employee_id']
-        employee = Employee.objects.select_related('job_role').get(pk=employee_id)
+        employee_id = input_serializer.validated_data["employee_id"]
+        employee = Employee.objects.select_related("job_role").get(pk=employee_id)
 
         if not employee.job_role:
             return Response(
                 {"detail": "Employee has no associated job role."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Get predictions for this employee's job role
-        predictions = FutureSkillPrediction.objects.filter(
-            job_role=employee.job_role
-        ).select_related('skill').order_by('-score')[:10]
+        predictions = (
+            FutureSkillPrediction.objects.filter(job_role=employee.job_role)
+            .select_related("skill")
+            .order_by("-score")[:10]
+        )
 
         # Format response
         results = []
         for pred in predictions:
-            results.append({
-                'skill_name': pred.skill.name,
-                'skill_id': pred.skill.id,
-                'level': pred.level,
-                'score': pred.score,
-                'rationale': pred.rationale or ''
-            })
+            results.append(
+                {
+                    "skill_name": pred.skill.name,
+                    "skill_id": pred.skill.id,
+                    "level": pred.level,
+                    "score": pred.score,
+                    "rationale": pred.rationale or "",
+                }
+            )
 
         response_serializer = PredictSkillsResponseSerializer(results, many=True)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
@@ -569,40 +606,43 @@ class RecommendSkillsAPIView(APIView):
 
     Returns: List of recommended skills (excluding current skills if specified)
     """
+
     permission_classes = [IsHRStaffOrManager]
 
     def post(self, request, *args, **kwargs):
         # Validate input
         input_serializer = RecommendSkillsRequestSerializer(data=request.data)
         if not input_serializer.is_valid():
-            return Response(
-                input_serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Get employee
-        employee_id = input_serializer.validated_data['employee_id']
-        exclude_current = input_serializer.validated_data['exclude_current']
+        employee_id = input_serializer.validated_data["employee_id"]
+        exclude_current = input_serializer.validated_data["exclude_current"]
 
-        employee = Employee.objects.select_related('job_role').get(pk=employee_id)
+        employee = Employee.objects.select_related("job_role").get(pk=employee_id)
 
         if not employee.job_role:
             return Response(
                 {"detail": "Employee has no associated job role."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Get high priority predictions for this job role
-        predictions = FutureSkillPrediction.objects.filter(
-            job_role=employee.job_role,
-            level__in=['HIGH', 'MEDIUM']
-        ).select_related('skill').order_by('-score')
+        predictions = (
+            FutureSkillPrediction.objects.filter(
+                job_role=employee.job_role, level__in=["HIGH", "MEDIUM"]
+            )
+            .select_related("skill")
+            .order_by("-score")
+        )
 
         # Filter out current skills if requested
         if exclude_current:
             current_skill_names = [s.lower() for s in employee.current_skills]
             predictions = predictions.exclude(
-                skill__name__icontains=lambda name: any(cs in name.lower() for cs in current_skill_names)
+                skill__name__icontains=lambda name: any(
+                    cs in name.lower() for cs in current_skill_names
+                )
             )
             # Manual filtering since Django ORM doesn't support complex icontains with list
             filtered_predictions = []
@@ -616,13 +656,15 @@ class RecommendSkillsAPIView(APIView):
         # Format response
         results = []
         for pred in predictions:
-            results.append({
-                'skill_name': pred.skill.name,
-                'skill_id': pred.skill.id,
-                'level': pred.level,
-                'score': pred.score,
-                'rationale': pred.rationale or ''
-            })
+            results.append(
+                {
+                    "skill_name": pred.skill.name,
+                    "skill_id": pred.skill.id,
+                    "level": pred.level,
+                    "score": pred.score,
+                    "rationale": pred.rationale or "",
+                }
+            )
 
         response_serializer = PredictSkillsResponseSerializer(results, many=True)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
@@ -639,46 +681,46 @@ class BulkPredictAPIView(APIView):
 
     Returns: Predictions for each employee
     """
+
     permission_classes = [IsHRStaffOrManager]
 
     def post(self, request, *args, **kwargs):
         # Validate input
         input_serializer = BulkPredictRequestSerializer(data=request.data)
         if not input_serializer.is_valid():
-            return Response(
-                input_serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        employee_ids = input_serializer.validated_data['employee_ids']
+        employee_ids = input_serializer.validated_data["employee_ids"]
 
         # Get all employees with their job roles
-        employees = Employee.objects.filter(
-            pk__in=employee_ids
-        ).select_related('job_role')
+        employees = Employee.objects.filter(pk__in=employee_ids).select_related(
+            "job_role"
+        )
 
         # Generate predictions for each
         results = {}
         for employee in employees:
             if not employee.job_role:
-                results[employee.id] = {
-                    'error': 'No associated job role'
-                }
+                results[employee.id] = {"error": "No associated job role"}
                 continue
 
-            predictions = FutureSkillPrediction.objects.filter(
-                job_role=employee.job_role
-            ).select_related('skill').order_by('-score')[:5]
+            predictions = (
+                FutureSkillPrediction.objects.filter(job_role=employee.job_role)
+                .select_related("skill")
+                .order_by("-score")[:5]
+            )
 
             employee_predictions = []
             for pred in predictions:
-                employee_predictions.append({
-                    'skill_name': pred.skill.name,
-                    'skill_id': pred.skill.id,
-                    'level': pred.level,
-                    'score': pred.score,
-                    'rationale': pred.rationale or ''
-                })
+                employee_predictions.append(
+                    {
+                        "skill_name": pred.skill.name,
+                        "skill_id": pred.skill.id,
+                        "level": pred.level,
+                        "score": pred.score,
+                        "rationale": pred.rationale or "",
+                    }
+                )
 
             results[employee.id] = employee_predictions
 
@@ -802,6 +844,7 @@ class BulkEmployeeImportAPIView(APIView):
     - BulkEmployeeImportSerializer for validation details
     - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
     """
+
     permission_classes = [IsHRStaff]  # Only DRH/Responsable RH
 
     def post(self, request, *args, **kwargs):
@@ -810,14 +853,11 @@ class BulkEmployeeImportAPIView(APIView):
         # Validate input
         input_serializer = BulkEmployeeImportSerializer(data=request.data)
         if not input_serializer.is_valid():
-            return Response(
-                input_serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        employees_data = input_serializer.validated_data['employees']
-        auto_predict = input_serializer.validated_data['auto_predict']
-        horizon_years = input_serializer.validated_data['horizon_years']
+        employees_data = input_serializer.validated_data["employees"]
+        auto_predict = input_serializer.validated_data["auto_predict"]
+        horizon_years = input_serializer.validated_data["horizon_years"]
 
         # Track results
         created_count = 0
@@ -831,7 +871,7 @@ class BulkEmployeeImportAPIView(APIView):
         with transaction.atomic():
             for idx, employee_data in enumerate(employees_data):
                 try:
-                    email = employee_data.get('email')
+                    email = employee_data.get("email")
 
                     # Check if employee exists by email
                     existing_employee = Employee.objects.filter(email=email).first()
@@ -839,7 +879,7 @@ class BulkEmployeeImportAPIView(APIView):
                     if existing_employee:
                         # Update existing employee
                         for field, value in employee_data.items():
-                            if field != 'id':  # Don't update ID
+                            if field != "id":  # Don't update ID
                                 setattr(existing_employee, field, value)
                         existing_employee.save()
                         updated_count += 1
@@ -852,11 +892,13 @@ class BulkEmployeeImportAPIView(APIView):
 
                 except Exception as e:
                     failed_count += 1
-                    errors.append({
-                        'row': idx + 1,
-                        'email': employee_data.get('email', 'unknown'),
-                        'error': str(e)
-                    })
+                    errors.append(
+                        {
+                            "row": idx + 1,
+                            "email": employee_data.get("email", "unknown"),
+                            "error": str(e),
+                        }
+                    )
 
         # Auto-generate predictions if requested
         predictions_generated = False
@@ -868,31 +910,37 @@ class BulkEmployeeImportAPIView(APIView):
                 total_predictions = recalculate_predictions(
                     horizon_years=horizon_years,
                     run_by=request.user if request.user.is_authenticated else None,
-                    parameters={'trigger': 'bulk_employee_import'}
+                    parameters={"trigger": "bulk_employee_import"},
                 )
                 predictions_generated = True
             except Exception as e:
                 # Log but don't fail the entire import
-                errors.append({
-                    'row': None,
-                    'email': None,
-                    'error': f'Prediction generation failed: {str(e)}'
-                })
+                errors.append(
+                    {
+                        "row": None,
+                        "email": None,
+                        "error": f"Prediction generation failed: {str(e)}",
+                    }
+                )
 
         # Build response
         response_data = {
-            'status': 'success' if failed_count == 0 else 'partial_success',
-            'created': created_count,
-            'updated': updated_count,
-            'failed': failed_count,
-            'errors': errors if errors else [],
-            'predictions_generated': predictions_generated,
-            'total_predictions': total_predictions if predictions_generated else 0
+            "status": "success" if failed_count == 0 else "partial_success",
+            "created": created_count,
+            "updated": updated_count,
+            "failed": failed_count,
+            "errors": errors if errors else [],
+            "predictions_generated": predictions_generated,
+            "total_predictions": total_predictions if predictions_generated else 0,
         }
 
         return Response(
             response_data,
-            status=status.HTTP_201_CREATED if failed_count == 0 else status.HTTP_207_MULTI_STATUS
+            status=(
+                status.HTTP_201_CREATED
+                if failed_count == 0
+                else status.HTTP_207_MULTI_STATUS
+            ),
         )
 
 
@@ -1058,16 +1106,17 @@ class BulkEmployeeUploadAPIView(APIView):
     - file_parser.py module for parsing implementation
     - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
     """
+
     permission_classes = [IsHRStaff]  # Only DRH/Responsable RH
 
     # File upload limits
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-    ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls', '.json'}
+    ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".xls", ".json"}
     ALLOWED_MIME_TYPES = {
-        'text/csv',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/json',
+        "text/csv",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/json",
     }
 
     def post(self, request, *args, **kwargs):
@@ -1075,30 +1124,32 @@ class BulkEmployeeUploadAPIView(APIView):
         from ..services.file_parser import parse_employee_file
 
         # Validate file presence
-        if 'file' not in request.FILES:
+        if "file" not in request.FILES:
             return Response(
                 {
-                    'status': 'error',
-                    'message': 'No file provided',
-                    'errors': [{'field': 'file', 'error': 'File is required'}]
+                    "status": "error",
+                    "message": "No file provided",
+                    "errors": [{"field": "file", "error": "File is required"}],
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        uploaded_file = request.FILES['file']
+        uploaded_file = request.FILES["file"]
 
         # Validate file size
         if uploaded_file.size > self.MAX_FILE_SIZE:
             return Response(
                 {
-                    'status': 'error',
-                    'message': 'File too large',
-                    'errors': [{
-                        'field': 'file',
-                        'error': f'File size exceeds maximum limit of {self.MAX_FILE_SIZE / (1024*1024):.1f}MB'
-                    }]
+                    "status": "error",
+                    "message": "File too large",
+                    "errors": [
+                        {
+                            "field": "file",
+                            "error": f"File size exceeds maximum limit of {self.MAX_FILE_SIZE / (1024*1024):.1f}MB",
+                        }
+                    ],
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Validate file extension
@@ -1109,14 +1160,16 @@ class BulkEmployeeUploadAPIView(APIView):
         if file_extension not in self.ALLOWED_EXTENSIONS:
             return Response(
                 {
-                    'status': 'error',
-                    'message': 'Invalid file type',
-                    'errors': [{
-                        'field': 'file',
-                        'error': f'File type {file_extension} not supported. Allowed: {", ".join(self.ALLOWED_EXTENSIONS)}'
-                    }]
+                    "status": "error",
+                    "message": "Invalid file type",
+                    "errors": [
+                        {
+                            "field": "file",
+                            "error": f'File type {file_extension} not supported. Allowed: {", ".join(self.ALLOWED_EXTENSIONS)}',
+                        }
+                    ],
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Validate MIME type (additional security check)
@@ -1124,86 +1177,99 @@ class BulkEmployeeUploadAPIView(APIView):
         if content_type and content_type not in self.ALLOWED_MIME_TYPES:
             return Response(
                 {
-                    'status': 'error',
-                    'message': 'Invalid file format',
-                    'errors': [{
-                        'field': 'file',
-                        'error': f'MIME type {content_type} not allowed'
-                    }]
+                    "status": "error",
+                    "message": "Invalid file format",
+                    "errors": [
+                        {
+                            "field": "file",
+                            "error": f"MIME type {content_type} not allowed",
+                        }
+                    ],
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Parse file based on extension
         try:
-            if file_extension == '.json':
+            if file_extension == ".json":
                 # Handle JSON format
                 employees, parse_errors = self._parse_json_file(uploaded_file)
             else:
                 # Handle CSV/Excel formats
-                employees, parse_errors = parse_employee_file(uploaded_file, file_extension)
+                employees, parse_errors = parse_employee_file(
+                    uploaded_file, file_extension
+                )
 
             if parse_errors:
                 return Response(
                     {
-                        'status': 'error',
-                        'message': 'File parsing failed',
-                        'errors': parse_errors
+                        "status": "error",
+                        "message": "File parsing failed",
+                        "errors": parse_errors,
                     },
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
             if not employees:
                 return Response(
                     {
-                        'status': 'error',
-                        'message': 'No valid employee data found in file',
-                        'errors': [{'field': 'file', 'error': 'File contains no valid employee records'}]
+                        "status": "error",
+                        "message": "No valid employee data found in file",
+                        "errors": [
+                            {
+                                "field": "file",
+                                "error": "File contains no valid employee records",
+                            }
+                        ],
                     },
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         except Exception as e:
             return Response(
                 {
-                    'status': 'error',
-                    'message': 'Failed to process file',
-                    'errors': [{'field': 'file', 'error': str(e)}]
+                    "status": "error",
+                    "message": "Failed to process file",
+                    "errors": [{"field": "file", "error": str(e)}],
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Get optional parameters from form data
-        auto_predict = request.data.get('auto_predict', 'true').lower() in ['true', '1', 'yes']
+        auto_predict = request.data.get("auto_predict", "true").lower() in [
+            "true",
+            "1",
+            "yes",
+        ]
         try:
-            horizon_years = int(request.data.get('horizon_years', 5))
+            horizon_years = int(request.data.get("horizon_years", 5))
         except ValueError:
             horizon_years = 5
 
         # Validate and import employees using BulkEmployeeImportSerializer
         import_data = {
-            'employees': employees,
-            'auto_predict': auto_predict,
-            'horizon_years': horizon_years
+            "employees": employees,
+            "auto_predict": auto_predict,
+            "horizon_years": horizon_years,
         }
 
         serializer = BulkEmployeeImportSerializer(data=import_data)
         if not serializer.is_valid():
             return Response(
                 {
-                    'status': 'error',
-                    'message': 'Validation failed',
-                    'errors': serializer.errors
+                    "status": "error",
+                    "message": "Validation failed",
+                    "errors": serializer.errors,
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Process the import (reuse logic from BulkEmployeeImportAPIView)
         from django.db import transaction
 
-        employees_data = serializer.validated_data['employees']
-        auto_predict = serializer.validated_data['auto_predict']
-        horizon_years = serializer.validated_data['horizon_years']
+        employees_data = serializer.validated_data["employees"]
+        auto_predict = serializer.validated_data["auto_predict"]
+        horizon_years = serializer.validated_data["horizon_years"]
 
         # Track results
         created_count = 0
@@ -1217,7 +1283,7 @@ class BulkEmployeeUploadAPIView(APIView):
         with transaction.atomic():
             for idx, employee_data in enumerate(employees_data):
                 try:
-                    email = employee_data.get('email')
+                    email = employee_data.get("email")
 
                     # Check if employee exists by email
                     existing_employee = Employee.objects.filter(email=email).first()
@@ -1225,7 +1291,7 @@ class BulkEmployeeUploadAPIView(APIView):
                     if existing_employee:
                         # Update existing employee
                         for field, value in employee_data.items():
-                            if field != 'id':  # Don't update ID
+                            if field != "id":  # Don't update ID
                                 setattr(existing_employee, field, value)
                         existing_employee.save()
                         updated_count += 1
@@ -1238,11 +1304,13 @@ class BulkEmployeeUploadAPIView(APIView):
 
                 except Exception as e:
                     failed_count += 1
-                    errors.append({
-                        'row': idx + 1,
-                        'email': employee_data.get('email', 'unknown'),
-                        'error': str(e)
-                    })
+                    errors.append(
+                        {
+                            "row": idx + 1,
+                            "email": employee_data.get("email", "unknown"),
+                            "error": str(e),
+                        }
+                    )
 
         # Auto-generate predictions if requested
         predictions_generated = False
@@ -1254,37 +1322,43 @@ class BulkEmployeeUploadAPIView(APIView):
                 total_predictions = recalculate_predictions(
                     horizon_years=horizon_years,
                     run_by=request.user if request.user.is_authenticated else None,
-                    parameters={'trigger': 'bulk_employee_upload'}
+                    parameters={"trigger": "bulk_employee_upload"},
                 )
                 predictions_generated = True
             except Exception as e:
                 # Log but don't fail the entire import
-                errors.append({
-                    'row': None,
-                    'email': None,
-                    'error': f'Prediction generation failed: {str(e)}'
-                })
+                errors.append(
+                    {
+                        "row": None,
+                        "email": None,
+                        "error": f"Prediction generation failed: {str(e)}",
+                    }
+                )
 
         # Build response
         response_data = {
-            'status': 'success' if failed_count == 0 else 'partial_success',
-            'message': f'File processed: {filename}',
-            'file_info': {
-                'filename': filename,
-                'size_bytes': uploaded_file.size,
-                'format': file_extension
+            "status": "success" if failed_count == 0 else "partial_success",
+            "message": f"File processed: {filename}",
+            "file_info": {
+                "filename": filename,
+                "size_bytes": uploaded_file.size,
+                "format": file_extension,
             },
-            'created': created_count,
-            'updated': updated_count,
-            'failed': failed_count,
-            'errors': errors if errors else [],
-            'predictions_generated': predictions_generated,
-            'total_predictions': total_predictions if predictions_generated else 0
+            "created": created_count,
+            "updated": updated_count,
+            "failed": failed_count,
+            "errors": errors if errors else [],
+            "predictions_generated": predictions_generated,
+            "total_predictions": total_predictions if predictions_generated else 0,
         }
 
         return Response(
             response_data,
-            status=status.HTTP_201_CREATED if failed_count == 0 else status.HTTP_207_MULTI_STATUS
+            status=(
+                status.HTTP_201_CREATED
+                if failed_count == 0
+                else status.HTTP_207_MULTI_STATUS
+            ),
         )
 
     def _parse_json_file(self, file):
@@ -1317,12 +1391,18 @@ class BulkEmployeeUploadAPIView(APIView):
             data = json.load(file)
 
             # Handle both formats
-            if isinstance(data, dict) and 'employees' in data:
-                employees = data['employees']
+            if isinstance(data, dict) and "employees" in data:
+                employees = data["employees"]
             elif isinstance(data, list):
                 employees = data
             else:
-                return [], [{'row': 0, 'field': 'file', 'error': 'Invalid JSON format. Expected array or object with "employees" key'}]
+                return [], [
+                    {
+                        "row": 0,
+                        "field": "file",
+                        "error": 'Invalid JSON format. Expected array or object with "employees" key',
+                    }
+                ]
 
             # Validate each employee
             validated_employees = []
@@ -1330,23 +1410,27 @@ class BulkEmployeeUploadAPIView(APIView):
 
             for idx, emp in enumerate(employees):
                 if not isinstance(emp, dict):
-                    errors.append({
-                        'row': idx + 1,
-                        'field': 'employee',
-                        'error': 'Each employee must be an object'
-                    })
+                    errors.append(
+                        {
+                            "row": idx + 1,
+                            "field": "employee",
+                            "error": "Each employee must be an object",
+                        }
+                    )
                     continue
 
                 # Basic validation
-                required_fields = ['name', 'email', 'department', 'position']
+                required_fields = ["name", "email", "department", "position"]
                 missing_fields = [f for f in required_fields if not emp.get(f)]
 
                 if missing_fields:
-                    errors.append({
-                        'row': idx + 1,
-                        'field': ', '.join(missing_fields),
-                        'error': f'Missing required fields: {", ".join(missing_fields)}'
-                    })
+                    errors.append(
+                        {
+                            "row": idx + 1,
+                            "field": ", ".join(missing_fields),
+                            "error": f'Missing required fields: {", ".join(missing_fields)}',
+                        }
+                    )
                     continue
 
                 validated_employees.append(emp)
@@ -1354,28 +1438,32 @@ class BulkEmployeeUploadAPIView(APIView):
             return validated_employees, errors
 
         except json.JSONDecodeError as e:
-            return [], [{'row': 0, 'field': 'file', 'error': f'Invalid JSON: {str(e)}'}]
+            return [], [{"row": 0, "field": "file", "error": f"Invalid JSON: {str(e)}"}]
         except Exception as e:
-            return [], [{'row': 0, 'field': 'file', 'error': f'Failed to parse JSON: {str(e)}'}]
+            return [], [
+                {"row": 0, "field": "file", "error": f"Failed to parse JSON: {str(e)}"}
+            ]
 
 
 # ============================================================================
 # Training API Views (Section 2.4)
 # ============================================================================
 
+
 class TrainingRunPagination(PageNumberPagination):
     """
     Custom pagination for training runs.
     """
+
     page_size = 20
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 100
 
 
 @extend_schema(
-    tags=['Training'],
-    summary='Train new ML model',
-    description='''Train a new machine learning model for future skill predictions.
+    tags=["Training"],
+    summary="Train new ML model",
+    description="""Train a new machine learning model for future skill predictions.
 
     **Permissions**: HR Staff only (DRH/Responsable RH)
 
@@ -1436,33 +1524,33 @@ class TrainingRunPagination(PageNumberPagination):
       "model_version": "v2.2_background"
     }
     ```
-    ''',
+    """,
     request=TrainModelRequestSerializer,
     examples=[
         OpenApiExample(
-            'Synchronous training with custom hyperparameters',
+            "Synchronous training with custom hyperparameters",
             value={
-                'dataset_path': 'ml/data/future_skills_dataset.csv',
-                'test_split': 0.2,
-                'hyperparameters': {
-                    'n_estimators': 150,
-                    'max_depth': 20,
-                    'min_samples_split': 5
+                "dataset_path": "ml/data/future_skills_dataset.csv",
+                "test_split": 0.2,
+                "hyperparameters": {
+                    "n_estimators": 150,
+                    "max_depth": 20,
+                    "min_samples_split": 5,
                 },
-                'model_version': 'v2.1_prod',
-                'notes': 'Production model with enhanced parameters',
-                'async_training': False
+                "model_version": "v2.1_prod",
+                "notes": "Production model with enhanced parameters",
+                "async_training": False,
             },
             request_only=True,
         ),
         OpenApiExample(
-            'Asynchronous background training',
+            "Asynchronous background training",
             value={
-                'dataset_path': 'ml/data/future_skills_dataset.csv',
-                'test_split': 0.25,
-                'async_training': True,
-                'model_version': 'v3.0_background',
-                'notes': 'Large dataset training in background'
+                "dataset_path": "ml/data/future_skills_dataset.csv",
+                "test_split": 0.25,
+                "async_training": True,
+                "model_version": "v3.0_background",
+                "notes": "Large dataset training in background",
             },
             request_only=True,
         ),
@@ -1520,6 +1608,7 @@ class TrainModelAPIView(APIView):
         "task_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     }
     """
+
     permission_classes = [IsHRStaff]
 
     def post(self, request, *args, **kwargs):
@@ -1532,35 +1621,32 @@ class TrainModelAPIView(APIView):
         from ..services.training_service import (
             ModelTrainer,
             DataLoadError,
-            TrainingError
+            TrainingError,
         )
 
-        logger = logging.getLogger('future_skills.api.views')
+        logger = logging.getLogger("future_skills.api.views")
 
         # Validate request data
         request_serializer = TrainModelRequestSerializer(data=request.data)
         if not request_serializer.is_valid():
             return Response(
-                {
-                    'error': 'Invalid request data',
-                    'details': request_serializer.errors
-                },
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Invalid request data", "details": request_serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         validated_data = request_serializer.validated_data
-        dataset_path = validated_data.get('dataset_path')
-        test_split = validated_data.get('test_split')
-        hyperparameters = validated_data.get('hyperparameters', {})
-        notes = validated_data.get('notes', '')
+        dataset_path = validated_data.get("dataset_path")
+        test_split = validated_data.get("test_split")
+        hyperparameters = validated_data.get("hyperparameters", {})
+        notes = validated_data.get("notes", "")
 
         # Check if async training is requested (Section 2.5)
-        async_training = request.data.get('async_training', False)
+        async_training = request.data.get("async_training", False)
 
         # Generate model version if not provided
-        model_version = validated_data.get('model_version')
+        model_version = validated_data.get("model_version")
         if not model_version:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             model_version = f"api_v{timestamp}"
 
         # Create initial TrainingRun record with RUNNING status
@@ -1569,7 +1655,7 @@ class TrainModelAPIView(APIView):
             model_path="",  # Will be updated after training
             dataset_path=dataset_path,
             test_split=test_split,
-            status='RUNNING',
+            status="RUNNING",
             accuracy=0.0,
             precision=0.0,
             recall=0.0,
@@ -1599,7 +1685,7 @@ class TrainModelAPIView(APIView):
                     training_run_id=training_run.id,
                     dataset_path=dataset_path,
                     test_split=test_split,
-                    hyperparameters=hyperparameters
+                    hyperparameters=hyperparameters,
                 )
 
                 logger.info(
@@ -1610,18 +1696,18 @@ class TrainModelAPIView(APIView):
                 # Return immediately with RUNNING status
                 return Response(
                     {
-                        'training_run_id': training_run.id,
-                        'status': 'RUNNING',
-                        'message': 'Training started in background. Check status with GET /api/training/runs/<id>/',
-                        'model_version': model_version,
-                        'task_id': task.id
+                        "training_run_id": training_run.id,
+                        "status": "RUNNING",
+                        "message": "Training started in background. Check status with GET /api/training/runs/<id>/",
+                        "model_version": model_version,
+                        "task_id": task.id,
                     },
-                    status=status.HTTP_202_ACCEPTED
+                    status=status.HTTP_202_ACCEPTED,
                 )
 
             except Exception as e:
                 # If Celery fails, fall back to sync or return error
-                training_run.status = 'FAILED'
+                training_run.status = "FAILED"
                 training_run.error_message = f"Failed to dispatch Celery task: {str(e)}"
                 training_run.save()
 
@@ -1631,12 +1717,12 @@ class TrainModelAPIView(APIView):
 
                 return Response(
                     {
-                        'training_run_id': training_run.id,
-                        'status': 'FAILED',
-                        'message': 'Failed to start background training. Redis/Celery may not be available.',
-                        'error': str(e)
+                        "training_run_id": training_run.id,
+                        "status": "FAILED",
+                        "message": "Failed to start background training. Redis/Celery may not be available.",
+                        "error": str(e),
                     },
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
 
         # === SYNC MODE: Train immediately (Section 2.4) ===
@@ -1646,40 +1732,46 @@ class TrainModelAPIView(APIView):
             trainer = ModelTrainer(
                 dataset_path=dataset_path,
                 test_split=test_split,
-                random_state=hyperparameters.get('random_state', 42)
+                random_state=hyperparameters.get("random_state", 42),
             )
 
             # Load data
             trainer.load_data()
-            logger.info(f"Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test")
+            logger.info(
+                f"Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test"
+            )
 
             # Train model with provided hyperparameters
             metrics = trainer.train(**hyperparameters)
             logger.info(f"Training completed: accuracy={metrics['accuracy']:.2%}")
 
             # Save model
-            model_dir = Path('ml/models')
+            model_dir = Path("ml/models")
             model_dir.mkdir(parents=True, exist_ok=True)
             model_path = model_dir / f"{model_version}.pkl"
             trainer.save_model(str(model_path))
             logger.info(f"Model saved: {model_path}")
 
             # Update training run with success
-            training_run.status = 'COMPLETED'
+            training_run.status = "COMPLETED"
             training_run.model_path = str(model_path)
-            training_run.accuracy = metrics['accuracy']
-            training_run.precision = metrics['precision']
-            training_run.recall = metrics['recall']
-            training_run.f1_score = metrics['f1_score']
+            training_run.accuracy = metrics["accuracy"]
+            training_run.precision = metrics["precision"]
+            training_run.recall = metrics["recall"]
+            training_run.f1_score = metrics["f1_score"]
             training_run.total_samples = len(trainer.X_train) + len(trainer.X_test)
             training_run.train_samples = len(trainer.X_train)
             training_run.test_samples = len(trainer.X_test)
             training_run.training_duration_seconds = trainer.training_duration_seconds
-            training_run.per_class_metrics = metrics.get('per_class_metrics', {})
-            training_run.features_used = list(trainer.X_train.columns) if hasattr(trainer.X_train, 'columns') else []
+            training_run.per_class_metrics = metrics.get("per_class_metrics", {})
+            training_run.features_used = (
+                list(trainer.X_train.columns)
+                if hasattr(trainer.X_train, "columns")
+                else []
+            )
 
             # Update hyperparameters from trainer
-            if hasattr(trainer, 'hyperparameters'):
+            if hasattr(trainer, "hyperparameters"):
                 training_run.hyperparameters = trainer.hyperparameters
 
             training_run.save()
@@ -1691,17 +1783,17 @@ class TrainModelAPIView(APIView):
 
             # Prepare response
             response_data = {
-                'training_run_id': training_run.id,
-                'status': training_run.status,
-                'message': f'Training completed successfully in {training_run.training_duration_seconds:.2f}s',
-                'model_version': model_version,
-                'metrics': {
-                    'accuracy': training_run.accuracy,
-                    'precision': training_run.precision,
-                    'recall': training_run.recall,
-                    'f1_score': training_run.f1_score,
-                    'training_duration_seconds': training_run.training_duration_seconds,
-                }
+                "training_run_id": training_run.id,
+                "status": training_run.status,
+                "message": f"Training completed successfully in {training_run.training_duration_seconds:.2f}s",
+                "model_version": model_version,
+                "metrics": {
+                    "accuracy": training_run.accuracy,
+                    "precision": training_run.precision,
+                    "recall": training_run.recall,
+                    "f1_score": training_run.f1_score,
+                    "training_duration_seconds": training_run.training_duration_seconds,
+                },
             }
 
             response_serializer = TrainModelResponseSerializer(response_data)
@@ -1709,63 +1801,70 @@ class TrainModelAPIView(APIView):
 
         except DataLoadError as e:
             # Update training run with failure
-            training_run.status = 'FAILED'
+            training_run.status = "FAILED"
             training_run.error_message = f"Data loading error: {str(e)}"
             training_run.save()
 
-            logger.error(f"Training failed (data load): run_id={training_run.id}, error={str(e)}")
+            logger.error(
+                f"Training failed (data load): run_id={training_run.id}, error={str(e)}"
+            )
 
             return Response(
                 {
-                    'training_run_id': training_run.id,
-                    'status': 'FAILED',
-                    'message': 'Training failed due to data loading error',
-                    'error': str(e)
+                    "training_run_id": training_run.id,
+                    "status": "FAILED",
+                    "message": "Training failed due to data loading error",
+                    "error": str(e),
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         except TrainingError as e:
             # Update training run with failure
-            training_run.status = 'FAILED'
+            training_run.status = "FAILED"
             training_run.error_message = f"Training error: {str(e)}"
             training_run.save()
 
-            logger.error(f"Training failed (training): run_id={training_run.id}, error={str(e)}")
+            logger.error(
+                f"Training failed (training): run_id={training_run.id}, error={str(e)}"
+            )
 
             return Response(
                 {
-                    'training_run_id': training_run.id,
-                    'status': 'FAILED',
-                    'message': 'Training failed during model training',
-                    'error': str(e)
+                    "training_run_id": training_run.id,
+                    "status": "FAILED",
+                    "message": "Training failed during model training",
+                    "error": str(e),
                 },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         except Exception as e:
             # Update training run with unexpected failure
-            training_run.status = 'FAILED'
+            training_run.status = "FAILED"
             training_run.error_message = f"Unexpected error: {str(e)}"
             training_run.save()
 
-            logger.error(f"Training failed (unexpected): run_id={training_run.id}, error={str(e)}", exc_info=True)
+            logger.error(
+                f"Training failed (unexpected): run_id={training_run.id}, error={str(e)}",
+                exc_info=True,
+            )
 
             return Response(
                 {
-                    'training_run_id': training_run.id,
-                    'status': 'FAILED',
-                    'message': 'Training failed due to unexpected error',
-                    'error': str(e)
+                    "training_run_id": training_run.id,
+                    "status": "FAILED",
+                    "message": "Training failed due to unexpected error",
+                    "error": str(e),
                 },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
 @extend_schema(
-    tags=['Training'],
-    summary='List all training runs',
-    description='''Retrieve a paginated list of all model training runs with metrics and status.
+    tags=["Training"],
+    summary="List all training runs",
+    description="""Retrieve a paginated list of all model training runs with metrics and status.
 
     **Permissions**: HR Staff or Manager
 
@@ -1782,35 +1881,35 @@ class TrainModelAPIView(APIView):
     - Audit training activities
 
     **Example**: `/api/training/runs/?status=COMPLETED&trained_by=admin&page=1`
-    ''',
+    """,
     parameters=[
         OpenApiParameter(
-            name='status',
+            name="status",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
-            description='Filter by status (RUNNING, COMPLETED, FAILED)',
+            description="Filter by status (RUNNING, COMPLETED, FAILED)",
             required=False,
-            enum=['RUNNING', 'COMPLETED', 'FAILED'],
+            enum=["RUNNING", "COMPLETED", "FAILED"],
         ),
         OpenApiParameter(
-            name='trained_by',
+            name="trained_by",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
-            description='Filter by username who initiated training',
+            description="Filter by username who initiated training",
             required=False,
         ),
         OpenApiParameter(
-            name='page',
+            name="page",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Page number',
+            description="Page number",
             required=False,
         ),
         OpenApiParameter(
-            name='page_size',
+            name="page_size",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Items per page (max 100)',
+            description="Items per page (max 100)",
             required=False,
         ),
     ],
@@ -1834,6 +1933,7 @@ class TrainingRunListAPIView(ListAPIView):
 
     Returns paginated list of training runs with basic metrics.
     """
+
     permission_classes = [IsHRStaffOrManager]
     serializer_class = TrainingRunSerializer
     pagination_class = TrainingRunPagination
@@ -1842,15 +1942,15 @@ class TrainingRunListAPIView(ListAPIView):
         """
         Get filtered queryset based on query parameters.
         """
-        queryset = TrainingRun.objects.select_related('trained_by').all()
+        queryset = TrainingRun.objects.select_related("trained_by").all()
 
         # Filter by status
-        status_filter = self.request.query_params.get('status')
+        status_filter = self.request.query_params.get("status")
         if status_filter:
             queryset = queryset.filter(status=status_filter.upper())
 
         # Filter by username
-        trained_by = self.request.query_params.get('trained_by')
+        trained_by = self.request.query_params.get("trained_by")
         if trained_by:
             queryset = queryset.filter(trained_by__username=trained_by)
 
@@ -1858,9 +1958,9 @@ class TrainingRunListAPIView(ListAPIView):
 
 
 @extend_schema(
-    tags=['Training'],
-    summary='Get training run details',
-    description='''Retrieve detailed information about a specific training run.
+    tags=["Training"],
+    summary="Get training run details",
+    description="""Retrieve detailed information about a specific training run.
 
     **Permissions**: HR Staff or Manager
 
@@ -1880,7 +1980,7 @@ class TrainingRunListAPIView(ListAPIView):
     - Audit model versioning and traceability
 
     **Example**: `/api/training/runs/42/`
-    ''',
+    """,
     responses={
         200: TrainingRunDetailSerializer,
         401: OpenApiTypes.OBJECT,
@@ -1902,6 +2002,7 @@ class TrainingRunDetailAPIView(RetrieveAPIView):
     - Dataset information
     - Error messages (if failed)
     """
+
     permission_classes = [IsHRStaffOrManager]
     serializer_class = TrainingRunDetailSerializer
-    queryset = TrainingRun.objects.select_related('trained_by').all()
+    queryset = TrainingRun.objects.select_related("trained_by").all()

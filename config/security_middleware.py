@@ -14,7 +14,7 @@ import json
 from ipware import get_client_ip
 import user_agents
 
-logger = logging.getLogger('security')
+logger = logging.getLogger("security")
 
 
 class SecurityHeadersMiddleware(MiddlewareMixin):
@@ -31,34 +31,34 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
 
     def process_response(self, request, response):
         # Prevent MIME type sniffing
-        response['X-Content-Type-Options'] = 'nosniff'
+        response["X-Content-Type-Options"] = "nosniff"
 
         # Prevent clickjacking
-        if not response.get('X-Frame-Options'):
-            response['X-Frame-Options'] = 'DENY'
+        if not response.get("X-Frame-Options"):
+            response["X-Frame-Options"] = "DENY"
 
         # XSS Protection (legacy but still useful)
-        response['X-XSS-Protection'] = '1; mode=block'
+        response["X-XSS-Protection"] = "1; mode=block"
 
         # Referrer Policy
-        response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
         # Permissions Policy (formerly Feature Policy)
-        response['Permissions-Policy'] = (
-            'accelerometer=(), '
-            'camera=(), '
-            'geolocation=(), '
-            'gyroscope=(), '
-            'magnetometer=(), '
-            'microphone=(), '
-            'payment=(), '
-            'usb=()'
+        response["Permissions-Policy"] = (
+            "accelerometer=(), "
+            "camera=(), "
+            "geolocation=(), "
+            "gyroscope=(), "
+            "magnetometer=(), "
+            "microphone=(), "
+            "payment=(), "
+            "usb=()"
         )
 
         # HSTS (Strict-Transport-Security) - only in production
         if not settings.DEBUG:
-            response['Strict-Transport-Security'] = (
-                'max-age=31536000; includeSubDomains; preload'
+            response["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
             )
 
         return response
@@ -71,11 +71,16 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
 
     # Suspicious patterns
     SUSPICIOUS_PATTERNS = [
-        '../', '..\\',  # Path traversal
-        '<script', 'javascript:',  # XSS attempts
-        'union select', 'drop table',  # SQL injection
-        '${', '#{',  # Template injection
-        'eval(', 'exec(',  # Code execution
+        "../",
+        "..\\",  # Path traversal
+        "<script",
+        "javascript:",  # XSS attempts
+        "union select",
+        "drop table",  # SQL injection
+        "${",
+        "#{",  # Template injection
+        "eval(",
+        "exec(",  # Code execution
     ]
 
     def process_request(self, request):
@@ -84,7 +89,7 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
 
         # Get client info
         client_ip, is_routable = get_client_ip(request)
-        user_agent_string = request.META.get('HTTP_USER_AGENT', '')
+        user_agent_string = request.META.get("HTTP_USER_AGENT", "")
         user_agent = user_agents.parse(user_agent_string)
 
         # Store in request for later use
@@ -97,21 +102,23 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
             logger.warning(
                 f"Suspicious request detected from {client_ip}",
                 extra={
-                    'event': 'suspicious_request',
-                    'ip_address': client_ip,
-                    'path': request.path,
-                    'method': request.method,
-                    'user_agent': user_agent_string,
-                    'suspicious_patterns': suspicious,
-                    'user': str(request.user) if hasattr(request, 'user') else 'anonymous',
-                }
+                    "event": "suspicious_request",
+                    "ip_address": client_ip,
+                    "path": request.path,
+                    "method": request.method,
+                    "user_agent": user_agent_string,
+                    "suspicious_patterns": suspicious,
+                    "user": (
+                        str(request.user) if hasattr(request, "user") else "anonymous"
+                    ),
+                },
             )
 
         return None
 
     def process_response(self, request, response):
         # Calculate request duration
-        if hasattr(request, '_security_start_time'):
+        if hasattr(request, "_security_start_time"):
             duration = time.time() - request._security_start_time
 
             # Log slow requests (potential DoS)
@@ -119,12 +126,12 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
                 logger.warning(
                     f"Slow request detected: {duration:.2f}s",
                     extra={
-                        'event': 'slow_request',
-                        'duration': duration,
-                        'path': request.path,
-                        'method': request.method,
-                        'ip_address': getattr(request, '_client_ip', 'unknown'),
-                    }
+                        "event": "slow_request",
+                        "duration": duration,
+                        "path": request.path,
+                        "method": request.method,
+                        "ip_address": getattr(request, "_client_ip", "unknown"),
+                    },
                 )
 
         # Log failed authentication attempts
@@ -132,13 +139,15 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
             logger.warning(
                 f"Authentication/Authorization failure: {response.status_code}",
                 extra={
-                    'event': 'auth_failure',
-                    'status_code': response.status_code,
-                    'path': request.path,
-                    'method': request.method,
-                    'ip_address': getattr(request, '_client_ip', 'unknown'),
-                    'user': str(request.user) if hasattr(request, 'user') else 'anonymous',
-                }
+                    "event": "auth_failure",
+                    "status_code": response.status_code,
+                    "path": request.path,
+                    "method": request.method,
+                    "ip_address": getattr(request, "_client_ip", "unknown"),
+                    "user": (
+                        str(request.user) if hasattr(request, "user") else "anonymous"
+                    ),
+                },
             )
 
         return response
@@ -154,20 +163,28 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
                 suspicious.append(f"path:{pattern}")
 
         # Check query parameters
-        query_string = request.META.get('QUERY_STRING', '').lower()
+        query_string = request.META.get("QUERY_STRING", "").lower()
         for pattern in self.SUSPICIOUS_PATTERNS:
             if pattern.lower() in query_string:
                 suspicious.append(f"query:{pattern}")
 
         # Check for unusual methods
-        if request.method not in ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']:
+        if request.method not in [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "HEAD",
+            "OPTIONS",
+        ]:
             suspicious.append(f"method:{request.method}")
 
         # Check for missing or suspicious User-Agent
-        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
         if not user_agent:
             suspicious.append("no_user_agent")
-        elif len(user_agent) < 10 or 'bot' in user_agent.lower():
+        elif len(user_agent) < 10 or "bot" in user_agent.lower():
             suspicious.append(f"suspicious_ua:{user_agent[:50]}")
 
         return suspicious
@@ -185,6 +202,7 @@ class RateLimitMiddleware(MiddlewareMixin):
         self.get_response = get_response
         try:
             from django.core.cache import cache
+
             self.cache = cache
         except:
             self.cache = None
@@ -194,12 +212,12 @@ class RateLimitMiddleware(MiddlewareMixin):
             return None
 
         # Skip rate limiting for certain paths
-        skip_paths = ['/admin/', '/static/', '/media/']
+        skip_paths = ["/admin/", "/static/", "/media/"]
         if any(request.path.startswith(path) for path in skip_paths):
             return None
 
         # Get client identifier
-        client_ip = getattr(request, '_client_ip', None)
+        client_ip = getattr(request, "_client_ip", None)
         if not client_ip:
             client_ip, _ = get_client_ip(request)
 
@@ -217,20 +235,20 @@ class RateLimitMiddleware(MiddlewareMixin):
             logger.warning(
                 f"Rate limit exceeded for {client_ip}",
                 extra={
-                    'event': 'rate_limit_exceeded',
-                    'ip_address': client_ip,
-                    'path': request.path,
-                    'count': request_count,
-                    'limit': limit,
-                }
+                    "event": "rate_limit_exceeded",
+                    "ip_address": client_ip,
+                    "path": request.path,
+                    "count": request_count,
+                    "limit": limit,
+                },
             )
             return JsonResponse(
                 {
-                    'error': 'Rate limit exceeded',
-                    'detail': f'Maximum {limit} requests per minute',
-                    'retry_after': window,
+                    "error": "Rate limit exceeded",
+                    "detail": f"Maximum {limit} requests per minute",
+                    "retry_after": window,
                 },
-                status=429
+                status=429,
             )
 
         # Increment counter
@@ -251,14 +269,16 @@ class IPWhitelistMiddleware(MiddlewareMixin):
         if settings.DEBUG:
             return None
 
-        allowed_ips = getattr(settings, 'ALLOWED_IPS', None)
+        allowed_ips = getattr(settings, "ALLOWED_IPS", None)
         if not allowed_ips:
             return None
 
         client_ip, _ = get_client_ip(request)
 
         # Skip for certain paths (e.g., health checks)
-        skip_paths = getattr(settings, 'IP_WHITELIST_SKIP_PATHS', ['/health/', '/api/health/'])
+        skip_paths = getattr(
+            settings, "IP_WHITELIST_SKIP_PATHS", ["/health/", "/api/health/"]
+        )
         if any(request.path.startswith(path) for path in skip_paths):
             return None
 
@@ -266,15 +286,12 @@ class IPWhitelistMiddleware(MiddlewareMixin):
             logger.warning(
                 f"Access denied for IP: {client_ip}",
                 extra={
-                    'event': 'ip_blocked',
-                    'ip_address': client_ip,
-                    'path': request.path,
-                }
+                    "event": "ip_blocked",
+                    "ip_address": client_ip,
+                    "path": request.path,
+                },
             )
-            return JsonResponse(
-                {'error': 'Access denied'},
-                status=403
-            )
+            return JsonResponse({"error": "Access denied"}, status=403)
 
         return None
 
@@ -288,25 +305,25 @@ class SecurityAuditMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         # Only audit authenticated requests
-        if not hasattr(request, 'user') or not request.user.is_authenticated:
+        if not hasattr(request, "user") or not request.user.is_authenticated:
             return None
 
         # Skip for static files and common paths
-        if request.path.startswith(('/static/', '/media/', '/favicon.ico')):
+        if request.path.startswith(("/static/", "/media/", "/favicon.ico")):
             return None
 
         # Log the request
         logger.info(
             f"Authenticated request: {request.method} {request.path}",
             extra={
-                'event': 'authenticated_request',
-                'user_id': request.user.id,
-                'username': request.user.username,
-                'method': request.method,
-                'path': request.path,
-                'ip_address': getattr(request, '_client_ip', 'unknown'),
-                'user_agent': request.META.get('HTTP_USER_AGENT', '')[:200],
-            }
+                "event": "authenticated_request",
+                "user_id": request.user.id,
+                "username": request.user.username,
+                "method": request.method,
+                "path": request.path,
+                "ip_address": getattr(request, "_client_ip", "unknown"),
+                "user_agent": request.META.get("HTTP_USER_AGENT", "")[:200],
+            },
         )
 
         return None

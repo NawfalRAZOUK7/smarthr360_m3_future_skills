@@ -70,11 +70,7 @@ class TestModelMetrics:
     def test_create_metrics_with_valid_values(self):
         """Test creating metrics with valid values."""
         metrics = ModelMetrics(
-            accuracy=0.95,
-            precision=0.92,
-            recall=0.88,
-            f1_score=0.90,
-            roc_auc=0.93
+            accuracy=0.95, precision=0.92, recall=0.88, f1_score=0.90, roc_auc=0.93
         )
         assert metrics.accuracy == 0.95
         assert metrics.precision == 0.92
@@ -91,8 +87,7 @@ class TestModelMetrics:
     def test_custom_metrics(self):
         """Test custom metrics dictionary."""
         metrics = ModelMetrics(
-            accuracy=0.95,
-            custom_metrics={"mae": 0.05, "custom_score": 0.88}
+            accuracy=0.95, custom_metrics={"mae": 0.05, "custom_score": 0.88}
         )
         assert metrics.custom_metrics["mae"] == 0.05
         assert metrics.custom_metrics["custom_score"] == 0.88
@@ -110,10 +105,7 @@ class TestModelMetrics:
 
     def test_get_primary_metric_custom(self):
         """Test getting custom primary metric."""
-        metrics = ModelMetrics(
-            accuracy=0.95,
-            custom_metrics={"custom_score": 0.88}
-        )
+        metrics = ModelMetrics(accuracy=0.95, custom_metrics={"custom_score": 0.88})
         assert metrics.get_primary_metric("custom_score") == 0.88
 
     def test_get_primary_metric_missing(self):
@@ -129,9 +121,7 @@ class TestModelMetrics:
     def test_to_dict(self):
         """Test converting metrics to dictionary."""
         metrics = ModelMetrics(
-            accuracy=0.95,
-            f1_score=0.90,
-            custom_metrics={"mae": 0.05}
+            accuracy=0.95, f1_score=0.90, custom_metrics={"mae": 0.05}
         )
         metrics_dict = metrics.to_dict()
         assert metrics_dict["accuracy"] == 0.95
@@ -140,11 +130,7 @@ class TestModelMetrics:
 
     def test_training_and_inference_time(self):
         """Test training and inference time metrics."""
-        metrics = ModelMetrics(
-            accuracy=0.95,
-            training_time=120.5,
-            inference_time=5.2
-        )
+        metrics = ModelMetrics(accuracy=0.95, training_time=120.5, inference_time=5.2)
         assert metrics.training_time == 120.5
         assert metrics.inference_time == 5.2
 
@@ -159,10 +145,7 @@ class TestModelMetadata:
 
     def test_create_metadata_minimal(self):
         """Test creating metadata with minimal required fields."""
-        metadata = ModelMetadata(
-            model_id="test_model",
-            version_string="1.0.0"
-        )
+        metadata = ModelMetadata(model_id="test_model", version_string="1.0.0")
         assert metadata.model_id == "test_model"
         assert metadata.version_string == "1.0.0"
         assert metadata.framework == ModelFramework.SCIKIT_LEARN
@@ -187,7 +170,7 @@ class TestModelMetadata:
             tags={"env": "prod", "team": "ml"},
             description="Production model",
             parent_version="2.0.0",
-            mlflow_run_id="run_123"
+            mlflow_run_id="run_123",
         )
         assert metadata.model_id == "model_123"
         assert metadata.algorithm == "ResNet50"
@@ -198,10 +181,7 @@ class TestModelMetadata:
 
     def test_get_version(self):
         """Test getting semantic version object."""
-        metadata = ModelMetadata(
-            model_id="test",
-            version_string="1.2.3"
-        )
+        metadata = ModelMetadata(model_id="test", version_string="1.2.3")
         version = metadata.get_version()
         assert version.major == 1
         assert version.minor == 2
@@ -210,14 +190,10 @@ class TestModelMetadata:
     def test_is_production(self):
         """Test checking if model is in production."""
         prod_metadata = ModelMetadata(
-            model_id="test",
-            version_string="1.0.0",
-            stage=ModelStage.PRODUCTION
+            model_id="test", version_string="1.0.0", stage=ModelStage.PRODUCTION
         )
         dev_metadata = ModelMetadata(
-            model_id="test",
-            version_string="1.0.1",
-            stage=ModelStage.DEVELOPMENT
+            model_id="test", version_string="1.0.1", stage=ModelStage.DEVELOPMENT
         )
         assert prod_metadata.is_production() is True
         assert dev_metadata.is_production() is False
@@ -227,7 +203,7 @@ class TestModelMetadata:
         metadata = ModelMetadata(
             model_id="test",
             version_string="1.0.0",
-            trained_at=datetime(2024, 1, 15, 10, 30)
+            trained_at=datetime(2024, 1, 15, 10, 30),
         )
         data = metadata.to_dict()
         assert data["model_id"] == "test"
@@ -235,10 +211,7 @@ class TestModelMetadata:
 
     def test_default_timestamps(self):
         """Test that created_at has default value."""
-        metadata = ModelMetadata(
-            model_id="test",
-            version_string="1.0.0"
-        )
+        metadata = ModelMetadata(model_id="test", version_string="1.0.0")
         assert metadata.created_at is not None
         assert isinstance(metadata.created_at, datetime)
 
@@ -248,12 +221,10 @@ class TestModelMetadata:
             "learning_rate": 0.001,
             "batch_size": 32,
             "optimizer": "adam",
-            "layers": [128, 64, 32]
+            "layers": [128, 64, 32],
         }
         metadata = ModelMetadata(
-            model_id="test",
-            version_string="1.0.0",
-            hyperparameters=hyperparams
+            model_id="test", version_string="1.0.0", hyperparameters=hyperparams
         )
         assert metadata.hyperparameters["learning_rate"] == 0.001
         assert len(metadata.hyperparameters["layers"]) == 3
@@ -445,10 +416,7 @@ class TestModelVersion:
 
     def test_to_dict_with_metadata(self):
         """Test to_dict includes metadata."""
-        metadata = ModelMetadata(
-            model_id="test",
-            version_string="1.0.0"
-        )
+        metadata = ModelMetadata(model_id="test", version_string="1.0.0")
         version = ModelVersion(1, 0, 0, metadata=metadata)
         data = version.to_dict()
         assert "metadata" in data
@@ -517,24 +485,20 @@ class TestModelVersionManager:
     def test_get_latest_version_by_stage(self, tmp_path):
         """Test getting latest version filtered by stage."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         metadata1 = ModelMetadata(
-            model_id="m1",
-            version_string="1.0.0",
-            stage=ModelStage.PRODUCTION
+            model_id="m1", version_string="1.0.0", stage=ModelStage.PRODUCTION
         )
         metadata2 = ModelMetadata(
-            model_id="m2",
-            version_string="2.0.0",
-            stage=ModelStage.DEVELOPMENT
+            model_id="m2", version_string="2.0.0", stage=ModelStage.DEVELOPMENT
         )
-        
+
         v1 = ModelVersion(1, 0, 0, metadata=metadata1)
         v2 = ModelVersion(2, 0, 0, metadata=metadata2)
-        
+
         manager.register_version(v1)
         manager.register_version(v2)
-        
+
         prod_version = manager.get_latest_version(stage=ModelStage.PRODUCTION)
         assert prod_version == v1
 
@@ -545,22 +509,20 @@ class TestModelVersionManager:
         v2 = ModelVersion(2, 0, 0, prerelease="beta")
         manager.register_version(v1)
         manager.register_version(v2)
-        
+
         latest_stable = manager.get_latest_version(stable_only=True)
         assert latest_stable == v1
 
     def test_get_production_version(self, tmp_path):
         """Test getting production version."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         metadata = ModelMetadata(
-            model_id="test",
-            version_string="1.0.0",
-            stage=ModelStage.PRODUCTION
+            model_id="test", version_string="1.0.0", stage=ModelStage.PRODUCTION
         )
         version = ModelVersion(1, 0, 0, metadata=metadata)
         manager.register_version(version)
-        
+
         prod_version = manager.get_production_version()
         assert prod_version == version
 
@@ -575,62 +537,49 @@ class TestModelVersionManager:
     def test_should_promote_new_version_no_metrics(self, tmp_path):
         """Test that versions without metrics are not promoted."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         current_metadata = ModelMetadata(
-            model_id="current",
-            version_string="1.0.0",
-            stage=ModelStage.PRODUCTION
+            model_id="current", version_string="1.0.0", stage=ModelStage.PRODUCTION
         )
         current_version = ModelVersion(1, 0, 0, metadata=current_metadata)
         new_version = ModelVersion(2, 0, 0)
-        
-        should_promote, reason = manager.should_promote(
-            new_version, current_version
-        )
+
+        should_promote, reason = manager.should_promote(new_version, current_version)
         assert should_promote is False
         assert "no metrics" in reason
 
     def test_should_promote_current_version_no_metrics(self, tmp_path):
         """Test promotion when current version has no metrics."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
-        current_metadata = ModelMetadata(
-            model_id="current",
-            version_string="1.0.0"
-        )
+
+        current_metadata = ModelMetadata(model_id="current", version_string="1.0.0")
         current_version = ModelVersion(1, 0, 0, metadata=current_metadata)
-        
+
         new_metadata = ModelMetadata(
-            model_id="new",
-            version_string="2.0.0",
-            metrics=ModelMetrics(accuracy=0.95)
+            model_id="new", version_string="2.0.0", metrics=ModelMetrics(accuracy=0.95)
         )
         new_version = ModelVersion(2, 0, 0, metadata=new_metadata)
-        
-        should_promote, reason = manager.should_promote(
-            new_version, current_version
-        )
+
+        should_promote, reason = manager.should_promote(new_version, current_version)
         assert should_promote is True
         assert "Current version has no metrics" in reason
 
     def test_should_promote_with_improvement(self, tmp_path):
         """Test promotion when new version has improvement."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         current_metadata = ModelMetadata(
             model_id="current",
             version_string="1.0.0",
-            metrics=ModelMetrics(accuracy=0.85)
+            metrics=ModelMetrics(accuracy=0.85),
         )
         current_version = ModelVersion(1, 0, 0, metadata=current_metadata)
-        
+
         new_metadata = ModelMetadata(
-            model_id="new",
-            version_string="2.0.0",
-            metrics=ModelMetrics(accuracy=0.90)
+            model_id="new", version_string="2.0.0", metrics=ModelMetrics(accuracy=0.90)
         )
         new_version = ModelVersion(2, 0, 0, metadata=new_metadata)
-        
+
         should_promote, reason = manager.should_promote(
             new_version, current_version, improvement_threshold=0.01
         )
@@ -642,21 +591,19 @@ class TestModelVersionManager:
     def test_should_promote_insufficient_improvement(self, tmp_path):
         """Test promotion rejected when improvement is insufficient."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         current_metadata = ModelMetadata(
             model_id="current",
             version_string="1.0.0",
-            metrics=ModelMetrics(accuracy=0.85)
+            metrics=ModelMetrics(accuracy=0.85),
         )
         current_version = ModelVersion(1, 0, 0, metadata=current_metadata)
-        
+
         new_metadata = ModelMetadata(
-            model_id="new",
-            version_string="2.0.0",
-            metrics=ModelMetrics(accuracy=0.855)
+            model_id="new", version_string="2.0.0", metrics=ModelMetrics(accuracy=0.855)
         )
         new_version = ModelVersion(2, 0, 0, metadata=new_metadata)
-        
+
         should_promote, reason = manager.should_promote(
             new_version, current_version, improvement_threshold=0.01
         )
@@ -666,25 +613,26 @@ class TestModelVersionManager:
     def test_should_promote_custom_metric(self, tmp_path):
         """Test promotion using custom metric."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         current_metadata = ModelMetadata(
             model_id="current",
             version_string="1.0.0",
-            metrics=ModelMetrics(custom_metrics={"custom_score": 0.80})
+            metrics=ModelMetrics(custom_metrics={"custom_score": 0.80}),
         )
         current_version = ModelVersion(1, 0, 0, metadata=current_metadata)
-        
+
         new_metadata = ModelMetadata(
             model_id="new",
             version_string="2.0.0",
-            metrics=ModelMetrics(custom_metrics={"custom_score": 0.90})
+            metrics=ModelMetrics(custom_metrics={"custom_score": 0.90}),
         )
         new_version = ModelVersion(2, 0, 0, metadata=new_metadata)
-        
+
         should_promote, reason = manager.should_promote(
-            new_version, current_version,
+            new_version,
+            current_version,
             metric_name="custom_score",
-            improvement_threshold=0.05
+            improvement_threshold=0.05,
         )
         assert should_promote is True
 
@@ -699,7 +647,7 @@ class TestModelVersionManager:
         manager = ModelVersionManager(storage_path=tmp_path)
         current = ModelVersion(1, 2, 3)
         manager.register_version(current)
-        
+
         new_version = manager.auto_version(change_type="patch")
         assert str(new_version) == "1.2.4"
 
@@ -708,7 +656,7 @@ class TestModelVersionManager:
         manager = ModelVersionManager(storage_path=tmp_path)
         current = ModelVersion(1, 2, 3)
         manager.register_version(current)
-        
+
         new_version = manager.auto_version(change_type="minor")
         assert str(new_version) == "1.3.0"
 
@@ -717,7 +665,7 @@ class TestModelVersionManager:
         manager = ModelVersionManager(storage_path=tmp_path)
         current = ModelVersion(1, 2, 3)
         manager.register_version(current)
-        
+
         new_version = manager.auto_version(change_type="major")
         assert str(new_version) == "2.0.0"
 
@@ -725,10 +673,9 @@ class TestModelVersionManager:
         """Test auto-versioning from specific base version."""
         manager = ModelVersionManager(storage_path=tmp_path)
         base_version = ModelVersion(3, 0, 0)
-        
+
         new_version = manager.auto_version(
-            current_version=base_version,
-            change_type="minor"
+            current_version=base_version, change_type="minor"
         )
         assert str(new_version) == "3.1.0"
 
@@ -738,11 +685,11 @@ class TestModelVersionManager:
         v1 = ModelVersion(1, 0, 0)
         v2 = ModelVersion(2, 0, 0)
         v3 = ModelVersion(3, 0, 0)
-        
+
         manager.register_version(v1)
         manager.register_version(v2)
         manager.register_version(v3)
-        
+
         history = manager.get_version_history()
         assert len(history) == 3
         assert history[0] == v3  # Newest first
@@ -752,31 +699,27 @@ class TestModelVersionManager:
         manager = ModelVersionManager(storage_path=tmp_path)
         for i in range(5):
             manager.register_version(ModelVersion(i, 0, 0))
-        
+
         history = manager.get_version_history(limit=2)
         assert len(history) == 2
 
     def test_get_version_history_by_stage(self, tmp_path):
         """Test filtering version history by stage."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         prod_metadata = ModelMetadata(
-            model_id="m1",
-            version_string="1.0.0",
-            stage=ModelStage.PRODUCTION
+            model_id="m1", version_string="1.0.0", stage=ModelStage.PRODUCTION
         )
         dev_metadata = ModelMetadata(
-            model_id="m2",
-            version_string="2.0.0",
-            stage=ModelStage.DEVELOPMENT
+            model_id="m2", version_string="2.0.0", stage=ModelStage.DEVELOPMENT
         )
-        
+
         v1 = ModelVersion(1, 0, 0, metadata=prod_metadata)
         v2 = ModelVersion(2, 0, 0, metadata=dev_metadata)
-        
+
         manager.register_version(v1)
         manager.register_version(v2)
-        
+
         prod_history = manager.get_version_history(stage=ModelStage.PRODUCTION)
         assert len(prod_history) == 1
         assert prod_history[0] == v1
@@ -784,23 +727,23 @@ class TestModelVersionManager:
     def test_compare_versions(self, tmp_path):
         """Test comparing two versions."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         metadata1 = ModelMetadata(
             model_id="m1",
             version_string="1.0.0",
-            metrics=ModelMetrics(accuracy=0.85, precision=0.80)
+            metrics=ModelMetrics(accuracy=0.85, precision=0.80),
         )
         metadata2 = ModelMetadata(
             model_id="m2",
             version_string="2.0.0",
-            metrics=ModelMetrics(accuracy=0.90, precision=0.88)
+            metrics=ModelMetrics(accuracy=0.90, precision=0.88),
         )
-        
+
         v1 = ModelVersion(1, 0, 0, metadata=metadata1)
         v2 = ModelVersion(2, 0, 0, metadata=metadata2)
-        
+
         comparison = manager.compare_versions(v1, v2)
-        
+
         assert comparison["version1"] == "1.0.0"
         assert comparison["version2"] == "2.0.0"
         assert comparison["newer"] is False
@@ -811,44 +754,37 @@ class TestModelVersionManager:
     def test_compare_versions_custom_metrics(self, tmp_path):
         """Test comparing versions with custom metrics."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         metadata1 = ModelMetadata(
-            model_id="m1",
-            version_string="1.0.0",
-            metrics=ModelMetrics(accuracy=0.85)
+            model_id="m1", version_string="1.0.0", metrics=ModelMetrics(accuracy=0.85)
         )
         metadata2 = ModelMetadata(
-            model_id="m2",
-            version_string="2.0.0",
-            metrics=ModelMetrics(accuracy=0.90)
+            model_id="m2", version_string="2.0.0", metrics=ModelMetrics(accuracy=0.90)
         )
-        
+
         v1 = ModelVersion(1, 0, 0, metadata=metadata1)
         v2 = ModelVersion(2, 0, 0, metadata=metadata2)
-        
-        comparison = manager.compare_versions(
-            v1, v2,
-            metrics=["accuracy", "f1_score"]
-        )
+
+        comparison = manager.compare_versions(v1, v2, metrics=["accuracy", "f1_score"])
         assert "accuracy" in comparison["metrics"]
         assert "f1_score" in comparison["metrics"]
 
     def test_archive_old_versions(self, tmp_path):
         """Test archiving old versions."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         for i in range(10):
             metadata = ModelMetadata(
                 model_id=f"m{i}",
                 version_string=f"{i}.0.0",
-                stage=ModelStage.DEVELOPMENT
+                stage=ModelStage.DEVELOPMENT,
             )
             version = ModelVersion(i, 0, 0, metadata=metadata)
             manager.register_version(version)
-        
+
         archived_count = manager.archive_old_versions(keep_latest=5)
         assert archived_count == 5
-        
+
         # Check that old versions are archived
         for version in manager.versions[5:]:
             assert version.metadata.stage == ModelStage.ARCHIVED
@@ -856,28 +792,26 @@ class TestModelVersionManager:
     def test_archive_keeps_production_versions(self, tmp_path):
         """Test that production versions are kept even when archiving."""
         manager = ModelVersionManager(storage_path=tmp_path)
-        
+
         # Add old production version
         prod_metadata = ModelMetadata(
-            model_id="prod",
-            version_string="1.0.0",
-            stage=ModelStage.PRODUCTION
+            model_id="prod", version_string="1.0.0", stage=ModelStage.PRODUCTION
         )
         prod_version = ModelVersion(1, 0, 0, metadata=prod_metadata)
         manager.register_version(prod_version)
-        
+
         # Add newer dev versions
         for i in range(10):
             dev_metadata = ModelMetadata(
                 model_id=f"dev{i}",
                 version_string=f"{i+2}.0.0",
-                stage=ModelStage.DEVELOPMENT
+                stage=ModelStage.DEVELOPMENT,
             )
             version = ModelVersion(i + 2, 0, 0, metadata=dev_metadata)
             manager.register_version(version)
-        
+
         manager.archive_old_versions(keep_latest=5, keep_production=True)
-        
+
         # Production version should not be archived
         assert prod_version.metadata.stage == ModelStage.PRODUCTION
 
@@ -886,7 +820,7 @@ class TestModelVersionManager:
         manager1 = ModelVersionManager(storage_path=tmp_path)
         version = ModelVersion(1, 2, 3)
         manager1.register_version(version)
-        
+
         # Create new manager with same storage path
         manager2 = ModelVersionManager(storage_path=tmp_path)
         assert len(manager2.versions) == 1
@@ -895,15 +829,15 @@ class TestModelVersionManager:
     def test_load_versions_with_metadata(self, tmp_path):
         """Test loading versions with metadata."""
         manager1 = ModelVersionManager(storage_path=tmp_path)
-        
+
         metadata = ModelMetadata(
             model_id="test_model",
             version_string="1.0.0",
-            metrics=ModelMetrics(accuracy=0.95)
+            metrics=ModelMetrics(accuracy=0.95),
         )
         version = ModelVersion(1, 0, 0, metadata=metadata)
         manager1.register_version(version)
-        
+
         # Reload
         manager2 = ModelVersionManager(storage_path=tmp_path)
         loaded_version = manager2.versions[0]
@@ -915,13 +849,13 @@ class TestModelVersionManager:
         manager = ModelVersionManager(storage_path=tmp_path)
         assert manager.versions == []
 
-    @patch('builtins.open', side_effect=IOError("Read error"))
+    @patch("builtins.open", side_effect=IOError("Read error"))
     def test_load_versions_error_handling(self, mock_open, tmp_path):
         """Test error handling when loading versions fails."""
         # Create a versions file first
         versions_file = tmp_path / "versions.json"
         versions_file.write_text('{"versions": []}')
-        
+
         # Now try to load with error
         manager = ModelVersionManager(storage_path=tmp_path)
         # Should handle error gracefully
@@ -936,7 +870,7 @@ class TestCreateModelVersionHelper:
         version = create_model_version(
             version_string="1.0.0",
             metrics={"accuracy": 0.95, "f1_score": 0.90},
-            model_path="/path/to/model.pkl"
+            model_path="/path/to/model.pkl",
         )
         assert str(version) == "1.0.0"
         assert version.metadata is not None
@@ -948,7 +882,7 @@ class TestCreateModelVersionHelper:
             version_string="2.0.0",
             metrics={"accuracy": 0.92},
             model_path="/path/to/model.pth",
-            framework="pytorch"
+            framework="pytorch",
         )
         assert version.metadata.framework == ModelFramework.PYTORCH
 
@@ -958,7 +892,7 @@ class TestCreateModelVersionHelper:
             version_string="1.0.0",
             metrics={"accuracy": 0.88},
             model_path="/path/to/model.pkl",
-            algorithm="RandomForest"
+            algorithm="RandomForest",
         )
         assert version.metadata.algorithm == "RandomForest"
 
@@ -969,7 +903,7 @@ class TestCreateModelVersionHelper:
             version_string="1.0.0",
             metrics={"accuracy": 0.90},
             model_path="/path/to/model.pkl",
-            hyperparameters=hyperparams
+            hyperparameters=hyperparams,
         )
         assert version.metadata.hyperparameters["n_estimators"] == 100
 
@@ -979,7 +913,7 @@ class TestCreateModelVersionHelper:
             version_string="1.0.0",
             metrics={"accuracy": 0.95},
             model_path="/path/to/model.pkl",
-            stage="Production"
+            stage="Production",
         )
         assert version.metadata.stage == ModelStage.PRODUCTION
 
@@ -989,7 +923,7 @@ class TestCreateModelVersionHelper:
             version_string="1.0.0",
             metrics={"accuracy": 0.95},
             model_path="/path/to/model.pkl",
-            model_id="custom_model_123"
+            model_id="custom_model_123",
         )
         assert version.metadata.model_id == "custom_model_123"
 
@@ -998,7 +932,7 @@ class TestCreateModelVersionHelper:
         version = create_model_version(
             version_string="1.0.0",
             metrics={"accuracy": 0.95},
-            model_path="/path/to/model.pkl"
+            model_path="/path/to/model.pkl",
         )
         assert "model_1.0.0" in version.metadata.model_id
 
@@ -1010,7 +944,7 @@ class TestCreateModelVersionHelper:
             model_path="/path/to/model.pkl",
             description="Test model",
             tags={"env": "test"},
-            mlflow_run_id="run_123"
+            mlflow_run_id="run_123",
         )
         assert version.metadata.description == "Test model"
         assert version.metadata.tags["env"] == "test"
@@ -1021,7 +955,7 @@ class TestCreateModelVersionHelper:
         version = create_model_version(
             version_string="v1.0.0",
             metrics={"accuracy": 0.95},
-            model_path="/path/to/model.pkl"
+            model_path="/path/to/model.pkl",
         )
         assert str(version) == "1.0.0"
         assert version.metadata.version_string == "v1.0.0"

@@ -8,76 +8,222 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='JobRole',
+            name="JobRole",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=150, unique=True)),
-                ('department', models.CharField(blank=True, help_text='Département ou direction (ex : IT, RH, Finance...).', max_length=150, null=True)),
-                ('description', models.TextField(blank=True, help_text='Description optionnelle du rôle.', null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=150, unique=True)),
+                (
+                    "department",
+                    models.CharField(
+                        blank=True,
+                        help_text="Département ou direction (ex : IT, RH, Finance...).",
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True,
+                        help_text="Description optionnelle du rôle.",
+                        null=True,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MarketTrend',
+            name="MarketTrend",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('source_name', models.CharField(help_text='Source de la tendance (ex : LinkedIn Report 2025, World Economic Forum...).', max_length=200)),
-                ('year', models.IntegerField()),
-                ('sector', models.CharField(help_text='Secteur / domaine concerné (ex : Tech, RH, Industrie...).', max_length=150)),
-                ('trend_score', models.FloatField(help_text='Score de tendance entre 0 et 1 (0 = faible, 1 = très forte tendance).')),
-                ('description', models.TextField(blank=True, help_text='Description ou résumé de la tendance.', null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                (
+                    "source_name",
+                    models.CharField(
+                        help_text="Source de la tendance (ex : LinkedIn Report 2025, World Economic Forum...).",
+                        max_length=200,
+                    ),
+                ),
+                ("year", models.IntegerField()),
+                (
+                    "sector",
+                    models.CharField(
+                        help_text="Secteur / domaine concerné (ex : Tech, RH, Industrie...).",
+                        max_length=150,
+                    ),
+                ),
+                (
+                    "trend_score",
+                    models.FloatField(
+                        help_text="Score de tendance entre 0 et 1 (0 = faible, 1 = très forte tendance)."
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True,
+                        help_text="Description ou résumé de la tendance.",
+                        null=True,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'Tendance marché',
-                'verbose_name_plural': 'Tendances marché',
-                'ordering': ['-year', '-trend_score'],
+                "verbose_name": "Tendance marché",
+                "verbose_name_plural": "Tendances marché",
+                "ordering": ["-year", "-trend_score"],
             },
         ),
         migrations.CreateModel(
-            name='PredictionRun',
+            name="PredictionRun",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('run_date', models.DateTimeField(auto_now_add=True)),
-                ('description', models.TextField(blank=True, help_text="Contexte du recalcul (ex : 'Mise à jour tendances 2025').", null=True)),
-                ('total_predictions', models.PositiveIntegerField(default=0, help_text='Nombre total de prédictions créées / mises à jour.')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("run_date", models.DateTimeField(auto_now_add=True)),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True,
+                        help_text="Contexte du recalcul (ex : 'Mise à jour tendances 2025').",
+                        null=True,
+                    ),
+                ),
+                (
+                    "total_predictions",
+                    models.PositiveIntegerField(
+                        default=0,
+                        help_text="Nombre total de prédictions créées / mises à jour.",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Exécution de prédiction',
-                'verbose_name_plural': 'Exécutions de prédiction',
-                'ordering': ['-run_date'],
+                "verbose_name": "Exécution de prédiction",
+                "verbose_name_plural": "Exécutions de prédiction",
+                "ordering": ["-run_date"],
             },
         ),
         migrations.CreateModel(
-            name='Skill',
+            name="Skill",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=150, unique=True)),
-                ('category', models.CharField(blank=True, help_text='Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)', max_length=100, null=True)),
-                ('description', models.TextField(blank=True, help_text='Description optionnelle de la compétence.', null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=150, unique=True)),
+                (
+                    "category",
+                    models.CharField(
+                        blank=True,
+                        help_text="Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True,
+                        help_text="Description optionnelle de la compétence.",
+                        null=True,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='FutureSkillPrediction',
+            name="FutureSkillPrediction",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('horizon_years', models.PositiveIntegerField(help_text='Horizon de prédiction en années (ex : 3, 5...).')),
-                ('score', models.FloatField(help_text='Score de besoin futur (0–100).')),
-                ('level', models.CharField(choices=[('LOW', 'Low'), ('MEDIUM', 'Medium'), ('HIGH', 'High')], help_text='Niveau de criticité : LOW / MEDIUM / HIGH.', max_length=10)),
-                ('rationale', models.TextField(blank=True, help_text='Explication textuelle de la prédiction (pour le DRH).', null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('job_role', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='future_skill_predictions', to='future_skills.jobrole')),
-                ('skill', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='future_skill_predictions', to='future_skills.skill')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "horizon_years",
+                    models.PositiveIntegerField(
+                        help_text="Horizon de prédiction en années (ex : 3, 5...)."
+                    ),
+                ),
+                (
+                    "score",
+                    models.FloatField(help_text="Score de besoin futur (0–100)."),
+                ),
+                (
+                    "level",
+                    models.CharField(
+                        choices=[
+                            ("LOW", "Low"),
+                            ("MEDIUM", "Medium"),
+                            ("HIGH", "High"),
+                        ],
+                        help_text="Niveau de criticité : LOW / MEDIUM / HIGH.",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "rationale",
+                    models.TextField(
+                        blank=True,
+                        help_text="Explication textuelle de la prédiction (pour le DRH).",
+                        null=True,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "job_role",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="future_skill_predictions",
+                        to="future_skills.jobrole",
+                    ),
+                ),
+                (
+                    "skill",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="future_skill_predictions",
+                        to="future_skills.skill",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Prédiction de compétence future',
-                'verbose_name_plural': 'Prédictions de compétences futures',
-                'unique_together': {('job_role', 'skill', 'horizon_years')},
+                "verbose_name": "Prédiction de compétence future",
+                "verbose_name_plural": "Prédictions de compétences futures",
+                "unique_together": {("job_role", "skill", "horizon_years")},
             },
         ),
     ]

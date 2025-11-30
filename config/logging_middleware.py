@@ -21,6 +21,7 @@ from config.apm_config import set_user_context, set_custom_context
 # REQUEST LOGGING MIDDLEWARE
 # ============================================================================
 
+
 class RequestLoggingMiddleware(MiddlewareMixin):
     """
     Middleware to log all HTTP requests and responses.
@@ -33,7 +34,7 @@ class RequestLoggingMiddleware(MiddlewareMixin):
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
         self.get_response = get_response
-        self.logger = get_logger('django.request')
+        self.logger = get_logger("django.request")
 
     def process_request(self, request: HttpRequest) -> None:
         """Process incoming request."""
@@ -42,60 +43,63 @@ class RequestLoggingMiddleware(MiddlewareMixin):
 
         # Log request
         self.logger.info(
-            'request_started',
+            "request_started",
             method=request.method,
             path=request.path,
             query_params=dict(request.GET),
             remote_addr=self.get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            correlation_id=getattr(request, 'correlation_id', None),
+            user_agent=request.META.get("HTTP_USER_AGENT", ""),
+            correlation_id=getattr(request, "correlation_id", None),
         )
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+    def process_response(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> HttpResponse:
         """Process outgoing response."""
         # Calculate duration
-        duration = time.time() - getattr(request, '_start_time', time.time())
+        duration = time.time() - getattr(request, "_start_time", time.time())
 
         # Log response
         self.logger.info(
-            'request_completed',
+            "request_completed",
             method=request.method,
             path=request.path,
             status_code=response.status_code,
             duration_seconds=round(duration, 3),
-            correlation_id=getattr(request, 'correlation_id', None),
+            correlation_id=getattr(request, "correlation_id", None),
         )
 
         return response
 
     def process_exception(self, request: HttpRequest, exception: Exception) -> None:
         """Process exception during request handling."""
-        duration = time.time() - getattr(request, '_start_time', time.time())
+        duration = time.time() - getattr(request, "_start_time", time.time())
 
         self.logger.error(
-            'request_exception',
+            "request_exception",
             method=request.method,
             path=request.path,
             duration_seconds=round(duration, 3),
             exception=str(exception),
-            correlation_id=getattr(request, 'correlation_id', None),
+            correlation_id=getattr(request, "correlation_id", None),
             exc_info=True,
         )
 
     @staticmethod
     def get_client_ip(request: HttpRequest) -> str:
         """Get client IP address from request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
+            ip = x_forwarded_for.split(",")[0]
         else:
-            ip = request.META.get('REMOTE_ADDR')
+            ip = request.META.get("REMOTE_ADDR")
         return ip
 
 
 # ============================================================================
 # CORRELATION ID MIDDLEWARE
 # ============================================================================
+
 
 class CorrelationIdMiddleware:
     """
@@ -105,7 +109,7 @@ class CorrelationIdMiddleware:
     Uses modern Django middleware pattern with sync_capable/async_capable.
     """
 
-    CORRELATION_ID_HEADER = 'X-Correlation-ID'
+    CORRELATION_ID_HEADER = "X-Correlation-ID"
     sync_capable = True
     async_capable = False
 
@@ -119,7 +123,7 @@ class CorrelationIdMiddleware:
         # Get correlation ID from header or generate new one
         correlation_id = request.META.get(
             f'HTTP_{self.CORRELATION_ID_HEADER.upper().replace("-", "_")}',
-            str(uuid.uuid4())
+            str(uuid.uuid4()),
         )
 
         # Store on request
@@ -127,6 +131,7 @@ class CorrelationIdMiddleware:
 
         # Bind to structlog context
         import structlog
+
         structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
 
         # Get response
@@ -148,12 +153,13 @@ class CorrelationIdMiddleware:
 # PERFORMANCE MONITORING MIDDLEWARE
 # ============================================================================
 
+
 class PerformanceMonitoringMiddleware(MiddlewareMixin):
     """
     Middleware to monitor and log performance metrics.
     Tracks slow requests and database query counts.
     """
-    
+
     sync_capable = True
     async_capable = False
 
@@ -162,7 +168,7 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
         self.get_response = get_response
-        self.logger = get_logger('performance')
+        self.logger = get_logger("performance")
 
     def process_request(self, request: HttpRequest) -> None:
         """Process incoming request."""
@@ -172,40 +178,42 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
         request._perf_start_time = time.time()
         request._perf_query_count = len(connection.queries)
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+    def process_response(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> HttpResponse:
         """Process outgoing response."""
         from django.db import connection
 
         # Calculate metrics
-        duration = time.time() - getattr(request, '_perf_start_time', time.time())
-        query_count = len(connection.queries) - getattr(request, '_perf_query_count', 0)
+        duration = time.time() - getattr(request, "_perf_start_time", time.time())
+        query_count = len(connection.queries) - getattr(request, "_perf_query_count", 0)
 
         # Log if slow request
         if duration > self.SLOW_REQUEST_THRESHOLD:
             self.logger.warning(
-                'slow_request',
+                "slow_request",
                 method=request.method,
                 path=request.path,
                 duration_seconds=round(duration, 3),
                 query_count=query_count,
                 status_code=response.status_code,
-                correlation_id=getattr(request, 'correlation_id', None),
+                correlation_id=getattr(request, "correlation_id", None),
             )
 
         # Log performance metrics
         self.logger.info(
-            'request_performance',
+            "request_performance",
             method=request.method,
             path=request.path,
             duration_seconds=round(duration, 3),
             query_count=query_count,
             status_code=response.status_code,
-            correlation_id=getattr(request, 'correlation_id', None),
+            correlation_id=getattr(request, "correlation_id", None),
         )
 
         # Add performance headers
-        response['X-Response-Time'] = f'{duration:.3f}s'
-        response['X-Query-Count'] = str(query_count)
+        response["X-Response-Time"] = f"{duration:.3f}s"
+        response["X-Query-Count"] = str(query_count)
 
         return response
 
@@ -214,12 +222,13 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
 # APM CONTEXT MIDDLEWARE
 # ============================================================================
 
+
 class APMContextMiddleware(MiddlewareMixin):
     """
     Middleware to add user and custom context to APM tools.
     Sets user information and request context for better monitoring.
     """
-    
+
     sync_capable = True
     async_capable = False
 
@@ -230,7 +239,7 @@ class APMContextMiddleware(MiddlewareMixin):
     def process_request(self, request: HttpRequest) -> None:
         """Process incoming request."""
         # Set user context if authenticated
-        if hasattr(request, 'user') and request.user.is_authenticated:
+        if hasattr(request, "user") and request.user.is_authenticated:
             set_user_context(
                 user_id=request.user.id,
                 username=request.user.username,
@@ -240,30 +249,34 @@ class APMContextMiddleware(MiddlewareMixin):
             )
 
         # Set custom context
-        set_custom_context('request', {
-            'method': request.method,
-            'path': request.path,
-            'correlation_id': getattr(request, 'correlation_id', None),
-        })
+        set_custom_context(
+            "request",
+            {
+                "method": request.method,
+                "path": request.path,
+                "correlation_id": getattr(request, "correlation_id", None),
+            },
+        )
 
 
 # ============================================================================
 # ERROR TRACKING MIDDLEWARE
 # ============================================================================
 
+
 class ErrorTrackingMiddleware(MiddlewareMixin):
     """
     Middleware to capture and track errors.
     Sends errors to APM tools with full context.
     """
-    
+
     sync_capable = True
     async_capable = False
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
         self.get_response = get_response
-        self.logger = get_logger('django.request')
+        self.logger = get_logger("django.request")
 
     def process_exception(self, request: HttpRequest, exception: Exception) -> None:
         """Process exception during request handling."""
@@ -271,20 +284,20 @@ class ErrorTrackingMiddleware(MiddlewareMixin):
 
         # Build context
         context = {
-            'request': {
-                'method': request.method,
-                'path': request.path,
-                'query_params': dict(request.GET),
-                'correlation_id': getattr(request, 'correlation_id', None),
+            "request": {
+                "method": request.method,
+                "path": request.path,
+                "query_params": dict(request.GET),
+                "correlation_id": getattr(request, "correlation_id", None),
             }
         }
 
         # Add user context if available
-        if hasattr(request, 'user') and request.user.is_authenticated:
-            context['user'] = {
-                'id': request.user.id,
-                'username': request.user.username,
-                'email': request.user.email,
+        if hasattr(request, "user") and request.user.is_authenticated:
+            context["user"] = {
+                "id": request.user.id,
+                "username": request.user.username,
+                "email": request.user.email,
             }
 
         # Capture exception
@@ -292,12 +305,12 @@ class ErrorTrackingMiddleware(MiddlewareMixin):
 
         # Log error
         self.logger.error(
-            'request_error',
+            "request_error",
             method=request.method,
             path=request.path,
             exception_type=type(exception).__name__,
             exception_message=str(exception),
-            correlation_id=getattr(request, 'correlation_id', None),
+            correlation_id=getattr(request, "correlation_id", None),
             exc_info=True,
         )
 
@@ -306,21 +319,24 @@ class ErrorTrackingMiddleware(MiddlewareMixin):
 # SQL QUERY LOGGING MIDDLEWARE (Development Only)
 # ============================================================================
 
+
 class SQLQueryLoggingMiddleware(MiddlewareMixin):
     """
     Middleware to log SQL queries (for development/debugging).
     WARNING: Only enable in development, not production!
     """
-    
+
     sync_capable = True
     async_capable = False
 
     def __init__(self, get_response: Callable):
         """Initialize middleware."""
         self.get_response = get_response
-        self.logger = get_logger('django.db.backends')
+        self.logger = get_logger("django.db.backends")
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+    def process_response(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> HttpResponse:
         """Process outgoing response."""
         from django.conf import settings
         from django.db import connection
@@ -331,14 +347,14 @@ class SQLQueryLoggingMiddleware(MiddlewareMixin):
 
             if queries:
                 self.logger.debug(
-                    'sql_queries',
+                    "sql_queries",
                     path=request.path,
                     query_count=len(queries),
-                    total_time=sum(float(q['time']) for q in queries),
+                    total_time=sum(float(q["time"]) for q in queries),
                     queries=[
                         {
-                            'sql': q['sql'][:200],  # Truncate long queries
-                            'time': q['time'],
+                            "sql": q["sql"][:200],  # Truncate long queries
+                            "time": q["time"],
                         }
                         for q in queries[-10:]  # Last 10 queries
                     ],
@@ -351,12 +367,13 @@ class SQLQueryLoggingMiddleware(MiddlewareMixin):
 # CUSTOM LOG CONTEXT MIDDLEWARE
 # ============================================================================
 
+
 class CustomLogContextMiddleware(MiddlewareMixin):
     """
     Middleware to add custom context to all log messages during request.
     Uses structlog's contextvars to bind context for the request lifecycle.
     """
-    
+
     sync_capable = True
     async_capable = False
 
@@ -370,13 +387,19 @@ class CustomLogContextMiddleware(MiddlewareMixin):
 
         # Bind request context
         structlog.contextvars.bind_contextvars(
-            request_id=getattr(request, 'correlation_id', None),
+            request_id=getattr(request, "correlation_id", None),
             method=request.method,
             path=request.path,
-            user_id=request.user.id if hasattr(request, 'user') and request.user.is_authenticated else None,
+            user_id=(
+                request.user.id
+                if hasattr(request, "user") and request.user.is_authenticated
+                else None
+            ),
         )
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+    def process_response(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> HttpResponse:
         """Process outgoing response."""
         import structlog
 

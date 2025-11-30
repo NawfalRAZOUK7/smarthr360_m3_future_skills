@@ -15,7 +15,9 @@ from rest_framework import status
 class TestCompleteUserJourney:
     """Test complete user journey from login to prediction."""
 
-    def test_complete_hr_manager_workflow(self, api_client, hr_manager, sample_job_role, sample_skill):
+    def test_complete_hr_manager_workflow(
+        self, api_client, hr_manager, sample_job_role, sample_skill
+    ):
         """
         Test complete HR manager workflow:
         1. Login
@@ -28,46 +30,48 @@ class TestCompleteUserJourney:
         api_client.force_authenticate(user=hr_manager)
 
         # Step 2: View future skill predictions
-        url = reverse('future-skills-list')
+        url = reverse("future-skills-list")
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
 
         # Step 3: Filter by job role
-        response = api_client.get(url, {'job_role_id': sample_job_role.id})
+        response = api_client.get(url, {"job_role_id": sample_job_role.id})
         assert response.status_code == status.HTTP_200_OK
 
         # Step 4: Recalculate predictions (requires staff permission)
         # hr_manager should have appropriate permissions for this
-        recalc_url = reverse('future-skills-recalculate')
-        recalc_data = {'horizon_years': 5}
-        response = api_client.post(recalc_url, recalc_data, format='json')
+        recalc_url = reverse("future-skills-recalculate")
+        recalc_data = {"horizon_years": 5}
+        response = api_client.post(recalc_url, recalc_data, format="json")
         # May return 403 if hr_manager doesn't have IsHRStaff permission
         # or 200 if they do
         assert response.status_code in [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN]
 
         # Step 5: View market trends
-        trends_url = reverse('market-trends-list')
+        trends_url = reverse("market-trends-list")
         response = api_client.get(trends_url)
         assert response.status_code == status.HTTP_200_OK
 
         # Step 6: View HR investment recommendations
-        recommendations_url = reverse('hr-investment-recommendations-list')
+        recommendations_url = reverse("hr-investment-recommendations-list")
         response = api_client.get(recommendations_url)
         assert response.status_code == status.HTTP_200_OK
 
-    def test_viewer_limited_workflow(self, api_client, hr_viewer, sample_future_skill_prediction):
+    def test_viewer_limited_workflow(
+        self, api_client, hr_viewer, sample_future_skill_prediction
+    ):
         """Test that viewer can only read data, not modify."""
         api_client.force_authenticate(user=hr_viewer)
 
         # Cannot view predictions (requires group membership)
-        url = reverse('future-skills-list')
+        url = reverse("future-skills-list")
         response = api_client.get(url)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
         # Cannot recalculate predictions (requires IsHRStaff)
-        recalc_url = reverse('future-skills-recalculate')
-        recalc_data = {'horizon_years': 5}
-        response = api_client.post(recalc_url, recalc_data, format='json')
+        recalc_url = reverse("future-skills-recalculate")
+        recalc_data = {"horizon_years": 5}
+        response = api_client.post(recalc_url, recalc_data, format="json")
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -87,25 +91,25 @@ class TestSkillManagementJourney:
         # Step 1: Skills and job roles already exist via fixtures
 
         # Step 2: Trigger recalculation
-        url = reverse('future-skills-recalculate')
-        data = {'horizon_years': 5}
-        response = admin_client.post(url, data, format='json')
+        url = reverse("future-skills-recalculate")
+        data = {"horizon_years": 5}
+        response = admin_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert 'total_predictions' in response.data
+        assert "total_predictions" in response.data
 
         # Step 3: View prediction results
-        predictions_url = reverse('future-skills-list')
+        predictions_url = reverse("future-skills-list")
         response = admin_client.get(predictions_url)
 
         assert response.status_code == status.HTTP_200_OK
         # Handle paginated response
         data = response.data
-        results = data.get('results', data) if isinstance(data, dict) else data
+        results = data.get("results", data) if isinstance(data, dict) else data
         assert isinstance(results, list)
 
         # Step 4: Check HR recommendations
-        recommendations_url = reverse('hr-investment-recommendations-list')
+        recommendations_url = reverse("hr-investment-recommendations-list")
         response = admin_client.get(recommendations_url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -120,27 +124,23 @@ class TestBulkOperationsJourney:
 
     def test_bulk_employee_import_and_predict(self, admin_client, db, sample_job_role):
         """Test importing multiple employees and running bulk predictions."""
-        url = reverse('employee-bulk-import')
+        url = reverse("employee-bulk-import")
 
         employees_data = [
             {
-                'name': f'Employee {i}',
-                'email': f'employee{i}@test.com',
-                'department': 'Engineering',
-                'position': 'Developer',
-                'job_role_id': sample_job_role.id,
-                'current_skills': ['Python', 'Django']
+                "name": f"Employee {i}",
+                "email": f"employee{i}@test.com",
+                "department": "Engineering",
+                "position": "Developer",
+                "job_role_id": sample_job_role.id,
+                "current_skills": ["Python", "Django"],
             }
             for i in range(5)
         ]
 
-        data = {
-            'employees': employees_data,
-            'auto_predict': True,
-            'horizon_years': 5
-        }
+        data = {"employees": employees_data, "auto_predict": True, "horizon_years": 5}
 
-        response = admin_client.post(url, data, format='json')
+        response = admin_client.post(url, data, format="json")
 
         # Debug output
         if response.status_code not in [status.HTTP_200_OK, status.HTTP_201_CREATED]:
@@ -148,9 +148,15 @@ class TestBulkOperationsJourney:
             print(f"Response data: {response.data}")
             print(f"Response content: {response.content}")
 
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_201_CREATED, status.HTTP_207_MULTI_STATUS]
-        assert response.data.get('created', 0) == 5
-        assert response.data.get('predictions_generated') is True
+        assert response.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_201_CREATED,
+            status.HTTP_207_MULTI_STATUS,
+        ]
+        assert response.data.get("created", 0) == 5
+        assert response.data.get("predictions_generated") is True
+
+
 @pytest.mark.django_db
 @pytest.mark.e2e
 class TestReportingJourney:
@@ -158,7 +164,7 @@ class TestReportingJourney:
 
     def test_view_market_trends(self, authenticated_client):
         """Test viewing market trends for analysis."""
-        url = reverse('market-trends-list')
+        url = reverse("market-trends-list")
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -166,7 +172,7 @@ class TestReportingJourney:
 
     def test_view_economic_reports(self, authenticated_client):
         """Test viewing economic reports."""
-        url = reverse('economic-reports-list')
+        url = reverse("economic-reports-list")
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -220,24 +226,27 @@ Customer Success,Customer Relations,Soft Skills,Customer Success,0.75,0.92,24,0.
         dataset_path.write_text(sample_data)
 
         # Step 2: Start training
-        url = reverse('training-start')
-        data = {
-            'dataset_path': str(dataset_path),
-            'test_split': 0.2
-        }
-        response = admin_client.post(url, data, format='json')
+        url = reverse("training-start")
+        data = {"dataset_path": str(dataset_path), "test_split": 0.2}
+        response = admin_client.post(url, data, format="json")
 
         # Should accept 200 (sync success), 201 (created), or 202 (async accepted)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_201_CREATED, status.HTTP_202_ACCEPTED]
-        assert 'training_run_id' in response.data
+        assert response.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_201_CREATED,
+            status.HTTP_202_ACCEPTED,
+        ]
+        assert "training_run_id" in response.data
 
         # Step 3: Check training run status
-        training_run_id = response.data['training_run_id']
-        detail_url = reverse('training-run-detail', kwargs={'pk': training_run_id})
+        training_run_id = response.data["training_run_id"]
+        detail_url = reverse("training-run-detail", kwargs={"pk": training_run_id})
         detail_response = admin_client.get(detail_url)
 
         assert detail_response.status_code == status.HTTP_200_OK
-        assert detail_response.data['status'] in ['RUNNING', 'COMPLETED']
+        assert detail_response.data["status"] in ["RUNNING", "COMPLETED"]
+
+
 @pytest.mark.django_db
 @pytest.mark.e2e
 class TestErrorRecoveryJourney:
@@ -245,21 +254,21 @@ class TestErrorRecoveryJourney:
 
     def test_prediction_invalid_horizon(self, admin_client):
         """Test system behavior when invalid horizon_years is provided."""
-        url = reverse('future-skills-recalculate')
+        url = reverse("future-skills-recalculate")
 
         # Send invalid data to trigger error
-        invalid_data = {'horizon_years': 'invalid'}
+        invalid_data = {"horizon_years": "invalid"}
 
-        response = admin_client.post(url, invalid_data, format='json')
+        response = admin_client.post(url, invalid_data, format="json")
 
         # Should return error status with helpful message
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_filter_invalid_job_role(self, authenticated_client):
         """Test handling of invalid job role filter."""
-        url = reverse('future-skills-list')
+        url = reverse("future-skills-list")
 
-        response = authenticated_client.get(url, {'job_role_id': 99999})
+        response = authenticated_client.get(url, {"job_role_id": 99999})
 
         # Should return empty results or 200 OK (not crash)
         assert response.status_code == status.HTTP_200_OK
@@ -276,17 +285,11 @@ class TestPerformanceJourney:
         from future_skills.models import Skill
 
         # Create many skills
-        skills = [
-            Skill(
-                name=f'Skill {i}',
-                category='Technical'
-            )
-            for i in range(100)
-        ]
+        skills = [Skill(name=f"Skill {i}", category="Technical") for i in range(100)]
         Skill.objects.bulk_create(skills)
 
         # Test listing predictions (should complete without timeout)
-        url = reverse('future-skills-list')
+        url = reverse("future-skills-list")
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK

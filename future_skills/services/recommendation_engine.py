@@ -141,17 +141,14 @@ def generate_recommendations_from_predictions(horizon_years: int = 5) -> int:
 
         priority = _choose_priority_from_level(prediction.level)
         action = _choose_recommended_action(job_role, skill)
-        
+
         # Track statistics
         priority_stats[priority] = priority_stats.get(priority, 0) + 1
         action_stats[action] = action_stats.get(action, 0) + 1
 
-        rationale = (
-            prediction.rationale
-            or (
-                f"Basée sur un score de {prediction.score} et un niveau {prediction.level}, "
-                f"il est recommandé de {action} pour {skill.name} à horizon {horizon_years} ans."
-            )
+        rationale = prediction.rationale or (
+            f"Basée sur un score de {prediction.score} et un niveau {prediction.level}, "
+            f"il est recommandé de {action} pour {skill.name} à horizon {horizon_years} ans."
         )
 
         obj, created = HRInvestmentRecommendation.objects.update_or_create(
@@ -179,13 +176,17 @@ def generate_recommendations_from_predictions(horizon_years: int = 5) -> int:
 
     logger.info("✅ Recommendation generation completed successfully")
     logger.info("Total recommendations created/updated: %s", total)
-    logger.info("Priority distribution: HIGH=%s, MEDIUM=%s, LOW=%s",
-                priority_stats.get("HIGH", 0),
-                priority_stats.get("MEDIUM", 0),
-                priority_stats.get("LOW", 0))
-    logger.info("Action distribution: HIRING=%s, TRAINING=%s",
-                action_stats.get("HIRING", 0),
-                action_stats.get("TRAINING", 0))
+    logger.info(
+        "Priority distribution: HIGH=%s, MEDIUM=%s, LOW=%s",
+        priority_stats.get("HIGH", 0),
+        priority_stats.get("MEDIUM", 0),
+        priority_stats.get("LOW", 0),
+    )
+    logger.info(
+        "Action distribution: HIRING=%s, TRAINING=%s",
+        action_stats.get("HIRING", 0),
+        action_stats.get("TRAINING", 0),
+    )
     logger.info("========================================")
 
     return total

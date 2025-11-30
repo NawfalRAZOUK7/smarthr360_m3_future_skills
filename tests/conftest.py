@@ -16,12 +16,13 @@ User = get_user_model()
 # Test Constants
 # ============================================================================
 
-SKILL_MACHINE_LEARNING = 'Machine Learning'
+SKILL_MACHINE_LEARNING = "Machine Learning"
 
 
 # ============================================================================
 # API Client Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def api_client():
@@ -68,6 +69,7 @@ def admin_client(api_client, admin_user):
 # User Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def regular_user(db):
     """
@@ -81,15 +83,15 @@ def regular_user(db):
     from django.contrib.auth.models import Group
 
     user = User.objects.create_user(
-        username='testuser',
-        email='testuser@example.com',
-        password='testpass123',
+        username="testuser",
+        email="testuser@example.com",
+        password="testpass123",
         is_staff=False,
-        is_superuser=False
+        is_superuser=False,
     )
 
     # Add to MANAGER group for API access
-    manager_group, _ = Group.objects.get_or_create(name='MANAGER')
+    manager_group, _ = Group.objects.get_or_create(name="MANAGER")
     user.groups.add(manager_group)
 
     return user
@@ -106,9 +108,7 @@ def admin_user(db):
             assert admin_user.is_staff
     """
     return User.objects.create_superuser(
-        username='admin',
-        email='admin@example.com',
-        password='adminpass123'
+        username="admin", email="admin@example.com", password="adminpass123"
     )
 
 
@@ -125,20 +125,18 @@ def hr_manager(db):
     from django.contrib.auth.models import Group
 
     user = User.objects.create_user(
-        username='hr_manager',
-        email='hr_manager@example.com',
-        password='hrpass123',
-        is_staff=True
+        username="hr_manager",
+        email="hr_manager@example.com",
+        password="hrpass123",
+        is_staff=True,
     )
 
     # Add to RESPONSABLE_RH group for HR staff permissions
-    hr_group, _ = Group.objects.get_or_create(name='RESPONSABLE_RH')
+    hr_group, _ = Group.objects.get_or_create(name="RESPONSABLE_RH")
     user.groups.add(hr_group)
 
     # Add future_skills permissions
-    permissions = Permission.objects.filter(
-        content_type__app_label='future_skills'
-    )
+    permissions = Permission.objects.filter(content_type__app_label="future_skills")
     user.user_permissions.set(permissions)
 
     return user
@@ -156,16 +154,15 @@ def hr_viewer(db):
             assert not hr_viewer.groups.filter(name__in=['DRH', 'RESPONSABLE_RH']).exists()
     """
     user = User.objects.create_user(
-        username='hr_viewer',
-        email='hr_viewer@example.com',
-        password='viewerpass123',
-        is_staff=False
+        username="hr_viewer",
+        email="hr_viewer@example.com",
+        password="viewerpass123",
+        is_staff=False,
     )
 
     # Add view-only permissions (but no group membership)
     view_permissions = Permission.objects.filter(
-        content_type__app_label='future_skills',
-        codename__startswith='view_'
+        content_type__app_label="future_skills", codename__startswith="view_"
     )
     user.user_permissions.set(view_permissions)
 
@@ -175,6 +172,7 @@ def hr_viewer(db):
 # ============================================================================
 # Database Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def sample_skill(db):
@@ -188,9 +186,9 @@ def sample_skill(db):
     from future_skills.models import Skill
 
     return Skill.objects.create(
-        name='Python Programming',
-        category='Technical',
-        description='Advanced Python programming skills'
+        name="Python Programming",
+        category="Technical",
+        description="Advanced Python programming skills",
     )
 
 
@@ -206,9 +204,9 @@ def sample_job_role(db):
     from future_skills.models import JobRole
 
     return JobRole.objects.create(
-        name='Software Engineer',
-        department='Engineering',
-        description='Develops and maintains software applications'
+        name="Software Engineer",
+        department="Engineering",
+        description="Develops and maintains software applications",
     )
 
 
@@ -228,8 +226,8 @@ def sample_future_skill_prediction(db, sample_job_role, sample_skill):
         skill=sample_skill,
         horizon_years=5,
         score=85.0,
-        level='HIGH',
-        rationale='High demand for Python skills in software engineering'
+        level="HIGH",
+        rationale="High demand for Python skills in software engineering",
     )
 
 
@@ -245,9 +243,9 @@ def sample_prediction_run(db):
     from future_skills.models import PredictionRun
 
     return PredictionRun.objects.create(
-        description='Test prediction run',
+        description="Test prediction run",
         total_predictions=10,
-        parameters={'horizon_years': 5, 'engine': 'rules'}
+        parameters={"horizon_years": 5, "engine": "rules"},
     )
 
 
@@ -264,18 +262,19 @@ def sample_employee(db, sample_job_role):
     from future_skills.models import Employee
 
     return Employee.objects.create(
-        name='John Doe',
-        email='john.doe@example.com',
-        department='Engineering',
-        position='Developer',
+        name="John Doe",
+        email="john.doe@example.com",
+        department="Engineering",
+        position="Developer",
         job_role=sample_job_role,
-        current_skills=['Python', 'Django']
+        current_skills=["Python", "Django"],
     )
 
 
 # ============================================================================
 # ML Testing Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def mock_ml_model(mocker):
@@ -287,8 +286,8 @@ def mock_ml_model(mocker):
             result = predict_future_skills(employee_data)
             assert result is not None
     """
-    mock_model = mocker.patch('future_skills.services.prediction_engine.load_model')
-    mock_model.return_value.predict.return_value = ['AI', SKILL_MACHINE_LEARNING]
+    mock_model = mocker.patch("future_skills.services.prediction_engine.load_model")
+    mock_model.return_value.predict.return_value = ["AI", SKILL_MACHINE_LEARNING]
     mock_model.return_value.predict_proba.return_value = [[0.1, 0.9]]
     return mock_model
 
@@ -311,6 +310,7 @@ def disable_ml(settings):
 # Request Factory Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def request_factory():
     """
@@ -323,12 +323,14 @@ def request_factory():
             assert response.status_code == 200
     """
     from django.test import RequestFactory
+
     return RequestFactory()
 
 
 # ============================================================================
 # Test Data Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def skill_data():
@@ -341,9 +343,9 @@ def skill_data():
             assert skill.category == 'Technical'
     """
     return {
-        'name': SKILL_MACHINE_LEARNING,
-        'category': 'Technical',
-        'description': 'ML algorithms and frameworks'
+        "name": SKILL_MACHINE_LEARNING,
+        "category": "Technical",
+        "description": "ML algorithms and frameworks",
     }
 
 
@@ -358,9 +360,9 @@ def job_role_data():
             assert role.department == 'Data Science'
     """
     return {
-        'name': 'Data Analyst',
-        'department': 'Data Science',
-        'description': 'Analyzes data and provides insights'
+        "name": "Data Analyst",
+        "department": "Data Science",
+        "description": "Analyzes data and provides insights",
     }
 
 
@@ -375,12 +377,12 @@ def future_skill_prediction_data(sample_job_role, sample_skill):
             assert prediction.level == 'HIGH'
     """
     return {
-        'job_role': sample_job_role,
-        'skill': sample_skill,
-        'horizon_years': 5,
-        'score': 90.0,
-        'level': 'HIGH',
-        'rationale': 'Strong market demand'
+        "job_role": sample_job_role,
+        "skill": sample_skill,
+        "horizon_years": 5,
+        "score": 90.0,
+        "level": "HIGH",
+        "rationale": "Strong market demand",
     }
 
 
@@ -388,20 +390,13 @@ def future_skill_prediction_data(sample_job_role, sample_skill):
 # Pytest Configuration
 # ============================================================================
 
+
 def pytest_configure(config):
     """Configure pytest with custom markers."""
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
-    config.addinivalue_line(
-        "markers", "integration: marks tests as integration tests"
-    )
-    config.addinivalue_line(
-        "markers", "e2e: marks tests as end-to-end tests"
-    )
-    config.addinivalue_line(
-        "markers", "ml: marks tests that require ML model"
-    )
-    config.addinivalue_line(
-        "markers", "api: marks tests for API endpoints"
-    )
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
+    config.addinivalue_line("markers", "e2e: marks tests as end-to-end tests")
+    config.addinivalue_line("markers", "ml: marks tests that require ML model")
+    config.addinivalue_line("markers", "api: marks tests for API endpoints")

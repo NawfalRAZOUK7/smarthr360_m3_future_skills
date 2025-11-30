@@ -1,18 +1,22 @@
 # CI/CD Enhancement Summary
 
 ## Overview
+
 This document summarizes the comprehensive CI/CD enhancements implemented for SmartHR360, including staging/production deployment workflows, monitoring infrastructure, and deployment strategies.
 
 ## Deployment Workflows
 
 ### 1. Staging Deployment Workflow
+
 **File:** `.github/workflows/deploy-staging.yml`
 
 **Trigger:**
+
 - Push to `develop` branch
 - Manual workflow dispatch
 
 **Features:**
+
 - Multi-platform Docker builds (AMD64 + ARM64)
 - Automated deployment to staging environment
 - Health checks and smoke tests
@@ -22,13 +26,16 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 **URL:** https://staging.smarthr360.com
 
 ### 2. Production Deployment Workflow
+
 **File:** `.github/workflows/deploy-production.yml`
 
 **Trigger:**
-- Git version tags (v*)
+
+- Git version tags (v\*)
 - Manual workflow dispatch with version input
 
 **Features:**
+
 - Semantic versioning with Git tags
 - Multi-platform Docker builds
 - Manual approval requirement (GitHub Environments)
@@ -41,10 +48,12 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 ## Kubernetes Environment Configurations
 
 ### Staging Environment
+
 **Namespace:** `smarthr360-staging`
 **Configuration:** `k8s/overlays/staging/`
 
 **Characteristics:**
+
 - Uses `develop` branch images
 - 2 API replicas (high availability)
 - Production-like settings with debugging enabled
@@ -52,15 +61,18 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 - Ingress: staging.smarthr360.com
 
 **Key Files:**
+
 - `kustomization.yaml` - Overlay configuration
 - `configmap-patch.yaml` - Environment variables
 - `ingress-patch.yaml` - Staging domain configuration
 
 ### Production Environment
+
 **Namespace:** `smarthr360-prod`
 **Configuration:** `k8s/overlays/production/`
 
 **Characteristics:**
+
 - Uses versioned release tags
 - 3 API replicas + 2 Celery workers (high availability)
 - Production settings with enhanced security
@@ -69,6 +81,7 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 - Ingress: smarthr360.com, www.smarthr360.com
 
 **Key Files:**
+
 - `kustomization.yaml` - Production overlay with resource limits
 - `configmap-patch.yaml` - Production environment variables
 - `ingress-patch.yaml` - Production domain configuration
@@ -76,9 +89,11 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 ## Monitoring and Observability
 
 ### Prometheus Configuration
+
 **File:** `monitoring/prometheus/config.yaml`
 
 **Features:**
+
 - Kubernetes service discovery
 - Pod-level metrics scraping (with annotations)
 - Node and API server monitoring
@@ -86,6 +101,7 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 - Multi-environment support (dev/staging/prod)
 
 **Metrics Collected:**
+
 - HTTP request rates and error rates
 - Response time percentiles (P50, P95, P99)
 - CPU and memory usage
@@ -94,9 +110,11 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 - Pod restart counts
 
 ### Alert Rules
+
 **File:** `monitoring/alerts/api-alerts.yaml`
 
 **Alerts Configured:**
+
 1. **HighErrorRate** - >5% error rate for 5 minutes
 2. **HighAPILatency** - P95 latency >2 seconds
 3. **PodRestartingFrequently** - >0.1 restarts/hour
@@ -107,13 +125,16 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 8. **DeploymentReplicasMismatch** - Replicas unavailable for 15 minutes
 
 **Severity Levels:**
+
 - Critical: Immediate action required
 - Warning: Investigation needed
 
 ### Grafana Dashboard
+
 **File:** `monitoring/dashboards/application-dashboard.json`
 
 **Panels:**
+
 1. Request Rate (by environment)
 2. Error Rate (5xx responses)
 3. Response Time P95
@@ -128,6 +149,7 @@ This document summarizes the comprehensive CI/CD enhancements implemented for Sm
 ## Deployment Strategies
 
 ### Blue-Green Deployment
+
 Support for zero-downtime deployments using blue-green strategy:
 
 1. Deploy new version to "blue" environment
@@ -138,6 +160,7 @@ Support for zero-downtime deployments using blue-green strategy:
 **Implementation:** Prepared in workflow comments (deploy-production.yml)
 
 ### Canary Deployment
+
 Gradual rollout with traffic shifting:
 
 1. Deploy new version with 10% traffic
@@ -148,6 +171,7 @@ Gradual rollout with traffic shifting:
 **Tooling:** ArgoCD Rollouts / Istio
 
 ### Rolling Update
+
 Default Kubernetes strategy with enhanced health checks:
 
 - **maxUnavailable:** 0 (zero downtime)
@@ -158,6 +182,7 @@ Default Kubernetes strategy with enhanced health checks:
 ## Multi-Platform Support
 
 All Docker images are built for multiple architectures:
+
 - **linux/amd64** - Cloud deployments (AWS, GCP, Azure)
 - **linux/arm64** - Apple Silicon development machines
 
@@ -168,11 +193,13 @@ All Docker images are built for multiple architectures:
 ### Required Setup
 
 1. **Development Environment**
+
    - No approval required
    - Auto-deploy on push to main
    - URL: Set in ArgoCD
 
 2. **Staging Environment**
+
    - No approval required
    - Auto-deploy on push to develop
    - URL: https://staging.smarthr360.com
@@ -180,11 +207,13 @@ All Docker images are built for multiple architectures:
 3. **Production Environment**
    - **Required reviewers:** Team leads
    - **Wait timer:** 5 minutes
-   - **Branch restriction:** Only version tags (v*)
+   - **Branch restriction:** Only version tags (v\*)
    - URL: https://smarthr360.com
 
 ### Environment Secrets
+
 Each environment requires:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `SECRET_KEY` - Django secret key
 - `DB_PASSWORD` - Database password
@@ -194,6 +223,7 @@ Each environment requires:
 ## ArgoCD Applications
 
 ### Development
+
 ```bash
 argocd app create smarthr360-dev \
   --repo https://github.com/NawfalRAZOUK7/smarthr360_m3_future_skills.git \
@@ -204,6 +234,7 @@ argocd app create smarthr360-dev \
 ```
 
 ### Staging (To Be Created)
+
 ```bash
 argocd app create smarthr360-staging \
   --repo https://github.com/NawfalRAZOUK7/smarthr360_m3_future_skills.git \
@@ -214,6 +245,7 @@ argocd app create smarthr360-staging \
 ```
 
 ### Production (To Be Created)
+
 ```bash
 argocd app create smarthr360-prod \
   --repo https://github.com/NawfalRAZOUK7/smarthr360_m3_future_skills.git \
@@ -225,6 +257,7 @@ argocd app create smarthr360-prod \
 ## Deployment Process
 
 ### Staging Deployment
+
 1. Merge feature branch to `develop`
 2. GitHub Actions triggers staging workflow
 3. Multi-platform Docker image built and pushed
@@ -233,6 +266,7 @@ argocd app create smarthr360-prod \
 6. Team notified of deployment status
 
 ### Production Deployment
+
 1. Create version tag: `git tag v1.0.0 && git push origin v1.0.0`
 2. GitHub Actions triggers production workflow
 3. Multi-platform Docker image built with version tags
@@ -245,18 +279,22 @@ argocd app create smarthr360-prod \
 ## Rollback Procedures
 
 ### Automatic Rollback
+
 Triggered by:
+
 - Health check failures (>3 consecutive failures)
 - Error rate spike (>10% 5xx errors)
 - Critical alert (HighErrorRate, HighAPILatency)
 
 **Process:**
+
 1. Detect failure condition
 2. Execute `kubectl rollout undo`
 3. Verify previous version is healthy
 4. Notify team with rollback details
 
 ### Manual Rollback
+
 ```bash
 # Rollback to previous version
 kubectl rollout undo deployment/smarthr360-api -n smarthr360-prod
@@ -271,21 +309,25 @@ kubectl rollout status deployment/smarthr360-api -n smarthr360-prod
 ## Monitoring Access
 
 ### Prometheus
+
 - Development: `kubectl port-forward -n monitoring svc/prometheus 9090:9090`
 - Access: http://localhost:9090
 
 ### Grafana
+
 - Development: `kubectl port-forward -n monitoring svc/grafana 3000:80`
 - Access: http://localhost:3000
 - Default credentials: admin/admin (change on first login)
 
 ### ArgoCD
+
 - Access: https://localhost:8080 (via port-forward)
 - Login: `argocd login localhost:8080`
 
 ## Next Steps
 
 1. **Setup Monitoring Stack**
+
    ```bash
    kubectl create namespace monitoring
    kubectl apply -f monitoring/prometheus/
@@ -293,15 +335,18 @@ kubectl rollout status deployment/smarthr360-api -n smarthr360-prod
    ```
 
 2. **Configure GitHub Environments**
+
    - Go to Repository Settings → Environments
    - Create staging and production environments
    - Set protection rules and secrets
 
 3. **Create ArgoCD Applications**
+
    - Run the ArgoCD app create commands above
    - Verify auto-sync is working
 
 4. **Setup Notification Channels**
+
    - Configure Slack webhooks in GitHub Secrets
    - Add PagerDuty integration for critical alerts
    - Setup email notifications for deployments
@@ -314,22 +359,26 @@ kubectl rollout status deployment/smarthr360-api -n smarthr360-prod
 ## Best Practices
 
 1. **Version Tagging**
+
    - Use semantic versioning (v1.2.3)
    - Tag only stable commits from main branch
    - Include changelog in tag annotations
 
 2. **Environment Promotion**
+
    - dev → staging → production
    - Test thoroughly in staging before production
    - Monitor metrics after each deployment
 
 3. **Secrets Management**
+
    - Never commit secrets to Git
    - Use GitHub Secrets for CI/CD
    - Use Kubernetes Secrets for runtime
    - Rotate secrets regularly
 
 4. **Monitoring**
+
    - Review dashboards daily
    - Respond to critical alerts immediately
    - Tune alert thresholds based on baselines
@@ -344,27 +393,32 @@ kubectl rollout status deployment/smarthr360-api -n smarthr360-prod
 ## Troubleshooting
 
 ### Workflow Not Triggering
+
 - Check GitHub Actions is enabled
 - Verify branch/tag names match workflow triggers
 - Check GitHub Actions logs for errors
 
 ### Image Pull Errors
+
 - Verify GITHUB_TOKEN permissions (packages:write)
 - Check image exists in GHCR: https://github.com/NawfalRAZOUK7?tab=packages
 - Verify Kubernetes secret `ghcr-secret` exists
 
 ### ArgoCD Sync Failures
+
 - Check repository authentication
 - Verify Kustomize builds: `kubectl kustomize k8s/overlays/staging`
 - Review ArgoCD logs: `argocd app logs smarthr360-staging`
 
 ### Pod CrashLoopBackOff
+
 - Check pod logs: `kubectl logs <pod-name>`
 - Verify ConfigMap values
 - Check database connectivity
 - Review resource limits
 
 ## Documentation
+
 - **Architecture:** `docs/TRAINING_SYSTEM_ARCHITECTURE.md`
 - **API Documentation:** `docs/API_DOCUMENTATION.md`
 - **CI/CD ML Testing:** `docs/CI_CD_ML_TESTING.md`

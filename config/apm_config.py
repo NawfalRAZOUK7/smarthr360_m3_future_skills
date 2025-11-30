@@ -16,6 +16,7 @@ from django.conf import settings
 # ELASTIC APM CONFIGURATION
 # ============================================================================
 
+
 def get_elastic_apm_config() -> Optional[Dict[str, Any]]:
     """
     Get Elastic APM configuration.
@@ -23,46 +24,49 @@ def get_elastic_apm_config() -> Optional[Dict[str, Any]]:
     Returns:
         Dict with Elastic APM settings or None if not configured
     """
-    if not os.getenv('ELASTIC_APM_SERVER_URL'):
+    if not os.getenv("ELASTIC_APM_SERVER_URL"):
         return None
 
     return {
-        'SERVICE_NAME': os.getenv('ELASTIC_APM_SERVICE_NAME', 'smarthr360-future-skills'),
-        'SECRET_TOKEN': os.getenv('ELASTIC_APM_SECRET_TOKEN', ''),
-        'SERVER_URL': os.getenv('ELASTIC_APM_SERVER_URL'),
-        'ENVIRONMENT': os.getenv('ENVIRONMENT', 'development'),
-        'DEBUG': os.getenv('ELASTIC_APM_DEBUG', 'false').lower() == 'true',
-
+        "SERVICE_NAME": os.getenv(
+            "ELASTIC_APM_SERVICE_NAME", "smarthr360-future-skills"
+        ),
+        "SECRET_TOKEN": os.getenv("ELASTIC_APM_SECRET_TOKEN", ""),
+        "SERVER_URL": os.getenv("ELASTIC_APM_SERVER_URL"),
+        "ENVIRONMENT": os.getenv("ENVIRONMENT", "development"),
+        "DEBUG": os.getenv("ELASTIC_APM_DEBUG", "false").lower() == "true",
         # Transaction settings
-        'TRANSACTION_SAMPLE_RATE': float(os.getenv('ELASTIC_APM_TRANSACTION_SAMPLE_RATE', '1.0')),
-        'TRANSACTION_MAX_SPANS': int(os.getenv('ELASTIC_APM_TRANSACTION_MAX_SPANS', '500')),
-
+        "TRANSACTION_SAMPLE_RATE": float(
+            os.getenv("ELASTIC_APM_TRANSACTION_SAMPLE_RATE", "1.0")
+        ),
+        "TRANSACTION_MAX_SPANS": int(
+            os.getenv("ELASTIC_APM_TRANSACTION_MAX_SPANS", "500")
+        ),
         # Performance monitoring
-        'CAPTURE_BODY': os.getenv('ELASTIC_APM_CAPTURE_BODY', 'errors'),  # 'off', 'errors', 'transactions', 'all'
-        'CAPTURE_HEADERS': os.getenv('ELASTIC_APM_CAPTURE_HEADERS', 'true').lower() == 'true',
-
+        "CAPTURE_BODY": os.getenv(
+            "ELASTIC_APM_CAPTURE_BODY", "errors"
+        ),  # 'off', 'errors', 'transactions', 'all'
+        "CAPTURE_HEADERS": os.getenv("ELASTIC_APM_CAPTURE_HEADERS", "true").lower()
+        == "true",
         # Distributed tracing
-        'DISTRIBUTED_TRACING': True,
-        'TRACE_CONTINUATION_STRATEGY': 'continue',
-
+        "DISTRIBUTED_TRACING": True,
+        "TRACE_CONTINUATION_STRATEGY": "continue",
         # Django specific
-        'DJANGO_TRANSACTION_NAME_FROM_ROUTE': True,
-        'TRANSACTIONS_IGNORE_PATTERNS': [
-            '^OPTIONS',
-            'healthcheck',
-            'readiness',
-            'liveness',
+        "DJANGO_TRANSACTION_NAME_FROM_ROUTE": True,
+        "TRANSACTIONS_IGNORE_PATTERNS": [
+            "^OPTIONS",
+            "healthcheck",
+            "readiness",
+            "liveness",
         ],
-
         # Error filtering
-        'FILTER_EXCEPTION_TYPES': [
-            'Http404',
-            'PermissionDenied',
+        "FILTER_EXCEPTION_TYPES": [
+            "Http404",
+            "PermissionDenied",
         ],
-
         # Custom context
-        'CUSTOM_CONTEXT_PROCESSORS': [
-            'config.apm_config.add_custom_context',
+        "CUSTOM_CONTEXT_PROCESSORS": [
+            "config.apm_config.add_custom_context",
         ],
     }
 
@@ -79,13 +83,13 @@ def add_custom_context(client: Any, event_dict: Dict[str, Any]) -> Dict[str, Any
         Modified event dictionary
     """
     # Add custom tags
-    event_dict['tags'] = event_dict.get('tags', {})
-    event_dict['tags']['app'] = 'smarthr360'
-    event_dict['tags']['component'] = 'future-skills'
+    event_dict["tags"] = event_dict.get("tags", {})
+    event_dict["tags"]["app"] = "smarthr360"
+    event_dict["tags"]["component"] = "future-skills"
 
     # Add custom metadata
-    event_dict['custom'] = event_dict.get('custom', {})
-    event_dict['custom']['environment'] = os.getenv('ENVIRONMENT', 'development')
+    event_dict["custom"] = event_dict.get("custom", {})
+    event_dict["custom"]["environment"] = os.getenv("ENVIRONMENT", "development")
 
     return event_dict
 
@@ -94,6 +98,7 @@ def add_custom_context(client: Any, event_dict: Dict[str, Any]) -> Dict[str, Any
 # SENTRY CONFIGURATION
 # ============================================================================
 
+
 def get_sentry_config() -> Optional[Dict[str, Any]]:
     """
     Get Sentry configuration.
@@ -101,44 +106,37 @@ def get_sentry_config() -> Optional[Dict[str, Any]]:
     Returns:
         Dict with Sentry settings or None if not configured
     """
-    dsn = os.getenv('SENTRY_DSN')
+    dsn = os.getenv("SENTRY_DSN")
     if not dsn:
         return None
 
     return {
-        'dsn': dsn,
-        'environment': os.getenv('ENVIRONMENT', 'development'),
-        'release': os.getenv('APP_VERSION', 'unknown'),
-
+        "dsn": dsn,
+        "environment": os.getenv("ENVIRONMENT", "development"),
+        "release": os.getenv("APP_VERSION", "unknown"),
         # Performance monitoring
-        'traces_sample_rate': float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '1.0')),
-        'profiles_sample_rate': float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '1.0')),
-
+        "traces_sample_rate": float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "1.0")),
+        "profiles_sample_rate": float(os.getenv("SENTRY_PROFILES_SAMPLE_RATE", "1.0")),
         # Error sampling
-        'sample_rate': float(os.getenv('SENTRY_SAMPLE_RATE', '1.0')),
-
+        "sample_rate": float(os.getenv("SENTRY_SAMPLE_RATE", "1.0")),
         # Integrations
-        'integrations': get_sentry_integrations(),
-
+        "integrations": get_sentry_integrations(),
         # Request data
-        'send_default_pii': False,
-        'max_breadcrumbs': 50,
-        'attach_stacktrace': True,
-
+        "send_default_pii": False,
+        "max_breadcrumbs": 50,
+        "attach_stacktrace": True,
         # Performance
-        'max_request_body_size': 'medium',  # 'never', 'small', 'medium', 'always'
-
+        "max_request_body_size": "medium",  # 'never', 'small', 'medium', 'always'
         # Error filtering
-        'ignore_errors': [
-            'Http404',
-            'PermissionDenied',
-            'NotAuthenticated',
-            'AuthenticationFailed',
+        "ignore_errors": [
+            "Http404",
+            "PermissionDenied",
+            "NotAuthenticated",
+            "AuthenticationFailed",
         ],
-
         # Before send hook
-        'before_send': before_send_sentry,
-        'before_send_transaction': before_send_transaction,
+        "before_send": before_send_sentry,
+        "before_send_transaction": before_send_transaction,
     }
 
 
@@ -152,7 +150,7 @@ def get_sentry_integrations() -> list:
 
     integrations = [
         DjangoIntegration(
-            transaction_style='url',
+            transaction_style="url",
             middleware_spans=True,
             signals_spans=True,
             cache_spans=True,
@@ -171,7 +169,9 @@ def get_sentry_integrations() -> list:
     return integrations
 
 
-def before_send_sentry(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def before_send_sentry(
+    event: Dict[str, Any], hint: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
     """
     Process events before sending to Sentry.
 
@@ -183,31 +183,33 @@ def before_send_sentry(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[
         Modified event or None to drop the event
     """
     # Remove sensitive data
-    if 'request' in event:
-        headers = event['request'].get('headers', {})
-        for sensitive_header in ['Authorization', 'Cookie', 'X-API-Key']:
+    if "request" in event:
+        headers = event["request"].get("headers", {})
+        for sensitive_header in ["Authorization", "Cookie", "X-API-Key"]:
             if sensitive_header in headers:
-                headers[sensitive_header] = '[Filtered]'
+                headers[sensitive_header] = "[Filtered]"
 
     # Add custom tags
-    event.setdefault('tags', {})
-    event['tags']['app'] = 'smarthr360'
-    event['tags']['component'] = 'future-skills'
+    event.setdefault("tags", {})
+    event["tags"]["app"] = "smarthr360"
+    event["tags"]["component"] = "future-skills"
 
     # Add user context if available
-    if 'user' not in event and hasattr(hint.get('request'), 'user'):
-        user = hint['request'].user
+    if "user" not in event and hasattr(hint.get("request"), "user"):
+        user = hint["request"].user
         if user.is_authenticated:
-            event['user'] = {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
+            event["user"] = {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
             }
 
     return event
 
 
-def before_send_transaction(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def before_send_transaction(
+    event: Dict[str, Any], hint: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
     """
     Process transactions before sending to Sentry.
 
@@ -219,13 +221,13 @@ def before_send_transaction(event: Dict[str, Any], hint: Dict[str, Any]) -> Opti
         Modified event or None to drop the transaction
     """
     # Skip health check transactions
-    if event.get('transaction') in ['/health/', '/healthcheck/', '/ready/', '/alive/']:
+    if event.get("transaction") in ["/health/", "/healthcheck/", "/ready/", "/alive/"]:
         return None
 
     # Add custom tags
-    event.setdefault('tags', {})
-    event['tags']['app'] = 'smarthr360'
-    event['tags']['component'] = 'future-skills'
+    event.setdefault("tags", {})
+    event["tags"]["app"] = "smarthr360"
+    event["tags"]["component"] = "future-skills"
 
     return event
 
@@ -233,6 +235,7 @@ def before_send_transaction(event: Dict[str, Any], hint: Dict[str, Any]) -> Opti
 # ============================================================================
 # APM INITIALIZATION
 # ============================================================================
+
 
 def initialize_apm() -> None:
     """
@@ -249,11 +252,12 @@ def initialize_apm() -> None:
             # Elastic APM is configured via Django settings
             # No need to initialize here, just log
             from config.logging_config import get_logger
+
             logger = get_logger(__name__)
             logger.info(
-                'elastic_apm_configured',
-                service_name=elastic_config['SERVICE_NAME'],
-                environment=elastic_config['ENVIRONMENT'],
+                "elastic_apm_configured",
+                service_name=elastic_config["SERVICE_NAME"],
+                environment=elastic_config["ENVIRONMENT"],
             )
         except ImportError:
             pass
@@ -267,11 +271,12 @@ def initialize_apm() -> None:
             sentry_sdk.init(**sentry_config)
 
             from config.logging_config import get_logger
+
             logger = get_logger(__name__)
             logger.info(
-                'sentry_configured',
-                environment=sentry_config['environment'],
-                release=sentry_config['release'],
+                "sentry_configured",
+                environment=sentry_config["environment"],
+                release=sentry_config["release"],
             )
         except ImportError:
             pass
@@ -280,6 +285,7 @@ def initialize_apm() -> None:
 # ============================================================================
 # APM UTILITIES
 # ============================================================================
+
 
 def capture_exception(exception: Exception, **context: Any) -> None:
     """
@@ -292,6 +298,7 @@ def capture_exception(exception: Exception, **context: Any) -> None:
     # Elastic APM
     try:
         import elasticapm
+
         client = elasticapm.get_client()
         if client:
             client.capture_exception(exc_info=True, context=context)
@@ -301,6 +308,7 @@ def capture_exception(exception: Exception, **context: Any) -> None:
     # Sentry
     try:
         import sentry_sdk
+
         with sentry_sdk.push_scope() as scope:
             for key, value in context.items():
                 scope.set_context(key, value)
@@ -309,7 +317,7 @@ def capture_exception(exception: Exception, **context: Any) -> None:
         pass
 
 
-def capture_message(message: str, level: str = 'info', **context: Any) -> None:
+def capture_message(message: str, level: str = "info", **context: Any) -> None:
     """
     Capture message in both Elastic APM and Sentry.
 
@@ -321,6 +329,7 @@ def capture_message(message: str, level: str = 'info', **context: Any) -> None:
     # Elastic APM
     try:
         import elasticapm
+
         client = elasticapm.get_client()
         if client:
             client.capture_message(message, level=level, custom=context)
@@ -330,6 +339,7 @@ def capture_message(message: str, level: str = 'info', **context: Any) -> None:
     # Sentry
     try:
         import sentry_sdk
+
         with sentry_sdk.push_scope() as scope:
             for key, value in context.items():
                 scope.set_context(key, value)
@@ -338,7 +348,9 @@ def capture_message(message: str, level: str = 'info', **context: Any) -> None:
         pass
 
 
-def set_user_context(user_id: Any, username: str = None, email: str = None, **extra: Any) -> None:
+def set_user_context(
+    user_id: Any, username: str = None, email: str = None, **extra: Any
+) -> None:
     """
     Set user context for APM.
 
@@ -349,15 +361,16 @@ def set_user_context(user_id: Any, username: str = None, email: str = None, **ex
         **extra: Additional user context
     """
     user_data = {
-        'id': user_id,
-        'username': username,
-        'email': email,
+        "id": user_id,
+        "username": username,
+        "email": email,
         **extra,
     }
 
     # Elastic APM
     try:
         import elasticapm
+
         client = elasticapm.get_client()
         if client:
             client.set_user_context(user_data)
@@ -367,6 +380,7 @@ def set_user_context(user_id: Any, username: str = None, email: str = None, **ex
     # Sentry
     try:
         import sentry_sdk
+
         sentry_sdk.set_user(user_data)
     except (ImportError, Exception):
         pass
@@ -383,6 +397,7 @@ def set_custom_context(key: str, value: Any) -> None:
     # Elastic APM
     try:
         import elasticapm
+
         client = elasticapm.get_client()
         if client:
             client.set_custom_context({key: value})
@@ -392,6 +407,7 @@ def set_custom_context(key: str, value: Any) -> None:
     # Sentry
     try:
         import sentry_sdk
+
         sentry_sdk.set_context(key, value)
     except (ImportError, Exception):
         pass

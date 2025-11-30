@@ -46,13 +46,14 @@ class BaseThrottleTestCase(TestCase):
         self.factory = RequestFactory()
         cache.clear()
 
-    def create_request(self, path='/', user=None):
+    def create_request(self, path="/", user=None):
         """Create a test request."""
         request = self.factory.get(path)
         if user:
             request.user = user
         else:
             from django.contrib.auth.models import AnonymousUser
+
             request.user = AnonymousUser()
         return request
 
@@ -62,8 +63,8 @@ class AnonRateThrottleTestCase(BaseThrottleTestCase):
 
     @override_settings(
         REST_FRAMEWORK={
-            'DEFAULT_THROTTLE_RATES': {
-                'anon': '5/minute',
+            "DEFAULT_THROTTLE_RATES": {
+                "anon": "5/minute",
             }
         }
     )
@@ -82,7 +83,7 @@ class AnonRateThrottleTestCase(BaseThrottleTestCase):
     def test_authenticated_user_not_throttled_by_anon(self):
         """Test that authenticated users bypass anon throttle."""
         throttle = AnonRateThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
         request = self.create_request(user=user)
 
         # Authenticated user should not be throttled by anon throttle
@@ -99,9 +100,9 @@ class AnonRateThrottleTestCase(BaseThrottleTestCase):
         # Get headers
         headers = throttle.get_rate_limit_headers(request, view)
 
-        self.assertIn('X-RateLimit-Limit', headers)
-        self.assertIn('X-RateLimit-Remaining', headers)
-        self.assertIn('X-RateLimit-Reset', headers)
+        self.assertIn("X-RateLimit-Limit", headers)
+        self.assertIn("X-RateLimit-Remaining", headers)
+        self.assertIn("X-RateLimit-Reset", headers)
 
     def test_wait_time_calculation(self):
         """Test wait time calculation when throttled."""
@@ -110,7 +111,7 @@ class AnonRateThrottleTestCase(BaseThrottleTestCase):
 
         # Exhaust the limit
         with override_settings(
-            REST_FRAMEWORK={'DEFAULT_THROTTLE_RATES': {'anon': '1/minute'}}
+            REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "1/minute"}}
         ):
             throttle.allow_request(request, None)
             throttle.allow_request(request, None)
@@ -125,15 +126,15 @@ class UserRateThrottleTestCase(BaseThrottleTestCase):
 
     @override_settings(
         REST_FRAMEWORK={
-            'DEFAULT_THROTTLE_RATES': {
-                'user': '10/minute',
+            "DEFAULT_THROTTLE_RATES": {
+                "user": "10/minute",
             }
         }
     )
     def test_authenticated_user_throttled(self):
         """Test that authenticated users are throttled."""
         throttle = UserRateThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
         request = self.create_request(user=user)
 
         # Make requests up to limit
@@ -147,8 +148,8 @@ class UserRateThrottleTestCase(BaseThrottleTestCase):
         """Test that different users have separate limits."""
         throttle = UserRateThrottle()
 
-        user1 = User.objects.create_user(username='user1', password='pass')
-        user2 = User.objects.create_user(username='user2', password='pass')
+        user1 = User.objects.create_user(username="user1", password="pass")
+        user2 = User.objects.create_user(username="user2", password="pass")
 
         request1 = self.create_request(user=user1)
         request2 = self.create_request(user=user2)
@@ -171,15 +172,15 @@ class BurstRateThrottleTestCase(BaseThrottleTestCase):
 
     @override_settings(
         REST_FRAMEWORK={
-            'DEFAULT_THROTTLE_RATES': {
-                'burst': '3/minute',
+            "DEFAULT_THROTTLE_RATES": {
+                "burst": "3/minute",
             }
         }
     )
     def test_burst_rate_limiting(self):
         """Test burst rate limiting."""
         throttle = BurstRateThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
         request = self.create_request(user=user)
 
         # Make burst requests
@@ -192,7 +193,7 @@ class BurstRateThrottleTestCase(BaseThrottleTestCase):
     def test_burst_applies_to_all_users(self):
         """Test that burst throttle applies to all users."""
         throttle = BurstRateThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
         request = self.create_request(user=user)
 
         # Should throttle authenticated users
@@ -204,15 +205,15 @@ class SustainedRateThrottleTestCase(BaseThrottleTestCase):
 
     @override_settings(
         REST_FRAMEWORK={
-            'DEFAULT_THROTTLE_RATES': {
-                'sustained': '100/day',
+            "DEFAULT_THROTTLE_RATES": {
+                "sustained": "100/day",
             }
         }
     )
     def test_sustained_rate_limiting(self):
         """Test sustained rate limiting."""
         throttle = SustainedRateThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
         request = self.create_request(user=user)
 
         # Make sustained requests
@@ -228,8 +229,8 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
 
     @override_settings(
         REST_FRAMEWORK={
-            'DEFAULT_THROTTLE_RATES': {
-                'premium': '100/hour',
+            "DEFAULT_THROTTLE_RATES": {
+                "premium": "100/hour",
             }
         }
     )
@@ -237,9 +238,7 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
         """Test that staff users get premium rate."""
         throttle = PremiumUserRateThrottle()
         staff_user = User.objects.create_user(
-            username='staff',
-            password='pass',
-            is_staff=True
+            username="staff", password="pass", is_staff=True
         )
         request = self.create_request(user=staff_user)
 
@@ -249,10 +248,10 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
     def test_premium_user_attribute(self):
         """Test users with is_premium attribute get premium rate."""
         throttle = PremiumUserRateThrottle()
-        user = User.objects.create_user(username='premium', password='pass')
+        user = User.objects.create_user(username="premium", password="pass")
 
         # Add is_premium attribute (if model supports it)
-        if hasattr(user, 'is_premium'):
+        if hasattr(user, "is_premium"):
             user.is_premium = True
             user.save()
 
@@ -262,7 +261,7 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
     def test_regular_user_bypassed(self):
         """Test that regular users bypass premium throttle."""
         throttle = PremiumUserRateThrottle()
-        user = User.objects.create_user(username='regular', password='pass')
+        user = User.objects.create_user(username="regular", password="pass")
         request = self.create_request(user=user)
 
         # Regular user should bypass (returns True)
@@ -272,9 +271,7 @@ class PremiumUserRateThrottleTestCase(BaseThrottleTestCase):
         """Test that superusers bypass throttle."""
         throttle = PremiumUserRateThrottle()
         superuser = User.objects.create_superuser(
-            username='admin',
-            password='admin123',
-            email='admin@test.com'
+            username="admin", password="admin123", email="admin@test.com"
         )
         request = self.create_request(user=superuser)
 
@@ -288,16 +285,16 @@ class MLOperationsThrottleTestCase(BaseThrottleTestCase):
 
     @override_settings(
         REST_FRAMEWORK={
-            'DEFAULT_THROTTLE_RATES': {
-                'ml_operations': '2/hour',
+            "DEFAULT_THROTTLE_RATES": {
+                "ml_operations": "2/hour",
             }
         }
     )
     def test_ml_operations_throttling(self):
         """Test ML operations throttling."""
         throttle = MLOperationsThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
-        request = self.create_request(path='/api/v2/ml/train/', user=user)
+        user = User.objects.create_user(username="testuser", password="pass")
+        request = self.create_request(path="/api/v2/ml/train/", user=user)
 
         # Make requests up to limit
         for i in range(2):
@@ -309,14 +306,14 @@ class MLOperationsThrottleTestCase(BaseThrottleTestCase):
     def test_only_applies_to_ml_endpoints(self):
         """Test that throttle only applies to ML endpoints."""
         throttle = MLOperationsThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
 
         # ML endpoint should be throttled
-        ml_request = self.create_request(path='/api/v2/ml/predict/', user=user)
+        ml_request = self.create_request(path="/api/v2/ml/predict/", user=user)
         self.assertTrue(throttle.allow_request(ml_request, None))
 
         # Non-ML endpoint should bypass
-        other_request = self.create_request(path='/api/v2/predictions/', user=user)
+        other_request = self.create_request(path="/api/v2/predictions/", user=user)
         # Implementation dependent - may bypass or apply
 
 
@@ -325,19 +322,16 @@ class BulkOperationsThrottleTestCase(BaseThrottleTestCase):
 
     @override_settings(
         REST_FRAMEWORK={
-            'DEFAULT_THROTTLE_RATES': {
-                'bulk_operations': '3/hour',
+            "DEFAULT_THROTTLE_RATES": {
+                "bulk_operations": "3/hour",
             }
         }
     )
     def test_bulk_operations_throttling(self):
         """Test bulk operations throttling."""
         throttle = BulkOperationsThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
-        request = self.create_request(
-            path='/api/v2/bulk/employees/import/',
-            user=user
-        )
+        user = User.objects.create_user(username="testuser", password="pass")
+        request = self.create_request(path="/api/v2/bulk/employees/import/", user=user)
 
         # Make requests up to limit
         for i in range(3):
@@ -349,12 +343,11 @@ class BulkOperationsThrottleTestCase(BaseThrottleTestCase):
     def test_only_applies_to_bulk_endpoints(self):
         """Test that throttle only applies to bulk endpoints."""
         throttle = BulkOperationsThrottle()
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
 
         # Bulk endpoint should be throttled
         bulk_request = self.create_request(
-            path='/api/v2/bulk/employees/upload/',
-            user=user
+            path="/api/v2/bulk/employees/upload/", user=user
         )
         self.assertTrue(throttle.allow_request(bulk_request, None))
 
@@ -364,15 +357,15 @@ class HealthCheckThrottleTestCase(BaseThrottleTestCase):
 
     @override_settings(
         REST_FRAMEWORK={
-            'DEFAULT_THROTTLE_RATES': {
-                'health_check': '10/minute',
+            "DEFAULT_THROTTLE_RATES": {
+                "health_check": "10/minute",
             }
         }
     )
     def test_health_check_throttling(self):
         """Test health check throttling."""
         throttle = HealthCheckThrottle()
-        request = self.create_request(path='/api/health/')
+        request = self.create_request(path="/api/health/")
 
         # Make requests up to limit
         for i in range(10):
@@ -386,7 +379,7 @@ class HealthCheckThrottleTestCase(BaseThrottleTestCase):
         # Health checks should have a relatively high limit
         # since they're used for monitoring
         throttle = HealthCheckThrottle()
-        request = self.create_request(path='/api/health/')
+        request = self.create_request(path="/api/health/")
 
         # Should allow many requests
         self.assertTrue(throttle.allow_request(request, None))
@@ -404,19 +397,19 @@ class ThrottleHeadersTestCase(BaseThrottleTestCase):
         throttle.allow_request(request, view)
         headers = throttle.get_rate_limit_headers(request, view)
 
-        self.assertIn('X-RateLimit-Limit', headers)
-        self.assertIn('X-RateLimit-Remaining', headers)
-        self.assertIn('X-RateLimit-Reset', headers)
+        self.assertIn("X-RateLimit-Limit", headers)
+        self.assertIn("X-RateLimit-Remaining", headers)
+        self.assertIn("X-RateLimit-Reset", headers)
 
         # Verify types
-        self.assertIsInstance(int(headers['X-RateLimit-Limit']), int)
-        self.assertIsInstance(int(headers['X-RateLimit-Remaining']), int)
-        self.assertIsInstance(int(headers['X-RateLimit-Reset']), int)
+        self.assertIsInstance(int(headers["X-RateLimit-Limit"]), int)
+        self.assertIsInstance(int(headers["X-RateLimit-Remaining"]), int)
+        self.assertIsInstance(int(headers["X-RateLimit-Reset"]), int)
 
     def test_headers_show_correct_values(self):
         """Test that headers show correct rate limit values."""
         with override_settings(
-            REST_FRAMEWORK={'DEFAULT_THROTTLE_RATES': {'anon': '5/minute'}}
+            REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "5/minute"}}
         ):
             throttle = AnonRateThrottle()
             request = self.create_request()
@@ -426,8 +419,8 @@ class ThrottleHeadersTestCase(BaseThrottleTestCase):
             throttle.allow_request(request, view)
             headers = throttle.get_rate_limit_headers(request, view)
 
-            limit = int(headers['X-RateLimit-Limit'])
-            remaining = int(headers['X-RateLimit-Remaining'])
+            limit = int(headers["X-RateLimit-Limit"])
+            remaining = int(headers["X-RateLimit-Remaining"])
 
             self.assertEqual(limit, 5)
             self.assertEqual(remaining, 4)  # One request made
@@ -435,7 +428,7 @@ class ThrottleHeadersTestCase(BaseThrottleTestCase):
     def test_headers_countdown(self):
         """Test that remaining count goes down with requests."""
         with override_settings(
-            REST_FRAMEWORK={'DEFAULT_THROTTLE_RATES': {'anon': '10/minute'}}
+            REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "10/minute"}}
         ):
             throttle = AnonRateThrottle()
             request = self.create_request()
@@ -445,7 +438,7 @@ class ThrottleHeadersTestCase(BaseThrottleTestCase):
             for i in range(5):
                 throttle.allow_request(request, view)
                 headers = throttle.get_rate_limit_headers(request, view)
-                remaining = int(headers['X-RateLimit-Remaining'])
+                remaining = int(headers["X-RateLimit-Remaining"])
 
                 if previous_remaining is not None:
                     self.assertEqual(remaining, previous_remaining - 1)
@@ -461,7 +454,7 @@ class ThrottleHeadersTestCase(BaseThrottleTestCase):
         throttle.allow_request(request, view)
         headers = throttle.get_rate_limit_headers(request, view)
 
-        reset_timestamp = int(headers['X-RateLimit-Reset'])
+        reset_timestamp = int(headers["X-RateLimit-Reset"])
         current_time = int(time.time())
 
         self.assertGreater(reset_timestamp, current_time)
@@ -470,14 +463,12 @@ class ThrottleHeadersTestCase(BaseThrottleTestCase):
 class IPWhitelistTestCase(BaseThrottleTestCase):
     """Test IP whitelisting functionality."""
 
-    @override_settings(
-        THROTTLE_BYPASS_IPS=['127.0.0.1', '192.168.1.100']
-    )
+    @override_settings(THROTTLE_BYPASS_IPS=["127.0.0.1", "192.168.1.100"])
     def test_whitelisted_ip_bypass(self):
         """Test that whitelisted IPs bypass throttling."""
         throttle = AnonRateThrottle()
         request = self.create_request()
-        request.META['REMOTE_ADDR'] = '127.0.0.1'
+        request.META["REMOTE_ADDR"] = "127.0.0.1"
 
         # Should bypass throttle (if implemented)
         # Implementation dependent
@@ -487,12 +478,12 @@ class IPWhitelistTestCase(BaseThrottleTestCase):
     def test_non_whitelisted_ip_throttled(self):
         """Test that non-whitelisted IPs are throttled."""
         with override_settings(
-            REST_FRAMEWORK={'DEFAULT_THROTTLE_RATES': {'anon': '2/minute'}},
-            THROTTLE_BYPASS_IPS=['192.168.1.100']
+            REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "2/minute"}},
+            THROTTLE_BYPASS_IPS=["192.168.1.100"],
         ):
             throttle = AnonRateThrottle()
             request = self.create_request()
-            request.META['REMOTE_ADDR'] = '10.0.0.1'
+            request.META["REMOTE_ADDR"] = "10.0.0.1"
 
             # Make requests up to limit
             throttle.allow_request(request, None)
@@ -511,7 +502,7 @@ class ThrottleIntegrationTestCase(BaseThrottleTestCase):
         burst_throttle = BurstRateThrottle()
         sustained_throttle = SustainedRateThrottle()
 
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
         request = self.create_request(user=user)
 
         # Both should allow the first request
@@ -523,16 +514,16 @@ class ThrottleIntegrationTestCase(BaseThrottleTestCase):
         # If burst is more restrictive than sustained, burst should throttle first
         with override_settings(
             REST_FRAMEWORK={
-                'DEFAULT_THROTTLE_RATES': {
-                    'burst': '2/minute',
-                    'sustained': '100/day',
+                "DEFAULT_THROTTLE_RATES": {
+                    "burst": "2/minute",
+                    "sustained": "100/day",
                 }
             }
         ):
             burst_throttle = BurstRateThrottle()
             sustained_throttle = SustainedRateThrottle()
 
-            user = User.objects.create_user(username='testuser', password='pass')
+            user = User.objects.create_user(username="testuser", password="pass")
             request = self.create_request(user=user)
 
             # Make 2 requests
@@ -553,12 +544,11 @@ class ThrottleIntegrationTestCase(BaseThrottleTestCase):
         ml_throttle = MLOperationsThrottle()
         bulk_throttle = BulkOperationsThrottle()
 
-        user = User.objects.create_user(username='testuser', password='pass')
+        user = User.objects.create_user(username="testuser", password="pass")
 
-        ml_request = self.create_request(path='/api/v2/ml/train/', user=user)
+        ml_request = self.create_request(path="/api/v2/ml/train/", user=user)
         bulk_request = self.create_request(
-            path='/api/v2/bulk/employees/import/',
-            user=user
+            path="/api/v2/bulk/employees/import/", user=user
         )
 
         # Each endpoint should have its own throttle

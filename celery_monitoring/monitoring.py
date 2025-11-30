@@ -18,7 +18,7 @@ from prometheus_client import (
     Summary,
     Info,
     generate_latest,
-    REGISTRY
+    REGISTRY,
 )
 from django.db import models
 from django.utils import timezone
@@ -34,79 +34,68 @@ logger = logging.getLogger(__name__)
 
 # Task execution metrics
 TASK_STARTED_COUNTER = Counter(
-    'celery_task_started_total',
-    'Total number of tasks started',
-    ['task_name', 'queue']
+    "celery_task_started_total", "Total number of tasks started", ["task_name", "queue"]
 )
 
 TASK_COMPLETED_COUNTER = Counter(
-    'celery_task_completed_total',
-    'Total number of tasks completed successfully',
-    ['task_name', 'queue']
+    "celery_task_completed_total",
+    "Total number of tasks completed successfully",
+    ["task_name", "queue"],
 )
 
 TASK_FAILED_COUNTER = Counter(
-    'celery_task_failed_total',
-    'Total number of tasks that failed',
-    ['task_name', 'queue', 'exception']
+    "celery_task_failed_total",
+    "Total number of tasks that failed",
+    ["task_name", "queue", "exception"],
 )
 
 TASK_RETRY_COUNTER = Counter(
-    'celery_task_retry_total',
-    'Total number of task retries',
-    ['task_name', 'queue']
+    "celery_task_retry_total", "Total number of task retries", ["task_name", "queue"]
 )
 
 TASK_DURATION_HISTOGRAM = Histogram(
-    'celery_task_duration_seconds',
-    'Task execution duration in seconds',
-    ['task_name', 'queue'],
-    buckets=[1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600]
+    "celery_task_duration_seconds",
+    "Task execution duration in seconds",
+    ["task_name", "queue"],
+    buckets=[1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600],
 )
 
 TASK_DURATION_SUMMARY = Summary(
-    'celery_task_duration_summary',
-    'Summary of task execution durations',
-    ['task_name', 'queue']
+    "celery_task_duration_summary",
+    "Summary of task execution durations",
+    ["task_name", "queue"],
 )
 
 # Queue metrics
 QUEUE_LENGTH_GAUGE = Gauge(
-    'celery_queue_length',
-    'Number of tasks waiting in queue',
-    ['queue']
+    "celery_queue_length", "Number of tasks waiting in queue", ["queue"]
 )
 
 ACTIVE_TASKS_GAUGE = Gauge(
-    'celery_active_tasks',
-    'Number of currently executing tasks',
-    ['worker', 'queue']
+    "celery_active_tasks", "Number of currently executing tasks", ["worker", "queue"]
 )
 
 # Worker metrics
 WORKER_ONLINE_GAUGE = Gauge(
-    'celery_worker_online',
-    'Worker online status (1=online, 0=offline)',
-    ['worker']
+    "celery_worker_online", "Worker online status (1=online, 0=offline)", ["worker"]
 )
 
 WORKER_POOL_SIZE_GAUGE = Gauge(
-    'celery_worker_pool_size',
-    'Worker pool size (number of concurrent tasks)',
-    ['worker']
+    "celery_worker_pool_size",
+    "Worker pool size (number of concurrent tasks)",
+    ["worker"],
 )
 
 # Resource metrics
 TASK_MEMORY_USAGE_GAUGE = Gauge(
-    'celery_task_memory_mb',
-    'Task memory usage in MB',
-    ['task_name']
+    "celery_task_memory_mb", "Task memory usage in MB", ["task_name"]
 )
 
 
 # ============================================================================
 # TASK EXECUTION TRACKING
 # ============================================================================
+
 
 class TaskExecution(models.Model):
     """
@@ -124,23 +113,29 @@ class TaskExecution(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
 
     # Duration metrics (in seconds)
-    queue_time = models.FloatField(null=True, blank=True, help_text="Time spent in queue")
-    execution_time = models.FloatField(null=True, blank=True, help_text="Actual execution time")
-    total_time = models.FloatField(null=True, blank=True, help_text="Total time from receive to complete")
+    queue_time = models.FloatField(
+        null=True, blank=True, help_text="Time spent in queue"
+    )
+    execution_time = models.FloatField(
+        null=True, blank=True, help_text="Actual execution time"
+    )
+    total_time = models.FloatField(
+        null=True, blank=True, help_text="Total time from receive to complete"
+    )
 
     # Status
     status = models.CharField(
         max_length=20,
         choices=[
-            ('RECEIVED', 'Received'),
-            ('STARTED', 'Started'),
-            ('SUCCESS', 'Success'),
-            ('FAILURE', 'Failure'),
-            ('RETRY', 'Retry'),
-            ('REVOKED', 'Revoked'),
+            ("RECEIVED", "Received"),
+            ("STARTED", "Started"),
+            ("SUCCESS", "Success"),
+            ("FAILURE", "Failure"),
+            ("RETRY", "Retry"),
+            ("REVOKED", "Revoked"),
         ],
-        default='RECEIVED',
-        db_index=True
+        default="RECEIVED",
+        db_index=True,
     )
 
     # Result and error information
@@ -166,13 +161,13 @@ class TaskExecution(models.Model):
     kwargs = models.JSONField(default=dict)
 
     class Meta:
-        db_table = 'celery_task_execution'
-        ordering = ['-started_at']
+        db_table = "celery_task_execution"
+        ordering = ["-started_at"]
         indexes = [
-            models.Index(fields=['task_name', 'status', 'started_at']),
-            models.Index(fields=['worker_name', 'started_at']),
-            models.Index(fields=['queue_name', 'started_at']),
-            models.Index(fields=['status', 'started_at']),
+            models.Index(fields=["task_name", "status", "started_at"]),
+            models.Index(fields=["worker_name", "started_at"]),
+            models.Index(fields=["queue_name", "started_at"]),
+            models.Index(fields=["status", "started_at"]),
         ]
 
     def __str__(self):
@@ -207,44 +202,59 @@ class TaskExecution(models.Model):
 # SIGNAL HANDLERS FOR AUTOMATIC TRACKING
 # ============================================================================
 
+
 @signals.task_received.connect
 def task_received_handler(sender=None, request=None, **kwargs):
     """Track when task is received by worker."""
     TaskExecution.objects.update_or_create(
         task_id=request.id,
         defaults={
-            'task_name': request.task,
-            'received_at': timezone.now(),
-            'status': 'RECEIVED',
-            'worker_name': request.hostname,
-            'queue_name': request.delivery_info.get('routing_key', '') if request.delivery_info else '',
-            'args': list(request.args or []),
-            'kwargs': dict(request.kwargs or {}),
-        }
+            "task_name": request.task,
+            "received_at": timezone.now(),
+            "status": "RECEIVED",
+            "worker_name": request.hostname,
+            "queue_name": (
+                request.delivery_info.get("routing_key", "")
+                if request.delivery_info
+                else ""
+            ),
+            "args": list(request.args or []),
+            "kwargs": dict(request.kwargs or {}),
+        },
     )
 
 
 @signals.task_prerun.connect
-def task_prerun_handler(sender=None, task_id=None, task=None, args=None, kwargs=None, **extra):
+def task_prerun_handler(
+    sender=None, task_id=None, task=None, args=None, kwargs=None, **extra
+):
     """Track when task execution starts."""
     execution, created = TaskExecution.objects.update_or_create(
         task_id=task_id,
         defaults={
-            'task_name': task.name,
-            'started_at': timezone.now(),
-            'status': 'STARTED',
-        }
+            "task_name": task.name,
+            "started_at": timezone.now(),
+            "status": "STARTED",
+        },
     )
 
     # Update Prometheus metrics
-    queue = execution.queue_name or 'default'
+    queue = execution.queue_name or "default"
     TASK_STARTED_COUNTER.labels(task_name=task.name, queue=queue).inc()
     ACTIVE_TASKS_GAUGE.labels(worker=execution.worker_name, queue=queue).inc()
 
 
 @signals.task_postrun.connect
-def task_postrun_handler(sender=None, task_id=None, task=None, args=None, kwargs=None,
-                        retval=None, state=None, **extra):
+def task_postrun_handler(
+    sender=None,
+    task_id=None,
+    task=None,
+    args=None,
+    kwargs=None,
+    retval=None,
+    state=None,
+    **extra,
+):
     """Track task completion."""
     try:
         execution = TaskExecution.objects.get(task_id=task_id)
@@ -256,22 +266,22 @@ def task_postrun_handler(sender=None, task_id=None, task=None, args=None, kwargs
             result_str = str(retval)
             if len(result_str) > 10000:
                 result_str = result_str[:10000] + "... (truncated)"
-            execution.result = {'value': result_str}
+            execution.result = {"value": result_str}
 
         # Calculate metrics
         execution.calculate_metrics()
         execution.save()
 
         # Update Prometheus metrics
-        queue = execution.queue_name or 'default'
+        queue = execution.queue_name or "default"
         ACTIVE_TASKS_GAUGE.labels(worker=execution.worker_name, queue=queue).dec()
 
         if state == SUCCESS:
             TASK_COMPLETED_COUNTER.labels(task_name=task.name, queue=queue).inc()
             if execution.execution_time:
-                TASK_DURATION_HISTOGRAM.labels(task_name=task.name, queue=queue).observe(
-                    execution.execution_time
-                )
+                TASK_DURATION_HISTOGRAM.labels(
+                    task_name=task.name, queue=queue
+                ).observe(execution.execution_time)
                 TASK_DURATION_SUMMARY.labels(task_name=task.name, queue=queue).observe(
                     execution.execution_time
                 )
@@ -281,15 +291,23 @@ def task_postrun_handler(sender=None, task_id=None, task=None, args=None, kwargs
 
 
 @signals.task_failure.connect
-def task_failure_handler(sender=None, task_id=None, exception=None, args=None,
-                        kwargs=None, traceback=None, einfo=None, **extra):
+def task_failure_handler(
+    sender=None,
+    task_id=None,
+    exception=None,
+    args=None,
+    kwargs=None,
+    traceback=None,
+    einfo=None,
+    **extra,
+):
     """Track task failures."""
     import traceback as tb
 
     try:
         execution = TaskExecution.objects.get(task_id=task_id)
         execution.completed_at = timezone.now()
-        execution.status = 'FAILURE'
+        execution.status = "FAILURE"
         execution.exception_type = type(exception).__name__
         execution.exception_message = str(exception)
         execution.traceback = str(einfo) if einfo else tb.format_exc()
@@ -297,11 +315,9 @@ def task_failure_handler(sender=None, task_id=None, exception=None, args=None,
         execution.save()
 
         # Update Prometheus metrics
-        queue = execution.queue_name or 'default'
+        queue = execution.queue_name or "default"
         TASK_FAILED_COUNTER.labels(
-            task_name=sender.name,
-            queue=queue,
-            exception=type(exception).__name__
+            task_name=sender.name, queue=queue, exception=type(exception).__name__
         ).inc()
         ACTIVE_TASKS_GAUGE.labels(worker=execution.worker_name, queue=queue).dec()
 
@@ -315,12 +331,12 @@ def task_retry_handler(sender=None, task_id=None, reason=None, einfo=None, **kwa
     try:
         execution = TaskExecution.objects.get(task_id=task_id)
         execution.retry_count += 1
-        execution.status = 'RETRY'
+        execution.status = "RETRY"
         execution.exception_message = str(reason)
         execution.save()
 
         # Update Prometheus metrics
-        queue = execution.queue_name or 'default'
+        queue = execution.queue_name or "default"
         TASK_RETRY_COUNTER.labels(task_name=sender.name, queue=queue).inc()
 
     except TaskExecution.DoesNotExist:
@@ -331,10 +347,8 @@ def task_retry_handler(sender=None, task_id=None, reason=None, einfo=None, **kwa
 # MONITORING DECORATOR
 # ============================================================================
 
-def monitor_task(
-    track_memory: bool = False,
-    track_cpu: bool = False
-):
+
+def monitor_task(track_memory: bool = False, track_cpu: bool = False):
     """
     Decorator to add comprehensive monitoring to Celery tasks.
 
@@ -349,6 +363,7 @@ def monitor_task(
             # Task will be automatically monitored
             pass
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -360,6 +375,7 @@ def monitor_task(
 
             if track_memory or track_cpu:
                 import psutil
+
                 process = psutil.Process()
 
                 if track_memory:
@@ -379,11 +395,11 @@ def monitor_task(
                 if track_memory and memory_before is not None:
                     memory_after = process.memory_info().rss / 1024 / 1024
                     memory_used = memory_after - memory_before
-                    TASK_MEMORY_USAGE_GAUGE.labels(task_name=func.__name__).set(memory_used)
+                    TASK_MEMORY_USAGE_GAUGE.labels(task_name=func.__name__).set(
+                        memory_used
+                    )
 
-                logger.info(
-                    f"Task {func.__name__} completed in {execution_time:.2f}s"
-                )
+                logger.info(f"Task {func.__name__} completed in {execution_time:.2f}s")
 
                 return result
 
@@ -395,6 +411,7 @@ def monitor_task(
                 raise
 
         return wrapper
+
     return decorator
 
 
@@ -402,9 +419,9 @@ def monitor_task(
 # PERFORMANCE ANALYSIS
 # ============================================================================
 
+
 def get_task_performance_stats(
-    task_name: Optional[str] = None,
-    hours: int = 24
+    task_name: Optional[str] = None, hours: int = 24
 ) -> Dict[str, Any]:
     """
     Get performance statistics for tasks.
@@ -425,34 +442,34 @@ def get_task_performance_stats(
         query = query.filter(task_name=task_name)
 
     stats = query.aggregate(
-        total_tasks=Count('id'),
-        avg_execution_time=Avg('execution_time'),
-        min_execution_time=Min('execution_time'),
-        max_execution_time=Max('execution_time'),
-        avg_queue_time=Avg('queue_time'),
+        total_tasks=Count("id"),
+        avg_execution_time=Avg("execution_time"),
+        min_execution_time=Min("execution_time"),
+        max_execution_time=Max("execution_time"),
+        avg_queue_time=Avg("queue_time"),
     )
 
     # Count by status
     status_counts = {}
-    for status in ['SUCCESS', 'FAILURE', 'RETRY']:
+    for status in ["SUCCESS", "FAILURE", "RETRY"]:
         count = query.filter(status=status).count()
         status_counts[status.lower()] = count
 
     # Calculate success rate
-    total = stats['total_tasks'] or 0
-    success = status_counts.get('success', 0)
+    total = stats["total_tasks"] or 0
+    success = status_counts.get("success", 0)
     success_rate = (success / total * 100) if total > 0 else 0
 
     return {
-        'period_hours': hours,
-        'task_name': task_name or 'all',
-        'total_tasks': total,
-        'success_rate': round(success_rate, 2),
-        'status_counts': status_counts,
-        'avg_execution_time_seconds': round(stats['avg_execution_time'] or 0, 2),
-        'min_execution_time_seconds': round(stats['min_execution_time'] or 0, 2),
-        'max_execution_time_seconds': round(stats['max_execution_time'] or 0, 2),
-        'avg_queue_time_seconds': round(stats['avg_queue_time'] or 0, 2),
+        "period_hours": hours,
+        "task_name": task_name or "all",
+        "total_tasks": total,
+        "success_rate": round(success_rate, 2),
+        "status_counts": status_counts,
+        "avg_execution_time_seconds": round(stats["avg_execution_time"] or 0, 2),
+        "min_execution_time_seconds": round(stats["min_execution_time"] or 0, 2),
+        "max_execution_time_seconds": round(stats["max_execution_time"] or 0, 2),
+        "avg_queue_time_seconds": round(stats["avg_queue_time"] or 0, 2),
     }
 
 
@@ -470,18 +487,17 @@ def get_slowest_tasks(limit: int = 10, hours: int = 24) -> List[Dict[str, Any]]:
     cutoff_time = timezone.now() - timedelta(hours=hours)
 
     tasks = TaskExecution.objects.filter(
-        started_at__gte=cutoff_time,
-        execution_time__isnull=False
-    ).order_by('-execution_time')[:limit]
+        started_at__gte=cutoff_time, execution_time__isnull=False
+    ).order_by("-execution_time")[:limit]
 
     return [
         {
-            'task_id': task.task_id,
-            'task_name': task.task_name,
-            'execution_time': round(task.execution_time, 2),
-            'started_at': task.started_at.isoformat(),
-            'status': task.status,
-            'worker': task.worker_name,
+            "task_id": task.task_id,
+            "task_name": task.task_name,
+            "execution_time": round(task.execution_time, 2),
+            "started_at": task.started_at.isoformat(),
+            "status": task.status,
+            "worker": task.worker_name,
         }
         for task in tasks
     ]
@@ -499,9 +515,7 @@ def cleanup_old_task_executions(days: int = 7) -> int:
     """
     cutoff_date = timezone.now() - timedelta(days=days)
 
-    deleted_count, _ = TaskExecution.objects.filter(
-        started_at__lt=cutoff_date
-    ).delete()
+    deleted_count, _ = TaskExecution.objects.filter(started_at__lt=cutoff_date).delete()
 
     logger.info(f"Cleaned up {deleted_count} old task execution records")
 

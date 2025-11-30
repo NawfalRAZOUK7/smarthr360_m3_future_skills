@@ -45,7 +45,7 @@ class TestPredictionLog:
             model_version="1.0.0",
             features={"feature1": 0.5, "feature2": 0.8},
             prediction="HIGH",
-            probability=0.95
+            probability=0.95,
         )
 
         assert log.model_name == "test-model"
@@ -62,7 +62,7 @@ class TestPredictionLog:
             model_version="1.0.0",
             features={"feature1": 0.5},
             prediction="HIGH",
-            probability=0.95
+            probability=0.95,
         )
 
         result = log.to_dict()
@@ -80,7 +80,7 @@ class TestPredictionLog:
             model_version="1.0.0",
             features={},
             prediction="HIGH",
-            actual_value="HIGH"
+            actual_value="HIGH",
         )
 
         assert log.is_correct() is True
@@ -93,7 +93,7 @@ class TestPredictionLog:
             model_version="1.0.0",
             features={},
             prediction="HIGH",
-            actual_value="LOW"
+            actual_value="LOW",
         )
 
         assert log.is_correct() is False
@@ -105,7 +105,7 @@ class TestPredictionLog:
             model_name="test-model",
             model_version="1.0.0",
             features={},
-            prediction="HIGH"
+            prediction="HIGH",
         )
 
         assert log.is_correct() is None
@@ -119,7 +119,7 @@ class TestPredictionLog:
             model_version="1.0.0",
             features={},
             prediction="HIGH",
-            metadata=metadata
+            metadata=metadata,
         )
 
         assert log.metadata == metadata
@@ -132,7 +132,7 @@ class TestPredictionLog:
             model_version="1.0.0",
             features={},
             prediction="HIGH",
-            request_id="req-12345"
+            request_id="req-12345",
         )
 
         assert log.request_id == "req-12345"
@@ -167,7 +167,7 @@ class TestPredictionLogger:
             model_version="1.0.0",
             features={"feature1": 0.5},
             prediction="HIGH",
-            probability=0.95
+            probability=0.95,
         )
 
         assert len(logger.buffer) == 1
@@ -188,7 +188,7 @@ class TestPredictionLogger:
             prediction_time_ms=50.5,
             request_id="req-123",
             user_id="user-456",
-            metadata={"source": "api"}
+            metadata={"source": "api"},
         )
 
         log_entry = logger.buffer[0]
@@ -207,7 +207,7 @@ class TestPredictionLogger:
                 model_name="test-model",
                 model_version="1.0.0",
                 features={"feature1": i},
-                prediction="HIGH"
+                prediction="HIGH",
             )
 
         # Buffer should be cleared after flush
@@ -225,7 +225,7 @@ class TestPredictionLogger:
             model_name="test-model",
             model_version="1.0.0",
             features={"feature1": 0.5},
-            prediction="HIGH"
+            prediction="HIGH",
         )
 
         logger.flush()
@@ -236,7 +236,7 @@ class TestPredictionLogger:
         assert len(log_files) == 1
 
         # Verify content
-        with open(log_files[0], 'r') as f:
+        with open(log_files[0], "r") as f:
             content = json.loads(f.readline())
             assert content["model_name"] == "test-model"
 
@@ -258,7 +258,7 @@ class TestPredictionLogger:
                 model_name="test-model",
                 model_version="1.0.0",
                 features={},
-                prediction="HIGH"
+                prediction="HIGH",
             )
 
         date_str = datetime.now().strftime("%Y%m%d")
@@ -274,7 +274,7 @@ class TestPredictionLogger:
                 model_name="test-model",
                 model_version="1.0.0",
                 features={"index": i},
-                prediction="HIGH"
+                prediction="HIGH",
             )
 
         recent = logger.get_recent_predictions(limit=5)
@@ -288,22 +288,16 @@ class TestPredictionLogger:
         logger = PredictionLogger(storage_path=tmp_path)
 
         logger.log_prediction(
-            model_name="model-A",
-            model_version="1.0.0",
-            features={},
-            prediction="HIGH"
+            model_name="model-A", model_version="1.0.0", features={}, prediction="HIGH"
         )
         logger.log_prediction(
-            model_name="model-B",
-            model_version="1.0.0",
-            features={},
-            prediction="LOW"
+            model_name="model-B", model_version="1.0.0", features={}, prediction="LOW"
         )
         logger.log_prediction(
             model_name="model-A",
             model_version="1.0.0",
             features={},
-            prediction="MEDIUM"
+            prediction="MEDIUM",
         )
 
         recent = logger.get_recent_predictions(model_name="model-A")
@@ -319,13 +313,13 @@ class TestPredictionLogger:
             model_name="test-model",
             model_version="1.0.0",
             features={},
-            prediction="HIGH"
+            prediction="HIGH",
         )
         logger.log_prediction(
             model_name="test-model",
             model_version="2.0.0",
             features={},
-            prediction="LOW"
+            prediction="LOW",
         )
 
         recent = logger.get_recent_predictions(model_version="1.0.0")
@@ -343,7 +337,7 @@ class TestPredictionLogger:
                 model_name="test-model",
                 model_version="1.0.0",
                 features={"index": i},
-                prediction="HIGH"
+                prediction="HIGH",
             )
 
         # Load from today
@@ -370,19 +364,18 @@ class TestPredictionLogger:
                 model_name="model-A",
                 model_version="1.0.0",
                 features={},
-                prediction="HIGH"
+                prediction="HIGH",
             )
         for i in range(5):
             logger.log_prediction(
                 model_name="model-B",
                 model_version="1.0.0",
                 features={},
-                prediction="LOW"
+                prediction="LOW",
             )
 
         predictions = logger.load_predictions_from_date(
-            datetime.now(),
-            model_name="model-A"
+            datetime.now(), model_name="model-A"
         )
 
         assert len(predictions) == 5
@@ -400,13 +393,11 @@ class TestPredictionLogger:
                 features={},
                 prediction="HIGH" if i % 2 == 0 else "LOW",
                 probability=0.8 + (i * 0.01),
-                prediction_time_ms=10.0 + i
+                prediction_time_ms=10.0 + i,
             )
 
         stats = logger.get_prediction_statistics(
-            model_name="test-model",
-            start_date=datetime.now(),
-            end_date=datetime.now()
+            model_name="test-model", start_date=datetime.now(), end_date=datetime.now()
         )
 
         assert stats["total_predictions"] == 10
@@ -421,9 +412,7 @@ class TestPredictionLogger:
         logger = PredictionLogger(storage_path=tmp_path)
 
         stats = logger.get_prediction_statistics(
-            model_name="test-model",
-            start_date=datetime.now(),
-            end_date=datetime.now()
+            model_name="test-model", start_date=datetime.now(), end_date=datetime.now()
         )
 
         assert stats["total_predictions"] == 0
@@ -438,12 +427,11 @@ class TestPredictionLogger:
                 model_version="1.0.0",
                 features={},
                 prediction="HIGH",
-                prediction_time_ms=float(i)
+                prediction_time_ms=float(i),
             )
 
         stats = logger.get_prediction_statistics(
-            model_name="test-model",
-            start_date=datetime.now()
+            model_name="test-model", start_date=datetime.now()
         )
 
         assert "p50_prediction_time_ms" in stats
@@ -458,9 +446,7 @@ class TestModelMonitor:
     def test_initialization(self):
         """Test ModelMonitor initialization."""
         monitor = ModelMonitor(
-            model_name="test-model",
-            model_version="1.0.0",
-            cache_ttl=600
+            model_name="test-model", model_version="1.0.0", cache_ttl=600
         )
 
         assert monitor.model_name == "test-model"
@@ -472,10 +458,9 @@ class TestModelMonitor:
         """Test setting reference data for drift detection."""
         monitor = ModelMonitor(model_name="test-model")
 
-        reference_data = pd.DataFrame({
-            "feature1": [1, 2, 3, 4, 5],
-            "feature2": [5, 4, 3, 2, 1]
-        })
+        reference_data = pd.DataFrame(
+            {"feature1": [1, 2, 3, 4, 5], "feature2": [5, 4, 3, 2, 1]}
+        )
 
         monitor.set_reference_data(reference_data)
 
@@ -486,15 +471,19 @@ class TestModelMonitor:
         """Test basic drift detection with no drift."""
         monitor = ModelMonitor(model_name="test-model")
 
-        reference_data = pd.DataFrame({
-            "feature1": np.random.normal(0, 1, 100),
-            "feature2": np.random.normal(5, 2, 100)
-        })
+        reference_data = pd.DataFrame(
+            {
+                "feature1": np.random.normal(0, 1, 100),
+                "feature2": np.random.normal(5, 2, 100),
+            }
+        )
 
-        current_data = pd.DataFrame({
-            "feature1": np.random.normal(0, 1, 100),
-            "feature2": np.random.normal(5, 2, 100)
-        })
+        current_data = pd.DataFrame(
+            {
+                "feature1": np.random.normal(0, 1, 100),
+                "feature2": np.random.normal(5, 2, 100),
+            }
+        )
 
         monitor.set_reference_data(reference_data)
         drift_detected, report = monitor._basic_drift_detection(current_data)
@@ -506,14 +495,12 @@ class TestModelMonitor:
         """Test basic drift detection with significant drift."""
         monitor = ModelMonitor(model_name="test-model")
 
-        reference_data = pd.DataFrame({
-            "feature1": np.random.normal(0, 1, 100)
-        })
+        reference_data = pd.DataFrame({"feature1": np.random.normal(0, 1, 100)})
 
         # Create data with different distribution
-        current_data = pd.DataFrame({
-            "feature1": np.random.normal(10, 1, 100)  # Shifted mean
-        })
+        current_data = pd.DataFrame(
+            {"feature1": np.random.normal(10, 1, 100)}  # Shifted mean
+        )
 
         monitor.set_reference_data(reference_data)
         drift_detected, report = monitor._basic_drift_detection(current_data)
@@ -556,7 +543,7 @@ class TestModelMonitor:
             "accuracy": 0.85,
             "precision": 0.80,
             "recall": 0.90,
-            "f1_score": 0.85
+            "f1_score": 0.85,
         }
 
         y_true = np.array([1, 0, 1])
@@ -603,7 +590,7 @@ class TestModelMonitor:
                 "accuracy": accuracy,
                 "precision": accuracy,
                 "recall": accuracy,
-                "f1_score": accuracy
+                "f1_score": accuracy,
             }
             y_true = np.array([1])
             y_pred = np.array([1])
@@ -634,7 +621,12 @@ class TestModelMonitor:
         monitor = ModelMonitor(model_name="test-model")
 
         # Add poor performance
-        custom_metrics = {"accuracy": 0.5, "precision": 0.5, "recall": 0.5, "f1_score": 0.5}
+        custom_metrics = {
+            "accuracy": 0.5,
+            "precision": 0.5,
+            "recall": 0.5,
+            "f1_score": 0.5,
+        }
         y_true = np.array([1])
         y_pred = np.array([1])
         monitor.track_model_performance(y_true, y_pred, metrics=custom_metrics)
@@ -655,7 +647,7 @@ class TestModelMonitor:
                 "accuracy": accuracy,
                 "precision": accuracy,
                 "recall": accuracy,
-                "f1_score": accuracy
+                "f1_score": accuracy,
             }
             y_true = np.array([1])
             y_pred = np.array([1])
@@ -669,7 +661,9 @@ class TestModelMonitor:
     def test_generate_monitoring_report(self, tmp_path):
         """Test generating comprehensive monitoring report."""
         monitor = ModelMonitor(model_name="test-model", model_version="1.0.0")
-        monitor.prediction_logger = PredictionLogger(storage_path=tmp_path, buffer_size=10)
+        monitor.prediction_logger = PredictionLogger(
+            storage_path=tmp_path, buffer_size=10
+        )
 
         # Add some performance data
         y_true = np.array([1, 0, 1, 0])
@@ -682,7 +676,7 @@ class TestModelMonitor:
                 model_name="test-model",
                 model_version="1.0.0",
                 features={},
-                prediction="HIGH"
+                prediction="HIGH",
             )
 
         report = monitor.generate_monitoring_report()
@@ -693,7 +687,7 @@ class TestModelMonitor:
         assert "performance" in report
         assert "prediction_stats" in report
 
-    @patch('ml.monitoring.cache')
+    @patch("ml.monitoring.cache")
     def test_get_model_monitor_cached(self, mock_cache):
         """Test getting model monitor from cache."""
         mock_monitor = Mock()
@@ -704,7 +698,7 @@ class TestModelMonitor:
         assert monitor == mock_monitor
         mock_cache.get.assert_called_once()
 
-    @patch('ml.monitoring.cache')
+    @patch("ml.monitoring.cache")
     def test_get_model_monitor_create_new(self, mock_cache):
         """Test creating new model monitor when not cached."""
         mock_cache.get.return_value = None
@@ -727,7 +721,7 @@ class TestModelMonitor:
                 model_version="1.0.0",
                 features={},
                 prediction="HIGH",
-                prediction_time_ms=1500.0  # > 1000ms threshold
+                prediction_time_ms=1500.0,  # > 1000ms threshold
             )
 
         health = monitor.check_model_health()
@@ -744,22 +738,18 @@ class TestPrometheusMetrics:
         logger = PredictionLogger(storage_path=tmp_path)
 
         initial_value = PREDICTION_COUNTER.labels(
-            model_name="test-model",
-            model_version="1.0.0",
-            prediction_class="HIGH"
+            model_name="test-model", model_version="1.0.0", prediction_class="HIGH"
         )._value._value
 
         logger.log_prediction(
             model_name="test-model",
             model_version="1.0.0",
             features={},
-            prediction="HIGH"
+            prediction="HIGH",
         )
 
         new_value = PREDICTION_COUNTER.labels(
-            model_name="test-model",
-            model_version="1.0.0",
-            prediction_class="HIGH"
+            model_name="test-model", model_version="1.0.0", prediction_class="HIGH"
         )._value._value
 
         assert new_value > initial_value
@@ -773,13 +763,12 @@ class TestPrometheusMetrics:
             model_version="1.0.0",
             features={},
             prediction="HIGH",
-            prediction_time_ms=50.0
+            prediction_time_ms=50.0,
         )
 
         # Verify histogram was updated (count > 0)
         histogram = PREDICTION_LATENCY.labels(
-            model_name="test-model",
-            model_version="1.0.0"
+            model_name="test-model", model_version="1.0.0"
         )
 
         assert histogram._metrics

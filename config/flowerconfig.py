@@ -32,32 +32,32 @@ from decouple import config
 # ============================================================================
 
 # Broker URL (same as Celery)
-broker_url = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+broker_url = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 
 # Port for Flower web interface
-port = config('FLOWER_PORT', default=5555, cast=int)
+port = config("FLOWER_PORT", default=5555, cast=int)
 
 # Basic authentication (optional)
 # Format: username:password
-basic_auth = config('FLOWER_BASIC_AUTH', default='')
+basic_auth = config("FLOWER_BASIC_AUTH", default="")
 
 # Enable persistent mode to store task history
-persistent = config('FLOWER_PERSISTENT', default=True, cast=bool)
+persistent = config("FLOWER_PERSISTENT", default=True, cast=bool)
 
 # Database for persistent storage
-db = config('FLOWER_DB', default='flower.db')
+db = config("FLOWER_DB", default="flower.db")
 
 # URL prefix (useful behind reverse proxy)
-url_prefix = config('FLOWER_URL_PREFIX', default='')
+url_prefix = config("FLOWER_URL_PREFIX", default="")
 
 # Maximum number of tasks to keep in memory
-max_tasks = config('FLOWER_MAX_TASKS', default=10000, cast=int)
+max_tasks = config("FLOWER_MAX_TASKS", default=10000, cast=int)
 
 # Enable debug mode
-debug = config('FLOWER_DEBUG', default=False, cast=bool)
+debug = config("FLOWER_DEBUG", default=False, cast=bool)
 
 # Auto-refresh interval in milliseconds
-auto_refresh = config('FLOWER_AUTO_REFRESH', default=True, cast=bool)
+auto_refresh = config("FLOWER_AUTO_REFRESH", default=True, cast=bool)
 
 # Enable/disable specific features
 enable_events = True
@@ -65,7 +65,7 @@ inspect = True
 inspect_timeout = 10000  # milliseconds
 
 # Timezone
-timezone = config('TIME_ZONE', default='UTC')
+timezone = config("TIME_ZONE", default="UTC")
 
 # ============================================================================
 # AUTHENTICATION & SECURITY
@@ -95,7 +95,7 @@ timezone = config('TIME_ZONE', default='UTC')
 # ============================================================================
 
 # Custom page title
-page_title = 'SmartHR360 Celery Monitor'
+page_title = "SmartHR360 Celery Monitor"
 
 # Natural time display
 natural_time = True
@@ -104,10 +104,10 @@ natural_time = True
 # LOGGING
 # ============================================================================
 
-logging = 'INFO'
+logging = "INFO"
 
 # Log format
-log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 # ============================================================================
 # RATE LIMITING

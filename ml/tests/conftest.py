@@ -25,9 +25,9 @@ from tests.conftest import (
 
 # Re-export fixtures so they're available in ml/tests
 __all__ = [
-    'sample_skill',
-    'sample_job_role',
-    'sample_future_skill_prediction',
-    'regular_user',
-    'admin_user',
+    "sample_skill",
+    "sample_job_role",
+    "sample_future_skill_prediction",
+    "regular_user",
+    "admin_user",
 ]

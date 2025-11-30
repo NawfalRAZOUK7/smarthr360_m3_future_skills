@@ -8,24 +8,35 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('future_skills', '0003_hrinvestmentrecommendation'),
+        ("future_skills", "0003_hrinvestmentrecommendation"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='predictionrun',
-            name='parameters',
-            field=models.JSONField(blank=True, default=dict, help_text='Paramètres utilisés pour ce recalcul (horizon, moteur, trigger, etc.).'),
+            model_name="predictionrun",
+            name="parameters",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="Paramètres utilisés pour ce recalcul (horizon, moteur, trigger, etc.).",
+            ),
         ),
         migrations.AddField(
-            model_name='predictionrun',
-            name='run_by',
-            field=models.ForeignKey(blank=True, help_text='Utilisateur ayant déclenché le recalcul (null si CLI).', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='future_skills_runs', to=settings.AUTH_USER_MODEL),
+            model_name="predictionrun",
+            name="run_by",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Utilisateur ayant déclenché le recalcul (null si CLI).",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="future_skills_runs",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='predictionrun',
-            name='total_predictions',
+            model_name="predictionrun",
+            name="total_predictions",
             field=models.IntegerField(),
         ),
     ]

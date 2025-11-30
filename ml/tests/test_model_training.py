@@ -24,18 +24,19 @@ from future_skills.services.training_service import (
 def sample_dataset(tmp_path):
     """Create a sample dataset for testing."""
     data = {
-        'job_role_name': ['Software Engineer', 'Data Scientist', 'DevOps Engineer'] * 20,
-        'skill_name': ['Python', 'Machine Learning', 'Docker'] * 20,
-        'skill_category': ['Programming', 'AI/ML', 'Infrastructure'] * 20,
-        'job_department': ['Engineering', 'Data', 'Operations'] * 20,
-        'trend_score': [0.8, 0.6, 0.3, 0.7, 0.5, 0.2] * 10,
-        'internal_usage': [0.9, 0.7, 0.4, 0.8, 0.6, 0.3] * 10,
-        'training_requests': [15, 10, 5, 12, 8, 3] * 10,
-        'scarcity_index': [0.7, 0.5, 0.2, 0.6, 0.4, 0.1] * 10,
-        'hiring_difficulty': [0.8, 0.6, 0.3, 0.7, 0.5, 0.2] * 10,
-        'avg_salary_k': [120, 110, 90, 115, 105, 85] * 10,
-        'economic_indicator': [0.9, 0.7, 0.4, 0.8, 0.6, 0.3] * 10,
-        'future_need_level': ['HIGH', 'MEDIUM', 'LOW', 'HIGH', 'MEDIUM', 'LOW'] * 10
+        "job_role_name": ["Software Engineer", "Data Scientist", "DevOps Engineer"]
+        * 20,
+        "skill_name": ["Python", "Machine Learning", "Docker"] * 20,
+        "skill_category": ["Programming", "AI/ML", "Infrastructure"] * 20,
+        "job_department": ["Engineering", "Data", "Operations"] * 20,
+        "trend_score": [0.8, 0.6, 0.3, 0.7, 0.5, 0.2] * 10,
+        "internal_usage": [0.9, 0.7, 0.4, 0.8, 0.6, 0.3] * 10,
+        "training_requests": [15, 10, 5, 12, 8, 3] * 10,
+        "scarcity_index": [0.7, 0.5, 0.2, 0.6, 0.4, 0.1] * 10,
+        "hiring_difficulty": [0.8, 0.6, 0.3, 0.7, 0.5, 0.2] * 10,
+        "avg_salary_k": [120, 110, 90, 115, 105, 85] * 10,
+        "economic_indicator": [0.9, 0.7, 0.4, 0.8, 0.6, 0.3] * 10,
+        "future_need_level": ["HIGH", "MEDIUM", "LOW", "HIGH", "MEDIUM", "LOW"] * 10,
     }
     df = pd.DataFrame(data)
 
@@ -49,9 +50,9 @@ def sample_dataset(tmp_path):
 def minimal_dataset(tmp_path):
     """Create a minimal dataset with only required columns."""
     data = {
-        'trend_score': [0.8, 0.6, 0.3, 0.7, 0.5, 0.2] * 10,
-        'internal_usage': [0.9, 0.7, 0.4, 0.8, 0.6, 0.3] * 10,
-        'future_need_level': ['HIGH', 'MEDIUM', 'LOW', 'HIGH', 'MEDIUM', 'LOW'] * 10
+        "trend_score": [0.8, 0.6, 0.3, 0.7, 0.5, 0.2] * 10,
+        "internal_usage": [0.9, 0.7, 0.4, 0.8, 0.6, 0.3] * 10,
+        "future_need_level": ["HIGH", "MEDIUM", "LOW", "HIGH", "MEDIUM", "LOW"] * 10,
     }
     df = pd.DataFrame(data)
 
@@ -65,9 +66,9 @@ def minimal_dataset(tmp_path):
 def imbalanced_dataset(tmp_path):
     """Create an imbalanced dataset for testing class weights."""
     data = {
-        'trend_score': [0.8] * 50 + [0.5] * 10 + [0.2] * 5,
-        'internal_usage': [0.9] * 50 + [0.6] * 10 + [0.3] * 5,
-        'future_need_level': ['HIGH'] * 50 + ['MEDIUM'] * 10 + ['LOW'] * 5
+        "trend_score": [0.8] * 50 + [0.5] * 10 + [0.2] * 5,
+        "internal_usage": [0.9] * 50 + [0.6] * 10 + [0.3] * 5,
+        "future_need_level": ["HIGH"] * 50 + ["MEDIUM"] * 10 + ["LOW"] * 5,
     }
     df = pd.DataFrame(data)
 
@@ -92,11 +93,7 @@ class TestModelTrainerInitialization:
 
     def test_initialization_with_custom_parameters(self, sample_dataset):
         """Test initialization with custom test split and random state."""
-        trainer = ModelTrainer(
-            str(sample_dataset),
-            test_split=0.3,
-            random_state=123
-        )
+        trainer = ModelTrainer(str(sample_dataset), test_split=0.3, random_state=123)
 
         assert trainer.test_split == 0.3
         assert trainer.random_state == 123
@@ -132,8 +129,8 @@ class TestDataLoading:
         # Check target values
         assert len(trainer.y_train) == len(trainer.X_train)
         assert len(trainer.y_test) == len(trainer.X_test)
-        assert all(y in ['LOW', 'MEDIUM', 'HIGH'] for y in trainer.y_train)
-        assert all(y in ['LOW', 'MEDIUM', 'HIGH'] for y in trainer.y_test)
+        assert all(y in ["LOW", "MEDIUM", "HIGH"] for y in trainer.y_train)
+        assert all(y in ["LOW", "MEDIUM", "HIGH"] for y in trainer.y_test)
 
     def test_load_data_identifies_features(self, sample_dataset):
         """Test that feature types are correctly identified."""
@@ -148,7 +145,12 @@ class TestDataLoading:
         assert len(trainer.numeric_features) > 0
 
         # Expected categoricals
-        expected_cats = {'job_role_name', 'skill_name', 'skill_category', 'job_department'}
+        expected_cats = {
+            "job_role_name",
+            "skill_name",
+            "skill_category",
+            "job_department",
+        }
         actual_cats = set(trainer.categorical_features)
         assert expected_cats.issubset(actual_cats)
 
@@ -166,9 +168,19 @@ class TestDataLoading:
         """Test that invalid target labels are filtered out."""
         # Need enough samples per class for stratification (at least 2 per class)
         data = {
-            'trend_score': [0.8, 0.6, 0.3, 0.7, 0.5, 0.4, 0.9, 0.2] * 2,
-            'internal_usage': [0.9, 0.7, 0.4, 0.8, 0.6, 0.5, 0.9, 0.3] * 2,
-            'future_need_level': ['HIGH', 'INVALID', 'LOW', 'MEDIUM', 'HIGH', 'LOW', 'MEDIUM', 'INVALID'] * 2
+            "trend_score": [0.8, 0.6, 0.3, 0.7, 0.5, 0.4, 0.9, 0.2] * 2,
+            "internal_usage": [0.9, 0.7, 0.4, 0.8, 0.6, 0.5, 0.9, 0.3] * 2,
+            "future_need_level": [
+                "HIGH",
+                "INVALID",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "LOW",
+                "MEDIUM",
+                "INVALID",
+            ]
+            * 2,
         }
         df = pd.DataFrame(data)
         dataset_path = tmp_path / "invalid_labels.csv"
@@ -179,7 +191,9 @@ class TestDataLoading:
 
         # Should have filtered out INVALID rows (4 out of 16)
         assert len(trainer.df) == 12
-        assert all(y in ['LOW', 'MEDIUM', 'HIGH'] for y in trainer.df['future_need_level'])
+        assert all(
+            y in ["LOW", "MEDIUM", "HIGH"] for y in trainer.df["future_need_level"]
+        )
 
     def test_load_data_file_not_found(self, tmp_path):
         """Test error handling when dataset file doesn't exist."""
@@ -191,7 +205,7 @@ class TestDataLoading:
 
     def test_load_data_missing_target_column(self, tmp_path):
         """Test error when target column is missing."""
-        data = {'trend_score': [0.8, 0.6], 'internal_usage': [0.9, 0.7]}
+        data = {"trend_score": [0.8, 0.6], "internal_usage": [0.9, 0.7]}
         df = pd.DataFrame(data)
         dataset_path = tmp_path / "no_target.csv"
         df.to_csv(dataset_path, index=False)
@@ -241,10 +255,10 @@ class TestModelTraining:
         assert trainer.model is not None
 
         # Check metrics are returned
-        assert 'accuracy' in metrics
-        assert 'precision' in metrics
-        assert 'recall' in metrics
-        assert 'f1_score' in metrics
+        assert "accuracy" in metrics
+        assert "precision" in metrics
+        assert "recall" in metrics
+        assert "f1_score" in metrics
 
         # Check timing is recorded
         assert trainer.training_duration_seconds > 0
@@ -256,20 +270,16 @@ class TestModelTraining:
         trainer = ModelTrainer(str(sample_dataset))
         trainer.load_data()
 
-        metrics = trainer.train(
-            n_estimators=50,
-            max_depth=10,
-            min_samples_split=5
-        )
+        metrics = trainer.train(n_estimators=50, max_depth=10, min_samples_split=5)
 
         # Check hyperparameters are stored
-        assert trainer.hyperparameters['n_estimators'] == 50
-        assert trainer.hyperparameters['max_depth'] == 10
-        assert trainer.hyperparameters['min_samples_split'] == 5
+        assert trainer.hyperparameters["n_estimators"] == 50
+        assert trainer.hyperparameters["max_depth"] == 10
+        assert trainer.hyperparameters["min_samples_split"] == 5
 
         # Check model trained successfully
         assert trainer.model is not None
-        assert metrics['accuracy'] >= 0
+        assert metrics["accuracy"] >= 0
 
     def test_train_without_loading_data(self, sample_dataset):
         """Test that training fails if data not loaded first."""
@@ -285,7 +295,7 @@ class TestModelTraining:
         trainer.train()
 
         # Check class_weight is set to balanced
-        assert trainer.hyperparameters['class_weight'] == 'balanced'
+        assert trainer.hyperparameters["class_weight"] == "balanced"
 
 
 class TestModelEvaluation:
@@ -299,12 +309,12 @@ class TestModelEvaluation:
         metrics = trainer.evaluate(trainer.X_test, trainer.y_test)
 
         # Check all required metrics
-        assert 'accuracy' in metrics
-        assert 'precision' in metrics
-        assert 'recall' in metrics
-        assert 'f1_score' in metrics
-        assert 'per_class' in metrics
-        assert 'confusion_matrix' in metrics
+        assert "accuracy" in metrics
+        assert "precision" in metrics
+        assert "recall" in metrics
+        assert "f1_score" in metrics
+        assert "per_class" in metrics
+        assert "confusion_matrix" in metrics
 
     def test_evaluate_metric_ranges(self, sample_dataset):
         """Test that metrics are in valid ranges."""
@@ -314,10 +324,10 @@ class TestModelEvaluation:
         metrics = trainer.evaluate(trainer.X_test, trainer.y_test)
 
         # Check ranges (0 to 1)
-        assert 0 <= metrics['accuracy'] <= 1
-        assert 0 <= metrics['precision'] <= 1
-        assert 0 <= metrics['recall'] <= 1
-        assert 0 <= metrics['f1_score'] <= 1
+        assert 0 <= metrics["accuracy"] <= 1
+        assert 0 <= metrics["precision"] <= 1
+        assert 0 <= metrics["recall"] <= 1
+        assert 0 <= metrics["f1_score"] <= 1
 
     def test_evaluate_per_class_metrics(self, sample_dataset):
         """Test per-class metrics calculation."""
@@ -326,19 +336,19 @@ class TestModelEvaluation:
         trainer.train()
         metrics = trainer.evaluate(trainer.X_test, trainer.y_test)
 
-        per_class = metrics['per_class']
+        per_class = metrics["per_class"]
 
         # Check all classes present
-        assert 'LOW' in per_class
-        assert 'MEDIUM' in per_class
-        assert 'HIGH' in per_class
+        assert "LOW" in per_class
+        assert "MEDIUM" in per_class
+        assert "HIGH" in per_class
 
         # Check each class has accuracy and support
-        for level in ['LOW', 'MEDIUM', 'HIGH']:
-            assert 'accuracy' in per_class[level]
-            assert 'support' in per_class[level]
-            assert 0 <= per_class[level]['accuracy'] <= 1
-            assert per_class[level]['support'] >= 0
+        for level in ["LOW", "MEDIUM", "HIGH"]:
+            assert "accuracy" in per_class[level]
+            assert "support" in per_class[level]
+            assert 0 <= per_class[level]["accuracy"] <= 1
+            assert per_class[level]["support"] >= 0
 
     def test_evaluate_without_training(self, sample_dataset):
         """Test that evaluation fails if model not trained."""
@@ -355,7 +365,7 @@ class TestModelEvaluation:
         trainer.train()
         metrics = trainer.evaluate(trainer.X_test, trainer.y_test)
 
-        cm = metrics['confusion_matrix']
+        cm = metrics["confusion_matrix"]
 
         # Should be 3x3 for LOW/MEDIUM/HIGH
         assert len(cm) == 3
@@ -410,10 +420,11 @@ class TestModelPersistence:
 
         # Load using joblib directly (FutureSkillsModel uses instance() pattern)
         import joblib
+
         loaded_model = joblib.load(str(model_path))
 
         assert loaded_model is not None
-        assert hasattr(loaded_model, 'predict')
+        assert hasattr(loaded_model, "predict")
 
 
 class TestFeatureImportance:
@@ -466,8 +477,10 @@ class TestFeatureImportance:
 class TestTrainingRunTracking:
     """Test MLOps tracking via TrainingRun model."""
 
-    @patch('future_skills.services.training_service.TrainingRun')
-    def test_save_training_run_creates_record(self, mock_training_run, sample_dataset, tmp_path):
+    @patch("future_skills.services.training_service.TrainingRun")
+    def test_save_training_run_creates_record(
+        self, mock_training_run, sample_dataset, tmp_path
+    ):
         """Test that training run is saved to database."""
         trainer = ModelTrainer(str(sample_dataset))
         trainer.load_data()
@@ -482,7 +495,7 @@ class TestTrainingRunTracking:
         trainer.save_training_run(
             model_version="1.0.0-test",
             model_path=str(model_path),
-            notes="Test training run"
+            notes="Test training run",
         )
 
         # Verify create was called
@@ -490,10 +503,10 @@ class TestTrainingRunTracking:
         call_kwargs = mock_training_run.objects.create.call_args[1]
 
         # Check required fields
-        assert call_kwargs['model_version'] == "1.0.0-test"
-        assert call_kwargs['model_path'] == str(model_path)
-        assert 'accuracy' in call_kwargs
-        assert 'f1_score' in call_kwargs
+        assert call_kwargs["model_version"] == "1.0.0-test"
+        assert call_kwargs["model_path"] == str(model_path)
+        assert "accuracy" in call_kwargs
+        assert "f1_score" in call_kwargs
 
     def test_save_training_run_without_training(self, sample_dataset, tmp_path):
         """Test that saving training run fails if no metrics available."""
@@ -503,10 +516,7 @@ class TestTrainingRunTracking:
         model_path = tmp_path / "test_model.pkl"
 
         with pytest.raises(TrainingError, match="No metrics available"):
-            trainer.save_training_run(
-                model_version="v1.0",
-                model_path=str(model_path)
-            )
+            trainer.save_training_run(model_version="v1.0", model_path=str(model_path))
 
 
 class TestEndToEndWorkflow:
@@ -523,7 +533,7 @@ class TestEndToEndWorkflow:
 
         # Train
         metrics = trainer.train(n_estimators=50)
-        assert metrics['accuracy'] >= 0
+        assert metrics["accuracy"] >= 0
 
         # Save
         model_path = tmp_path / "final_model.pkl"
@@ -546,9 +556,9 @@ class TestEndToEndWorkflow:
         df = pd.read_csv(real_dataset)
 
         # Map 'label' to 'future_need_level' and add required features
-        df['future_need_level'] = df['label']
-        df['trend_score'] = df['market_trend_score']
-        df['internal_usage'] = df['economic_indicator']
+        df["future_need_level"] = df["label"]
+        df["trend_score"] = df["market_trend_score"]
+        df["internal_usage"] = df["economic_indicator"]
 
         adapted_path = tmp_path / "adapted_data.csv"
         df.to_csv(adapted_path, index=False)
@@ -559,5 +569,5 @@ class TestEndToEndWorkflow:
         metrics = trainer.train(n_estimators=100)
 
         # Verify training worked
-        assert metrics['accuracy'] > 0
+        assert metrics["accuracy"] > 0
         assert trainer.model is not None
