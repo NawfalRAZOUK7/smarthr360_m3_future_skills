@@ -33,11 +33,24 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Optional, Tuple, Type
 
 from celery import Task
-from celery.exceptions import Ignore, Reject, Retry, SoftTimeLimitExceeded, TimeLimitExceeded
+from celery.exceptions import (
+    Ignore,
+    Reject,
+    Retry,
+    SoftTimeLimitExceeded,
+    TimeLimitExceeded,
+)
 from django.core.cache import cache
 from django.utils import timezone
 from pybreaker import CircuitBreaker, CircuitBreakerError
-from tenacity import after_log, before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    after_log,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 logger = logging.getLogger(__name__)
 

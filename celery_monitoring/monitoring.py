@@ -15,7 +15,15 @@ from celery import signals
 from celery.states import FAILURE, RECEIVED, RETRY, STARTED, SUCCESS
 from django.db import models
 from django.utils import timezone
-from prometheus_client import REGISTRY, Counter, Gauge, Histogram, Info, Summary, generate_latest
+from prometheus_client import (
+    REGISTRY,
+    Counter,
+    Gauge,
+    Histogram,
+    Info,
+    Summary,
+    generate_latest,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -21,8 +21,14 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pandas as pd
 
-from ml.monitoring import (PREDICTION_COUNTER, PREDICTION_LATENCY, ModelMonitor, PredictionLog, PredictionLogger,
-                           get_model_monitor)
+from ml.monitoring import (
+    PREDICTION_COUNTER,
+    PREDICTION_LATENCY,
+    ModelMonitor,
+    PredictionLog,
+    PredictionLogger,
+    get_model_monitor,
+)
 
 
 class TestPredictionLog:

@@ -18,7 +18,13 @@ import pytest
 # Add parent directory to path to import from tests.conftest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from tests.conftest import admin_user, regular_user, sample_future_skill_prediction, sample_job_role, sample_skill
+from tests.conftest import (
+    admin_user,
+    regular_user,
+    sample_future_skill_prediction,
+    sample_job_role,
+    sample_skill,
+)
 
 
 @pytest.fixture(scope="session", autouse=True)

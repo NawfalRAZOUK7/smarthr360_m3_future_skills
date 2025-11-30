@@ -2,8 +2,16 @@
 
 from rest_framework import serializers
 
-from ..models import (EconomicReport, Employee, FutureSkillPrediction, HRInvestmentRecommendation, JobRole, MarketTrend,
-                      Skill, TrainingRun)
+from ..models import (
+    EconomicReport,
+    Employee,
+    FutureSkillPrediction,
+    HRInvestmentRecommendation,
+    JobRole,
+    MarketTrend,
+    Skill,
+    TrainingRun,
+)
 
 
 class SkillSerializer(serializers.ModelSerializer):

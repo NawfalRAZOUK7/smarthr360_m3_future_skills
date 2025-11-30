@@ -20,12 +20,24 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
-from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
-from future_skills.services.prediction_engine import (PredictionEngine, _estimate_internal_usage,
-                                                      _estimate_scarcity_index, _estimate_training_requests,
-                                                      _find_relevant_trend, _log_prediction_for_monitoring,
-                                                      _normalize_training_requests, calculate_level,
-                                                      recalculate_predictions)
+from future_skills.models import (
+    FutureSkillPrediction,
+    JobRole,
+    MarketTrend,
+    PredictionRun,
+    Skill,
+)
+from future_skills.services.prediction_engine import (
+    PredictionEngine,
+    _estimate_internal_usage,
+    _estimate_scarcity_index,
+    _estimate_training_requests,
+    _find_relevant_trend,
+    _log_prediction_for_monitoring,
+    _normalize_training_requests,
+    calculate_level,
+    recalculate_predictions,
+)
 
 User = get_user_model()
 

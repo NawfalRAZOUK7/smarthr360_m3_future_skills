@@ -13,7 +13,11 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
+from future_skills.services.training_service import (
+    DataLoadError,
+    ModelTrainer,
+    TrainingError,
+)
 
 
 @pytest.fixture

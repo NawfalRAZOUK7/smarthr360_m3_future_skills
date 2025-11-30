@@ -1,7 +1,16 @@
 from django.contrib import admin
 
-from .models import (EconomicReport, Employee, FutureSkillPrediction, HRInvestmentRecommendation, JobRole, MarketTrend,
-                     PredictionRun, Skill, TrainingRun)
+from .models import (
+    EconomicReport,
+    Employee,
+    FutureSkillPrediction,
+    HRInvestmentRecommendation,
+    JobRole,
+    MarketTrend,
+    PredictionRun,
+    Skill,
+    TrainingRun,
+)
 
 
 @admin.register(Skill)
