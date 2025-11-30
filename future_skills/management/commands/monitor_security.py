@@ -234,17 +234,9 @@ class Command(BaseCommand):
                 )
             )
             for event in analysis["recent_auth_failures"][-5:]:
-                self.stdout.write(
-                    f"  {
-                        event.get(
-                            'asctime',
-                            'N/A')}: {
-                        event.get(
-                            'username',
-                            'unknown')} from {
-                        event.get(
-                            'ip_address',
-                            'unknown')}"
-                )
+                timestamp = event.get("asctime", "N/A")
+                username = event.get("username", "unknown")
+                ip_address = event.get("ip_address", "unknown")
+                self.stdout.write(f"  {timestamp}: {username} from {ip_address}")
 
         self.stdout.write("\n")
