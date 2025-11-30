@@ -11,4 +11,4 @@ from celery_monitoring.dead_letter import DeadLetterTask
 # These models are automatically created when celery_monitoring is imported
 # They will be registered with Django's ORM
 
-__all__ = ['TaskExecution', 'DeadLetterTask']
+__all__ = ["TaskExecution", "DeadLetterTask"]

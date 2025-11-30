@@ -11,7 +11,8 @@ Created comprehensive extended test suite for `future_skills/services/training_s
 
 ## Existing Test Coverage
 
-**Existing File**: `ml/tests/test_model_training.py`  
+**Existing File**: `ml/tests/test_model_training.py`
+
 - 8 test classes with ~40 tests
 - Covers main functionality: initialization, data loading, training, evaluation, persistence, feature importance, end-to-end workflows
 - Focus on happy-path scenarios and basic error cases
@@ -21,12 +22,14 @@ Created comprehensive extended test suite for `future_skills/services/training_s
 The extended test suite targets **uncovered areas** identified in the existing tests:
 
 ### 1. Exception Hierarchy (3 tests)
+
 - `TestExceptionHierarchy`
   - Validates custom exception inheritance structure
   - Tests `DataLoadError` and `TrainingError` as subclasses of `ModelTrainerError`
   - Ensures exceptions can be properly raised and caught
 
 ### 2. Data Loading Edge Cases (7 tests)
+
 - `TestDataLoadingEdgeCases`
   - All rows with invalid labels
   - Malformed CSV files (parser errors)
@@ -37,28 +40,33 @@ The extended test suite targets **uncovered areas** identified in the existing t
   - Mixed categorical/numeric feature type identification
 
 ### 3. Training Error Scenarios (3 tests)
+
 - `TestTrainingErrorScenarios`
   - MLflow setup failures
   - Model fit errors during training
   - MLflow run ID logging verification
 
 ### 4. Model Evaluation Edge Cases (2 tests)
+
 - `TestEvaluationEdgeCases`
   - Prediction errors during evaluation
   - Per-class metrics with zero support classes
 
 ### 5. Model Persistence Errors (2 tests)
+
 - `TestModelPersistenceErrors`
   - Permission denied during save
   - Disk full errors (OSError)
 
 ### 6. Feature Importance Edge Cases (3 tests)
+
 - `TestFeatureImportanceEdgeCases`
   - Feature importance with numeric-only features
   - Extraction errors (AttributeError handling)
   - Feature count mismatch scenarios
 
 ### 7. Training Run Saving & Model Versioning (5 tests)
+
 - `TestTrainingRunSaving`
   - **Auto-promotion logic when model improves metrics**
   - No promotion when metrics don't improve
@@ -67,17 +75,20 @@ The extended test suite targets **uncovered areas** identified in the existing t
   - Database save errors
 
 ### 8. Failed Training Run Tracking (2 tests)
+
 - `TestFailedTrainingRunTracking`
   - **`save_failed_training_run()` method testing** (previously untested)
   - Failed run database record creation
   - Error handling when saving failed runs fails
 
 ### 9. Pipeline Building Edge Cases (2 tests)
+
 - `TestPipelineBuilding`
   - Pipeline with only categorical features
   - Pipeline with empty categorical feature list
 
 ### 10. MLflow Integration (2 tests)
+
 - `TestMLflowIntegration`
   - Complete parameter logging verification
   - Per-class metrics logging to MLflow
@@ -87,20 +98,24 @@ The extended test suite targets **uncovered areas** identified in the existing t
 ### Critical Coverage Additions
 
 1. **Failed Run Tracking**
+
    - `save_failed_training_run()` was completely untested
    - Now covered with comprehensive tests including error scenarios
 
 2. **Model Versioning Auto-Promotion**
+
    - Auto-promotion logic based on metric improvements
    - First model automatic promotion
    - Scenarios where promotion is skipped
 
 3. **MLflow Error Handling**
+
    - MLflow connection failures
    - Stage transition errors
    - Logging failures
 
 4. **Database Error Paths**
+
    - TrainingRun creation failures
    - Version registration errors
 
@@ -113,6 +128,7 @@ The extended test suite targets **uncovered areas** identified in the existing t
 ## Test Fixtures Used
 
 The extended tests create fixtures on-the-fly using `tmp_path`:
+
 - Valid training datasets
 - Malformed CSV files
 - Datasets with edge cases (imbalance, missing features, invalid labels)
@@ -121,6 +137,7 @@ The extended tests create fixtures on-the-fly using `tmp_path`:
 ## Mocking Strategy
 
 Extensive use of `unittest.mock` for:
+
 - `@patch('future_skills.services.training_service.TrainingRun')`
 - `@patch('future_skills.services.training_service.create_model_version')`
 - `@patch('future_skills.services.training_service.ModelVersionManager')`
@@ -132,16 +149,19 @@ Extensive use of `unittest.mock` for:
 ## Testing Approach
 
 ### Error Path Testing
+
 - Focuses on exception handling paths
 - Validates error messages and types
 - Ensures graceful degradation
 
 ### Integration Testing
+
 - Tests MLflow integration failures
 - Model versioning integration scenarios
 - Database operation failures
 
 ### Edge Case Testing
+
 - Boundary conditions (zero support, extreme imbalance)
 - Type edge cases (numeric-only, categorical-only)
 - Resource constraints (disk full, permissions)
@@ -149,16 +169,19 @@ Extensive use of `unittest.mock` for:
 ## Coverage Impact
 
 ### Before Extended Tests
+
 - Existing `test_model_training.py`: ~40 tests
 - Coverage: **46%**
 - Focus: Main functionality, happy paths
 
 ### After Extended Tests
+
 - Combined: ~110 tests (40 existing + 70 extended)
 - Expected Coverage: **50%+**
 - Focus: Error handling, edge cases, integration failures
 
 ### Uncovered Methods Now Tested
+
 1. ✅ `save_failed_training_run()` - Complete coverage
 2. ✅ `_compute_per_class_metrics()` - Zero support edge case
 3. ✅ `_build_pipeline()` - Edge cases
@@ -168,6 +191,7 @@ Extensive use of `unittest.mock` for:
 ## Test Execution
 
 ### Running Extended Tests
+
 ```bash
 # Run all extended tests
 pytest ml/tests/test_training_service_extended.py -v
@@ -183,6 +207,7 @@ pytest ml/tests/test_model_training.py ml/tests/test_training_service_extended.p
 ```
 
 ### Expected Outcomes
+
 - All 70+ tests should pass
 - Combined with existing tests: ~110 tests total
 - Coverage improvement: 46% → 50%+
@@ -191,11 +216,13 @@ pytest ml/tests/test_model_training.py ml/tests/test_training_service_extended.p
 ## Integration with CI/CD
 
 ### GitHub Actions
+
 - Tests run in Python 3.11 and 3.12 environments
 - Coverage threshold for ML job: 40%
 - Extended tests add to overall ML module coverage
 
 ### Coverage Reporting
+
 - pytest-cov generates coverage reports
 - CI pipeline validates coverage meets thresholds
 - Coverage trends tracked across commits
@@ -203,12 +230,14 @@ pytest ml/tests/test_model_training.py ml/tests/test_training_service_extended.p
 ## Maintenance Notes
 
 ### Future Enhancements
+
 1. Add tests for concurrent training scenarios
 2. Test distributed training configurations
 3. Add performance benchmarks
 4. Test with larger datasets
 
 ### Dependencies
+
 - pytest
 - pytest-django
 - pytest-mock
@@ -219,6 +248,7 @@ pytest ml/tests/test_model_training.py ml/tests/test_training_service_extended.p
 - joblib
 
 ### Related Files
+
 - Source: `future_skills/services/training_service.py`
 - Existing Tests: `ml/tests/test_model_training.py`
 - Extended Tests: `ml/tests/test_training_service_extended.py`
@@ -242,11 +272,13 @@ pytest ml/tests/test_model_training.py ml/tests/test_training_service_extended.p
 ## Test Categories
 
 ### By Complexity
+
 - **Unit Tests**: 60% (isolated method testing)
 - **Integration Tests**: 30% (MLflow, DB, versioning)
 - **Edge Case Tests**: 10% (boundary conditions)
 
 ### By Coverage Type
+
 - **Line Coverage**: Primary focus
 - **Branch Coverage**: Error paths, conditionals
 - **Exception Coverage**: All custom exceptions

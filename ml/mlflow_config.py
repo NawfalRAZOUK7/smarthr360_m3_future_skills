@@ -82,14 +82,13 @@ class MLflowConfig:
         3. Default local file-based tracking
         """
         tracking_uri = os.environ.get(
-            'MLFLOW_TRACKING_URI',
-            getattr(settings, 'MLFLOW_TRACKING_URI', None)
+            "MLFLOW_TRACKING_URI", getattr(settings, "MLFLOW_TRACKING_URI", None)
         )
 
         if not tracking_uri:
             # Default to local file-based tracking
-            base_dir = getattr(settings, 'BASE_DIR', Path.cwd())
-            mlruns_dir = base_dir / 'mlruns'
+            base_dir = getattr(settings, "BASE_DIR", Path.cwd())
+            mlruns_dir = base_dir / "mlruns"
             mlruns_dir.mkdir(exist_ok=True)
             tracking_uri = f"file://{mlruns_dir.absolute()}"
 
@@ -98,13 +97,13 @@ class MLflowConfig:
     def _get_artifact_location(self) -> str:
         """Get artifact storage location."""
         artifact_location = os.environ.get(
-            'MLFLOW_ARTIFACT_LOCATION',
-            getattr(settings, 'MLFLOW_ARTIFACT_LOCATION', None)
+            "MLFLOW_ARTIFACT_LOCATION",
+            getattr(settings, "MLFLOW_ARTIFACT_LOCATION", None),
         )
 
         if not artifact_location:
-            base_dir = getattr(settings, 'BASE_DIR', Path.cwd())
-            artifacts_dir = base_dir / 'mlruns' / 'artifacts'
+            base_dir = getattr(settings, "BASE_DIR", Path.cwd())
+            artifacts_dir = base_dir / "mlruns" / "artifacts"
             artifacts_dir.mkdir(parents=True, exist_ok=True)
             artifact_location = str(artifacts_dir.absolute())
 
@@ -117,14 +116,14 @@ class MLflowConfig:
         Supports PostgreSQL, MySQL, SQLite, or file-based storage.
         """
         backend_uri = os.environ.get(
-            'MLFLOW_BACKEND_STORE_URI',
-            getattr(settings, 'MLFLOW_BACKEND_STORE_URI', None)
+            "MLFLOW_BACKEND_STORE_URI",
+            getattr(settings, "MLFLOW_BACKEND_STORE_URI", None),
         )
 
         if not backend_uri:
             # Default to SQLite database
-            base_dir = getattr(settings, 'BASE_DIR', Path.cwd())
-            db_path = base_dir / 'mlruns' / 'mlflow.db'
+            base_dir = getattr(settings, "BASE_DIR", Path.cwd())
+            db_path = base_dir / "mlruns" / "mlflow.db"
             db_path.parent.mkdir(parents=True, exist_ok=True)
             backend_uri = f"sqlite:///{db_path.absolute()}"
 
@@ -167,7 +166,10 @@ class MLflowConfig:
             (self.DEFAULT_EXPERIMENT, "Main future skills prediction experiments"),
             (self.TRAINING_EXPERIMENT, "Model training and hyperparameter tuning"),
             (self.EVALUATION_EXPERIMENT, "Model evaluation and validation"),
-            (self.PRODUCTION_EXPERIMENT, "Production model monitoring and drift detection"),
+            (
+                self.PRODUCTION_EXPERIMENT,
+                "Production model monitoring and drift detection",
+            ),
         ]
 
         for exp_name, description in experiments:
@@ -177,7 +179,10 @@ class MLflowConfig:
                     exp_id = self.client.create_experiment(
                         name=exp_name,
                         artifact_location=f"{self.artifact_location}/{exp_name}",
-                        tags={"description": description, "created_at": datetime.now().isoformat()}
+                        tags={
+                            "description": description,
+                            "created_at": datetime.now().isoformat(),
+                        },
                     )
                     logger.info(f"Created experiment '{exp_name}' with ID: {exp_id}")
                 else:
@@ -191,7 +196,7 @@ class MLflowConfig:
         run_name: Optional[str] = None,
         experiment_name: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
-        nested: bool = False
+        nested: bool = False,
     ):
         """
         Context manager for MLflow run tracking.
@@ -221,7 +226,7 @@ class MLflowConfig:
 
                 # Log system info
                 mlflow.set_tag("mlflow.source.name", "smarthr360")
-                mlflow.set_tag("mlflow.user", os.environ.get('USER', 'unknown'))
+                mlflow.set_tag("mlflow.user", os.environ.get("USER", "unknown"))
 
                 yield run
 
@@ -230,9 +235,7 @@ class MLflowConfig:
             raise
 
     def log_model_metrics(
-        self,
-        metrics: Dict[str, float],
-        step: Optional[int] = None
+        self, metrics: Dict[str, float], step: Optional[int] = None
     ) -> None:
         """
         Log multiple metrics at once.
@@ -253,7 +256,9 @@ class MLflowConfig:
         """
         mlflow.log_params(params)
 
-    def log_artifact_directory(self, local_dir: str, artifact_path: Optional[str] = None) -> None:
+    def log_artifact_directory(
+        self, local_dir: str, artifact_path: Optional[str] = None
+    ) -> None:
         """
         Log a directory as an artifact.
 
@@ -268,7 +273,7 @@ class MLflowConfig:
         model_uri: str,
         model_name: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-        description: Optional[str] = None
+        description: Optional[str] = None,
     ) -> Any:
         """
         Register a model in MLflow Model Registry.
@@ -290,9 +295,7 @@ class MLflowConfig:
         try:
             # Register model
             model_version = mlflow.register_model(
-                model_uri=model_uri,
-                name=model_name,
-                tags=tags
+                model_uri=model_uri, name=model_name, tags=tags
             )
 
             # Update description if provided
@@ -300,7 +303,7 @@ class MLflowConfig:
                 self.client.update_model_version(
                     name=model_name,
                     version=model_version.version,
-                    description=description
+                    description=description,
                 )
 
             logger.info(
@@ -314,11 +317,7 @@ class MLflowConfig:
             raise
 
     def transition_model_stage(
-        self,
-        model_name: str,
-        version: str,
-        stage: str,
-        archive_existing: bool = True
+        self, model_name: str, version: str, stage: str, archive_existing: bool = True
     ) -> None:
         """
         Transition a model version to a different stage.
@@ -337,7 +336,7 @@ class MLflowConfig:
                 name=model_name,
                 version=version,
                 stage=stage,
-                archive_existing_versions=archive_existing
+                archive_existing_versions=archive_existing,
             )
 
             logger.info(
@@ -349,9 +348,7 @@ class MLflowConfig:
             raise
 
     def get_latest_model_version(
-        self,
-        model_name: Optional[str] = None,
-        stage: Optional[str] = None
+        self, model_name: Optional[str] = None, stage: Optional[str] = None
     ) -> Optional[Any]:
         """
         Get the latest version of a registered model.
@@ -386,7 +383,9 @@ class MLflowConfig:
             logger.error(f"Failed to get latest model version: {e}")
             return None
 
-    def get_production_model_uri(self, model_name: Optional[str] = None) -> Optional[str]:
+    def get_production_model_uri(
+        self, model_name: Optional[str] = None
+    ) -> Optional[str]:
         """
         Get the URI of the current production model.
 
@@ -409,7 +408,7 @@ class MLflowConfig:
         experiment_name: Optional[str] = None,
         filter_string: str = "",
         max_results: int = 100,
-        order_by: Optional[List[str]] = None
+        order_by: Optional[List[str]] = None,
     ) -> List[Any]:
         """
         Search for runs in an experiment.
@@ -438,7 +437,7 @@ class MLflowConfig:
                 experiment_ids=[experiment.experiment_id],
                 filter_string=filter_string,
                 max_results=max_results,
-                order_by=order_by or ["start_time DESC"]
+                order_by=order_by or ["start_time DESC"],
             )
 
             return runs
@@ -451,7 +450,7 @@ class MLflowConfig:
         self,
         experiment_name: Optional[str] = None,
         metric_name: str = "accuracy",
-        ascending: bool = False
+        ascending: bool = False,
     ) -> Optional[Any]:
         """
         Get the best run based on a metric.
@@ -468,18 +467,13 @@ class MLflowConfig:
         order_by = [f"metrics.{metric_name} {order_direction}"]
 
         runs = self.search_runs(
-            experiment_name=experiment_name,
-            max_results=1,
-            order_by=order_by
+            experiment_name=experiment_name, max_results=1, order_by=order_by
         )
 
         return runs[0] if runs else None
 
     def cleanup_old_runs(
-        self,
-        experiment_name: str,
-        days_to_keep: int = 90,
-        dry_run: bool = True
+        self, experiment_name: str, days_to_keep: int = 90, dry_run: bool = True
     ) -> int:
         """
         Clean up old runs from an experiment.
@@ -502,6 +496,7 @@ class MLflowConfig:
         try:
             # Calculate cutoff timestamp
             from datetime import timedelta
+
             cutoff = datetime.now() - timedelta(days=days_to_keep)
             cutoff_ts = int(cutoff.timestamp() * 1000)
 
@@ -509,7 +504,7 @@ class MLflowConfig:
             runs = self.client.search_runs(
                 experiment_ids=[experiment.experiment_id],
                 filter_string=f"start_time < {cutoff_ts}",
-                run_view_type=ViewType.ACTIVE_ONLY
+                run_view_type=ViewType.ACTIVE_ONLY,
             )
 
             deleted_count = 0

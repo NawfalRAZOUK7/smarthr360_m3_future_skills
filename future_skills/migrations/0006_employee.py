@@ -7,26 +7,63 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('future_skills', '0005_add_explanation_field'),
+        ("future_skills", "0005_add_explanation_field"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Employee',
+            name="Employee",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('email', models.EmailField(max_length=254, unique=True)),
-                ('department', models.CharField(help_text="Département de l'employé (ex : IT, RH, Finance...).", max_length=150)),
-                ('position', models.CharField(help_text="Poste actuel de l'employé (ex : Developer, Manager...).", max_length=150)),
-                ('current_skills', models.JSONField(blank=True, default=list, help_text="Liste des compétences actuelles de l'employé (ex : ['Python', 'Django']).")),
-                ('date_joined', models.DateTimeField(auto_now_add=True)),
-                ('job_role', models.ForeignKey(blank=True, help_text='Rôle/métier associé dans le référentiel JobRole.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='employees', to='future_skills.jobrole')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("email", models.EmailField(max_length=254, unique=True)),
+                (
+                    "department",
+                    models.CharField(
+                        help_text="Département de l'employé (ex : IT, RH, Finance...).",
+                        max_length=150,
+                    ),
+                ),
+                (
+                    "position",
+                    models.CharField(
+                        help_text="Poste actuel de l'employé (ex : Developer, Manager...).",
+                        max_length=150,
+                    ),
+                ),
+                (
+                    "current_skills",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Liste des compétences actuelles de l'employé (ex : ['Python', 'Django']).",
+                    ),
+                ),
+                ("date_joined", models.DateTimeField(auto_now_add=True)),
+                (
+                    "job_role",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Rôle/métier associé dans le référentiel JobRole.",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="employees",
+                        to="future_skills.jobrole",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Employé',
-                'verbose_name_plural': 'Employés',
-                'ordering': ['name'],
+                "verbose_name": "Employé",
+                "verbose_name_plural": "Employés",
+                "ordering": ["name"],
             },
         ),
     ]

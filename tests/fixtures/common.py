@@ -14,13 +14,14 @@ User = get_user_model()
 # Test Constants
 # ============================================================================
 
-SKILL_AI_ML = 'AI/ML'
-SKILL_CLOUD_ARCHITECTURE = 'Cloud Architecture'
+SKILL_AI_ML = "AI/ML"
+SKILL_CLOUD_ARCHITECTURE = "Cloud Architecture"
 
 
 # ============================================================================
 # Complex Model Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def complete_employee_with_predictions(db, sample_employee):
@@ -38,10 +39,10 @@ def complete_employee_with_predictions(db, sample_employee):
     for i in range(3):
         PredictionRun.objects.create(
             employee=sample_employee,
-            status='completed',
+            status="completed",
             confidence_score=0.70 + (i * 0.05),
-            predicted_skills=[f'Skill {j}' for j in range(3)],
-            model_version=f'v1.{i}'
+            predicted_skills=[f"Skill {j}" for j in range(3)],
+            model_version=f"v1.{i}",
         )
 
     return sample_employee
@@ -61,11 +62,11 @@ def multiple_employees(db):
     employees = []
     for i in range(5):
         emp = Employee.objects.create(
-            name=f'Employee {i}',
-            email=f'employee{i}@example.com',
-            department='Engineering' if i % 2 == 0 else 'Marketing',
-            position=f'Position {i}',
-            current_skills=[f'Skill {j}' for j in range(3)]
+            name=f"Employee {i}",
+            email=f"employee{i}@example.com",
+            department="Engineering" if i % 2 == 0 else "Marketing",
+            position=f"Position {i}",
+            current_skills=[f"Skill {j}" for j in range(3)],
         )
         employees.append(emp)
 
@@ -83,16 +84,16 @@ def multiple_future_skills(db):
     """
     from future_skills.models import FutureSkill
 
-    categories = ['Technical', 'Soft Skills', 'Leadership', 'Domain']
+    categories = ["Technical", "Soft Skills", "Leadership", "Domain"]
     skills = []
 
     for i in range(10):
         skill = FutureSkill.objects.create(
-            skill_name=f'Skill {i}',
+            skill_name=f"Skill {i}",
             category=categories[i % len(categories)],
-            description=f'Description for skill {i}',
+            description=f"Description for skill {i}",
             importance_score=0.5 + (i * 0.05),
-            relevance_score=0.6 + (i * 0.04)
+            relevance_score=0.6 + (i * 0.04),
         )
         skills.append(skill)
 
@@ -102,6 +103,7 @@ def multiple_future_skills(db):
 # ============================================================================
 # Scenario Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def skills_gap_scenario(db):
@@ -116,47 +118,47 @@ def skills_gap_scenario(db):
     future_skills = [
         FutureSkill.objects.create(
             skill_name=SKILL_AI_ML,
-            category='Technical',
+            category="Technical",
             importance_score=0.95,
-            relevance_score=0.90
+            relevance_score=0.90,
         ),
         FutureSkill.objects.create(
             skill_name=SKILL_CLOUD_ARCHITECTURE,
-            category='Technical',
+            category="Technical",
             importance_score=0.88,
-            relevance_score=0.85
+            relevance_score=0.85,
         ),
         FutureSkill.objects.create(
-            skill_name='Leadership',
-            category='Soft Skills',
+            skill_name="Leadership",
+            category="Soft Skills",
             importance_score=0.82,
-            relevance_score=0.80
-        )
+            relevance_score=0.80,
+        ),
     ]
 
     # Create employees with gaps in their skills
     employees = [
         Employee.objects.create(
-            name='Developer A',
-            email='deva@example.com',
-            department='Engineering',
-            current_skills=['Python', 'Django']  # Missing AI/ML, Cloud
+            name="Developer A",
+            email="deva@example.com",
+            department="Engineering",
+            current_skills=["Python", "Django"],  # Missing AI/ML, Cloud
         ),
         Employee.objects.create(
-            name='Developer B',
-            email='devb@example.com',
-            department='Engineering',
-            current_skills=['JavaScript', 'React']  # Missing AI/ML, Cloud
-        )
+            name="Developer B",
+            email="devb@example.com",
+            department="Engineering",
+            current_skills=["JavaScript", "React"],  # Missing AI/ML, Cloud
+        ),
     ]
 
     return {
-        'employees': employees,
-        'future_skills': future_skills,
-        'expected_gaps': {
-            'Developer A': [SKILL_AI_ML, SKILL_CLOUD_ARCHITECTURE, 'Leadership'],
-            'Developer B': [SKILL_AI_ML, SKILL_CLOUD_ARCHITECTURE, 'Leadership']
-        }
+        "employees": employees,
+        "future_skills": future_skills,
+        "expected_gaps": {
+            "Developer A": [SKILL_AI_ML, SKILL_CLOUD_ARCHITECTURE, "Leadership"],
+            "Developer B": [SKILL_AI_ML, SKILL_CLOUD_ARCHITECTURE, "Leadership"],
+        },
     }
 
 
@@ -171,35 +173,31 @@ def prediction_test_scenario(db):
 
     # Create employee
     employee = Employee.objects.create(
-        name='Test Employee',
-        email='test@example.com',
-        department='Data Science',
-        position='Data Analyst',
-        current_skills=['Python', 'SQL', 'Excel']
+        name="Test Employee",
+        email="test@example.com",
+        department="Data Science",
+        position="Data Analyst",
+        current_skills=["Python", "SQL", "Excel"],
     )
 
     # Create future skills that should be predicted
     predicted_skills = [
         FutureSkill.objects.create(
-            skill_name='Machine Learning',
-            category='Technical',
-            importance_score=0.90
+            skill_name="Machine Learning", category="Technical", importance_score=0.90
         ),
         FutureSkill.objects.create(
-            skill_name='Data Visualization',
-            category='Technical',
-            importance_score=0.85
-        )
+            skill_name="Data Visualization", category="Technical", importance_score=0.85
+        ),
     ]
 
     return {
-        'employee': employee,
-        'input_data': {
-            'current_skills': employee.current_skills,
-            'department': employee.department,
-            'position': employee.position
+        "employee": employee,
+        "input_data": {
+            "current_skills": employee.current_skills,
+            "department": employee.department,
+            "position": employee.position,
         },
-        'expected_skills': predicted_skills
+        "expected_skills": predicted_skills,
     }
 
 
@@ -207,16 +205,17 @@ def prediction_test_scenario(db):
 # API Request Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def valid_employee_payload():
     """Provides valid employee creation payload."""
     return {
-        'name': 'Valid Employee',
-        'email': 'valid@example.com',
-        'department': 'IT',
-        'position': 'Software Engineer',
-        'current_skills': ['Python', 'Django', 'PostgreSQL'],
-        'experience_years': 5
+        "name": "Valid Employee",
+        "email": "valid@example.com",
+        "department": "IT",
+        "position": "Software Engineer",
+        "current_skills": ["Python", "Django", "PostgreSQL"],
+        "experience_years": 5,
     }
 
 
@@ -224,9 +223,9 @@ def valid_employee_payload():
 def invalid_employee_payload():
     """Provides invalid employee creation payload for testing validation."""
     return {
-        'name': '',  # Invalid: empty name
-        'email': 'invalid-email',  # Invalid: not a proper email
-        'department': 'IT',
+        "name": "",  # Invalid: empty name
+        "email": "invalid-email",  # Invalid: not a proper email
+        "department": "IT",
         # Missing required fields
     }
 
@@ -235,16 +234,17 @@ def invalid_employee_payload():
 def valid_prediction_payload(sample_employee):
     """Provides valid prediction request payload."""
     return {
-        'employee_id': sample_employee.id,
-        'current_skills': sample_employee.current_skills,
-        'department': sample_employee.department,
-        'use_ml': True
+        "employee_id": sample_employee.id,
+        "current_skills": sample_employee.current_skills,
+        "department": sample_employee.department,
+        "use_ml": True,
     }
 
 
 # ============================================================================
 # File Upload Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def sample_csv_data():
@@ -263,14 +263,17 @@ Bob Wilson,bob@example.com,Sales,Representative,"CRM,Communication"
 # Mock Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def mock_ml_predictions(mocker):
     """Mocks ML model predictions for testing without actual model."""
-    mock_predict = mocker.patch('future_skills.services.prediction_engine.PredictionEngine.predict')
+    mock_predict = mocker.patch(
+        "future_skills.services.prediction_engine.PredictionEngine.predict"
+    )
     mock_predict.return_value = {
-        'predictions': [SKILL_AI_ML, 'Cloud Computing', 'DevOps'],
-        'confidence_scores': [0.85, 0.78, 0.72],
-        'model_version': 'v1.0'
+        "predictions": [SKILL_AI_ML, "Cloud Computing", "DevOps"],
+        "confidence_scores": [0.85, 0.78, 0.72],
+        "model_version": "v1.0",
     }
     return mock_predict
 
@@ -278,12 +281,14 @@ def mock_ml_predictions(mocker):
 @pytest.fixture
 def mock_recommendation_engine(mocker):
     """Mocks recommendation engine for testing."""
-    mock_recommend = mocker.patch('future_skills.services.recommendation_engine.RecommendationEngine.recommend')
+    mock_recommend = mocker.patch(
+        "future_skills.services.recommendation_engine.RecommendationEngine.recommend"
+    )
     mock_recommend.return_value = {
-        'recommendations': [
-            {'skill_name': 'Machine Learning', 'score': 0.90},
-            {'skill_name': 'Data Science', 'score': 0.85},
-            {'skill_name': 'Cloud Computing', 'score': 0.80}
+        "recommendations": [
+            {"skill_name": "Machine Learning", "score": 0.90},
+            {"skill_name": "Data Science", "score": 0.85},
+            {"skill_name": "Cloud Computing", "score": 0.80},
         ]
     }
     return mock_recommend
@@ -293,11 +298,13 @@ def mock_recommendation_engine(mocker):
 # Time-based Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def freeze_time():
     """Freezes time for testing time-dependent features."""
     import freezegun
-    with freezegun.freeze_time('2025-01-01 12:00:00'):
+
+    with freezegun.freeze_time("2025-01-01 12:00:00"):
         yield
 
 
@@ -305,10 +312,12 @@ def freeze_time():
 # Cache Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def clear_cache():
     """Clears Django cache before and after test."""
     from django.core.cache import cache
+
     cache.clear()
     yield
     cache.clear()
@@ -317,6 +326,7 @@ def clear_cache():
 # ============================================================================
 # Settings Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def ml_enabled_settings(settings):

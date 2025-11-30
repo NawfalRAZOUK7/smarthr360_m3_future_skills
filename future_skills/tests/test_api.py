@@ -17,7 +17,9 @@ from future_skills.models import (
     PredictionRun,
 )
 from future_skills.services.prediction_engine import recalculate_predictions
-from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
+from future_skills.services.recommendation_engine import (
+    generate_recommendations_from_predictions,
+)
 
 User = get_user_model()
 
@@ -103,7 +105,7 @@ class FutureSkillsListAPITests(BaseAPITestCase):
 
         data = response.json()
         # Handle paginated response
-        results = data.get('results', data) if isinstance(data, dict) else data
+        results = data.get("results", data) if isinstance(data, dict) else data
         # On doit avoir au moins une prédiction
         self.assertTrue(len(results) > 0)
         # Verif champs principaux
@@ -158,7 +160,6 @@ class RecalculateFutureSkillsAPITests(BaseAPITestCase):
             self.assertEqual(last_run.parameters.get("engine"), "rules_v1")
 
 
-
 class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
     """Tests pour vérifier le fallback ML dans l'API."""
 
@@ -182,7 +183,9 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
 
         with override_settings(FUTURE_SKILLS_USE_ML=True):
             # Mock du modèle pour simuler qu'il n'est pas disponible
-            with patch("future_skills.services.prediction_engine.FutureSkillsModel.instance") as mock_ml:
+            with patch(
+                "future_skills.services.prediction_engine.FutureSkillsModel.instance"
+            ) as mock_ml:
                 mock_ml.return_value.is_available.return_value = False
 
                 # Appel de l'API
@@ -216,7 +219,6 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
                 self.assertNotIn("model_version", last_run.parameters)
 
 
-
 class MarketTrendsAPITests(BaseAPITestCase):
     def test_get_market_trends_with_manager_role_should_succeed(self):
         url = reverse("market-trends-list")
@@ -228,9 +230,11 @@ class MarketTrendsAPITests(BaseAPITestCase):
         data = response.json()
         self.assertTrue(len(data) >= 2)  # on a créé 2 MarketTrend en setUp
 
+
 class HRInvestmentRecommendationsAPITests(BaseAPITestCase):
     def test_get_hr_investment_recommendations_without_auth_should_be_forbidden(self):
         from django.urls import reverse
+
         url = reverse("hr-investment-recommendations-list")
 
         response = self.client.get(url)
@@ -238,6 +242,7 @@ class HRInvestmentRecommendationsAPITests(BaseAPITestCase):
 
     def test_get_hr_investment_recommendations_with_manager_role_should_succeed(self):
         from django.urls import reverse
+
         url = reverse("hr-investment-recommendations-list")
 
         self.client.force_authenticate(user=self.user_manager)

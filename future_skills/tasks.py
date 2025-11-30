@@ -17,7 +17,7 @@ from future_skills.models import TrainingRun
 from future_skills.services.training_service import (
     ModelTrainer,
     DataLoadError,
-    TrainingError
+    TrainingError,
 )
 from celery_monitoring import (
     retry_with_exponential_backoff,
@@ -25,14 +25,14 @@ from celery_monitoring import (
     with_dead_letter_queue,
     monitor_task,
     with_timeout,
-    idempotent
+    idempotent,
 )
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-@shared_task(bind=True, name='future_skills.train_model')
+@shared_task(bind=True, name="future_skills.train_model")
 @monitor_task(track_memory=True, track_cpu=True)
 @with_timeout(soft_timeout=1500, hard_timeout=1800)  # 25/30 minute limits
 @with_dead_letter_queue(max_retries=3)
@@ -105,23 +105,23 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
 
     # Update task state to show progress
     self.update_state(
-        state='PROGRESS',
-        meta={'stage': 'initializing', 'training_run_id': training_run_id}
+        state="PROGRESS",
+        meta={"stage": "initializing", "training_run_id": training_run_id},
     )
 
     try:
         # === STEP 1: Initialize ModelTrainer ===
-        logger.info(f"[CELERY] Initializing ModelTrainer for {training_run.model_version}")
+        logger.info(
+            f"[CELERY] Initializing ModelTrainer for {training_run.model_version}"
+        )
         trainer = ModelTrainer(
-            dataset_path=dataset_path,
-            test_split=test_split,
-            random_state=42
+            dataset_path=dataset_path, test_split=test_split, random_state=42
         )
 
         # === STEP 2: Load and validate data ===
         self.update_state(
-            state='PROGRESS',
-            meta={'stage': 'loading_data', 'training_run_id': training_run_id}
+            state="PROGRESS",
+            meta={"stage": "loading_data", "training_run_id": training_run_id},
         )
         logger.info("[CELERY] Loading dataset...")
         trainer.load_data()
@@ -132,12 +132,10 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
 
         # === STEP 3: Train model ===
         self.update_state(
-            state='PROGRESS',
-            meta={'stage': 'training', 'training_run_id': training_run_id}
+            state="PROGRESS",
+            meta={"stage": "training", "training_run_id": training_run_id},
         )
-        logger.info(
-            f"[CELERY] Training model with hyperparameters: {hyperparameters}"
-        )
+        logger.info(f"[CELERY] Training model with hyperparameters: {hyperparameters}")
         metrics = trainer.train(**hyperparameters)
         logger.info(
             f"[CELERY] Training completed: accuracy={metrics['accuracy']:.4f}, "
@@ -146,8 +144,8 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
 
         # === STEP 4: Evaluate model ===
         self.update_state(
-            state='PROGRESS',
-            meta={'stage': 'evaluating', 'training_run_id': training_run_id}
+            state="PROGRESS",
+            meta={"stage": "evaluating", "training_run_id": training_run_id},
         )
         evaluation_metrics = trainer.evaluate()
         logger.info(
@@ -157,8 +155,8 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
 
         # === STEP 5: Save model to disk ===
         self.update_state(
-            state='PROGRESS',
-            meta={'stage': 'saving_model', 'training_run_id': training_run_id}
+            state="PROGRESS",
+            meta={"stage": "saving_model", "training_run_id": training_run_id},
         )
         model_path = f"ml/models/{training_run.model_version}.pkl"
         model_size = trainer.save_model(model_path)
@@ -166,20 +164,20 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
 
         # === STEP 6: Update TrainingRun with success ===
         self.update_state(
-            state='PROGRESS',
-            meta={'stage': 'updating_database', 'training_run_id': training_run_id}
+            state="PROGRESS",
+            meta={"stage": "updating_database", "training_run_id": training_run_id},
         )
 
-        training_run.status = 'COMPLETED'
+        training_run.status = "COMPLETED"
         training_run.model_path = model_path
-        training_run.accuracy = evaluation_metrics['accuracy']
-        training_run.precision = evaluation_metrics['precision']
-        training_run.recall = evaluation_metrics['recall']
-        training_run.f1_score = evaluation_metrics['f1_score']
-        training_run.training_duration_seconds = metrics['training_duration_seconds']
-        training_run.total_samples = evaluation_metrics['total_samples']
-        training_run.per_class_metrics = evaluation_metrics.get('per_class_metrics', {})
-        training_run.features_used = evaluation_metrics.get('features_used', [])
+        training_run.accuracy = evaluation_metrics["accuracy"]
+        training_run.precision = evaluation_metrics["precision"]
+        training_run.recall = evaluation_metrics["recall"]
+        training_run.f1_score = evaluation_metrics["f1_score"]
+        training_run.training_duration_seconds = metrics["training_duration_seconds"]
+        training_run.total_samples = evaluation_metrics["total_samples"]
+        training_run.per_class_metrics = evaluation_metrics.get("per_class_metrics", {})
+        training_run.features_used = evaluation_metrics.get("features_used", [])
         training_run.save()
 
         logger.info(
@@ -189,14 +187,14 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
 
         # Return results
         result = {
-            'status': 'COMPLETED',
-            'training_run_id': training_run_id,
-            'model_version': training_run.model_version,
-            'accuracy': training_run.accuracy,
-            'f1_score': training_run.f1_score,
-            'training_duration_seconds': training_run.training_duration_seconds,
-            'model_path': model_path,
-            'message': 'Training completed successfully'
+            "status": "COMPLETED",
+            "training_run_id": training_run_id,
+            "model_version": training_run.model_version,
+            "accuracy": training_run.accuracy,
+            "f1_score": training_run.f1_score,
+            "training_duration_seconds": training_run.training_duration_seconds,
+            "model_path": model_path,
+            "message": "Training completed successfully",
         }
 
         return result
@@ -206,14 +204,14 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         error_message = f"Data loading failed: {str(e)}"
         logger.error(f"[CELERY] ❌ {error_message}")
 
-        training_run.status = 'FAILED'
+        training_run.status = "FAILED"
         training_run.error_message = error_message
         training_run.save()
 
         # Update task state
         self.update_state(
-            state='FAILURE',
-            meta={'error': error_message, 'training_run_id': training_run_id}
+            state="FAILURE",
+            meta={"error": error_message, "training_run_id": training_run_id},
         )
 
         # Re-raise to mark task as failed in Celery
@@ -224,13 +222,13 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         error_message = f"Training failed: {str(e)}"
         logger.error(f"[CELERY] ❌ {error_message}")
 
-        training_run.status = 'FAILED'
+        training_run.status = "FAILED"
         training_run.error_message = error_message
         training_run.save()
 
         self.update_state(
-            state='FAILURE',
-            meta={'error': error_message, 'training_run_id': training_run_id}
+            state="FAILURE",
+            meta={"error": error_message, "training_run_id": training_run_id},
         )
 
         raise
@@ -240,19 +238,19 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         error_message = f"Unexpected error during training: {str(e)}"
         logger.error(f"[CELERY] ❌ {error_message}", exc_info=True)
 
-        training_run.status = 'FAILED'
+        training_run.status = "FAILED"
         training_run.error_message = error_message
         training_run.save()
 
         self.update_state(
-            state='FAILURE',
-            meta={'error': error_message, 'training_run_id': training_run_id}
+            state="FAILURE",
+            meta={"error": error_message, "training_run_id": training_run_id},
         )
 
         raise
 
 
-@shared_task(name='future_skills.cleanup_old_models')
+@shared_task(name="future_skills.cleanup_old_models")
 @monitor_task(track_memory=False, track_cpu=False)
 @idempotent(timeout=3600)  # Prevent duplicate runs within 1 hour
 @retry_with_exponential_backoff(max_retries=2, base_delay=300)
@@ -294,8 +292,7 @@ def cleanup_old_models_task(days_to_keep=30):
 
     # Find old training runs
     old_runs = TrainingRun.objects.filter(
-        run_date__lt=cutoff_date,
-        status__in=['COMPLETED', 'FAILED']
+        run_date__lt=cutoff_date, status__in=["COMPLETED", "FAILED"]
     )
 
     deleted_files = 0
@@ -322,8 +319,8 @@ def cleanup_old_models_task(days_to_keep=30):
     )
 
     return {
-        'deleted_files': deleted_files,
-        'total_size_freed_mb': total_size_freed / 1024 / 1024,
-        'old_runs_count': deleted_count,
-        'cutoff_date': cutoff_date.isoformat()
+        "deleted_files": deleted_files,
+        "total_size_freed_mb": total_size_freed / 1024 / 1024,
+        "old_runs_count": deleted_count,
+        "cutoff_date": cutoff_date.isoformat(),
     }

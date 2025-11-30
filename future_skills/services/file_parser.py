@@ -12,8 +12,7 @@ from typing import List, Dict, Any, Optional, Tuple
 
 
 def parse_employee_csv(
-    file,
-    encoding: str = 'utf-8'
+    file, encoding: str = "utf-8"
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
     """
     Parse CSV file containing employee data.
@@ -52,33 +51,37 @@ def parse_employee_csv(
         except UnicodeDecodeError:
             # Fallback to latin-1
             file.seek(0)
-            content = file.read().decode('latin-1')
-            errors.append({
-                'row': 0,
-                'field': 'encoding',
-                'error': f'File encoding issue detected, used latin-1 fallback'
-            })
+            content = file.read().decode("latin-1")
+            errors.append(
+                {
+                    "row": 0,
+                    "field": "encoding",
+                    "error": f"File encoding issue detected, used latin-1 fallback",
+                }
+            )
 
         # Create CSV reader from string content
         csv_reader = csv.DictReader(io.StringIO(content))
 
         # Validate headers
-        required_headers = {'name', 'email', 'department', 'position'}
+        required_headers = {"name", "email", "department", "position"}
         headers = set(csv_reader.fieldnames or [])
         missing_headers = required_headers - headers
 
         if missing_headers:
-            errors.append({
-                'row': 0,
-                'field': 'headers',
-                'error': f'Missing required columns: {", ".join(missing_headers)}'
-            })
+            errors.append(
+                {
+                    "row": 0,
+                    "field": "headers",
+                    "error": f'Missing required columns: {", ".join(missing_headers)}',
+                }
+            )
             return [], errors
 
         # Process each row
         for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 (1 is header)
             # Skip empty rows
-            if not any(row.values()) or all(v.strip() == '' for v in row.values()):
+            if not any(row.values()) or all(v.strip() == "" for v in row.values()):
                 continue
 
             # Validate and extract employee data
@@ -90,11 +93,9 @@ def parse_employee_csv(
                 validated_employees.append(employee_data)
 
     except Exception as e:
-        errors.append({
-            'row': 0,
-            'field': 'file',
-            'error': f'Failed to parse CSV file: {str(e)}'
-        })
+        errors.append(
+            {"row": 0, "field": "file", "error": f"Failed to parse CSV file: {str(e)}"}
+        )
 
     return validated_employees, errors
 
@@ -132,31 +133,35 @@ def parse_employee_excel(file) -> Tuple[List[Dict[str, Any]], List[Dict[str, str
 
         # Read Excel file
         try:
-            df = pd.read_excel(file, engine='openpyxl')
+            df = pd.read_excel(file, engine="openpyxl")
         except Exception:
             # Try with xlrd for older .xls files
             file.seek(0)
             try:
-                df = pd.read_excel(file, engine='xlrd')
+                df = pd.read_excel(file, engine="xlrd")
             except ImportError:
-                errors.append({
-                    'row': 0,
-                    'field': 'file',
-                    'error': 'openpyxl or xlrd library required for Excel parsing. Install with: pip install openpyxl'
-                })
+                errors.append(
+                    {
+                        "row": 0,
+                        "field": "file",
+                        "error": "openpyxl or xlrd library required for Excel parsing. Install with: pip install openpyxl",
+                    }
+                )
                 return [], errors
 
         # Validate headers
-        required_headers = {'name', 'email', 'department', 'position'}
+        required_headers = {"name", "email", "department", "position"}
         headers = set(df.columns)
         missing_headers = required_headers - headers
 
         if missing_headers:
-            errors.append({
-                'row': 0,
-                'field': 'headers',
-                'error': f'Missing required columns: {", ".join(missing_headers)}'
-            })
+            errors.append(
+                {
+                    "row": 0,
+                    "field": "headers",
+                    "error": f'Missing required columns: {", ".join(missing_headers)}',
+                }
+            )
             return [], errors
 
         # Process each row
@@ -179,22 +184,28 @@ def parse_employee_excel(file) -> Tuple[List[Dict[str, Any]], List[Dict[str, str
                 validated_employees.append(employee_data)
 
     except ImportError:
-        errors.append({
-            'row': 0,
-            'field': 'library',
-            'error': 'pandas library required for Excel parsing. Install with: pip install pandas openpyxl'
-        })
+        errors.append(
+            {
+                "row": 0,
+                "field": "library",
+                "error": "pandas library required for Excel parsing. Install with: pip install pandas openpyxl",
+            }
+        )
     except Exception as e:
-        errors.append({
-            'row': 0,
-            'field': 'file',
-            'error': f'Failed to parse Excel file: {str(e)}'
-        })
+        errors.append(
+            {
+                "row": 0,
+                "field": "file",
+                "error": f"Failed to parse Excel file: {str(e)}",
+            }
+        )
 
     return validated_employees, errors
 
 
-def _validate_csv_row(row: Dict[str, str], row_num: int) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
+def _validate_csv_row(
+    row: Dict[str, str], row_num: int
+) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
     """
     Validate a single CSV row and extract employee data.
 
@@ -209,74 +220,96 @@ def _validate_csv_row(row: Dict[str, str], row_num: int) -> Tuple[Optional[Dict[
     employee_data = {}
 
     # Required fields
-    name = row.get('name', '').strip()
-    email = row.get('email', '').strip()
-    department = row.get('department', '').strip()
-    position = row.get('position', '').strip()
+    name = row.get("name", "").strip()
+    email = row.get("email", "").strip()
+    department = row.get("department", "").strip()
+    position = row.get("position", "").strip()
 
     # Validate required fields
     if not name:
-        errors.append({'row': row_num, 'field': 'name', 'error': 'Name is required'})
+        errors.append({"row": row_num, "field": "name", "error": "Name is required"})
     if not email:
-        errors.append({'row': row_num, 'field': 'email', 'error': 'Email is required'})
+        errors.append({"row": row_num, "field": "email", "error": "Email is required"})
     if not department:
-        errors.append({'row': row_num, 'field': 'department', 'error': 'Department is required'})
+        errors.append(
+            {"row": row_num, "field": "department", "error": "Department is required"}
+        )
     if not position:
-        errors.append({'row': row_num, 'field': 'position', 'error': 'Position is required'})
+        errors.append(
+            {"row": row_num, "field": "position", "error": "Position is required"}
+        )
 
     # If required fields missing, return errors
     if errors:
         return None, errors
 
     # Basic email validation
-    if '@' not in email or '.' not in email.split('@')[-1]:
-        errors.append({'row': row_num, 'field': 'email', 'error': f'Invalid email format: {email}'})
+    if "@" not in email or "." not in email.split("@")[-1]:
+        errors.append(
+            {
+                "row": row_num,
+                "field": "email",
+                "error": f"Invalid email format: {email}",
+            }
+        )
         return None, errors
 
     # Build employee data
-    employee_data['name'] = name
-    employee_data['email'] = email
-    employee_data['department'] = department
-    employee_data['position'] = position
+    employee_data["name"] = name
+    employee_data["email"] = email
+    employee_data["department"] = department
+    employee_data["position"] = position
 
     # Optional: job_role_id (takes precedence)
-    job_role_id = row.get('job_role_id', '').strip()
+    job_role_id = row.get("job_role_id", "").strip()
     if job_role_id:
         try:
-            employee_data['job_role_id'] = int(job_role_id)
+            employee_data["job_role_id"] = int(job_role_id)
         except ValueError:
-            errors.append({'row': row_num, 'field': 'job_role_id', 'error': f'Invalid job_role_id: must be integer'})
+            errors.append(
+                {
+                    "row": row_num,
+                    "field": "job_role_id",
+                    "error": f"Invalid job_role_id: must be integer",
+                }
+            )
 
     # Optional: job_role_name (if job_role_id not provided)
-    elif 'job_role_name' in row and row.get('job_role_name', '').strip():
-        job_role_name = row.get('job_role_name', '').strip()
+    elif "job_role_name" in row and row.get("job_role_name", "").strip():
+        job_role_name = row.get("job_role_name", "").strip()
         # Note: This will need to be resolved to job_role_id in the view/serializer
-        employee_data['job_role_name'] = job_role_name
+        employee_data["job_role_name"] = job_role_name
 
     # Optional: current_skills (comma or semicolon separated)
-    current_skills = row.get('current_skills', '').strip()
+    current_skills = row.get("current_skills", "").strip()
     if current_skills:
         # Handle both comma and semicolon separators
-        if ';' in current_skills:
-            skills_list = [s.strip() for s in current_skills.split(';') if s.strip()]
-        elif ',' in current_skills:
+        if ";" in current_skills:
+            skills_list = [s.strip() for s in current_skills.split(";") if s.strip()]
+        elif "," in current_skills:
             # Check if it's JSON format
-            if current_skills.startswith('[') and current_skills.endswith(']'):
+            if current_skills.startswith("[") and current_skills.endswith("]"):
                 try:
                     skills_list = json.loads(current_skills)
                 except json.JSONDecodeError:
-                    skills_list = [s.strip() for s in current_skills.split(',') if s.strip()]
+                    skills_list = [
+                        s.strip() for s in current_skills.split(",") if s.strip()
+                    ]
             else:
-                skills_list = [s.strip() for s in current_skills.split(',') if s.strip()]
+                skills_list = [
+                    s.strip() for s in current_skills.split(",") if s.strip()
+                ]
         else:
             skills_list = [current_skills]
 
-        employee_data['current_skills'] = skills_list
+        employee_data["current_skills"] = skills_list
 
     return employee_data, errors
 
 
-def _validate_excel_row(row: Dict[str, Any], row_num: int) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
+def _validate_excel_row(
+    row: Dict[str, Any], row_num: int
+) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
     """
     Validate a single Excel row and extract employee data.
 
@@ -293,76 +326,106 @@ def _validate_excel_row(row: Dict[str, Any], row_num: int) -> Tuple[Optional[Dic
     employee_data = {}
 
     # Required fields (handle NaN values from pandas)
-    name = str(row.get('name', '')).strip() if pd.notna(row.get('name')) else ''
-    email = str(row.get('email', '')).strip() if pd.notna(row.get('email')) else ''
-    department = str(row.get('department', '')).strip() if pd.notna(row.get('department')) else ''
-    position = str(row.get('position', '')).strip() if pd.notna(row.get('position')) else ''
+    name = str(row.get("name", "")).strip() if pd.notna(row.get("name")) else ""
+    email = str(row.get("email", "")).strip() if pd.notna(row.get("email")) else ""
+    department = (
+        str(row.get("department", "")).strip()
+        if pd.notna(row.get("department"))
+        else ""
+    )
+    position = (
+        str(row.get("position", "")).strip() if pd.notna(row.get("position")) else ""
+    )
 
     # Validate required fields
-    if not name or name == 'nan':
-        errors.append({'row': row_num, 'field': 'name', 'error': 'Name is required'})
-    if not email or email == 'nan':
-        errors.append({'row': row_num, 'field': 'email', 'error': 'Email is required'})
-    if not department or department == 'nan':
-        errors.append({'row': row_num, 'field': 'department', 'error': 'Department is required'})
-    if not position or position == 'nan':
-        errors.append({'row': row_num, 'field': 'position', 'error': 'Position is required'})
+    if not name or name == "nan":
+        errors.append({"row": row_num, "field": "name", "error": "Name is required"})
+    if not email or email == "nan":
+        errors.append({"row": row_num, "field": "email", "error": "Email is required"})
+    if not department or department == "nan":
+        errors.append(
+            {"row": row_num, "field": "department", "error": "Department is required"}
+        )
+    if not position or position == "nan":
+        errors.append(
+            {"row": row_num, "field": "position", "error": "Position is required"}
+        )
 
     # If required fields missing, return errors
     if errors:
         return None, errors
 
     # Basic email validation
-    if '@' not in email or '.' not in email.split('@')[-1]:
-        errors.append({'row': row_num, 'field': 'email', 'error': f'Invalid email format: {email}'})
+    if "@" not in email or "." not in email.split("@")[-1]:
+        errors.append(
+            {
+                "row": row_num,
+                "field": "email",
+                "error": f"Invalid email format: {email}",
+            }
+        )
         return None, errors
 
     # Build employee data
-    employee_data['name'] = name
-    employee_data['email'] = email
-    employee_data['department'] = department
-    employee_data['position'] = position
+    employee_data["name"] = name
+    employee_data["email"] = email
+    employee_data["department"] = department
+    employee_data["position"] = position
 
     # Optional: job_role_id (takes precedence)
-    job_role_id = row.get('job_role_id')
+    job_role_id = row.get("job_role_id")
     if pd.notna(job_role_id):
         try:
-            employee_data['job_role_id'] = int(job_role_id)
+            employee_data["job_role_id"] = int(job_role_id)
         except (ValueError, TypeError):
-            errors.append({'row': row_num, 'field': 'job_role_id', 'error': 'Invalid job_role_id: must be integer'})
+            errors.append(
+                {
+                    "row": row_num,
+                    "field": "job_role_id",
+                    "error": "Invalid job_role_id: must be integer",
+                }
+            )
 
     # Optional: job_role_name (if job_role_id not provided)
-    elif 'job_role_name' in row and pd.notna(row.get('job_role_name')):
-        job_role_name = str(row.get('job_role_name', '')).strip()
-        if job_role_name and job_role_name != 'nan':
-            employee_data['job_role_name'] = job_role_name
+    elif "job_role_name" in row and pd.notna(row.get("job_role_name")):
+        job_role_name = str(row.get("job_role_name", "")).strip()
+        if job_role_name and job_role_name != "nan":
+            employee_data["job_role_name"] = job_role_name
 
     # Optional: current_skills
-    current_skills = row.get('current_skills')
+    current_skills = row.get("current_skills")
     if pd.notna(current_skills):
         current_skills = str(current_skills).strip()
-        if current_skills and current_skills != 'nan':
+        if current_skills and current_skills != "nan":
             # Handle both comma and semicolon separators
-            if ';' in current_skills:
-                skills_list = [s.strip() for s in current_skills.split(';') if s.strip()]
-            elif ',' in current_skills:
+            if ";" in current_skills:
+                skills_list = [
+                    s.strip() for s in current_skills.split(";") if s.strip()
+                ]
+            elif "," in current_skills:
                 # Check if it's JSON format
-                if current_skills.startswith('[') and current_skills.endswith(']'):
+                if current_skills.startswith("[") and current_skills.endswith("]"):
                     try:
                         skills_list = json.loads(current_skills)
                     except json.JSONDecodeError:
-                        skills_list = [s.strip() for s in current_skills.split(',') if s.strip()]
+                        skills_list = [
+                            s.strip() for s in current_skills.split(",") if s.strip()
+                        ]
                 else:
-                    skills_list = [s.strip() for s in current_skills.split(',') if s.strip()]
+                    skills_list = [
+                        s.strip() for s in current_skills.split(",") if s.strip()
+                    ]
             else:
                 skills_list = [current_skills]
 
-            employee_data['current_skills'] = skills_list
+            employee_data["current_skills"] = skills_list
 
     return employee_data, errors
 
 
-def parse_employee_file(file, file_extension: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
+def parse_employee_file(
+    file, file_extension: str
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
     """
     Universal parser that detects file type and calls appropriate parser.
 
@@ -375,13 +438,15 @@ def parse_employee_file(file, file_extension: str) -> Tuple[List[Dict[str, Any]]
     """
     file_extension = file_extension.lower()
 
-    if file_extension == '.csv':
+    if file_extension == ".csv":
         return parse_employee_csv(file)
-    elif file_extension in ['.xlsx', '.xls']:
+    elif file_extension in [".xlsx", ".xls"]:
         return parse_employee_excel(file)
     else:
-        return [], [{
-            'row': 0,
-            'field': 'file',
-            'error': f'Unsupported file format: {file_extension}. Supported: .csv, .xlsx, .xls'
-        }]
+        return [], [
+            {
+                "row": 0,
+                "field": "file",
+                "error": f"Unsupported file format: {file_extension}. Supported: .csv, .xlsx, .xls",
+            }
+        ]

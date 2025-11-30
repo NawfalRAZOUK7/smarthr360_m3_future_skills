@@ -6,23 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('future_skills', '0007_trainingrun'),
+        ("future_skills", "0007_trainingrun"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='trainingrun',
-            name='error_message',
-            field=models.TextField(blank=True, help_text='Error message if training failed.', null=True),
+            model_name="trainingrun",
+            name="error_message",
+            field=models.TextField(
+                blank=True, help_text="Error message if training failed.", null=True
+            ),
         ),
         migrations.AddField(
-            model_name='trainingrun',
-            name='hyperparameters',
-            field=models.JSONField(blank=True, default=dict, help_text='All hyperparameters used for this training run (consolidated view).'),
+            model_name="trainingrun",
+            name="hyperparameters",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="All hyperparameters used for this training run (consolidated view).",
+            ),
         ),
         migrations.AddField(
-            model_name='trainingrun',
-            name='status',
-            field=models.CharField(choices=[('RUNNING', 'Running'), ('COMPLETED', 'Completed'), ('FAILED', 'Failed')], default='COMPLETED', help_text='Current status of the training run.', max_length=20),
+            model_name="trainingrun",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("RUNNING", "Running"),
+                    ("COMPLETED", "Completed"),
+                    ("FAILED", "Failed"),
+                ],
+                default="COMPLETED",
+                help_text="Current status of the training run.",
+                max_length=20,
+            ),
         ),
     ]

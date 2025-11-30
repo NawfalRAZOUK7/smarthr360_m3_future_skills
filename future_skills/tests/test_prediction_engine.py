@@ -153,9 +153,9 @@ class MLFallbackTests(TestCase):
     def test_fallback_to_rules_when_ml_unavailable(self):
         """
         Vérifie que le système bascule sur le moteur de règles quand le ML est indisponible.
-        
+
         Test : FUTURE_SKILLS_USE_ML = True mais modèle ML non disponible.
-        Résultat attendu : 
+        Résultat attendu :
         - Aucune exception levée
         - Prédictions créées avec succès
         - PredictionRun.parameters["engine"] == "rules_v1" (fallback)
@@ -165,7 +165,9 @@ class MLFallbackTests(TestCase):
 
         with override_settings(FUTURE_SKILLS_USE_ML=True):
             # Mock du modèle pour simuler qu'il n'est pas disponible
-            with patch("future_skills.services.prediction_engine.FutureSkillsModel.instance") as mock_ml:
+            with patch(
+                "future_skills.services.prediction_engine.FutureSkillsModel.instance"
+            ) as mock_ml:
                 mock_ml.return_value.is_available.return_value = False
 
                 # Appel du recalcul
@@ -180,17 +182,17 @@ class MLFallbackTests(TestCase):
                 last_run = PredictionRun.objects.order_by("-run_date").first()
                 self.assertIsNotNone(last_run)
                 self.assertEqual(last_run.total_predictions, expected_count)
-                
+
                 # ✅ Point clé : le moteur utilisé doit être "rules_v1" (fallback)
                 self.assertEqual(last_run.parameters.get("engine"), "rules_v1")
-                
+
                 # ✅ Le champ model_version ne doit PAS être présent en mode fallback
                 self.assertNotIn("model_version", last_run.parameters)
 
     def test_uses_ml_when_available(self):
         """
         Vérifie que le système utilise bien le ML quand il est disponible.
-        
+
         Test : FUTURE_SKILLS_USE_ML = True et modèle ML disponible.
         Résultat attendu :
         - Prédictions créées avec succès
@@ -201,11 +203,12 @@ class MLFallbackTests(TestCase):
         from django.test import override_settings
 
         with override_settings(
-            FUTURE_SKILLS_USE_ML=True,
-            FUTURE_SKILLS_MODEL_VERSION="ml_random_forest_v1"
+            FUTURE_SKILLS_USE_ML=True, FUTURE_SKILLS_MODEL_VERSION="ml_random_forest_v1"
         ):
             # Mock du modèle pour simuler qu'il est disponible et fonctionnel
-            with patch("future_skills.services.prediction_engine.FutureSkillsModel.instance") as mock_ml:
+            with patch(
+                "future_skills.services.prediction_engine.FutureSkillsModel.instance"
+            ) as mock_ml:
                 mock_instance = MagicMock()
                 mock_instance.is_available.return_value = True
                 mock_instance.predict_level.return_value = ("HIGH", 85.0)
@@ -221,13 +224,16 @@ class MLFallbackTests(TestCase):
                 # Vérifier le PredictionRun créé
                 last_run = PredictionRun.objects.order_by("-run_date").first()
                 self.assertIsNotNone(last_run)
-                
+
                 # ✅ Point clé : le moteur utilisé doit être "ml_random_forest_v1"
-                self.assertEqual(last_run.parameters.get("engine"), "ml_random_forest_v1")
-                
+                self.assertEqual(
+                    last_run.parameters.get("engine"), "ml_random_forest_v1"
+                )
+
                 # ✅ Le champ model_version doit être présent
-                self.assertEqual(last_run.parameters.get("model_version"), "ml_random_forest_v1")
+                self.assertEqual(
+                    last_run.parameters.get("model_version"), "ml_random_forest_v1"
+                )
 
                 # Vérifier que predict_level a bien été appelé
                 self.assertTrue(mock_instance.predict_level.called)
-

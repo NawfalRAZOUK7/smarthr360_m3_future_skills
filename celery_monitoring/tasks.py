@@ -12,7 +12,7 @@ from celery_monitoring.dead_letter import cleanup_old_dead_letter_tasks
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name='celery_monitoring.cleanup_task_executions')
+@shared_task(name="celery_monitoring.cleanup_task_executions")
 def cleanup_task_executions_task(days: int = 7):
     """
     Periodic task to cleanup old task execution records.
@@ -27,18 +27,14 @@ def cleanup_task_executions_task(days: int = 7):
 
     deleted_count = cleanup_old_task_executions(days=days)
 
-    result = {
-        'deleted_count': deleted_count,
-        'days': days,
-        'status': 'completed'
-    }
+    result = {"deleted_count": deleted_count, "days": days, "status": "completed"}
 
     logger.info(f"Cleanup completed: {deleted_count} task executions deleted")
 
     return result
 
 
-@shared_task(name='celery_monitoring.cleanup_dead_letter')
+@shared_task(name="celery_monitoring.cleanup_dead_letter")
 def cleanup_dead_letter_task(days: int = 30):
     """
     Periodic task to cleanup old dead letter queue tasks.
@@ -53,11 +49,7 @@ def cleanup_dead_letter_task(days: int = 30):
 
     deleted_count = cleanup_old_dead_letter_tasks(days=days)
 
-    result = {
-        'deleted_count': deleted_count,
-        'days': days,
-        'status': 'completed'
-    }
+    result = {"deleted_count": deleted_count, "days": days, "status": "completed"}
 
     logger.info(f"Cleanup completed: {deleted_count} dead letter tasks deleted")
 

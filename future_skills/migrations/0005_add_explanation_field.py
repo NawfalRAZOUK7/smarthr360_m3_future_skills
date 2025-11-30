@@ -6,13 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('future_skills', '0004_predictionrun_parameters_predictionrun_run_by_and_more'),
+        (
+            "future_skills",
+            "0004_predictionrun_parameters_predictionrun_run_by_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='futureskillprediction',
-            name='explanation',
-            field=models.JSONField(blank=True, help_text='Explication détaillée générée par SHAP/LIME (text, top_factors, confidence).', null=True),
+            model_name="futureskillprediction",
+            name="explanation",
+            field=models.JSONField(
+                blank=True,
+                help_text="Explication détaillée générée par SHAP/LIME (text, top_factors, confidence).",
+                null=True,
+            ),
         ),
     ]

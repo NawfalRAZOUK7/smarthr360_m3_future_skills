@@ -38,7 +38,7 @@ from celery.exceptions import (
     SoftTimeLimitExceeded,
     TimeLimitExceeded,
     Reject,
-    Ignore
+    Ignore,
 )
 from tenacity import (
     retry,
@@ -46,7 +46,7 @@ from tenacity import (
     wait_exponential,
     retry_if_exception_type,
     before_sleep_log,
-    after_log
+    after_log,
 )
 from pybreaker import CircuitBreaker, CircuitBreakerError
 from django.core.cache import cache
@@ -58,6 +58,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # RETRY POLICIES
 # ============================================================================
+
 
 class RetryPolicy:
     """Base retry policy configuration."""
@@ -87,12 +88,14 @@ class RetryPolicy:
 
 class AggressiveRetryPolicy(RetryPolicy):
     """Aggressive retry for critical tasks."""
+
     MAX_RETRIES = 10
     RETRY_BACKOFF_MAX = 1800  # 30 minutes
 
 
 class ConservativeRetryPolicy(RetryPolicy):
     """Conservative retry for non-critical tasks."""
+
     MAX_RETRIES = 2
     RETRY_BACKOFF_MAX = 300  # 5 minutes
 
@@ -101,13 +104,14 @@ class ConservativeRetryPolicy(RetryPolicy):
 # EXPONENTIAL BACKOFF DECORATOR
 # ============================================================================
 
+
 def retry_with_exponential_backoff(
     max_retries: int = 3,
     base_delay: int = 60,
     max_delay: int = 3600,
     exponential_base: int = 2,
     jitter: bool = True,
-    retriable_exceptions: Optional[Tuple[Type[Exception], ...]] = None
+    retriable_exceptions: Optional[Tuple[Type[Exception], ...]] = None,
 ):
     """
     Decorator that adds exponential backoff retry logic to Celery tasks.
@@ -151,14 +155,12 @@ def retry_with_exponential_backoff(
                     raise
 
                 # Calculate exponential backoff delay
-                delay = min(
-                    base_delay * (exponential_base ** retry_count),
-                    max_delay
-                )
+                delay = min(base_delay * (exponential_base**retry_count), max_delay)
 
                 # Add jitter (random variation ±20%)
                 if jitter:
                     import random
+
                     jitter_range = delay * 0.2
                     delay = delay + random.uniform(-jitter_range, jitter_range)
 
@@ -171,6 +173,7 @@ def retry_with_exponential_backoff(
                 raise self.retry(exc=exc, countdown=delay, max_retries=max_retries)
 
         return wrapper
+
     return decorator
 
 
@@ -183,9 +186,7 @@ CIRCUIT_BREAKERS = {}
 
 
 def get_circuit_breaker(
-    name: str,
-    fail_max: int = 5,
-    reset_timeout: int = 60
+    name: str, fail_max: int = 5, reset_timeout: int = 60
 ) -> CircuitBreaker:
     """
     Get or create a circuit breaker for a specific service.
@@ -208,7 +209,7 @@ def get_circuit_breaker(
             fail_max=fail_max,
             reset_timeout=reset_timeout,
             name=name,
-            listeners=[_circuit_breaker_listener]
+            listeners=[_circuit_breaker_listener],
         )
     return CIRCUIT_BREAKERS[name]
 
@@ -220,11 +221,7 @@ def _circuit_breaker_listener(cb, old_state, new_state):
     )
 
 
-def with_circuit_breaker(
-    name: str,
-    fail_max: int = 5,
-    reset_timeout: int = 60
-):
+def with_circuit_breaker(name: str, fail_max: int = 5, reset_timeout: int = 60):
     """
     Decorator that adds circuit breaker pattern to Celery tasks.
 
@@ -243,6 +240,7 @@ def with_circuit_breaker(
             response = requests.get('https://api.example.com')
             return response.json()
     """
+
     def decorator(func):
         breaker = get_circuit_breaker(name, fail_max, reset_timeout)
 
@@ -259,6 +257,7 @@ def with_circuit_breaker(
                 raise Reject(str(e), requeue=False)
 
         return wrapper
+
     return decorator
 
 
@@ -266,9 +265,9 @@ def with_circuit_breaker(
 # DEAD LETTER QUEUE
 # ============================================================================
 
+
 def with_dead_letter_queue(
-    max_retries: int = 3,
-    dead_letter_queue: str = 'dead_letter_queue'
+    max_retries: int = 3, dead_letter_queue: str = "dead_letter_queue"
 ):
     """
     Decorator that sends permanently failed tasks to a dead letter queue.
@@ -287,6 +286,7 @@ def with_dead_letter_queue(
             # Critical operation that shouldn't be lost
             pass
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -310,23 +310,25 @@ def with_dead_letter_queue(
                         args=args,
                         kwargs=kwargs,
                         exception=exc,
-                        retries=retry_count
+                        retries=retry_count,
                     )
 
                     # Don't requeue, task is in DLQ
                     raise Ignore()
 
                 # Retry with exponential backoff
-                countdown = min(60 * (2 ** retry_count), 3600)
+                countdown = min(60 * (2**retry_count), 3600)
                 raise self.retry(exc=exc, countdown=countdown, max_retries=max_retries)
 
         return wrapper
+
     return decorator
 
 
 # ============================================================================
 # RATE LIMITING
 # ============================================================================
+
 
 def rate_limit(calls: int = 10, period: int = 60):
     """
@@ -344,6 +346,7 @@ def rate_limit(calls: int = 10, period: int = 60):
         def call_rate_limited_api():
             pass
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -370,12 +373,14 @@ def rate_limit(calls: int = 10, period: int = 60):
             return func(*args, **kwargs)
 
         return wrapper
+
     return decorator
 
 
 # ============================================================================
 # TIMEOUT HANDLING
 # ============================================================================
+
 
 def with_timeout(soft_timeout: int = 300, hard_timeout: int = 600):
     """
@@ -392,6 +397,7 @@ def with_timeout(soft_timeout: int = 300, hard_timeout: int = 600):
             # Task with 10-minute soft limit, 15-minute hard limit
             pass
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -416,12 +422,14 @@ def with_timeout(soft_timeout: int = 300, hard_timeout: int = 600):
                 raise
 
         return wrapper
+
     return decorator
 
 
 # ============================================================================
 # IDEMPOTENCY KEY
 # ============================================================================
+
 
 def idempotent(timeout: int = 3600):
     """
@@ -439,6 +447,7 @@ def idempotent(timeout: int = 3600):
             # Won't send duplicate notifications within 5 minutes
             pass
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -446,11 +455,7 @@ def idempotent(timeout: int = 3600):
             import hashlib
             import json
 
-            key_data = {
-                'func': func.__name__,
-                'args': args,
-                'kwargs': kwargs
-            }
+            key_data = {"func": func.__name__, "args": args, "kwargs": kwargs}
             key_hash = hashlib.md5(
                 json.dumps(key_data, sort_keys=True).encode()
             ).hexdigest()
@@ -473,6 +478,7 @@ def idempotent(timeout: int = 3600):
             return result
 
         return wrapper
+
     return decorator
 
 
@@ -480,13 +486,14 @@ def idempotent(timeout: int = 3600):
 # COMPOSITE RETRY STRATEGY
 # ============================================================================
 
+
 def with_advanced_retry(
     max_retries: int = 5,
     use_circuit_breaker: bool = True,
     use_dead_letter_queue: bool = True,
     circuit_breaker_name: Optional[str] = None,
     rate_limit_calls: Optional[int] = None,
-    rate_limit_period: int = 60
+    rate_limit_period: int = 60,
 ):
     """
     Composite decorator combining multiple retry strategies.
@@ -506,6 +513,7 @@ def with_advanced_retry(
             # Fully protected task with all retry strategies
             pass
     """
+
     def decorator(func):
         # Start with base function
         decorated_func = func
@@ -513,8 +521,7 @@ def with_advanced_retry(
         # Add rate limiting if specified
         if rate_limit_calls:
             decorated_func = rate_limit(
-                calls=rate_limit_calls,
-                period=rate_limit_period
+                calls=rate_limit_calls, period=rate_limit_period
             )(decorated_func)
 
         # Add circuit breaker if specified
@@ -524,14 +531,14 @@ def with_advanced_retry(
 
         # Add dead letter queue if specified
         if use_dead_letter_queue:
-            decorated_func = with_dead_letter_queue(
-                max_retries=max_retries
-            )(decorated_func)
+            decorated_func = with_dead_letter_queue(max_retries=max_retries)(
+                decorated_func
+            )
 
         # Add exponential backoff
-        decorated_func = retry_with_exponential_backoff(
-            max_retries=max_retries
-        )(decorated_func)
+        decorated_func = retry_with_exponential_backoff(max_retries=max_retries)(
+            decorated_func
+        )
 
         return decorated_func
 

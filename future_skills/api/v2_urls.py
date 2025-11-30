@@ -29,7 +29,7 @@ from .views import (
     TrainingRunDetailAPIView,
 )
 
-app_name = 'v2'
+app_name = "v2"
 
 # Router for ViewSets
 router = DefaultRouter()
@@ -38,7 +38,6 @@ router.register(r"employees", EmployeeViewSet, basename="employee")
 urlpatterns = [
     # Include router URLs
     path("", include(router.urls)),
-
     # Predictions
     path(
         "predictions/",  # v2: renamed from future-skills/
@@ -50,7 +49,6 @@ urlpatterns = [
         RecalculateFutureSkillsAPIView.as_view(),
         name="predictions-recalculate",
     ),
-
     # Market data
     path(
         "market-trends/",
@@ -62,14 +60,12 @@ urlpatterns = [
         EconomicReportListAPIView.as_view(),
         name="economic-reports-list",
     ),
-
     # HR recommendations
     path(
         "recommendations/",  # v2: shortened from hr-investment-recommendations/
         HRInvestmentRecommendationListAPIView.as_view(),
         name="recommendations-list",
     ),
-
     # ML operations
     path(
         "ml/predict/",  # v2: namespaced under ml/
@@ -91,7 +87,6 @@ urlpatterns = [
         TrainModelAPIView.as_view(),
         name="ml-train",
     ),
-
     # Bulk operations
     path(
         "bulk/employees/import/",  # v2: better organization
@@ -103,7 +98,6 @@ urlpatterns = [
         BulkEmployeeUploadAPIView.as_view(),
         name="bulk-employees-upload",
     ),
-
     # Training runs
     path(
         "ml/training-runs/",  # v2: namespaced under ml/

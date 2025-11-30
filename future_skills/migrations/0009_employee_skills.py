@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('future_skills', '0008_trainingrun_error_message_and_more'),
+        ("future_skills", "0008_trainingrun_error_message_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='employee',
-            name='skills',
-            field=models.ManyToManyField(blank=True, help_text='Skills possessed by this employee', related_name='employees', to='future_skills.skill'),
+            model_name="employee",
+            name="skills",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="Skills possessed by this employee",
+                related_name="employees",
+                to="future_skills.skill",
+            ),
         ),
     ]

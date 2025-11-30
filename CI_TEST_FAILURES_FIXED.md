@@ -19,6 +19,7 @@ Comprehensive review and fix of CI/CD pipeline test configuration issues that co
 **Location**: `.github/workflows/ci.yml:84`
 
 **Problem**:
+
 ```yaml
 pytest --cov=future_skills --cov-report=xml --cov-report=term-missing --cov-fail-under=70 -v
 ```
@@ -29,14 +30,17 @@ pytest --cov=future_skills --cov-report=xml --cov-report=term-missing --cov-fail
 - Would cause tests to fail if coverage drops below 70% globally
 
 **Impact**:
+
 - Could cause false positive failures
 - Contradicts documented coverage strategy
 - Prevents proper per-module threshold control
 
 **Fix**:
+
 ```yaml
 pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
 ```
+
 - Removed `--cov-fail-under=70`
 - Allows per-job and per-module thresholds to work correctly
 
@@ -47,6 +51,7 @@ pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
 **Location**: `.github/workflows/ci.yml:95-101`
 
 **Problem**:
+
 ```yaml
 - name: Run unit tests only
   run: |
@@ -58,15 +63,18 @@ pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
 - Redundant test execution without coverage data
 
 **Impact**:
+
 - Incomplete coverage reporting
 - Wasted CI time running tests twice (once with coverage, once without)
 
 **Fix**:
+
 ```yaml
 - name: Run unit tests
   run: |
     pytest future_skills/tests/ -v -m "not slow" --cov=future_skills --cov-append
 ```
+
 - Added `--cov=future_skills --cov-append` to accumulate coverage
 - Renamed to "Run unit tests" (removed "only" for clarity)
 
@@ -77,6 +85,7 @@ pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
 **Location**: `.github/workflows/ci.yml:103-108`
 
 **Problem**:
+
 ```yaml
 - name: Run integration tests
   run: |
@@ -87,15 +96,18 @@ pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
 - No threshold enforcement (should be 50% per `COVERAGE_THRESHOLDS.md`)
 
 **Impact**:
+
 - Integration test coverage not reported
 - No enforcement of 50% threshold for integration tests
 
 **Fix**:
+
 ```yaml
 - name: Run integration tests
   run: |
     pytest tests/integration/ -v --cov=future_skills --cov-append --cov-fail-under=50
 ```
+
 - Added coverage tracking with `--cov=future_skills --cov-append`
 - Added `--cov-fail-under=50` (per-job threshold)
 
@@ -106,6 +118,7 @@ pytest --cov=future_skills --cov-report=xml --cov-report=term-missing -v
 **Location**: `.github/workflows/ci.yml:183`
 
 **Problem**:
+
 ```yaml
 pytest tests/integration/test_ml_integration.py -v --cov=future_skills.services.prediction_engine
 ```
@@ -115,14 +128,17 @@ pytest tests/integration/test_ml_integration.py -v --cov=future_skills.services.
 - Inconsistent with ML test coverage expectations
 
 **Impact**:
+
 - Incomplete ML services coverage reporting
 - `training_service.py` coverage not tracked in integration tests
 - Could allow coverage regressions in non-prediction_engine services
 
 **Fix**:
+
 ```yaml
 pytest tests/integration/test_ml_integration.py -v --cov=future_skills.services
 ```
+
 - Changed to cover entire `future_skills.services` module
 - Includes `prediction_engine`, `training_service`, and other services
 - Consistent with "all ML tests" step coverage target
@@ -134,6 +150,7 @@ pytest tests/integration/test_ml_integration.py -v --cov=future_skills.services
 **Location**: `.github/workflows/ci.yml:191`
 
 **Problem**:
+
 ```yaml
 pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills.services.prediction_engine --cov=ml
 ```
@@ -141,9 +158,11 @@ pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills
 - Same issue as #4: limited to `prediction_engine` only
 
 **Fix**:
+
 ```yaml
 pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills.services --cov=ml
 ```
+
 - Changed to `--cov=future_skills.services`
 - Comprehensive coverage of all service modules
 
@@ -152,6 +171,7 @@ pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills
 ## Summary of Changes
 
 ### Before (Issues)
+
 1. ❌ Hardcoded global coverage threshold (70%)
 2. ❌ Unit tests without coverage tracking
 3. ❌ Integration tests without coverage or threshold
@@ -159,6 +179,7 @@ pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills
 5. ⚠️ Inconsistent coverage targets across jobs
 
 ### After (Fixed)
+
 1. ✅ No global threshold (per-job control)
 2. ✅ Unit tests with coverage tracking (`--cov-append`)
 3. ✅ Integration tests with 50% threshold
@@ -170,31 +191,37 @@ pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills
 ## Coverage Strategy Alignment
 
 ### Main Test Job
+
 - **Run**: `pytest --cov=future_skills`
 - **Threshold**: None (allows per-module control)
 - **Purpose**: Generate comprehensive coverage report
 
 ### Unit Tests
+
 - **Run**: `pytest future_skills/tests/ --cov=future_skills --cov-append`
 - **Threshold**: None (contributes to main job coverage)
 - **Purpose**: Fast unit test execution with coverage accumulation
 
 ### Integration Tests
+
 - **Run**: `pytest tests/integration/ --cov=future_skills --cov-append --cov-fail-under=50`
 - **Threshold**: **50%** (per `COVERAGE_THRESHOLDS.md`)
 - **Purpose**: Integration test coverage enforcement
 
 ### ML Tests Job
+
 - **ML Unit**: `pytest ml/tests/ --cov=ml --cov-fail-under=40`
 - **Threshold**: **40%** (per `COVERAGE_THRESHOLDS.md`)
 - **Purpose**: ML module coverage
 
 ### ML Integration Tests
+
 - **Run**: `pytest tests/integration/test_ml_integration.py --cov=future_skills.services --cov-fail-under=50`
 - **Threshold**: **50%** (integration tests)
 - **Coverage**: Full `future_skills.services` module
 
 ### All ML Tests Combined
+
 - **Run**: `pytest ml/tests/ tests/integration/test_ml_integration.py --cov=future_skills.services --cov=ml --cov-fail-under=40`
 - **Threshold**: **40%** (minimum for ML modules)
 - **Purpose**: Comprehensive ML coverage report
@@ -227,15 +254,18 @@ pytest ml/tests/ tests/integration/test_ml_integration.py -v --cov=future_skills
 ### Expected CI Behavior After Fix
 
 1. **Main Test Job**:
+
    - All tests run with coverage
    - No global threshold failure
    - Per-module thresholds control pass/fail
 
 2. **Unit Tests**:
+
    - Fast execution with `--cov-append`
    - Contribute to overall coverage
 
 3. **Integration Tests**:
+
    - Enforce 50% threshold
    - Fail if integration coverage < 50%
 
@@ -274,9 +304,11 @@ gh run view <run-id>
 **Commit**: 0bcb973  
 **Message**: fix(ci): Remove hardcoded coverage thresholds and improve test configuration  
 **Files Changed**:
+
 - `.github/workflows/ci.yml` (6 insertions, 6 deletions)
 
 **Changes**:
+
 1. Line 84: Removed `--cov-fail-under=70`
 2. Line 97: Added `--cov=future_skills --cov-append`
 3. Line 105: Added `--cov=future_skills --cov-append --cov-fail-under=50`
