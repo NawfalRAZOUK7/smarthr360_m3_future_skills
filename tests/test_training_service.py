@@ -20,7 +20,11 @@ django.setup()
 
 from pathlib import Path
 
-from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
+from future_skills.services.training_service import (
+    DataLoadError,
+    ModelTrainer,
+    TrainingError,
+)
 
 
 def test_training_service():

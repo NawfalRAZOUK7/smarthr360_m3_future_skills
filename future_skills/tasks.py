@@ -14,10 +14,19 @@ import logging
 from celery import shared_task
 from django.contrib.auth import get_user_model
 
-from celery_monitoring import (idempotent, monitor_task, retry_with_exponential_backoff, with_dead_letter_queue,
-                               with_timeout)
+from celery_monitoring import (
+    idempotent,
+    monitor_task,
+    retry_with_exponential_backoff,
+    with_dead_letter_queue,
+    with_timeout,
+)
 from future_skills.models import TrainingRun
-from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
+from future_skills.services.training_service import (
+    DataLoadError,
+    ModelTrainer,
+    TrainingError,
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()

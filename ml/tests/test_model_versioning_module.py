@@ -15,8 +15,15 @@ from unittest.mock import patch
 
 import pytest
 
-from ml.model_versioning import (ModelFramework, ModelMetadata, ModelMetrics, ModelStage, ModelVersion,
-                                 ModelVersionManager, create_model_version)
+from ml.model_versioning import (
+    ModelFramework,
+    ModelMetadata,
+    ModelMetrics,
+    ModelStage,
+    ModelVersion,
+    ModelVersionManager,
+    create_model_version,
+)
 
 
 class TestModelStageEnum:

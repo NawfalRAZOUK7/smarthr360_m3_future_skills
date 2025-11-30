@@ -129,12 +129,12 @@ class TestDataLoadingEdgeCases:
         trainer = ModelTrainer(str(dataset_path))
 
         with caplog.at_level("WARNING"):
-            X_train, X_test, y_train, y_test = trainer.load_data()
+            trainer.load_data()
 
         # Data should load successfully with available features
-        assert X_train is not None
-        assert y_train is not None
-        assert len(X_train) > 0
+        assert trainer.X_train is not None
+        assert trainer.y_train is not None
+        assert len(trainer.X_train) > 0
 
     def test_load_data_with_extreme_imbalance(self, tmp_path, caplog):
         """Test handling of extreme class imbalance (ratio > 10)."""
@@ -152,11 +152,11 @@ class TestDataLoadingEdgeCases:
         trainer = ModelTrainer(str(dataset_path))
 
         with caplog.at_level("WARNING"):
-            X_train, X_test, y_train, y_test = trainer.load_data()
+            trainer.load_data()
 
         # Should load data successfully despite imbalance
-        assert X_train is not None
-        assert len(X_train) > 0
+        assert trainer.X_train is not None
+        assert len(trainer.X_train) > 0
         # Optional: check if warning was logged, but don't require it
         # imbalance warnings might or might not be generated depending on implementation
 
@@ -455,15 +455,18 @@ class TestFeatureImportanceEdgeCases:
         trainer.load_data()
         trainer.train(n_estimators=10)
 
-        # Delete the feature_importances_ attribute to trigger the hasattr check
+        # Mock hasattr to return False for feature_importances_
         clf = trainer.model.named_steps["clf"]
-        if hasattr(clf, "feature_importances_"):
-            # Use patch to make hasattr return False
-            with patch.object(type(clf), "feature_importances_", create=True):
-                del clf.feature_importances_
-                # Should return empty dict when attribute missing
-                importance = trainer.get_feature_importance()
-                assert importance == {}
+
+        def mock_hasattr(obj, name):
+            if name == "feature_importances_":
+                return False
+            return hasattr(obj, name)
+
+        with patch("builtins.hasattr", side_effect=mock_hasattr):
+            # Should return empty dict when attribute missing
+            importance = trainer.get_feature_importance()
+            assert importance == {}
 
     def test_get_feature_importance_with_feature_count_mismatch(self, tmp_path, caplog):
         """Test handling when feature count doesn't match importance array."""
@@ -483,7 +486,8 @@ class TestFeatureImportanceEdgeCases:
         # Patch feature_importances_ with wrong sized array using PropertyMock
         import numpy as np
 
-        wrong_importances = np.array([0.5, 0.3])  # Wrong number of features
+        # We have 2 features (trend_score, internal_usage), so use 3 to mismatch
+        wrong_importances = np.array([0.5, 0.3, 0.2])  # Wrong number of features
 
         with patch.object(
             type(trainer.model.named_steps["clf"]),

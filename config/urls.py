@@ -17,11 +17,25 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 
-from config.jwt_auth import CustomTokenObtainPairView, CustomTokenRefreshView, logout_view, verify_token_view
-from future_skills.api.monitoring import (HealthCheckView, LivenessCheckView, MetricsView, ReadyCheckView,
-                                          VersionInfoView)
+from config.jwt_auth import (
+    CustomTokenObtainPairView,
+    CustomTokenRefreshView,
+    logout_view,
+    verify_token_view,
+)
+from future_skills.api.monitoring import (
+    HealthCheckView,
+    LivenessCheckView,
+    MetricsView,
+    ReadyCheckView,
+    VersionInfoView,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

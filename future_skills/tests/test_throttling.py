@@ -19,9 +19,16 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import RequestFactory, TestCase, override_settings
 
-from future_skills.api.throttling import (AnonRateThrottle, BulkOperationsThrottle, BurstRateThrottle,
-                                          HealthCheckThrottle, MLOperationsThrottle, PremiumUserRateThrottle,
-                                          SustainedRateThrottle, UserRateThrottle)
+from future_skills.api.throttling import (
+    AnonRateThrottle,
+    BulkOperationsThrottle,
+    BurstRateThrottle,
+    HealthCheckThrottle,
+    MLOperationsThrottle,
+    PremiumUserRateThrottle,
+    SustainedRateThrottle,
+    UserRateThrottle,
+)
 
 User = get_user_model()
 

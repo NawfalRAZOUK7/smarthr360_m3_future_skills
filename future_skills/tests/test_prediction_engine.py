@@ -2,8 +2,17 @@
 
 from django.test import TestCase
 
-from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
-from future_skills.services.prediction_engine import calculate_level, recalculate_predictions
+from future_skills.models import (
+    FutureSkillPrediction,
+    JobRole,
+    MarketTrend,
+    PredictionRun,
+    Skill,
+)
+from future_skills.services.prediction_engine import (
+    calculate_level,
+    recalculate_predictions,
+)
 
 
 class CalculateLevelTests(TestCase):

@@ -42,7 +42,13 @@ from typing import Any, Dict, Tuple
 from django.conf import settings
 
 from future_skills.ml_model import FutureSkillsModel
-from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
+from future_skills.models import (
+    FutureSkillPrediction,
+    JobRole,
+    MarketTrend,
+    PredictionRun,
+    Skill,
+)
 
 logger = logging.getLogger(__name__)
 

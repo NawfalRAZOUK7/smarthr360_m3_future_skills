@@ -17,8 +17,13 @@ from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 from django.test import RequestFactory, TestCase
 
-from future_skills.api.middleware import (APICacheMiddleware, APIDeprecationMiddleware, APIPerformanceMiddleware,
-                                          CORSHeadersMiddleware, RequestLoggingMiddleware)
+from future_skills.api.middleware import (
+    APICacheMiddleware,
+    APIDeprecationMiddleware,
+    APIPerformanceMiddleware,
+    CORSHeadersMiddleware,
+    RequestLoggingMiddleware,
+)
 
 User = get_user_model()
 

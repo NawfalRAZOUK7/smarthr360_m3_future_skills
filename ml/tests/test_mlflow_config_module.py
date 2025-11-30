@@ -19,7 +19,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from ml.mlflow_config import MLflowConfig, get_mlflow_client, get_mlflow_config, initialize_mlflow
+from ml.mlflow_config import (
+    MLflowConfig,
+    get_mlflow_client,
+    get_mlflow_config,
+    initialize_mlflow,
+)
 
 
 class TestMLflowConfigInitialization:

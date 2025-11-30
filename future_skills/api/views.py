@@ -10,17 +10,36 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from ..models import (EconomicReport, Employee, FutureSkillPrediction, HRInvestmentRecommendation, MarketTrend, Skill,
-                      TrainingRun)
+from ..models import (
+    EconomicReport,
+    Employee,
+    FutureSkillPrediction,
+    HRInvestmentRecommendation,
+    MarketTrend,
+    Skill,
+    TrainingRun,
+)
 from ..permissions import IsHRStaff, IsHRStaffOrManager
 from ..services.prediction_engine import recalculate_predictions
 from ..services.recommendation_engine import generate_recommendations_from_predictions
-from .serializers import (AddSkillToEmployeeSerializer, BulkEmployeeImportSerializer, BulkPredictRequestSerializer,
-                          EconomicReportSerializer, EmployeeSerializer, FutureSkillPredictionSerializer,
-                          HRInvestmentRecommendationSerializer, MarketTrendSerializer, PredictSkillsRequestSerializer,
-                          PredictSkillsResponseSerializer, RecommendSkillsRequestSerializer,
-                          RemoveSkillFromEmployeeSerializer, TrainingRunDetailSerializer, TrainingRunSerializer,
-                          TrainModelRequestSerializer, TrainModelResponseSerializer)
+from .serializers import (
+    AddSkillToEmployeeSerializer,
+    BulkEmployeeImportSerializer,
+    BulkPredictRequestSerializer,
+    EconomicReportSerializer,
+    EmployeeSerializer,
+    FutureSkillPredictionSerializer,
+    HRInvestmentRecommendationSerializer,
+    MarketTrendSerializer,
+    PredictSkillsRequestSerializer,
+    PredictSkillsResponseSerializer,
+    RecommendSkillsRequestSerializer,
+    RemoveSkillFromEmployeeSerializer,
+    TrainingRunDetailSerializer,
+    TrainingRunSerializer,
+    TrainModelRequestSerializer,
+    TrainModelResponseSerializer,
+)
 
 # Error messages constants
 ERROR_MESSAGES = {
@@ -1592,7 +1611,11 @@ class TrainModelAPIView(APIView):
         from datetime import datetime
         from pathlib import Path
 
-        from ..services.training_service import DataLoadError, ModelTrainer, TrainingError
+        from ..services.training_service import (
+            DataLoadError,
+            ModelTrainer,
+            TrainingError,
+        )
 
         logger = logging.getLogger("future_skills.api.views")
 

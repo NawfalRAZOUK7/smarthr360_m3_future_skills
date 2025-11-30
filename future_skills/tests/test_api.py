@@ -8,7 +8,9 @@ from rest_framework.test import APITestCase
 
 from future_skills.models import JobRole, MarketTrend, PredictionRun, Skill
 from future_skills.services.prediction_engine import recalculate_predictions
-from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
+from future_skills.services.recommendation_engine import (
+    generate_recommendations_from_predictions,
+)
 
 User = get_user_model()
 
