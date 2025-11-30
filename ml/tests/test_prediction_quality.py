@@ -8,8 +8,9 @@ and batch prediction correctness to ensure reliable model outputs.
 """
 
 import pytest
-from future_skills.services.prediction_engine import PredictionEngine
+
 from future_skills.models import JobRole, Skill
+from future_skills.services.prediction_engine import PredictionEngine
 
 
 @pytest.mark.django_db

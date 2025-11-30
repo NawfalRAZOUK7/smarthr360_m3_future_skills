@@ -3,20 +3,12 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.urls import reverse
-
-from rest_framework.test import APITestCase
 from rest_framework import status
+from rest_framework.test import APITestCase
 
-from future_skills.models import (
-    Skill,
-    JobRole,
-    MarketTrend,
-    PredictionRun,
-)
+from future_skills.models import JobRole, MarketTrend, PredictionRun, Skill
 from future_skills.services.prediction_engine import recalculate_predictions
-from future_skills.services.recommendation_engine import (
-    generate_recommendations_from_predictions,
-)
+from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
 
 User = get_user_model()
 
@@ -173,6 +165,7 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
         - PredictionRun.run_by == utilisateur DRH
         """
         from unittest.mock import patch
+
         from django.test import override_settings
 
         url = reverse("future-skills-recalculate")

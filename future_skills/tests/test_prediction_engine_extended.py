@@ -15,28 +15,17 @@ Target: Improve coverage from current level to 90%+
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-from django.test import TestCase, override_settings
-from django.contrib.auth import get_user_model
+from unittest.mock import MagicMock, patch
 
-from future_skills.models import (
-    Skill,
-    JobRole,
-    MarketTrend,
-    FutureSkillPrediction,
-    PredictionRun,
-)
-from future_skills.services.prediction_engine import (
-    PredictionEngine,
-    calculate_level,
-    recalculate_predictions,
-    _normalize_training_requests,
-    _find_relevant_trend,
-    _estimate_internal_usage,
-    _estimate_training_requests,
-    _estimate_scarcity_index,
-    _log_prediction_for_monitoring,
-)
+from django.contrib.auth import get_user_model
+from django.test import TestCase, override_settings
+
+from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
+from future_skills.services.prediction_engine import (PredictionEngine, _estimate_internal_usage,
+                                                      _estimate_scarcity_index, _estimate_training_requests,
+                                                      _find_relevant_trend, _log_prediction_for_monitoring,
+                                                      _normalize_training_requests, calculate_level,
+                                                      recalculate_predictions)
 
 User = get_user_model()
 

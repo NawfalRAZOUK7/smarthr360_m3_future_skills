@@ -6,9 +6,9 @@ Handles file parsing, validation, and error handling for employee data.
 """
 
 import csv
-import json
 import io
-from typing import List, Dict, Any, Optional, Tuple
+import json
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def parse_employee_csv(

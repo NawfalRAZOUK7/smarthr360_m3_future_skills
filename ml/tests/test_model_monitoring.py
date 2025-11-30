@@ -10,8 +10,10 @@ Run with:
     pytest ml/tests/test_model_monitoring.py -v
 """
 
-import pytest
 import json
+
+import pytest
+
 from future_skills.services.prediction_engine import _log_prediction_for_monitoring
 
 

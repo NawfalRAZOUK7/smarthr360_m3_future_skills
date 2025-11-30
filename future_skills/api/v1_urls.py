@@ -7,25 +7,13 @@ Will be sunset on 2026-06-01.
 Please migrate to v2: /api/v2/
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (
-    FutureSkillPredictionListAPIView,
-    RecalculateFutureSkillsAPIView,
-    MarketTrendListAPIView,
-    EconomicReportListAPIView,
-    HRInvestmentRecommendationListAPIView,
-    EmployeeViewSet,
-    PredictSkillsAPIView,
-    RecommendSkillsAPIView,
-    BulkPredictAPIView,
-    BulkEmployeeImportAPIView,
-    BulkEmployeeUploadAPIView,
-    TrainModelAPIView,
-    TrainingRunListAPIView,
-    TrainingRunDetailAPIView,
-)
+from .views import (BulkEmployeeImportAPIView, BulkEmployeeUploadAPIView, BulkPredictAPIView, EconomicReportListAPIView,
+                    EmployeeViewSet, FutureSkillPredictionListAPIView, HRInvestmentRecommendationListAPIView,
+                    MarketTrendListAPIView, PredictSkillsAPIView, RecalculateFutureSkillsAPIView,
+                    RecommendSkillsAPIView, TrainingRunDetailAPIView, TrainingRunListAPIView, TrainModelAPIView)
 
 app_name = "v1"
 

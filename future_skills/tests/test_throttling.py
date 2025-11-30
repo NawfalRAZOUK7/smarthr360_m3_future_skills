@@ -17,19 +17,11 @@ from unittest.mock import Mock
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.test import TestCase, RequestFactory, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 
-
-from future_skills.api.throttling import (
-    AnonRateThrottle,
-    UserRateThrottle,
-    BurstRateThrottle,
-    SustainedRateThrottle,
-    PremiumUserRateThrottle,
-    MLOperationsThrottle,
-    BulkOperationsThrottle,
-    HealthCheckThrottle,
-)
+from future_skills.api.throttling import (AnonRateThrottle, BulkOperationsThrottle, BurstRateThrottle,
+                                          HealthCheckThrottle, MLOperationsThrottle, PremiumUserRateThrottle,
+                                          SustainedRateThrottle, UserRateThrottle)
 
 User = get_user_model()
 

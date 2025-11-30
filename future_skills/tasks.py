@@ -10,22 +10,14 @@ Enhanced with advanced retry strategies, monitoring, and error handling.
 """
 
 import logging
+
 from celery import shared_task
 from django.contrib.auth import get_user_model
 
+from celery_monitoring import (idempotent, monitor_task, retry_with_exponential_backoff, with_dead_letter_queue,
+                               with_timeout)
 from future_skills.models import TrainingRun
-from future_skills.services.training_service import (
-    ModelTrainer,
-    DataLoadError,
-    TrainingError,
-)
-from celery_monitoring import (
-    retry_with_exponential_backoff,
-    with_dead_letter_queue,
-    monitor_task,
-    with_timeout,
-    idempotent,
-)
+from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -282,6 +274,7 @@ def cleanup_old_models_task(days_to_keep=30):
     """
     import os
     from datetime import timedelta
+
     from django.utils import timezone
 
     logger.info(f"[CELERY] Starting cleanup task (keeping last {days_to_keep} days)")

@@ -4,12 +4,13 @@ API Performance Middleware
 Provides request/response timing, caching, compression, and performance monitoring.
 """
 
-import time
-import logging
-from django.core.cache import cache
-from django.utils.deprecation import MiddlewareMixin
-from django.http import JsonResponse
 import json
+import logging
+import time
+
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
 

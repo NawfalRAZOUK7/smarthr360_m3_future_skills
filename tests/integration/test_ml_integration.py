@@ -8,11 +8,12 @@ These tests verify that:
 - Recalculation works with both ML and rules-based engines
 """
 
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 from django.urls import reverse
 from rest_framework import status
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 
 @pytest.mark.django_db

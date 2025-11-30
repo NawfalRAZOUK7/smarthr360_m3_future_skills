@@ -9,25 +9,13 @@ This is the current API version with enhanced features:
 - Bulk operation optimizations
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (
-    FutureSkillPredictionListAPIView,
-    RecalculateFutureSkillsAPIView,
-    MarketTrendListAPIView,
-    EconomicReportListAPIView,
-    HRInvestmentRecommendationListAPIView,
-    EmployeeViewSet,
-    PredictSkillsAPIView,
-    RecommendSkillsAPIView,
-    BulkPredictAPIView,
-    BulkEmployeeImportAPIView,
-    BulkEmployeeUploadAPIView,
-    TrainModelAPIView,
-    TrainingRunListAPIView,
-    TrainingRunDetailAPIView,
-)
+from .views import (BulkEmployeeImportAPIView, BulkEmployeeUploadAPIView, BulkPredictAPIView, EconomicReportListAPIView,
+                    EmployeeViewSet, FutureSkillPredictionListAPIView, HRInvestmentRecommendationListAPIView,
+                    MarketTrendListAPIView, PredictSkillsAPIView, RecalculateFutureSkillsAPIView,
+                    RecommendSkillsAPIView, TrainingRunDetailAPIView, TrainingRunListAPIView, TrainModelAPIView)
 
 app_name = "v2"
 

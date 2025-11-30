@@ -2,16 +2,8 @@
 
 from rest_framework import serializers
 
-from ..models import (
-    Skill,
-    JobRole,
-    MarketTrend,
-    FutureSkillPrediction,
-    EconomicReport,
-    HRInvestmentRecommendation,
-    Employee,
-    TrainingRun,
-)
+from ..models import (EconomicReport, Employee, FutureSkillPrediction, HRInvestmentRecommendation, JobRole, MarketTrend,
+                      Skill, TrainingRun)
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -291,8 +283,9 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
         Bulk create/update employees and optionally generate predictions.
         Returns summary of operation.
         """
-        from ..models import Employee
         from django.db import transaction
+
+        from ..models import Employee
 
         employees_data = validated_data["employees"]
         auto_predict = validated_data["auto_predict"]

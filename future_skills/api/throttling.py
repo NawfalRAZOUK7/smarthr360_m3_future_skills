@@ -5,14 +5,11 @@ Implements multiple throttling strategies for different user types and endpoints
 Provides granular control over API usage with proper rate limit headers.
 """
 
-from rest_framework.throttling import (
-    AnonRateThrottle,
-    UserRateThrottle,
-    ScopedRateThrottle,
-)
-from django.core.cache import cache
-from django.conf import settings
 import time
+
+from django.conf import settings
+from django.core.cache import cache
+from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, UserRateThrottle
 
 
 class AnonThrottle(AnonRateThrottle):

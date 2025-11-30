@@ -5,13 +5,14 @@ Security Middleware
 Custom middleware for security headers, monitoring, and protection.
 """
 
-from django.utils.deprecation import MiddlewareMixin
-from django.http import JsonResponse
-from django.conf import settings
 import logging
 import time
-from ipware import get_client_ip
+
 import user_agents
+from django.conf import settings
+from django.http import JsonResponse
+from django.utils.deprecation import MiddlewareMixin
+from ipware import get_client_ip
 
 logger = logging.getLogger("security")
 

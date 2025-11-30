@@ -9,22 +9,16 @@ for ML-specific tests.
 
 import os
 import shutil
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock
-import sys
 
 import pytest
 
 # Add parent directory to path to import from tests.conftest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from tests.conftest import (
-    sample_skill,
-    sample_job_role,
-    sample_future_skill_prediction,
-    regular_user,
-    admin_user,
-)
+from tests.conftest import admin_user, regular_user, sample_future_skill_prediction, sample_job_role, sample_skill
 
 
 @pytest.fixture(scope="session", autouse=True)

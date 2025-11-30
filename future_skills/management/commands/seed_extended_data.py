@@ -4,7 +4,8 @@ Creates a comprehensive set of job roles, skills, market trends, and economic re
 """
 
 from django.core.management.base import BaseCommand
-from future_skills.models import JobRole, Skill, MarketTrend, EconomicReport
+
+from future_skills.models import EconomicReport, JobRole, MarketTrend, Skill
 
 
 class Command(BaseCommand):

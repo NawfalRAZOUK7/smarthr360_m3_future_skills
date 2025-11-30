@@ -7,16 +7,13 @@ Tests the ModelTrainer class which handles the complete training lifecycle
 including data loading, model training, evaluation, and persistence.
 """
 
-import pytest
-import pandas as pd
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from future_skills.services.training_service import (
-    ModelTrainer,
-    DataLoadError,
-    TrainingError,
-)
+import pandas as pd
+import pytest
+
+from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
 
 
 @pytest.fixture

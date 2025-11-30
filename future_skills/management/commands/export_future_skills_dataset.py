@@ -7,12 +7,9 @@ import random
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from future_skills.models import JobRole, Skill, MarketTrend, EconomicReport
-from future_skills.services.prediction_engine import (
-    _estimate_internal_usage,
-    _estimate_training_requests,
-    calculate_level,
-)
+from future_skills.models import EconomicReport, JobRole, MarketTrend, Skill
+from future_skills.services.prediction_engine import (_estimate_internal_usage, _estimate_training_requests,
+                                                      calculate_level)
 
 # Constants for skill classification
 TECHNICAL_KEYWORDS = [

@@ -168,8 +168,9 @@ class EnvironmentValidator:
         Returns:
             Dictionary with validation results
         """
-        from decouple import config, Csv
         from pathlib import Path
+
+        from decouple import Csv, config
 
         # Base directory
         BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -350,8 +351,9 @@ def get_env_info() -> Dict[str, Any]:
     Returns:
         Dictionary with current configuration
     """
-    from decouple import config, Csv
     from pathlib import Path
+
+    from decouple import Csv, config
 
     BASE_DIR = Path(__file__).resolve().parent.parent.parent
 

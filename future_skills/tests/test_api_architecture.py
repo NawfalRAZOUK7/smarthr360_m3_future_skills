@@ -15,11 +15,10 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import override_settings
-
-from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
-from future_skills.models import Skill, JobRole
+from future_skills.models import JobRole, Skill
 
 User = get_user_model()
 

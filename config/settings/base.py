@@ -5,15 +5,16 @@ This module contains common settings shared across all environments.
 Environment-specific settings are in development.py, production.py, and test.py
 """
 
-from config.apm_config import get_elastic_apm_config
 import os
-from config.logging_config import get_structlog_config
 from datetime import timedelta
-from celery.schedules import crontab
 from pathlib import Path
 
 import dj_database_url
+from celery.schedules import crontab
 from decouple import Csv, config
+
+from config.apm_config import get_elastic_apm_config
+from config.logging_config import get_structlog_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent

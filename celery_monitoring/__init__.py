@@ -26,31 +26,18 @@ Usage:
         pass
 """
 
+import functools
 import logging
 import time
-import functools
-from typing import Callable, Optional, Type, Tuple, Any
 from datetime import datetime, timedelta
+from typing import Any, Callable, Optional, Tuple, Type
 
 from celery import Task
-from celery.exceptions import (
-    Retry,
-    SoftTimeLimitExceeded,
-    TimeLimitExceeded,
-    Reject,
-    Ignore,
-)
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-    before_sleep_log,
-    after_log,
-)
-from pybreaker import CircuitBreaker, CircuitBreakerError
+from celery.exceptions import Ignore, Reject, Retry, SoftTimeLimitExceeded, TimeLimitExceeded
 from django.core.cache import cache
 from django.utils import timezone
+from pybreaker import CircuitBreaker, CircuitBreakerError
+from tenacity import after_log, before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
