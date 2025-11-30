@@ -9,7 +9,6 @@ for ML-specific tests.
 
 import os
 import shutil
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
 import sys
@@ -133,7 +132,7 @@ def auto_mock_mlflow(monkeypatch, settings):
 
     # Mock mlflow logging functions
     try:
-        import mlflow
+        import mlflow  # noqa: F401
 
         monkeypatch.setattr("mlflow.log_params", MagicMock())
         monkeypatch.setattr("mlflow.log_param", MagicMock())
