@@ -37,16 +37,16 @@ def mlflow_test_environment():
     # Create temporary MLflow directory and its parent
     test_base_dir = Path("/tmp/test")
     test_base_dir.mkdir(parents=True, exist_ok=True)
-    
+
     mlflow_dir = test_base_dir / "mlruns"
     mlflow_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Set MLflow environment variables for testing
     os.environ["MLFLOW_TRACKING_URI"] = f"file://{mlflow_dir}"
     os.environ["MLFLOW_ARTIFACT_LOCATION"] = str(mlflow_dir / "artifacts")
-    
+
     yield mlflow_dir
-    
+
     # Cleanup after all tests
     if test_base_dir.exists():
         shutil.rmtree(test_base_dir, ignore_errors=True)
@@ -74,16 +74,16 @@ def mock_mlflow_config():
     mock_config.tracking_uri = "file:///tmp/test/mlruns"
     mock_config.experiment_name = "test-experiment"
     mock_config.artifact_location = "/tmp/test/mlruns/artifacts"
-    
+
     # Set up start_run to return a context manager
     mock_run = MagicMock()
     mock_run.__enter__ = MagicMock(return_value=mock_run)
     mock_run.__exit__ = MagicMock(return_value=False)
     mock_run.info.run_id = "test-run-id-12345"
-    
+
     mock_config.start_run.return_value = mock_run
     mock_config.setup.return_value = None
-    
+
     return mock_config
 
 
@@ -97,46 +97,44 @@ def auto_mock_mlflow(monkeypatch, settings):
     # Ensure Django settings have proper values for MLflow
     test_base_dir = Path("/tmp/test")
     test_mlflow_dir = test_base_dir / "mlruns"
-    
+
     # Set Django settings to actual values (not MagicMocks)
     settings.BASE_DIR = test_base_dir
     settings.MLFLOW_TRACKING_URI = f"file://{test_mlflow_dir}"
     settings.MLFLOW_ARTIFACT_LOCATION = str(test_mlflow_dir / "artifacts")
-    
+
     mock_config = MagicMock()
     mock_config.tracking_uri = f"file://{test_mlflow_dir}"
     mock_config.experiment_name = "test-experiment"
-    
+
     # Set up start_run to return a context manager
     mock_run = MagicMock()
     mock_run.__enter__ = MagicMock(return_value=mock_run)
     mock_run.__exit__ = MagicMock(return_value=False)
     mock_run.info.run_id = "test-run-id-12345"
-    
+
     mock_config.start_run.return_value = mock_run
     mock_config.setup.return_value = None
-    
+
     # Patch get_mlflow_config to return our mock
     def mock_get_mlflow_config():
         return mock_config
-    
-    monkeypatch.setattr(
-        "ml.mlflow_config.get_mlflow_config",
-        mock_get_mlflow_config
-    )
-    
+
+    monkeypatch.setattr("ml.mlflow_config.get_mlflow_config", mock_get_mlflow_config)
+
     # Also patch in the training_service module if it's already imported
     try:
         monkeypatch.setattr(
             "future_skills.services.training_service.get_mlflow_config",
-            mock_get_mlflow_config
+            mock_get_mlflow_config,
         )
     except AttributeError:
         pass  # Module not imported yet
-    
+
     # Mock mlflow logging functions
     try:
         import mlflow
+
         monkeypatch.setattr("mlflow.log_params", MagicMock())
         monkeypatch.setattr("mlflow.log_param", MagicMock())
         monkeypatch.setattr("mlflow.log_metric", MagicMock())
@@ -146,7 +144,7 @@ def auto_mock_mlflow(monkeypatch, settings):
         monkeypatch.setattr("mlflow.set_tag", MagicMock())
     except (ImportError, AttributeError):
         pass  # mlflow not available yet
-    
+
     return mock_config
 
 
