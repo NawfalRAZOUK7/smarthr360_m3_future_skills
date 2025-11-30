@@ -27,9 +27,6 @@ Usage:
         pass
 """
 
-# Import monitor_task from monitoring module to make it available at package level
-from celery_monitoring.monitoring import monitor_task
-
 __all__ = [
     "retry_with_exponential_backoff",
     "with_circuit_breaker",
@@ -40,6 +37,16 @@ __all__ = [
     "with_advanced_retry",
     "monitor_task",
 ]
+
+
+def __getattr__(name):
+    """Lazy import to avoid registering Prometheus metrics at import time."""
+    if name == "monitor_task":
+        from celery_monitoring.monitoring import monitor_task
+
+        return monitor_task
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 import functools
 import logging
