@@ -1,0 +1,26 @@
+[flake8]
+max-line-length = 120
+exclude =
+    migrations,
+    __pycache__,
+    .venv,
+    .git,
+    __init__.py,
+per-file-ignores =
+    # Django settings use star imports intentionally
+    config/settings/*.py:F405,F403
+    # Test files may have unused variables for clarity
+    */tests/*.py:F841
+    # Allow module-level imports after sys.path modifications
+    config/wsgi.py:E402
+    config/logging_config.py:E402,F841
+    config/settings/base.py:E402
+    config/settings/validators.py:F841
+    ml/scripts/*.py:E402
+    ml/tests/conftest.py:E402
+    # Allow f-strings without placeholders (used for consistency)
+    future_skills/services/file_parser.py:F541,E501
+    # Allow slightly long lines in specific cases
+    future_skills/api/views.py:E501
+    future_skills/services/training_service.py:E501
+    future_skills/services/file_parser.py:E501

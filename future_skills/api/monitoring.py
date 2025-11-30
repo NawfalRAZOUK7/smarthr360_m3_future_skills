@@ -74,7 +74,7 @@ class HealthCheckView(APIView):
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def _check_cache(self):

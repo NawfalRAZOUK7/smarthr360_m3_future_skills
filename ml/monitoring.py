@@ -42,11 +42,10 @@ import pandas as pd
 
 try:
     from evidently.report import Report
-    from evidently.metric_preset import DataDriftPreset, DataQualityPreset
+    from evidently.metric_preset import DataDriftPreset
     from evidently.metrics import (
         DatasetDriftMetric,
         DataDriftTable,
-        DatasetMissingValuesMetric,
     )
 
     EVIDENTLY_AVAILABLE = True
@@ -54,7 +53,7 @@ except ImportError:
     EVIDENTLY_AVAILABLE = False
     logging.warning("Evidently not installed. Data drift detection will be limited.")
 
-from prometheus_client import Counter, Gauge, Histogram, Summary
+from prometheus_client import Counter, Gauge, Histogram
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)

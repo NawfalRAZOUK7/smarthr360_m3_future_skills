@@ -10,11 +10,9 @@ Tests cover:
 - create_model_version helper function
 """
 
-import json
 import pytest
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import patch
 
 from ml.model_versioning import (
     ModelStage,
@@ -804,7 +802,7 @@ class TestModelVersionManager:
         for i in range(10):
             dev_metadata = ModelMetadata(
                 model_id=f"dev{i}",
-                version_string=f"{i+2}.0.0",
+                version_string=f"{i + 2}.0.0",
                 stage=ModelStage.DEVELOPMENT,
             )
             version = ModelVersion(i + 2, 0, 0, metadata=dev_metadata)

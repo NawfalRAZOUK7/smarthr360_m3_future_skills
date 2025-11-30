@@ -18,17 +18,18 @@ Usage:
     python ml/evaluate_future_skills_models.py [--dataset PATH] [--model PATH] [--output PATH]
 """
 
+from future_skills.services.prediction_engine import calculate_level
+import django
 import argparse
 import json
 import logging
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Any
 
 import joblib
 import pandas as pd
-import numpy as np
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -49,11 +50,8 @@ sys.path.insert(0, str(BASE_DIR))
 
 # Configure Django settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-import django
 
 django.setup()
-
-from future_skills.services.prediction_engine import calculate_level
 
 
 # ---------------------------------------------------------------------------
@@ -225,11 +223,11 @@ def print_metrics_summary(metrics: Dict[str, Any]):
     logger.info(f"  F1 (Macro):    {metrics['f1_macro']:.4f}")
     logger.info(f"  F1 (Weighted): {metrics['f1_weighted']:.4f}")
     logger.info("\n  Per-Class Metrics:")
-    logger.info(f"  {'-'*66}")
+    logger.info(f"  {'-' * 66}")
     logger.info(
         f"  {'Class':<10} {'Precision':<12} {'Recall':<12} {'F1-Score':<12} {'Support':<10}"
     )
-    logger.info(f"  {'-'*66}")
+    logger.info(f"  {'-' * 66}")
 
     for label in LABEL_ORDER:
         pc = metrics["per_class"][label]
@@ -239,11 +237,12 @@ def print_metrics_summary(metrics: Dict[str, Any]):
         )
 
     logger.info("\n  Confusion Matrix:")
-    logger.info(f"  {'-'*66}")
+    logger.info(f"  {'-' * 66}")
+    actual_vs_pred = "Actual \\ Pred"
     logger.info(
-        f"  {'Actual \\ Pred':<15} {LABEL_ORDER[0]:<10} {LABEL_ORDER[1]:<10} {LABEL_ORDER[2]:<10}"
+        f"  {actual_vs_pred:<15} {LABEL_ORDER[0]:<10} {LABEL_ORDER[1]:<10} {LABEL_ORDER[2]:<10}"
     )
-    logger.info(f"  {'-'*66}")
+    logger.info(f"  {'-' * 66}")
 
     cm = metrics["confusion_matrix"]
     for i, label in enumerate(LABEL_ORDER):

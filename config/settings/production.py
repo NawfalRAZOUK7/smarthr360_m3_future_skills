@@ -4,7 +4,6 @@ Production settings for SmartHR360 Future Skills project.
 This configuration is optimized for production deployment with security enabled.
 """
 
-import os
 from .base import *  # noqa: F403,S2208 - Standard Django settings pattern
 
 # Debug mode MUST be False in production

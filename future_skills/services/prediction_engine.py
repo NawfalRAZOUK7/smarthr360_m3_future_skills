@@ -37,7 +37,6 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import Tuple, Dict, Any
 
 from django.conf import settings
@@ -51,6 +50,8 @@ from future_skills.models import (
 )
 from future_skills.ml_model import FutureSkillsModel
 
+logger = logging.getLogger(__name__)
+
 # Lazy import pour éviter erreur si SHAP pas installé
 try:
     from future_skills.services.explanation_engine import ExplanationEngine
@@ -62,9 +63,6 @@ except ImportError:
         "ExplanationEngine non disponible. Les explications ne seront pas générées. "
         "Installez 'shap' pour activer cette fonctionnalité."
     )
-
-
-logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------

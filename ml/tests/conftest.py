@@ -7,14 +7,6 @@ Imports fixtures from the main tests/conftest.py to make them available
 for ML-specific tests.
 """
 
-import pytest
-from pathlib import Path
-import sys
-
-# Add parent directory to path to import from tests.conftest
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-# Import fixtures from main conftest
 from tests.conftest import (
     sample_skill,
     sample_job_role,
@@ -22,6 +14,13 @@ from tests.conftest import (
     regular_user,
     admin_user,
 )
+from pathlib import Path
+import sys
+
+# Add parent directory to path to import from tests.conftest
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+# Import fixtures from main conftest
 
 # Re-export fixtures so they're available in ml/tests
 __all__ = [

@@ -5,6 +5,11 @@ This module contains common settings shared across all environments.
 Environment-specific settings are in development.py, production.py, and test.py
 """
 
+from config.apm_config import get_elastic_apm_config
+import os
+from config.logging_config import get_structlog_config
+from datetime import timedelta
+from celery.schedules import crontab
 from pathlib import Path
 
 import dj_database_url
@@ -125,7 +130,7 @@ CACHE_URL = config("CACHE_URL", default=None)
 
 if CACHE_URL:
     # Use Redis or Memcached from CACHE_URL
-    import django_redis
+    pass
 
     CACHES = {
         "default": {
@@ -392,7 +397,6 @@ CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Reject task if worker dies
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # Celery Beat schedule (periodic tasks)
-from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
     # Cleanup old models daily at 2 AM
@@ -417,7 +421,6 @@ CELERY_BEAT_SCHEDULE = {
 
 # --- JWT Configuration (Simple JWT) ---
 
-from datetime import timedelta
 
 SIMPLE_JWT = {
     # Token Lifetimes
@@ -519,8 +522,6 @@ AXES_RESET_ON_SUCCESS = True
 # ============================================================================
 
 # Import logging configuration
-from config.logging_config import get_structlog_config, setup_logging
-import os
 
 # Setup structured logging
 # This will be initialized in wsgi.py and asgi.py
@@ -533,7 +534,6 @@ LOGGING = get_structlog_config(
 # ELASTIC APM CONFIGURATION
 # ============================================================================
 
-from config.apm_config import get_elastic_apm_config
 
 ELASTIC_APM = get_elastic_apm_config()
 

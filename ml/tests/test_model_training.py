@@ -12,7 +12,6 @@ import pandas as pd
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from future_skills.ml_model import FutureSkillsModel
 from future_skills.services.training_service import (
     ModelTrainer,
     DataLoadError,

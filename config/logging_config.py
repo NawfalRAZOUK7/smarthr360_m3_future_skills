@@ -6,6 +6,8 @@ This module provides structured logging configuration with multiple handlers,
 formatters, and processors for comprehensive application logging.
 """
 
+from functools import wraps
+import time
 import logging
 import os
 import sys
@@ -391,9 +393,6 @@ class LogContext:
 # ============================================================================
 # PERFORMANCE LOGGING
 # ============================================================================
-
-import time
-from functools import wraps
 
 
 def log_performance(logger_name: str = "performance"):

@@ -15,7 +15,7 @@ Target: Improve coverage from current level to 90%+
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 

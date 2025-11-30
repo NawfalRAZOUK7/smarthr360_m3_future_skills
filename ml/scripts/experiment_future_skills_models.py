@@ -24,7 +24,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Tuple
 
-import joblib
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
@@ -34,7 +33,6 @@ from sklearn.metrics import (
     confusion_matrix,
     accuracy_score,
     precision_recall_fscore_support,
-    f1_score,
 )
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.pipeline import Pipeline
@@ -51,6 +49,7 @@ warnings.filterwarnings("ignore")
 
 ALLOWED_LEVELS = {"LOW", "MEDIUM", "HIGH"}
 RANDOM_STATE = 42
+MARKDOWN_SEPARATOR = "\n---\n\n"
 
 
 def load_dataset(csv_path: Path) -> pd.DataFrame:
@@ -279,10 +278,10 @@ def train_and_evaluate_model(
     Returns:
         Dictionary with all metrics and model information.
     """
-    logger.info(f"\n{'='*70}")
+    logger.info(f"\n{'=' * 70}")
     logger.info(f"🔬 Experimentation: {model_name}")
     logger.info(f"   Description: {model_config['description']}")
-    logger.info(f"{'='*70}")
+    logger.info(f"{'=' * 70}")
 
     start_time = datetime.now()
 
@@ -631,7 +630,7 @@ def main():
     print(f"   • Features numériques : {numeric_features}")
     print("\n📈 Distribution des classes :")
     for level, count in y.value_counts().items():
-        print(f"   • {level:7s} : {count:4d} ({count/len(y)*100:.1f}%)")
+        print(f"   • {level:7s} : {count:4d} ({count / len(y) * 100:.1f}%)")
 
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(

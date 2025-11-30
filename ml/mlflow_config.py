@@ -560,5 +560,5 @@ def initialize_mlflow() -> None:
 
     Should be called during Django app startup.
     """
-    config = get_mlflow_config()
+    get_mlflow_config()
     logger.info("MLflow initialized for SmartHR360")
