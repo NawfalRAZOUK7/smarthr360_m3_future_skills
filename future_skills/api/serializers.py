@@ -1,5 +1,9 @@
 # future_skills/api/serializers.py
 
+import logging
+
+from django.conf import settings
+from django.db import transaction
 from rest_framework import serializers
 
 from ..models import (
@@ -12,6 +16,8 @@ from ..models import (
     Skill,
     TrainingRun,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -245,36 +251,9 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
         - Check for duplicate emails within the import batch
         - Validate that all job_roles exist
         """
-        emails = []
         errors = []
-
-        for idx, employee_data in enumerate(value):
-            # Check for duplicate emails in batch
-            email = employee_data.get("email")
-            if email:
-                if email in emails:
-                    errors.append(
-                        {
-                            "index": idx,
-                            "email": email,
-                            "error": f"Duplicate email '{email}' found in import batch",
-                        }
-                    )
-                emails.append(email)
-
-            # Check if job_role exists (if provided)
-            job_role_id = employee_data.get("job_role_id")
-            if job_role_id:
-                try:
-                    JobRole.objects.get(pk=job_role_id)
-                except JobRole.DoesNotExist:
-                    errors.append(
-                        {
-                            "index": idx,
-                            "email": email,
-                            "error": f"JobRole with id {job_role_id} does not exist",
-                        }
-                    )
+        errors.extend(self._collect_duplicate_email_errors(value))
+        errors.extend(self._collect_missing_job_role_errors(value))
 
         if errors:
             raise serializers.ValidationError(
@@ -286,77 +265,75 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
 
         return value
 
+    def _collect_duplicate_email_errors(self, employees):
+        errors = []
+        seen_emails = set()
+
+        for idx, employee_data in enumerate(employees):
+            email = employee_data.get("email")
+            if not email:
+                continue
+            if email in seen_emails:
+                errors.append(
+                    {
+                        "index": idx,
+                        "email": email,
+                        "error": f"Duplicate email '{email}' found in import batch",
+                    }
+                )
+            else:
+                seen_emails.add(email)
+
+        return errors
+
+    def _collect_missing_job_role_errors(self, employees):
+        job_role_ids = {
+            employee.get("job_role_id")
+            for employee in employees
+            if employee.get("job_role_id")
+        }
+
+        if not job_role_ids:
+            return []
+
+        existing_ids = set(
+            JobRole.objects.filter(pk__in=job_role_ids).values_list("id", flat=True)
+        )
+        missing_ids = job_role_ids - existing_ids
+
+        if not missing_ids:
+            return []
+
+        errors = []
+        for idx, employee_data in enumerate(employees):
+            job_role_id = employee_data.get("job_role_id")
+            if job_role_id in missing_ids:
+                errors.append(
+                    {
+                        "index": idx,
+                        "email": employee_data.get("email"),
+                        "error": f"JobRole with id {job_role_id} does not exist",
+                    }
+                )
+
+        return errors
+
     def create(self, validated_data):
         """
         Bulk create/update employees and optionally generate predictions.
         Returns summary of operation.
         """
-        from django.db import transaction
-
-        from ..models import Employee
-
         employees_data = validated_data["employees"]
         auto_predict = validated_data["auto_predict"]
         horizon_years = validated_data["horizon_years"]
 
-        created = []
-        updated = []
-        failed = []
+        created, updated, failed = self._upsert_employees(employees_data)
 
-        with transaction.atomic():
-            for employee_data in employees_data:
-                try:
-                    email = employee_data.get("email")
-
-                    # Try to find existing employee by email
-                    existing_employee = Employee.objects.filter(email=email).first()
-
-                    if existing_employee:
-                        # Update existing employee
-                        for field, value in employee_data.items():
-                            if field != "id":  # Don't update ID
-                                setattr(existing_employee, field, value)
-                        existing_employee.save()
-                        updated.append(
-                            {
-                                "id": existing_employee.id,
-                                "email": existing_employee.email,
-                                "name": existing_employee.name,
-                            }
-                        )
-                    else:
-                        # Create new employee
-                        new_employee = Employee.objects.create(**employee_data)
-                        created.append(
-                            {
-                                "id": new_employee.id,
-                                "email": new_employee.email,
-                                "name": new_employee.name,
-                            }
-                        )
-
-                except Exception as e:
-                    failed.append(
-                        {"email": employee_data.get("email"), "error": str(e)}
-                    )
-
-        # Generate predictions if requested
-        predictions_generated = 0
-        if auto_predict:
-            from ..services.prediction_engine import recalculate_predictions
-
-            all_employees = created + updated
-            for emp_data in all_employees:
-                try:
-                    employee = Employee.objects.get(pk=emp_data["id"])
-                    if employee.job_role:
-                        recalculate_predictions(
-                            job_role_id=employee.job_role.id,
-                            horizon_years=horizon_years,
-                        )
-                        predictions_generated += 1
-                except Exception:
-                    pass  # Silently fail prediction generation
+        predictions_generated = (
+            self._trigger_prediction_recalculation(horizon_years)
+            if auto_predict
+            else None
+        )
 
         return {
             "summary": {
@@ -368,8 +345,67 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
             "created": created,
             "updated": updated,
             "failed": failed,
-            "predictions_generated": predictions_generated if auto_predict else None,
+            "predictions_generated": predictions_generated,
         }
+
+    def _upsert_employees(self, employees_data):
+        """Create or update employees inside a single transaction."""
+
+        created = []
+        updated = []
+        failed = []
+
+        with transaction.atomic():
+            for employee_data in employees_data:
+                try:
+                    employee, was_created = self._persist_employee(employee_data)
+                    summary = {
+                        "id": employee.id,
+                        "email": employee.email,
+                        "name": employee.name,
+                    }
+                    if was_created:
+                        created.append(summary)
+                    else:
+                        updated.append(summary)
+                except Exception as exc:  # noqa: BLE001
+                    failed.append(
+                        {"email": employee_data.get("email"), "error": str(exc)}
+                    )
+
+        return created, updated, failed
+
+    def _persist_employee(self, employee_data):
+        """Return the saved Employee instance and whether it was created."""
+
+        email = employee_data.get("email")
+        existing_employee = Employee.objects.filter(email=email).first()
+
+        if existing_employee:
+            for field, value in employee_data.items():
+                if field != "id":
+                    setattr(existing_employee, field, value)
+            existing_employee.save()
+            return existing_employee, False
+
+        new_employee = Employee.objects.create(**employee_data)
+        return new_employee, True
+
+    def _trigger_prediction_recalculation(self, horizon_years: int) -> int:
+        """Kick off a single batch prediction recalculation."""
+
+        from ..services.prediction_engine import recalculate_predictions
+
+        try:
+            return recalculate_predictions(
+                horizon_years=horizon_years,
+                parameters={"trigger": "bulk_employee_import"},
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "Failed to generate predictions after bulk import: %s", exc
+            )
+            return 0
 
 
 # ============================================================================
@@ -455,7 +491,7 @@ class TrainModelRequestSerializer(serializers.Serializer):
 
     dataset_path = serializers.CharField(
         required=False,
-        default="ml/data/future_skills_dataset.csv",
+        default=str(settings.ML_DATASETS_DIR / "future_skills_dataset.csv"),
         help_text="Path to the training dataset CSV file",
     )
     test_split = serializers.FloatField(

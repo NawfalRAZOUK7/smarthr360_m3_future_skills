@@ -2,7 +2,8 @@ openapi: 3.0.3
 info:
   title: SmartHR360 Future Skills API
   version: 1.0.0
-  description: "Comprehensive API for SmartHR360 Future Skills prediction system.\n\n##
+  description:
+    "Comprehensive API for SmartHR360 Future Skills prediction system.\n\n##
     Features\n\n### Prediction System\n- **ML-Powered Predictions**: Machine learning
     models for future skill requirements\n- **Rules-Based Fallback**: Reliable fallback
     when ML is unavailable\n- **Batch Processing**: Efficient bulk predictions for
@@ -28,79 +29,75 @@ paths:
       operationId: employees_list
       description: |-
         ViewSet for Employee CRUD operations.
-
-        Provides:
-        - GET /api/employees/ - List all employees
-        - POST /api/employees/ - Create new employee
-        - GET /api/employees/{id}/ - Get employee detail
-        - PUT/PATCH /api/employees/{id}/ - Update employee
-        - DELETE /api/employees/{id}/ - Delete employee
-        - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
-        - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
-        - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
+        * GET /api/employees/ - List all employees
+        * POST /api/employees/ - Create new employee
+        * GET /api/employees/{id}/ - Get employee detail
+        * PUT/PATCH /api/employees/{id}/ - Update employee
+        * DELETE /api/employees/{id}/ - Delete employee
+        * POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+        * POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+        * PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
       parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
+        - name: page_size
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
       tags:
-      - employees
+        - employees
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedEmployeeList'
-          description: ''
+                $ref: "#/components/schemas/PaginatedEmployeeList"
+          description: ""
     post:
       operationId: employees_create
       description: |-
         ViewSet for Employee CRUD operations.
-
-        Provides:
-        - GET /api/employees/ - List all employees
-        - POST /api/employees/ - Create new employee
-        - GET /api/employees/{id}/ - Get employee detail
-        - PUT/PATCH /api/employees/{id}/ - Update employee
-        - DELETE /api/employees/{id}/ - Delete employee
-        - POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
-        - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
-        - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
+        * GET /api/employees/ - List all employees
+        * POST /api/employees/ - Create new employee
+        * GET /api/employees/{id}/ - Get employee detail
+        * PUT/PATCH /api/employees/{id}/ - Update employee
+        * DELETE /api/employees/{id}/ - Delete employee
+        * POST /api/employees/{id}/add-skill/ - Add skill to employee (Section 4.2)
+        * POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
+        * PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
       tags:
-      - employees
+        - employees
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Employee'
-          description: ''
+                $ref: "#/components/schemas/Employee"
+          description: ""
   /api/employees/{id}/:
     patch:
       operationId: employees_partial_update
@@ -117,35 +114,35 @@ paths:
         - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
         - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Employé.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Employé.
+          required: true
       tags:
-      - employees
+        - employees
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedEmployeeRequest'
+              $ref: "#/components/schemas/PatchedEmployeeRequest"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedEmployeeRequest'
+              $ref: "#/components/schemas/PatchedEmployeeRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedEmployeeRequest'
+              $ref: "#/components/schemas/PatchedEmployeeRequest"
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Employee'
-          description: ''
+                $ref: "#/components/schemas/Employee"
+          description: ""
     get:
       operationId: employees_retrieve
       description: |-
@@ -161,24 +158,24 @@ paths:
         - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
         - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Employé.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Employé.
+          required: true
       tags:
-      - employees
+        - employees
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Employee'
-          description: ''
+                $ref: "#/components/schemas/Employee"
+          description: ""
     put:
       operationId: employees_update
       description: |-
@@ -194,36 +191,36 @@ paths:
         - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
         - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Employé.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Employé.
+          required: true
       tags:
-      - employees
+        - employees
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Employee'
-          description: ''
+                $ref: "#/components/schemas/Employee"
+          description: ""
     delete:
       operationId: employees_destroy
       description: |-
@@ -239,19 +236,19 @@ paths:
         - POST /api/employees/{id}/remove-skill/ - Remove skill from employee (Section 4.2)
         - PUT /api/employees/{id}/skills/ - Update all employee skills (Section 4.2)
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Employé.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Employé.
+          required: true
       tags:
-      - employees
+        - employees
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '204':
+        "204":
           description: No response body
   /api/employees/{id}/add-skill/:
     post:
@@ -261,36 +258,36 @@ paths:
         POST /api/employees/{id}/add-skill/
         Body: {"skill_id": 5}
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Employé.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Employé.
+          required: true
       tags:
-      - employees
+        - employees
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Employee'
-          description: ''
+                $ref: "#/components/schemas/Employee"
+          description: ""
   /api/employees/{id}/remove-skill/:
     post:
       operationId: employees_remove_skill_create
@@ -299,36 +296,36 @@ paths:
         POST /api/employees/{id}/remove-skill/
         Body: {"skill_id": 5}
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Employé.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Employé.
+          required: true
       tags:
-      - employees
+        - employees
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Employee'
-          description: ''
+                $ref: "#/components/schemas/Employee"
+          description: ""
   /api/employees/{id}/skills/:
     put:
       operationId: employees_skills_update
@@ -337,40 +334,41 @@ paths:
         PUT /api/employees/{id}/skills/
         Body: {"skill_ids": [1, 2, 3]}
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Employé.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Employé.
+          required: true
       tags:
-      - employees
+        - employees
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EmployeeRequest'
+              $ref: "#/components/schemas/EmployeeRequest"
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Employee'
-          description: ''
+                $ref: "#/components/schemas/Employee"
+          description: ""
   /api/future-skills/:
     get:
       operationId: future_skills_list
-      description: "Retrieve a paginated list of future skill predictions with optional
+      description:
+        "Retrieve a paginated list of future skill predictions with optional
         filters.\n\n    **Permissions**: HR Staff or Manager\n\n    **Filters**:\n
         \   - `job_role_id`: Filter by specific job role\n    - `horizon_years`: Filter
         by prediction horizon (e.g., 3, 5, 10 years)\n\n    **Pagination**: Results
@@ -379,56 +377,57 @@ paths:
         \   "
       summary: List future skill predictions
       parameters:
-      - in: query
-        name: horizon_years
-        schema:
-          type: integer
-        description: Filter by prediction horizon in years (e.g., 3, 5, 10)
-      - in: query
-        name: job_role_id
-        schema:
-          type: integer
-        description: Filter predictions for a specific job role ID
-      - in: query
-        name: page
-        schema:
-          type: integer
-        description: Page number for pagination
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-        description: Number of items per page (max 100)
+        - in: query
+          name: horizon_years
+          schema:
+            type: integer
+          description: Filter by prediction horizon in years (e.g., 3, 5, 10)
+        - in: query
+          name: job_role_id
+          schema:
+            type: integer
+          description: Filter predictions for a specific job role ID
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number for pagination
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+          description: Number of items per page (max 100)
       tags:
-      - Predictions
+        - Predictions
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedFutureSkillPredictionList'
-          description: ''
-        '401':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '403':
+                $ref: "#/components/schemas/PaginatedFutureSkillPredictionList"
+          description: ""
+        "401":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
+          description: ""
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ""
   /api/future-skills/recalculate/:
     post:
       operationId: future_skills_recalculate_create
-      description: "Trigger a complete recalculation of all future skill predictions
+      description:
+        "Trigger a complete recalculation of all future skill predictions
         using ML or rules engine.\n\n    **Permissions**: HR Staff only (DRH/Responsable
         RH)\n\n    **Process**:\n    1. Recalculates predictions for all job role
         × skill combinations\n    2. Uses ML model if available, falls back to rules
@@ -442,7 +441,7 @@ paths:
         5\n    }\n    ```\n    "
       summary: Recalculate all predictions
       tags:
-      - Predictions
+        - Predictions
       requestBody:
         content:
           application/json:
@@ -464,10 +463,10 @@ paths:
                   horizon_years: 10
                 summary: 10-year strategic planning
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
@@ -483,28 +482,28 @@ paths:
                   horizon_years: 5
                   total_predictions: 357
                   total_recommendations: 42
-          description: ''
-        '400':
+          description: ""
+        "400":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '401':
+          description: ""
+        "401":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '403':
+          description: ""
+        "403":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
+          description: ""
   /api/market-trends/:
     get:
       operationId: market_trends_retrieve
@@ -517,12 +516,12 @@ paths:
         Exemple :
           GET /api/market-trends/?year=2025&sector=Tech
       tags:
-      - market-trends
+        - market-trends
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           description: No response body
   /api/economic-reports/:
     get:
@@ -535,12 +534,12 @@ paths:
           - sector
           - indicator (contient)
       tags:
-      - economic-reports
+        - economic-reports
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           description: No response body
   /api/hr-investment-recommendations/:
     get:
@@ -555,12 +554,12 @@ paths:
           - job_role_id
           - priority_level
       tags:
-      - hr-investment-recommendations
+        - hr-investment-recommendations
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           description: No response body
   /api/predict-skills/:
     post:
@@ -577,12 +576,12 @@ paths:
 
         Returns: List of predicted skills with scores and levels
       tags:
-      - predict-skills
+        - predict-skills
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           description: No response body
   /api/recommend-skills/:
     post:
@@ -598,12 +597,12 @@ paths:
 
         Returns: List of recommended skills (excluding current skills if specified)
       tags:
-      - recommend-skills
+        - recommend-skills
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           description: No response body
   /api/bulk-predict/:
     post:
@@ -618,12 +617,12 @@ paths:
 
         Returns: Predictions for each employee
       tags:
-      - bulk-predict
+        - bulk-predict
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           description: No response body
   /api/bulk-import/employees/:
     post:
@@ -741,12 +740,12 @@ paths:
         - BulkEmployeeImportSerializer for validation details
         - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
       tags:
-      - bulk-import
+        - bulk-import
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           description: No response body
   /api/bulk-upload/employees/:
     post:
@@ -906,17 +905,18 @@ paths:
         - file_parser.py module for parsing implementation
         - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
       tags:
-      - bulk-upload
+        - bulk-upload
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           description: No response body
   /api/training/train/:
     post:
       operationId: training_train_create
-      description: "Train a new machine learning model for future skill predictions.\n\n
+      description:
+        "Train a new machine learning model for future skill predictions.\n\n
         \   **Permissions**: HR Staff only (DRH/Responsable RH)\n\n    **Execution
         Modes**:\n\n    1. **Synchronous** (default, `async_training=false`):\n       -
         Training executes immediately in the request\n       - Returns complete metrics
@@ -927,7 +927,7 @@ paths:
         Recommended for production and large datasets\n\n    **Training Process**:\n
         \   1. Loads and validates dataset\n    2. Performs train/test split\n    3.
         Trains Random Forest classifier with hyperparameters\n    4. Evaluates on
-        test set (accuracy, precision, recall, F1)\n    5. Saves model to `ml/models/`
+        test set (accuracy, precision, recall, F1)\n    5. Saves model to `artifacts/models/`
         directory\n    6. Records metrics in TrainingRun\n\n    **Hyperparameters**:\n
         \   - `n_estimators`: Number of trees (default: 100)\n    - `max_depth`: Maximum
         tree depth (default: 15)\n    - `min_samples_split`: Min samples to split
@@ -935,26 +935,26 @@ paths:
         2)\n    - `random_state`: Random seed (default: 42)\n\n    **Model Versioning**:\n
         \   Provide a descriptive version string (e.g., \"v2.1_optimized\", \"prod_2024_q4\").\n
         \   If omitted, auto-generates timestamp-based version.\n\n    **Example Request
-        (Sync)**:\n    ```json\n    {\n      \"dataset_path\": \"ml/data/future_skills_dataset.csv\",\n
+        (Sync)**:\n    ```json\n    {\n      \"dataset_path\": \"artifacts/datasets/future_skills_dataset.csv\",\n
         \     \"test_split\": 0.2,\n      \"hyperparameters\": {\n        \"n_estimators\":
         150,\n        \"max_depth\": 20\n      },\n      \"model_version\": \"v2.1_production\",\n
         \     \"notes\": \"Optimized model for Q4 2024\",\n      \"async_training\":
         false\n    }\n    ```\n\n    **Example Request (Async)**:\n    ```json\n    {\n
-        \     \"dataset_path\": \"ml/data/future_skills_dataset.csv\",\n      \"test_split\":
+        \     \"dataset_path\": \"artifacts/datasets/future_skills_dataset.csv\",\n      \"test_split\":
         0.2,\n      \"async_training\": true,\n      \"model_version\": \"v2.2_background\"\n
         \   }\n    ```\n    "
       summary: Train new ML model
       tags:
-      - Training
+        - Training
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TrainModelRequestRequest'
+              $ref: "#/components/schemas/TrainModelRequestRequest"
             examples:
               SynchronousTrainingWithCustomHyperparameters:
                 value:
-                  dataset_path: ml/data/future_skills_dataset.csv
+                  dataset_path: artifacts/datasets/future_skills_dataset.csv
                   test_split: 0.2
                   hyperparameters:
                     n_estimators: 150
@@ -966,7 +966,7 @@ paths:
                 summary: Synchronous training with custom hyperparameters
               AsynchronousBackgroundTraining:
                 value:
-                  dataset_path: ml/data/future_skills_dataset.csv
+                  dataset_path: artifacts/datasets/future_skills_dataset.csv
                   test_split: 0.25
                   async_training: true
                   model_version: v3.0_background
@@ -974,58 +974,59 @@ paths:
                 summary: Asynchronous background training
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TrainModelRequestRequest'
+              $ref: "#/components/schemas/TrainModelRequestRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TrainModelRequestRequest'
+              $ref: "#/components/schemas/TrainModelRequestRequest"
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TrainModelResponse'
-          description: ''
-        '201':
+                $ref: "#/components/schemas/TrainModelResponse"
+          description: ""
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TrainModelResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '401':
+                $ref: "#/components/schemas/TrainModelResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '403':
+          description: ""
+        "401":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '500':
+          description: ""
+        "403":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
+          description: ""
+        "500":
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ""
   /api/training/start/:
     post:
       operationId: training_start_create
-      description: "Train a new machine learning model for future skill predictions.\n\n
+      description:
+        "Train a new machine learning model for future skill predictions.\n\n
         \   **Permissions**: HR Staff only (DRH/Responsable RH)\n\n    **Execution
         Modes**:\n\n    1. **Synchronous** (default, `async_training=false`):\n       -
         Training executes immediately in the request\n       - Returns complete metrics
@@ -1036,7 +1037,7 @@ paths:
         Recommended for production and large datasets\n\n    **Training Process**:\n
         \   1. Loads and validates dataset\n    2. Performs train/test split\n    3.
         Trains Random Forest classifier with hyperparameters\n    4. Evaluates on
-        test set (accuracy, precision, recall, F1)\n    5. Saves model to `ml/models/`
+        test set (accuracy, precision, recall, F1)\n    5. Saves model to `artifacts/models/`
         directory\n    6. Records metrics in TrainingRun\n\n    **Hyperparameters**:\n
         \   - `n_estimators`: Number of trees (default: 100)\n    - `max_depth`: Maximum
         tree depth (default: 15)\n    - `min_samples_split`: Min samples to split
@@ -1044,26 +1045,26 @@ paths:
         2)\n    - `random_state`: Random seed (default: 42)\n\n    **Model Versioning**:\n
         \   Provide a descriptive version string (e.g., \"v2.1_optimized\", \"prod_2024_q4\").\n
         \   If omitted, auto-generates timestamp-based version.\n\n    **Example Request
-        (Sync)**:\n    ```json\n    {\n      \"dataset_path\": \"ml/data/future_skills_dataset.csv\",\n
+        (Sync)**:\n    ```json\n    {\n      \"dataset_path\": \"artifacts/datasets/future_skills_dataset.csv\",\n
         \     \"test_split\": 0.2,\n      \"hyperparameters\": {\n        \"n_estimators\":
         150,\n        \"max_depth\": 20\n      },\n      \"model_version\": \"v2.1_production\",\n
         \     \"notes\": \"Optimized model for Q4 2024\",\n      \"async_training\":
         false\n    }\n    ```\n\n    **Example Request (Async)**:\n    ```json\n    {\n
-        \     \"dataset_path\": \"ml/data/future_skills_dataset.csv\",\n      \"test_split\":
+        \     \"dataset_path\": \"artifacts/datasets/future_skills_dataset.csv\",\n      \"test_split\":
         0.2,\n      \"async_training\": true,\n      \"model_version\": \"v2.2_background\"\n
         \   }\n    ```\n    "
       summary: Train new ML model
       tags:
-      - Training
+        - Training
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TrainModelRequestRequest'
+              $ref: "#/components/schemas/TrainModelRequestRequest"
             examples:
               SynchronousTrainingWithCustomHyperparameters:
                 value:
-                  dataset_path: ml/data/future_skills_dataset.csv
+                  dataset_path: artifacts/datasets/future_skills_dataset.csv
                   test_split: 0.2
                   hyperparameters:
                     n_estimators: 150
@@ -1075,7 +1076,7 @@ paths:
                 summary: Synchronous training with custom hyperparameters
               AsynchronousBackgroundTraining:
                 value:
-                  dataset_path: ml/data/future_skills_dataset.csv
+                  dataset_path: artifacts/datasets/future_skills_dataset.csv
                   test_split: 0.25
                   async_training: true
                   model_version: v3.0_background
@@ -1083,58 +1084,59 @@ paths:
                 summary: Asynchronous background training
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TrainModelRequestRequest'
+              $ref: "#/components/schemas/TrainModelRequestRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TrainModelRequestRequest'
+              $ref: "#/components/schemas/TrainModelRequestRequest"
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TrainModelResponse'
-          description: ''
-        '201':
+                $ref: "#/components/schemas/TrainModelResponse"
+          description: ""
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TrainModelResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '401':
+                $ref: "#/components/schemas/TrainModelResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '403':
+          description: ""
+        "401":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '500':
+          description: ""
+        "403":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
+          description: ""
+        "500":
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ""
   /api/training/runs/:
     get:
       operationId: training_runs_list
-      description: "Retrieve a paginated list of all model training runs with metrics
+      description:
+        "Retrieve a paginated list of all model training runs with metrics
         and status.\n\n    **Permissions**: HR Staff or Manager\n\n    **Filters**:\n
         \   - `status`: Filter by training status (RUNNING, COMPLETED, FAILED)\n    -
         `trained_by`: Filter by username who initiated training\n    - `page`: Page
@@ -1145,60 +1147,61 @@ paths:
         \   "
       summary: List all training runs
       parameters:
-      - in: query
-        name: page
-        schema:
-          type: integer
-        description: Page number
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-        description: Items per page (max 100)
-      - in: query
-        name: status
-        schema:
-          type: string
-          enum:
-          - COMPLETED
-          - FAILED
-          - RUNNING
-        description: Filter by status (RUNNING, COMPLETED, FAILED)
-      - in: query
-        name: trained_by
-        schema:
-          type: string
-        description: Filter by username who initiated training
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+          description: Items per page (max 100)
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - COMPLETED
+              - FAILED
+              - RUNNING
+          description: Filter by status (RUNNING, COMPLETED, FAILED)
+        - in: query
+          name: trained_by
+          schema:
+            type: string
+          description: Filter by username who initiated training
       tags:
-      - Training
+        - Training
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedTrainingRunList'
-          description: ''
-        '401':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '403':
+                $ref: "#/components/schemas/PaginatedTrainingRunList"
+          description: ""
+        "401":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
+          description: ""
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ""
   /api/training/runs/{id}/:
     get:
       operationId: training_runs_retrieve
-      description: "Retrieve detailed information about a specific training run.\n\n
+      description:
+        "Retrieve detailed information about a specific training run.\n\n
         \   **Permissions**: HR Staff or Manager\n\n    **Returns**:\n    - **Basic
         Info**: ID, version, status, timestamps\n    - **Performance Metrics**: Accuracy,
         precision, recall, F1 score\n    - **Per-Class Metrics**: Detailed metrics
@@ -1211,44 +1214,44 @@ paths:
         and traceability\n\n    **Example**: `/api/training/runs/42/`\n    "
       summary: Get training run details
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
       tags:
-      - Training
+        - Training
       security:
-      - cookieAuth: []
-      - basicAuth: []
+        - cookieAuth: []
+        - basicAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TrainingRunDetail'
-          description: ''
-        '401':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '403':
+                $ref: "#/components/schemas/TrainingRunDetail"
+          description: ""
+        "401":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '404':
+          description: ""
+        "403":
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
+          description: ""
+        "404":
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ""
 components:
   schemas:
     Employee:
@@ -1266,31 +1269,32 @@ components:
           maxLength: 254
         department:
           type: string
-          description: 'Département de l''employé (ex : IT, RH, Finance...).'
+          description: "Département de l'employé (ex : IT, RH, Finance...)."
           maxLength: 150
         position:
           type: string
-          description: 'Poste actuel de l''employé (ex : Developer, Manager...).'
+          description: "Poste actuel de l'employé (ex : Developer, Manager...)."
           maxLength: 150
         job_role:
           allOf:
-          - $ref: '#/components/schemas/JobRole'
+            - $ref: "#/components/schemas/JobRole"
           readOnly: true
         current_skills:
-          description: 'Liste des compétences actuelles de l''employé (ex : [''Python'',
-            ''Django'']).'
+          description:
+            "Liste des compétences actuelles de l'employé (ex : ['Python',
+            'Django'])."
         date_joined:
           type: string
           format: date-time
           readOnly: true
       required:
-      - date_joined
-      - department
-      - email
-      - id
-      - job_role
-      - name
-      - position
+        - date_joined
+        - department
+        - email
+        - id
+        - job_role
+        - name
+        - position
     EmployeeRequest:
       type: object
       properties:
@@ -1306,25 +1310,26 @@ components:
         department:
           type: string
           minLength: 1
-          description: 'Département de l''employé (ex : IT, RH, Finance...).'
+          description: "Département de l'employé (ex : IT, RH, Finance...)."
           maxLength: 150
         position:
           type: string
           minLength: 1
-          description: 'Poste actuel de l''employé (ex : Developer, Manager...).'
+          description: "Poste actuel de l'employé (ex : Developer, Manager...)."
           maxLength: 150
         job_role_id:
           type: integer
           writeOnly: true
           nullable: true
         current_skills:
-          description: 'Liste des compétences actuelles de l''employé (ex : [''Python'',
-            ''Django'']).'
+          description:
+            "Liste des compétences actuelles de l'employé (ex : ['Python',
+            'Django'])."
       required:
-      - department
-      - email
-      - name
-      - position
+        - department
+        - email
+        - name
+        - position
     FutureSkillPrediction:
       type: object
       properties:
@@ -1333,25 +1338,25 @@ components:
           readOnly: true
         job_role:
           allOf:
-          - $ref: '#/components/schemas/JobRole'
+            - $ref: "#/components/schemas/JobRole"
           readOnly: true
         skill:
           allOf:
-          - $ref: '#/components/schemas/Skill'
+            - $ref: "#/components/schemas/Skill"
           readOnly: true
         horizon_years:
           type: integer
           maximum: 9223372036854775807
           minimum: 0
           format: int64
-          description: 'Horizon de prédiction en années (ex : 3, 5...).'
+          description: "Horizon de prédiction en années (ex : 3, 5...)."
         score:
           type: number
           format: double
           description: Score de besoin futur (0–100).
         level:
           allOf:
-          - $ref: '#/components/schemas/LevelEnum'
+            - $ref: "#/components/schemas/LevelEnum"
           description: |-
             Niveau de criticité : LOW / MEDIUM / HIGH.
 
@@ -1367,13 +1372,13 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - horizon_years
-      - id
-      - job_role
-      - level
-      - score
-      - skill
+        - created_at
+        - horizon_years
+        - id
+        - job_role
+        - level
+        - score
+        - skill
     JobRole:
       type: object
       properties:
@@ -1386,15 +1391,15 @@ components:
         department:
           type: string
           nullable: true
-          description: 'Département ou direction (ex : IT, RH, Finance...).'
+          description: "Département ou direction (ex : IT, RH, Finance...)."
           maxLength: 150
         description:
           type: string
           nullable: true
           description: Description optionnelle du rôle.
       required:
-      - id
-      - name
+        - id
+        - name
     JobRoleRequest:
       type: object
       properties:
@@ -1405,19 +1410,19 @@ components:
         department:
           type: string
           nullable: true
-          description: 'Département ou direction (ex : IT, RH, Finance...).'
+          description: "Département ou direction (ex : IT, RH, Finance...)."
           maxLength: 150
         description:
           type: string
           nullable: true
           description: Description optionnelle du rôle.
       required:
-      - name
+        - name
     LevelEnum:
       enum:
-      - LOW
-      - MEDIUM
-      - HIGH
+        - LOW
+        - MEDIUM
+        - HIGH
       type: string
       description: |-
         * `LOW` - Low
@@ -1426,8 +1431,8 @@ components:
     PaginatedEmployeeList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -1445,12 +1450,12 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Employee'
+            $ref: "#/components/schemas/Employee"
     PaginatedFutureSkillPredictionList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -1468,12 +1473,12 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/FutureSkillPrediction'
+            $ref: "#/components/schemas/FutureSkillPrediction"
     PaginatedTrainingRunList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -1491,7 +1496,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/TrainingRun'
+            $ref: "#/components/schemas/TrainingRun"
     PatchedEmployeeRequest:
       type: object
       properties:
@@ -1507,20 +1512,21 @@ components:
         department:
           type: string
           minLength: 1
-          description: 'Département de l''employé (ex : IT, RH, Finance...).'
+          description: "Département de l'employé (ex : IT, RH, Finance...)."
           maxLength: 150
         position:
           type: string
           minLength: 1
-          description: 'Poste actuel de l''employé (ex : Developer, Manager...).'
+          description: "Poste actuel de l'employé (ex : Developer, Manager...)."
           maxLength: 150
         job_role_id:
           type: integer
           writeOnly: true
           nullable: true
         current_skills:
-          description: 'Liste des compétences actuelles de l''employé (ex : [''Python'',
-            ''Django'']).'
+          description:
+            "Liste des compétences actuelles de l'employé (ex : ['Python',
+            'Django'])."
     Skill:
       type: object
       properties:
@@ -1533,20 +1539,20 @@ components:
         category:
           type: string
           nullable: true
-          description: 'Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)'
+          description: "Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)"
           maxLength: 100
         description:
           type: string
           nullable: true
           description: Description optionnelle de la compétence.
       required:
-      - id
-      - name
+        - id
+        - name
     StatusEnum:
       enum:
-      - RUNNING
-      - COMPLETED
-      - FAILED
+        - RUNNING
+        - COMPLETED
+        - FAILED
       type: string
       description: |-
         * `RUNNING` - Running
@@ -1562,7 +1568,7 @@ components:
         dataset_path:
           type: string
           minLength: 1
-          default: ml/data/future_skills_dataset.csv
+          default: artifacts/datasets/future_skills_dataset.csv
           description: Path to the training dataset CSV file
         test_split:
           type: number
@@ -1608,10 +1614,10 @@ components:
           type: string
           description: Celery task ID (if async_training=true)
       required:
-      - message
-      - model_version
-      - status
-      - training_run_id
+        - message
+        - model_version
+        - status
+        - training_run_id
     TrainingRun:
       type: object
       description: Serializer for TrainingRun model - read-only for listing.
@@ -1629,7 +1635,7 @@ components:
           description: Version identifier for the trained model (e.g., 'v1', 'v2.1').
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+            - $ref: "#/components/schemas/StatusEnum"
           readOnly: true
           description: |-
             Current status of the training run.
@@ -1667,16 +1673,16 @@ components:
           readOnly: true
           nullable: true
       required:
-      - accuracy
-      - f1_score
-      - id
-      - model_version
-      - precision
-      - recall
-      - run_date
-      - status
-      - trained_by_username
-      - training_duration_seconds
+        - accuracy
+        - f1_score
+        - id
+        - model_version
+        - precision
+        - recall
+        - run_date
+        - status
+        - trained_by_username
+        - training_duration_seconds
     TrainingRunDetail:
       type: object
       description: Detailed serializer for TrainingRun - includes all fields.
@@ -1703,7 +1709,7 @@ components:
           description: Path to the training dataset CSV file.
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+            - $ref: "#/components/schemas/StatusEnum"
           readOnly: true
           description: |-
             Current status of the training run.
@@ -1763,7 +1769,8 @@ components:
           description: Random seed for reproducibility.
         hyperparameters:
           readOnly: true
-          description: All hyperparameters used for this training run (consolidated
+          description:
+            All hyperparameters used for this training run (consolidated
             view).
         training_duration_seconds:
           type: number
@@ -1786,29 +1793,29 @@ components:
           nullable: true
           description: Additional notes or comments about this training run.
       required:
-      - accuracy
-      - dataset_path
-      - error_message
-      - f1_score
-      - features_used
-      - hyperparameters
-      - id
-      - model_path
-      - model_version
-      - n_estimators
-      - notes
-      - per_class_metrics
-      - precision
-      - random_state
-      - recall
-      - run_date
-      - status
-      - test_samples
-      - test_split
-      - total_samples
-      - train_samples
-      - trained_by_username
-      - training_duration_seconds
+        - accuracy
+        - dataset_path
+        - error_message
+        - f1_score
+        - features_used
+        - hyperparameters
+        - id
+        - model_path
+        - model_version
+        - n_estimators
+        - notes
+        - per_class_metrics
+        - precision
+        - random_state
+        - recall
+        - run_date
+        - status
+        - test_samples
+        - test_split
+        - total_samples
+        - train_samples
+        - trained_by_username
+        - training_duration_seconds
   securitySchemes:
     basicAuth:
       type: http
@@ -1818,15 +1825,15 @@ components:
       in: cookie
       name: sessionid
 tags:
-- name: Predictions
-  description: Future skill predictions and recalculation
-- name: Training
-  description: ML model training and management
-- name: Employees
-  description: Employee management and skill tracking
-- name: Analytics
-  description: Market trends and economic reports
-- name: Recommendations
-  description: HR investment and skill recommendations
-- name: Bulk Operations
-  description: Batch processing and file imports
+  - name: Predictions
+    description: Future skill predictions and recalculation
+  - name: Training
+    description: ML model training and management
+  - name: Employees
+    description: Employee management and skill tracking
+  - name: Analytics
+    description: Market trends and economic reports
+  - name: Recommendations
+    description: HR investment and skill recommendations
+  - name: Bulk Operations
+    description: Batch processing and file imports

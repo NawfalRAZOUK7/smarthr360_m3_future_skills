@@ -352,7 +352,7 @@ class TestEvaluationEdgeCases:
 
         # Should handle zero support gracefully
         assert per_class["LOW"]["support"] == 0
-        assert per_class["LOW"]["accuracy"] == 0.0
+        assert per_class["LOW"]["accuracy"] == pytest.approx(0.0)
 
 
 # ============================================================================
@@ -454,9 +454,6 @@ class TestFeatureImportanceEdgeCases:
         trainer = ModelTrainer(str(dataset_path))
         trainer.load_data()
         trainer.train(n_estimators=10)
-
-        # Mock hasattr to return False for feature_importances_
-        clf = trainer.model.named_steps["clf"]
 
         def mock_hasattr(obj, name):
             if name == "feature_importances_":
@@ -690,7 +687,7 @@ class TestTrainingRunSaving:
 
         # Should complete without exception even if MLflow transition fails
         # Training run should be created despite MLflow error
-        assert True  # Test passes if we reach here without exception
+        assert mock_training_run.objects.create.called
 
     def test_save_training_run_handles_database_error(self, tmp_path):
         """Test handling when database save fails."""
@@ -754,6 +751,7 @@ class TestFailedTrainingRunTracking:
 
         # Verify create was called
         assert mock_training_run.objects.create.called
+        assert failed_run == mock_training_run.objects.create.return_value
         call_kwargs = mock_training_run.objects.create.call_args[1]
 
         # Check status is FAILED
@@ -764,8 +762,8 @@ class TestFailedTrainingRunTracking:
         assert call_kwargs["model_version"] == "v1.0.0"
 
         # Check metrics are zero
-        assert call_kwargs["accuracy"] == 0.0
-        assert call_kwargs["f1_score"] == 0.0
+        assert call_kwargs["accuracy"] == pytest.approx(0.0)
+        assert call_kwargs["f1_score"] == pytest.approx(0.0)
 
     @patch("future_skills.services.training_service.TrainingRun")
     def test_save_failed_training_run_handles_save_error(

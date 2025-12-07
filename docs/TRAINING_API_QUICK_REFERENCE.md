@@ -24,7 +24,7 @@
 
 ```json
 {
-  "dataset_path": "ml/data/future_skills_dataset.csv",
+  "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
   "test_split": 0.2,
   "hyperparameters": {
     "n_estimators": 100,
@@ -38,7 +38,7 @@
 
 **All fields optional** - Defaults:
 
-- `dataset_path`: `ml/data/future_skills_dataset.csv`
+- `dataset_path`: `artifacts/datasets/future_skills_dataset.csv`
 - `test_split`: `0.2`
 - `hyperparameters`: `{}` (uses defaults)
 - `model_version`: Auto-generated `api_v<timestamp>`
@@ -134,8 +134,8 @@ GET /api/training/runs/10/
   "id": 10,
   "run_date": "2025-11-27T16:30:00Z",
   "model_version": "v3.0",
-  "model_path": "ml/models/v3.0.pkl",
-  "dataset_path": "ml/data/future_skills_dataset.csv",
+  "model_path": "artifacts/models/v3.0.pkl",
+  "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
   "status": "COMPLETED",
   "error_message": null,
   "accuracy": 0.9861,

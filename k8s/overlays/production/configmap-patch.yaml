@@ -36,7 +36,7 @@ data:
 
   # ML Features
   FUTURE_SKILLS_USE_ML: "true"
-  ML_MODEL_PATH: "/app/ml/models"
+  ML_MODEL_PATH: "/app/artifacts/models"
 
   # Application Settings
   AUTO_MIGRATE: "false" # Manual migrations in production

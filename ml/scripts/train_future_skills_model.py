@@ -11,7 +11,7 @@ This script:
     - StandardScaler for numeric features
     - RandomForestClassifier as the classification model
 - Saves the complete pipeline (preprocessing + model) to:
-    ml/future_skills_model_vX.pkl (with versioning)
+    artifacts/models/future_skills_model_vX.pkl (with versioning)
 - Generates a JSON metadata file for MLOps traceability
 
 This script is intentionally Django-independent (no settings required).
@@ -37,6 +37,20 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+DEFAULT_DATASET_DIR = ARTIFACTS_DIR / "datasets"
+DEFAULT_MODEL_DIR = ARTIFACTS_DIR / "models"
+JOBLIB_CACHE_DIR = ARTIFACTS_DIR / "cache" / "joblib"
+
+for directory in (
+    ARTIFACTS_DIR,
+    DEFAULT_DATASET_DIR,
+    DEFAULT_MODEL_DIR,
+    JOBLIB_CACHE_DIR,
+):
+    directory.mkdir(parents=True, exist_ok=True)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -109,7 +123,7 @@ def build_pipeline(
             ("preprocess", preprocessor),
             ("clf", clf),
         ],
-        memory="auto",  # Cache transformers for better performance  # noqa: S106 - Not a password
+        memory=str(JOBLIB_CACHE_DIR),  # Cache transformers for better performance  # noqa: S106 - Not a password
     )
 
     return pipeline
@@ -367,10 +381,8 @@ def train_model(
 
 
 def main():
-    base_dir = Path(__file__).resolve().parent.parent
-
-    default_csv = base_dir / "data" / "future_skills_dataset.csv"
-    default_model = base_dir / "models" / "future_skills_model.pkl"
+    default_csv = DEFAULT_DATASET_DIR / "future_skills_dataset.csv"
+    default_model = DEFAULT_MODEL_DIR / "future_skills_model.pkl"
 
     parser = argparse.ArgumentParser(
         description="Entraîne le modèle ML pour le Module 3 - Future Skills."

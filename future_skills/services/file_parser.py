@@ -8,7 +8,103 @@ Handles file parsing, validation, and error handling for employee data.
 import csv
 import io
 import json
+from numbers import Number
 from typing import Any, Dict, List, Optional, Tuple
+
+
+REQUIRED_HEADERS = {"name", "email", "department", "position"}
+REQUIRED_FIELD_ERRORS = {
+    "name": "Name is required",
+    "email": "Email is required",
+    "department": "Department is required",
+    "position": "Position is required",
+}
+EMAIL_FORMAT_ERROR = "Invalid email format: {value}"
+JOB_ROLE_ID_ERROR = "Invalid job_role_id: must be integer"
+ENCODING_FALLBACK_ERROR = "File encoding issue detected, used latin-1 fallback"
+
+
+def _normalize_value(value: Any) -> str:
+    """Return a stripped string representation, handling pandas NaN values."""
+
+    if value is None:
+        return ""
+    text = str(value).strip()
+    return "" if text.lower() == "nan" else text
+
+
+def _collect_required_field_errors(
+    values: Dict[str, str], row_num: int
+) -> List[Dict[str, str]]:
+    """Build error payloads for missing required fields."""
+
+    errors: List[Dict[str, str]] = []
+    for field in REQUIRED_HEADERS:
+        if not values.get(field):
+            errors.append(
+                {"row": row_num, "field": field, "error": REQUIRED_FIELD_ERRORS[field]}
+            )
+    return errors
+
+
+def _validate_email_format(email: str, row_num: int) -> List[Dict[str, str]]:
+    """Validate email address structure."""
+
+    if "@" not in email or "." not in email.split("@")[-1]:
+        return [
+            {
+                "row": row_num,
+                "field": "email",
+                "error": EMAIL_FORMAT_ERROR.format(value=email),
+            }
+        ]
+    return []
+
+
+def _extract_current_skills(raw_value: str) -> List[str]:
+    """Normalize textual representation of skill lists."""
+
+    text = raw_value.strip()
+    if not text:
+        return []
+
+    if text.startswith("[") and text.endswith("]"):
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return [str(item).strip() for item in parsed if str(item).strip()]
+        except json.JSONDecodeError:
+            pass
+
+    if ";" in text:
+        return [skill.strip() for skill in text.split(";") if skill.strip()]
+
+    if "," in text:
+        return [skill.strip() for skill in text.split(",") if skill.strip()]
+
+    return [text]
+
+
+def _coerce_int_value(value: Any) -> Optional[int]:
+    """Attempt to parse an integer from raw spreadsheet/CSV values."""
+
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, Number):
+        return int(value) if float(value).is_integer() else None
+
+    cleaned = _normalize_value(value)
+    if not cleaned:
+        return None
+
+    try:
+        return int(cleaned)
+    except ValueError:
+        try:
+            float_value = float(cleaned)
+            return int(float_value) if float_value.is_integer() else None
+        except ValueError:
+            return None
 
 
 def parse_employee_csv(
@@ -56,7 +152,7 @@ def parse_employee_csv(
                 {
                     "row": 0,
                     "field": "encoding",
-                    "error": f"File encoding issue detected, used latin-1 fallback",
+                    "error": ENCODING_FALLBACK_ERROR,
                 }
             )
 
@@ -64,9 +160,8 @@ def parse_employee_csv(
         csv_reader = csv.DictReader(io.StringIO(content))
 
         # Validate headers
-        required_headers = {"name", "email", "department", "position"}
         headers = set(csv_reader.fieldnames or [])
-        missing_headers = required_headers - headers
+        missing_headers = REQUIRED_HEADERS - headers
 
         if missing_headers:
             errors.append(
@@ -150,9 +245,8 @@ def parse_employee_excel(file) -> Tuple[List[Dict[str, Any]], List[Dict[str, str
                 return [], errors
 
         # Validate headers
-        required_headers = {"name", "email", "department", "position"}
         headers = set(df.columns)
-        missing_headers = required_headers - headers
+        missing_headers = REQUIRED_HEADERS - headers
 
         if missing_headers:
             errors.append(
@@ -216,92 +310,40 @@ def _validate_csv_row(
     Returns:
         Tuple of (employee_data, errors)
     """
-    errors = []
-    employee_data = {}
+    errors: List[Dict[str, str]] = []
+    employee_data: Dict[str, Any] = {}
 
-    # Required fields
-    name = row.get("name", "").strip()
-    email = row.get("email", "").strip()
-    department = row.get("department", "").strip()
-    position = row.get("position", "").strip()
-
-    # Validate required fields
-    if not name:
-        errors.append({"row": row_num, "field": "name", "error": "Name is required"})
-    if not email:
-        errors.append({"row": row_num, "field": "email", "error": "Email is required"})
-    if not department:
-        errors.append(
-            {"row": row_num, "field": "department", "error": "Department is required"}
-        )
-    if not position:
-        errors.append(
-            {"row": row_num, "field": "position", "error": "Position is required"}
-        )
-
-    # If required fields missing, return errors
+    sanitized = {field: row.get(field, "").strip() for field in REQUIRED_HEADERS}
+    errors.extend(_collect_required_field_errors(sanitized, row_num))
     if errors:
         return None, errors
 
-    # Basic email validation
-    if "@" not in email or "." not in email.split("@")[-1]:
-        errors.append(
-            {
-                "row": row_num,
-                "field": "email",
-                "error": f"Invalid email format: {email}",
-            }
-        )
-        return None, errors
+    email_errors = _validate_email_format(sanitized["email"], row_num)
+    if email_errors:
+        return None, email_errors
 
-    # Build employee data
-    employee_data["name"] = name
-    employee_data["email"] = email
-    employee_data["department"] = department
-    employee_data["position"] = position
+    employee_data.update(sanitized)
 
-    # Optional: job_role_id (takes precedence)
-    job_role_id = row.get("job_role_id", "").strip()
-    if job_role_id:
-        try:
-            employee_data["job_role_id"] = int(job_role_id)
-        except ValueError:
+    job_role_id_raw = row.get("job_role_id", "").strip()
+    if job_role_id_raw:
+        job_role_id_value = _coerce_int_value(job_role_id_raw)
+        if job_role_id_value is None:
             errors.append(
                 {
                     "row": row_num,
                     "field": "job_role_id",
-                    "error": f"Invalid job_role_id: must be integer",
+                    "error": JOB_ROLE_ID_ERROR,
                 }
             )
+        else:
+            employee_data["job_role_id"] = job_role_id_value
 
-    # Optional: job_role_name (if job_role_id not provided)
-    elif "job_role_name" in row and row.get("job_role_name", "").strip():
-        job_role_name = row.get("job_role_name", "").strip()
-        # Note: This will need to be resolved to job_role_id in the view/serializer
+    elif job_role_name := _normalize_value(row.get("job_role_name", "")):
         employee_data["job_role_name"] = job_role_name
 
-    # Optional: current_skills (comma or semicolon separated)
-    current_skills = row.get("current_skills", "").strip()
-    if current_skills:
-        # Handle both comma and semicolon separators
-        if ";" in current_skills:
-            skills_list = [s.strip() for s in current_skills.split(";") if s.strip()]
-        elif "," in current_skills:
-            # Check if it's JSON format
-            if current_skills.startswith("[") and current_skills.endswith("]"):
-                try:
-                    skills_list = json.loads(current_skills)
-                except json.JSONDecodeError:
-                    skills_list = [
-                        s.strip() for s in current_skills.split(",") if s.strip()
-                    ]
-            else:
-                skills_list = [
-                    s.strip() for s in current_skills.split(",") if s.strip()
-                ]
-        else:
-            skills_list = [current_skills]
-
+    current_skills_raw = row.get("current_skills", "")
+    skills_list = _extract_current_skills(current_skills_raw) if current_skills_raw else []
+    if skills_list:
         employee_data["current_skills"] = skills_list
 
     return employee_data, errors
@@ -321,96 +363,43 @@ def _validate_excel_row(
         Tuple of (employee_data, errors)
     """
     import pandas as pd
+    errors: List[Dict[str, str]] = []
+    employee_data: Dict[str, Any] = {}
 
-    errors = []
-    employee_data = {}
-
-    # Required fields (handle NaN values from pandas)
-    name = str(row.get("name", "")).strip() if pd.notna(row.get("name")) else ""
-    email = str(row.get("email", "")).strip() if pd.notna(row.get("email")) else ""
-    department = (
-        str(row.get("department", "")).strip()
-        if pd.notna(row.get("department"))
-        else ""
-    )
-    position = (
-        str(row.get("position", "")).strip() if pd.notna(row.get("position")) else ""
-    )
-
-    # Validate required fields
-    if not name or name == "nan":
-        errors.append({"row": row_num, "field": "name", "error": "Name is required"})
-    if not email or email == "nan":
-        errors.append({"row": row_num, "field": "email", "error": "Email is required"})
-    if not department or department == "nan":
-        errors.append(
-            {"row": row_num, "field": "department", "error": "Department is required"}
-        )
-    if not position or position == "nan":
-        errors.append(
-            {"row": row_num, "field": "position", "error": "Position is required"}
-        )
-
-    # If required fields missing, return errors
+    sanitized = {field: _normalize_value(row.get(field)) for field in REQUIRED_HEADERS}
+    errors.extend(_collect_required_field_errors(sanitized, row_num))
     if errors:
         return None, errors
 
-    # Basic email validation
-    if "@" not in email or "." not in email.split("@")[-1]:
-        errors.append(
-            {
-                "row": row_num,
-                "field": "email",
-                "error": f"Invalid email format: {email}",
-            }
-        )
-        return None, errors
+    email_errors = _validate_email_format(sanitized["email"], row_num)
+    if email_errors:
+        return None, email_errors
 
-    # Build employee data
-    employee_data["name"] = name
-    employee_data["email"] = email
-    employee_data["department"] = department
-    employee_data["position"] = position
+    employee_data.update(sanitized)
 
-    # Optional: job_role_id (takes precedence)
-    job_role_id = row.get("job_role_id")
-    if pd.notna(job_role_id):
-        try:
-            employee_data["job_role_id"] = int(job_role_id)
-        except (ValueError, TypeError):
+    job_role_id_raw = row.get("job_role_id")
+    normalized_job_role_id = _normalize_value(job_role_id_raw)
+    if normalized_job_role_id:
+        job_role_id_value = _coerce_int_value(job_role_id_raw)
+        if job_role_id_value is None:
             errors.append(
                 {
                     "row": row_num,
                     "field": "job_role_id",
-                    "error": "Invalid job_role_id: must be integer",
+                    "error": JOB_ROLE_ID_ERROR,
                 }
             )
+        else:
+            employee_data["job_role_id"] = job_role_id_value
+    elif job_role_name := _normalize_value(row.get("job_role_name")):
+        employee_data["job_role_name"] = job_role_name
 
-    # Optional: job_role_name (if job_role_id not provided)
-    elif "job_role_name" in row and pd.notna(row.get("job_role_name")):
-        job_role_name = str(row.get("job_role_name", "")).strip()
-        if job_role_name and job_role_name != "nan":
-            employee_data["job_role_name"] = job_role_name
+    current_skills_raw = _normalize_value(row.get("current_skills"))
+    skills_list = _extract_current_skills(current_skills_raw) if current_skills_raw else []
+    if skills_list:
+        employee_data["current_skills"] = skills_list
 
-    # Optional: current_skills
-    current_skills = row.get("current_skills")
-    if pd.notna(current_skills):
-        current_skills = str(current_skills).strip()
-        if current_skills and current_skills != "nan":
-            # Handle both comma and semicolon separators
-            if ";" in current_skills:
-                skills_list = [
-                    s.strip() for s in current_skills.split(";") if s.strip()
-                ]
-            elif "," in current_skills:
-                # Check if it's JSON format
-                if current_skills.startswith("[") and current_skills.endswith("]"):
-                    try:
-                        skills_list = json.loads(current_skills)
-                    except json.JSONDecodeError:
-                        skills_list = [
-                            s.strip() for s in current_skills.split(",") if s.strip()
-                        ]
+    return employee_data, errors
                 else:
                     skills_list = [
                         s.strip() for s in current_skills.split(",") if s.strip()

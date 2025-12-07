@@ -70,8 +70,8 @@
 │                         Storage Layer                            │
 ├─────────────────────────────────────────────────────────────────┤
 │  • Database: SQLite (TrainingRun records)                        │
-│  • Filesystem: ml/models/*.pkl (trained models)                  │
-│  • Dataset: ml/data/future_skills_dataset.csv                    │
+│  • Filesystem: artifacts/models/*.pkl (trained models)           │
+│  • Dataset: artifacts/datasets/future_skills_dataset.csv         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -121,7 +121,7 @@ training_run = TrainingRun.objects.create(
 
 ```python
 trainer = ModelTrainer(
-    dataset_path="ml/data/future_skills_dataset.csv",
+  dataset_path="artifacts/datasets/future_skills_dataset.csv",
     test_split=0.2,
     random_state=42
 )
@@ -146,7 +146,7 @@ metrics = trainer.train(n_estimators=100)
 ### **8. Save Model**
 
 ```python
-trainer.save_model("ml/models/v3.0.pkl")
+trainer.save_model("artifacts/models/v3.0.pkl")
 # Output: Model saved (104KB)
 ```
 
@@ -158,7 +158,7 @@ training_run.accuracy = 0.9861
 training_run.precision = 0.9867
 training_run.recall = 0.9861
 training_run.f1_score = 0.9862
-training_run.model_path = "ml/models/v3.0.pkl"
+training_run.model_path = "artifacts/models/v3.0.pkl"
 training_run.per_class_metrics = {...}
 training_run.save()
 ```
@@ -331,7 +331,7 @@ Trained Model
   ↓ evaluate()
 Metrics (accuracy, precision, recall, f1)
   ↓ save_model()
-PKL file (ml/models/*.pkl)
+PKL file (artifacts/models/*.pkl)
   ↓ save_training_run()
 TrainingRun record (database)
 ```
@@ -424,7 +424,7 @@ All 5 tests passing (2.465s)
 - [ ] Create DRH/RESPONSABLE_RH groups
 - [ ] Assign users to groups
 - [ ] Test API with production data
-- [ ] Monitor disk space (ml/models/ directory)
+- [ ] Monitor disk space (artifacts/models/ directory)
 - [ ] Set up backup for TrainingRun records
 
 ---

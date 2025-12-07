@@ -647,7 +647,7 @@ SmartHR360 Future Skills Platform is an enterprise-grade machine learning system
 6. Model Persistence
    ┌────────────────────────────────────────┐
    │ - Serialize with joblib                │
-   │ - Save to ml/models/                   │
+   │ - Save to artifacts/models/            │
    │ - Version: v{major}.{minor}.{patch}    │
    │ - Update database record               │
    └────────────────┬───────────────────────┘

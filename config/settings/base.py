@@ -132,8 +132,6 @@ CACHE_URL = config("CACHE_URL", default=None)
 
 if CACHE_URL:
     # Use Redis or Memcached from CACHE_URL
-    pass
-
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
@@ -214,6 +212,23 @@ STATICFILES_DIRS = []
 # Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Centralized artifacts directories for ML assets
+DEFAULT_ARTIFACTS_ROOT = BASE_DIR / "artifacts"
+ARTIFACTS_ROOT = Path(
+    config("ARTIFACTS_ROOT", default=str(DEFAULT_ARTIFACTS_ROOT))
+).resolve()
+ML_MODELS_DIR = Path(config("ML_MODELS_DIR", default=str(ARTIFACTS_ROOT / "models")))
+ML_RESULTS_DIR = Path(config("ML_RESULTS_DIR", default=str(ARTIFACTS_ROOT / "results")))
+ML_DATASETS_DIR = Path(
+    config("ML_DATASETS_DIR", default=str(ARTIFACTS_ROOT / "datasets"))
+)
+ML_JOBLIB_CACHE_DIR = Path(
+    config("ML_JOBLIB_CACHE_DIR", default=str(ARTIFACTS_ROOT / "cache" / "joblib"))
+)
+
+for directory in (ARTIFACTS_ROOT, ML_MODELS_DIR, ML_RESULTS_DIR, ML_DATASETS_DIR, ML_JOBLIB_CACHE_DIR):
+    directory.mkdir(parents=True, exist_ok=True)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -329,10 +344,20 @@ No rate limiting currently applied. Consider implementing for production.
 FUTURE_SKILLS_USE_ML = True  # mets True quand tu es prêt à tester le ML
 
 # Chemin vers le modèle entraîné (pipeline scikit-learn)
-FUTURE_SKILLS_MODEL_PATH = BASE_DIR / "ml" / "models" / "future_skills_model.pkl"
+FUTURE_SKILLS_MODEL_PATH = Path(
+    config(
+        "FUTURE_SKILLS_MODEL_PATH",
+        default=str(ML_MODELS_DIR / "future_skills_model.pkl"),
+    )
+)
 
 # Chemin vers le dataset d'entraînement
-FUTURE_SKILLS_DATASET_PATH = BASE_DIR / "ml" / "data" / "future_skills_dataset.csv"
+FUTURE_SKILLS_DATASET_PATH = Path(
+    config(
+        "FUTURE_SKILLS_DATASET_PATH",
+        default=str(ML_DATASETS_DIR / "future_skills_dataset.csv"),
+    )
+)
 
 # Version logique du modèle (utile pour la traçabilité dans PredictionRun.parameters)
 FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_v1"
@@ -474,6 +499,8 @@ CORS_ALLOW_HEADERS = [
 
 # --- Security Settings ---
 
+CSP_SELF = "'self'"
+
 # Session Security
 SESSION_COOKIE_SECURE = not DEBUG  # HTTPS only in production
 SESSION_COOKIE_HTTPONLY = True
@@ -504,12 +531,12 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
 
 # Content Security Policy
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")  # Adjust as needed
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_IMG_SRC = ("'self'", "data:", "https:")
-CSP_FONT_SRC = ("'self'", "data:")
-CSP_CONNECT_SRC = ("'self'",)
+CSP_DEFAULT_SRC = (CSP_SELF,)
+CSP_SCRIPT_SRC = (CSP_SELF, "'unsafe-inline'")  # Adjust as needed
+CSP_STYLE_SRC = (CSP_SELF, "'unsafe-inline'")
+CSP_IMG_SRC = (CSP_SELF, "data:", "https:")
+CSP_FONT_SRC = (CSP_SELF, "data:")
+CSP_CONNECT_SRC = (CSP_SELF,)
 CSP_FRAME_ANCESTORS = ("'none'",)
 
 # Django Axes Configuration (Login Protection)

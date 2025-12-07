@@ -18,17 +18,17 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     C_FORCE_ROOT=1
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    postgresql-client \
-    curl \
-    netcat-traditional \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create non-root user
-RUN groupadd -g ${APP_GID} ${APP_USER} && \
-    useradd -u ${APP_UID} -g ${APP_GID} -m -s /bin/bash ${APP_USER}
+# Install runtime dependencies and create non-root user
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        curl \
+        libpq5 \
+        netcat-traditional \
+        postgresql-client; \
+    rm -rf /var/lib/apt/lists/*; \
+    groupadd -g "${APP_GID}" "${APP_USER}"; \
+    useradd -u "${APP_UID}" -g "${APP_GID}" -m -s /bin/bash "${APP_USER}"
 
 WORKDIR /app
 
@@ -41,28 +41,35 @@ RUN pip install --no-cache-dir -r requirements.txt \
 # Copy application
 COPY --chown=${APP_USER}:${APP_USER} . /app
 
-# Create necessary directories
-RUN mkdir -p logs media ml/models ml/data ml/results && \
-    chown -R ${APP_USER}:${APP_USER} /app
-
-# Create entrypoint
-RUN echo '#!/bin/bash\n\
-set -e\n\
-echo "Starting Celery Worker..."\n\
-\n\
-# Wait for broker\n\
-if [ -n "$REDIS_HOST" ]; then\n\
-    echo "Waiting for Redis at $REDIS_HOST:${REDIS_PORT:-6379}..."\n\
-    for i in {1..30}; do\n\
-        nc -z "$REDIS_HOST" "${REDIS_PORT:-6379}" && break\n\
-        echo "Waiting for Redis... ($i/30)"\n\
-        sleep 2\n\
-    done\n\
-fi\n\
-\n\
-echo "Celery Worker is ready!"\n\
-exec "$@"\n\
-' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+# Create necessary directories and entrypoint
+RUN set -eux; \
+    mkdir -p \
+        logs \
+        media \
+        artifacts/models \
+        artifacts/datasets \
+        artifacts/results \
+        artifacts/cache/joblib; \
+    chown -R "${APP_USER}:${APP_USER}" /app; \
+    printf '%s\n' \
+        '#!/bin/bash' \
+        'set -e' \
+        'echo "Starting Celery Worker..."' \
+        '' \
+        '# Wait for broker' \
+        'if [ -n "$REDIS_HOST" ]; then' \
+        '    echo "Waiting for Redis at $REDIS_HOST:${REDIS_PORT:-6379}..."' \
+        '    for i in {1..30}; do' \
+        '        nc -z "$REDIS_HOST" "${REDIS_PORT:-6379}" && break' \
+        '        echo "Waiting for Redis... ($i/30)"' \
+        '        sleep 2' \
+        '    done' \
+        'fi' \
+        '' \
+        'echo "Celery Worker is ready!"' \
+        'exec "$@"' \
+        > /app/entrypoint.sh; \
+    chmod +x /app/entrypoint.sh
 
 USER ${APP_USER}
 

@@ -8,7 +8,7 @@
 # ==============================================================================
 # Stage 1: Builder
 # ==============================================================================
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set build arguments
 ARG BUILD_ENV=production
@@ -26,11 +26,11 @@ WORKDIR /build
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libpq-dev \
-    gcc \
-    g++ \
-    git \
     curl \
+    g++ \
+    gcc \
+    git \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment
@@ -52,7 +52,14 @@ COPY . /build/app
 WORKDIR /build/app
 
 # Create necessary directories
-RUN mkdir -p logs staticfiles media ml/models ml/data ml/results
+RUN mkdir -p \
+    logs \
+    staticfiles \
+    media \
+    artifacts/models \
+    artifacts/datasets \
+    artifacts/results \
+    artifacts/cache/joblib
 
 # Collect static files
 RUN python manage.py collectstatic --noinput --clear || true
@@ -60,7 +67,7 @@ RUN python manage.py collectstatic --noinput --clear || true
 # ==============================================================================
 # Stage 2: Runtime
 # ==============================================================================
-FROM python:3.11-slim as runtime
+FROM python:3.11-slim AS runtime
 
 # Set runtime arguments
 ARG APP_USER=smarthr360
@@ -80,18 +87,18 @@ ENV PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=config.settings.production \
     PORT=8000
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    postgresql-client \
-    curl \
-    netcat-traditional \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-# Create non-root user
-RUN groupadd -g ${APP_GID} ${APP_USER} && \
-    useradd -u ${APP_UID} -g ${APP_GID} -m -s /bin/bash ${APP_USER}
+# Install runtime dependencies only and create app user
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        curl \
+        libpq5 \
+        netcat-traditional \
+        postgresql-client; \
+    rm -rf /var/lib/apt/lists/*; \
+    apt-get clean; \
+    groupadd -g "${APP_GID}" "${APP_USER}"; \
+    useradd -u "${APP_UID}" -g "${APP_GID}" -m -s /bin/bash "${APP_USER}"
 
 # Set working directory
 WORKDIR /app
@@ -105,49 +112,57 @@ COPY --chown=${APP_USER}:${APP_USER} . /app
 # Copy collected static files from builder
 COPY --from=builder --chown=${APP_USER}:${APP_USER} /build/app/staticfiles /app/staticfiles
 
-# Create necessary directories with proper permissions
-RUN mkdir -p logs staticfiles media ml/models ml/data ml/results && \
-    chown -R ${APP_USER}:${APP_USER} /app
-
-# Create entrypoint script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "Starting SmartHR360 Future Skills Platform..."\n\
-\n\
-# Wait for database\n\
-if [ -n "$DB_HOST" ]; then\n\
-    echo "Waiting for database at $DB_HOST:${DB_PORT:-5432}..."\n\
-    for i in {1..30}; do\n\
-        nc -z "$DB_HOST" "${DB_PORT:-5432}" && break\n\
-        echo "Waiting for database... ($i/30)"\n\
-        sleep 2\n\
-    done\n\
-fi\n\
-\n\
-# Run migrations if AUTO_MIGRATE is set\n\
-if [ "$AUTO_MIGRATE" = "true" ]; then\n\
-    echo "Running database migrations..."\n\
-    python manage.py migrate --noinput\n\
-fi\n\
-\n\
-# Create superuser if credentials provided\n\
-if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then\n\
-    echo "Creating superuser if not exists..."\n\
-    python manage.py shell -c "\n\
-from django.contrib.auth import get_user_model;\n\
-User = get_user_model();\n\
-if not User.objects.filter(username=\"$DJANGO_SUPERUSER_USERNAME\").exists():\n\
-    User.objects.create_superuser(\"$DJANGO_SUPERUSER_USERNAME\", \"$DJANGO_SUPERUSER_EMAIL\", \"$DJANGO_SUPERUSER_PASSWORD\")\n\
-    print(\"Superuser created\")\n\
-else:\n\
-    print(\"Superuser already exists\")\n\
-" || true\n\
-fi\n\
-\n\
-echo "SmartHR360 is ready!"\n\
-exec "$@"\n\
-' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+# Create necessary directories and entrypoint script
+RUN set -eux; \
+    mkdir -p \
+        logs \
+        staticfiles \
+        media \
+        artifacts/models \
+        artifacts/datasets \
+        artifacts/results \
+        artifacts/cache/joblib; \
+    chown -R "${APP_USER}:${APP_USER}" /app; \
+    printf '%s\n' \
+        '#!/bin/bash' \
+        'set -e' \
+        '' \
+        'echo "Starting SmartHR360 Future Skills Platform..."' \
+        '' \
+        '# Wait for database' \
+        'if [ -n "$DB_HOST" ]; then' \
+        '    echo "Waiting for database at $DB_HOST:${DB_PORT:-5432}..."' \
+        '    for i in {1..30}; do' \
+        '        nc -z "$DB_HOST" "${DB_PORT:-5432}" && break' \
+        '        echo "Waiting for database... ($i/30)"' \
+        '        sleep 2' \
+        '    done' \
+        'fi' \
+        '' \
+        '# Run migrations if AUTO_MIGRATE is set' \
+        'if [ "$AUTO_MIGRATE" = "true" ]; then' \
+        '    echo "Running database migrations..."' \
+        '    python manage.py migrate --noinput' \
+        'fi' \
+        '' \
+        '# Create superuser if credentials provided' \
+        'if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then' \
+        '    echo "Creating superuser if not exists..."' \
+        "    python manage.py shell -c \"" \
+        "from django.contrib.auth import get_user_model;" \
+        "User = get_user_model();" \
+        "if not User.objects.filter(username=\\\"$DJANGO_SUPERUSER_USERNAME\\\").exists():" \
+        "    User.objects.create_superuser(\\\"$DJANGO_SUPERUSER_USERNAME\\\", \\\"$DJANGO_SUPERUSER_EMAIL\\\", \\\"$DJANGO_SUPERUSER_PASSWORD\\\")" \
+        "    print(\\\"Superuser created\\\")" \
+        "else:" \
+        "    print(\\\"Superuser already exists\\\")" \
+        "\" || true" \
+        'fi' \
+        '' \
+        'echo "SmartHR360 is ready!"' \
+        'exec "$@"' \
+        > /app/entrypoint.sh; \
+    chmod +x /app/entrypoint.sh
 
 # Switch to non-root user
 USER ${APP_USER}

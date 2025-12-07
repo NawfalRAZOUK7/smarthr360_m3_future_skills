@@ -20,6 +20,17 @@ from datetime import datetime
 from pathlib import Path
 
 
+SCRIPTS_DIR = Path(__file__).resolve().parent
+ML_DIR = SCRIPTS_DIR.parent
+PROJECT_ROOT = ML_DIR.parent
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+DATASETS_DIR = ARTIFACTS_DIR / "datasets"
+MODELS_DIR = ARTIFACTS_DIR / "models"
+
+for directory in (ARTIFACTS_DIR, DATASETS_DIR, MODELS_DIR):
+    directory.mkdir(parents=True, exist_ok=True)
+
+
 def run_command(cmd: list, description: str) -> int:
     """Execute a shell command and return exit code."""
     print(f"\n{'=' * 60}")
@@ -39,7 +50,7 @@ def run_command(cmd: list, description: str) -> int:
 
 def update_settings_file(model_version: str, model_path: Path):
     """Update config/settings.py with new model version and path."""
-    settings_path = Path(__file__).resolve().parent.parent / "config" / "settings.py"
+    settings_path = PROJECT_ROOT / "config" / "settings" / "base.py"
 
     if not settings_path.exists():
         print(f"⚠️  Fichier settings.py introuvable: {settings_path}")
@@ -52,7 +63,7 @@ def update_settings_file(model_version: str, model_path: Path):
     import re
 
     content = re.sub(
-        r'FUTURE_SKILLS_MODEL_VERSION\s*=\s*["\'][^"\']* ["\']',
+        r'FUTURE_SKILLS_MODEL_VERSION\s*=\s*"[^"]+"',
         f'FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_{model_version}"',
         content,
     )
@@ -60,8 +71,8 @@ def update_settings_file(model_version: str, model_path: Path):
     # Update FUTURE_SKILLS_MODEL_PATH
     model_filename = model_path.name
     content = re.sub(
-        r'FUTURE_SKILLS_MODEL_PATH\s*=\s*BASE_DIR\s*/\s*"ml"\s*/\s*"[^"]*"',
-        f'FUTURE_SKILLS_MODEL_PATH = BASE_DIR / "ml" / "{model_filename}"',
+        r'default=str\(ML_MODELS_DIR\s*/\s*"[^"]+"\)',
+        f'default=str(ML_MODELS_DIR / "{model_filename}")',
         content,
     )
 
@@ -70,7 +81,10 @@ def update_settings_file(model_version: str, model_path: Path):
 
     print("✅ settings.py mis à jour:")
     print(f"   - FUTURE_SKILLS_MODEL_VERSION = 'ml_random_forest_{model_version}'")
-    print(f"   - FUTURE_SKILLS_MODEL_PATH = BASE_DIR / 'ml' / '{model_filename}'")
+    print(
+        "   - FUTURE_SKILLS_MODEL_PATH default = ML_MODELS_DIR / "
+        f"'{model_filename}'"
+    )
     return True
 
 

@@ -185,7 +185,7 @@ SmartHR360 M3 Future Skills is an AI-powered future skills prediction and recomm
 - **Registry File**: `ml/MODEL_REGISTRY.md`
 - **Version Format**: v{major}.{minor}
 - **Tracking**: Date, dataset, samples, performance metrics
-- **Storage**: `ml/models/future_skills_model_v{version}.joblib`
+- **Storage**: `artifacts/models/future_skills_model_v{version}.joblib`
 
 ---
 

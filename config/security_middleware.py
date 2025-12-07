@@ -88,7 +88,7 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
         request._security_start_time = time.time()
 
         # Get client info
-        client_ip, is_routable = get_client_ip(request)
+        client_ip, _ = get_client_ip(request)
         user_agent_string = request.META.get("HTTP_USER_AGENT", "")
         user_agent = user_agents.parse(user_agent_string)
 

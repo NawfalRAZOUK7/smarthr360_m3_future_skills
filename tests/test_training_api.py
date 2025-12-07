@@ -16,6 +16,7 @@ import django
 django.setup()
 
 # Now import Django models
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from rest_framework.test import APIClient
 
@@ -105,7 +106,9 @@ def test_train_model(client):
 
     # Prepare request data
     request_data = {
-        "dataset_path": "ml/data/future_skills_dataset.csv",
+        "dataset_path": str(
+            settings.ML_DATASETS_DIR / "future_skills_dataset.csv"
+        ),
         "test_split": 0.2,
         "hyperparameters": {
             "n_estimators": 30,  # Small for fast testing
@@ -123,7 +126,7 @@ def test_train_model(client):
 
     if response.status_code == 201:
         data = response.json()
-        print(f"   ✅ Training completed!")
+        print("   ✅ Training completed!")
         print(f"   Training Run ID: {data['training_run_id']}")
         print(f"   Status: {data['status']}")
         print(f"   Model Version: {data['model_version']}")
@@ -140,10 +143,10 @@ def test_train_model(client):
         assert (
             training_run.status == "COMPLETED"
         ), f"Expected COMPLETED, got {training_run.status}"
-        print(f"   ✅ TrainingRun record verified in database")
+        print("   ✅ TrainingRun record verified in database")
 
     else:
-        print(f"   ❌ Training failed!")
+        print("   ❌ Training failed!")
         print(f"   Response: {response.json()}")
         raise AssertionError(
             f"Training endpoint failed with status {response.status_code}"

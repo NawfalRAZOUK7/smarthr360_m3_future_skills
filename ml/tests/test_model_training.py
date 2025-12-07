@@ -7,6 +7,7 @@ Tests the ModelTrainer class which handles the complete training lifecycle
 including data loading, model training, evaluation, and persistence.
 """
 
+import math
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -86,7 +87,7 @@ class TestModelTrainerInitialization:
         trainer = ModelTrainer(str(sample_dataset))
 
         assert trainer.dataset_path == Path(sample_dataset)
-        assert trainer.test_split == 0.2
+        assert trainer.test_split == pytest.approx(0.2)
         assert trainer.random_state == 42
         assert trainer.model is None
         assert trainer.metrics == {}
@@ -95,7 +96,7 @@ class TestModelTrainerInitialization:
         """Test initialization with custom test split and random state."""
         trainer = ModelTrainer(str(sample_dataset), test_split=0.3, random_state=123)
 
-        assert trainer.test_split == 0.3
+        assert trainer.test_split == pytest.approx(0.3)
         assert trainer.random_state == 123
 
     def test_initialization_converts_string_path(self, sample_dataset):
@@ -114,21 +115,21 @@ class TestDataLoading:
         trainer.load_data()
 
         # Check data is loaded
-        assert trainer.X_train is not None
-        assert trainer.X_test is not None
+        assert trainer.x_train is not None
+        assert trainer.x_test is not None
         assert trainer.y_train is not None
         assert trainer.y_test is not None
 
         # Check splits are correct
-        total_samples = len(trainer.X_train) + len(trainer.X_test)
+        total_samples = len(trainer.x_train) + len(trainer.x_test)
         assert total_samples == 60  # 60 rows in sample dataset
 
         # Check stratification (approximately 20% test)
-        assert len(trainer.X_test) == pytest.approx(12, abs=2)
+        assert len(trainer.x_test) == pytest.approx(12, abs=2)
 
         # Check target values
-        assert len(trainer.y_train) == len(trainer.X_train)
-        assert len(trainer.y_test) == len(trainer.X_test)
+        assert len(trainer.y_train) == len(trainer.x_train)
+        assert len(trainer.y_test) == len(trainer.x_test)
         assert all(y in ["LOW", "MEDIUM", "HIGH"] for y in trainer.y_train)
         assert all(y in ["LOW", "MEDIUM", "HIGH"] for y in trainer.y_test)
 
@@ -162,7 +163,7 @@ class TestDataLoading:
         # Should still work with fewer features
         assert len(trainer.available_features) > 0
         assert len(trainer.missing_features) > 0
-        assert trainer.X_train is not None
+        assert trainer.x_train is not None
 
     def test_load_data_filters_invalid_labels(self, tmp_path):
         """Test that invalid target labels are filtered out."""
@@ -231,7 +232,7 @@ class TestDataLoading:
         trainer.load_data()
 
         # Verify data was loaded
-        assert trainer.X_train is not None
+        assert trainer.x_train is not None
         assert trainer.y_train is not None
 
         # Check class distribution in training data
@@ -306,7 +307,7 @@ class TestModelEvaluation:
         trainer = ModelTrainer(str(sample_dataset))
         trainer.load_data()
         trainer.train()
-        metrics = trainer.evaluate(trainer.X_test, trainer.y_test)
+        metrics = trainer.evaluate(trainer.x_test, trainer.y_test)
 
         # Check all required metrics
         assert "accuracy" in metrics
@@ -321,7 +322,7 @@ class TestModelEvaluation:
         trainer = ModelTrainer(str(sample_dataset))
         trainer.load_data()
         trainer.train()
-        metrics = trainer.evaluate(trainer.X_test, trainer.y_test)
+        metrics = trainer.evaluate(trainer.x_test, trainer.y_test)
 
         # Check ranges (0 to 1)
         assert 0 <= metrics["accuracy"] <= 1
@@ -334,7 +335,7 @@ class TestModelEvaluation:
         trainer = ModelTrainer(str(sample_dataset))
         trainer.load_data()
         trainer.train()
-        metrics = trainer.evaluate(trainer.X_test, trainer.y_test)
+        metrics = trainer.evaluate(trainer.x_test, trainer.y_test)
 
         per_class = metrics["per_class"]
 
@@ -356,14 +357,14 @@ class TestModelEvaluation:
         trainer.load_data()
 
         with pytest.raises(TrainingError, match="Model not trained"):
-            trainer.evaluate(trainer.X_test, trainer.y_test)
+            trainer.evaluate(trainer.x_test, trainer.y_test)
 
     def test_confusion_matrix_shape(self, sample_dataset):
         """Test that confusion matrix has correct shape."""
         trainer = ModelTrainer(str(sample_dataset))
         trainer.load_data()
         trainer.train()
-        metrics = trainer.evaluate(trainer.X_test, trainer.y_test)
+        metrics = trainer.evaluate(trainer.x_test, trainer.y_test)
 
         cm = metrics["confusion_matrix"]
 
@@ -451,7 +452,7 @@ class TestFeatureImportance:
         total = sum(feature_importance.values())
 
         # Should sum to approximately 1.0
-        assert pytest.approx(total, abs=0.01) == 1.0
+        assert math.isclose(total, 1.0, abs_tol=0.01)
 
     def test_feature_importance_sorted_descending(self, sample_dataset):
         """Test that features are sorted by importance."""
@@ -462,8 +463,10 @@ class TestFeatureImportance:
         feature_importance = trainer.get_feature_importance()
         values = list(feature_importance.values())
 
-        # Check descending order
-        assert values == sorted(values, reverse=True)
+        # Check descending order without strict float equality
+        assert all(
+            values[i] >= values[i + 1] - 1e-9 for i in range(len(values) - 1)
+        )
 
     def test_feature_importance_without_training(self, sample_dataset):
         """Test that feature importance fails if model not trained."""
@@ -529,7 +532,7 @@ class TestEndToEndWorkflow:
 
         # Load data
         trainer.load_data()
-        assert trainer.X_train is not None
+        assert trainer.x_train is not None
 
         # Train
         metrics = trainer.train(n_estimators=50)

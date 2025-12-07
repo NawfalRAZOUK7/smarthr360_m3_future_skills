@@ -170,7 +170,7 @@ spec:
             - name: media-storage
               mountPath: /app/media
             - name: ml-models-storage
-              mountPath: /app/ml/models
+              mountPath: /app/artifacts/models
             - name: logs-storage
               mountPath: /app/logs
 
@@ -178,9 +178,11 @@ spec:
             requests:
               memory: "1Gi"
               cpu: "500m"
+              ephemeral-storage: "1Gi"
             limits:
               memory: "3Gi"
               cpu: "1500m"
+              ephemeral-storage: "4Gi"
 
           livenessProbe:
             exec:

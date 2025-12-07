@@ -223,7 +223,7 @@ POST /api/training/train/
 
 ```json
 {
-  "dataset_path": "ml/data/future_skills_dataset.csv",
+  "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
   "test_split": 0.2,
   "hyperparameters": {
     "n_estimators": 150,
@@ -272,7 +272,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
   -H "Content-Type: application/json" \
   -u admin:password \
   -d '{
-    "dataset_path": "ml/data/future_skills_dataset.csv",
+    "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
     "test_split": 0.2,
     "hyperparameters": {"n_estimators": 150, "max_depth": 20},
     "model_version": "v2.1_prod",
@@ -376,8 +376,8 @@ curl -X GET http://localhost:8000/api/training/runs/10/ \
 {
   "id": 10,
   "model_version": "v2.1_prod",
-  "model_path": "ml/models/v2.1_prod.pkl",
-  "dataset_path": "ml/data/future_skills_dataset.csv",
+  "model_path": "artifacts/models/v2.1_prod.pkl",
+  "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
   "status": "COMPLETED",
   "accuracy": 0.9861,
   "precision": 0.9855,
@@ -614,7 +614,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
   -H "Content-Type: application/json" \
   -u admin:password \
   -d '{
-    "dataset_path": "ml/data/future_skills_dataset.csv",
+    "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
     "test_split": 0.2,
     "async_training": true
   }'
@@ -636,7 +636,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
 ### 500 Internal Server Error
 
 - Check server logs: `logs/future_skills.log`
-- Verify ML model exists: `ml/models/`
+- Verify ML model exists: `artifacts/models/`
 - Check database connectivity
 
 ### Training Timeouts

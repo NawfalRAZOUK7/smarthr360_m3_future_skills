@@ -13,7 +13,7 @@ Objective: Demonstrate architecture extensibility and establish model selection
 policy based on objective metrics.
 
 Usage:
-    python ml/experiment_future_skills_models.py --csv ml/future_skills_dataset.csv
+    python ml/scripts/experiment_future_skills_models.py --csv artifacts/datasets/future_skills_dataset.csv
 """
 
 import argparse
@@ -50,6 +50,19 @@ warnings.filterwarnings("ignore")
 ALLOWED_LEVELS = {"LOW", "MEDIUM", "HIGH"}
 RANDOM_STATE = 42
 MARKDOWN_SEPARATOR = "\n---\n\n"
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+DATASETS_DIR = ARTIFACTS_DIR / "datasets"
+RESULTS_DIR = ARTIFACTS_DIR / "results"
+JOBLIB_CACHE_DIR = ARTIFACTS_DIR / "cache" / "joblib"
+
+for directory in (ARTIFACTS_DIR, DATASETS_DIR, RESULTS_DIR, JOBLIB_CACHE_DIR):
+    directory.mkdir(parents=True, exist_ok=True)
+
+DEFAULT_DATASET = DATASETS_DIR / "future_skills_dataset.csv"
+DEFAULT_RESULTS_JSON = RESULTS_DIR / "experiment_results.json"
+DEFAULT_MARKDOWN = RESULTS_DIR / "MODEL_COMPARISON.md"
 
 
 def load_dataset(csv_path: Path) -> pd.DataFrame:
@@ -291,7 +304,7 @@ def train_and_evaluate_model(
             ("preprocess", preprocessor),
             ("clf", model_config["estimator"]),
         ],
-        memory="auto",  # Cache transformers for better performance
+        memory=str(JOBLIB_CACHE_DIR),  # Cache transformers for better performance
     )
 
     # Train
@@ -531,8 +544,8 @@ def _add_recommendations_section(best_model: dict, results: list) -> str:
     md += "tant que l'interface de prédiction `(level: LOW/MEDIUM/HIGH, score: 0-100)` reste identique.\n\n"
 
     md += "Pour changer de modèle, il suffit de :\n"
-    md += "1. Remplacer l'estimateur dans `ml/train_future_skills_model.py`\n"
-    md += "2. Réentraîner avec `python ml/train_future_skills_model.py`\n"
+    md += "1. Remplacer l'estimateur dans `ml/scripts/train_future_skills_model.py`\n"
+    md += "2. Réentraîner avec `python ml/scripts/train_future_skills_model.py`\n"
     md += "3. Recharger le nouveau modèle dans `future_skills/ml_model.py`\n"
     md += "4. Aucun changement nécessaire dans les APIs ou la logique métier\n\n"
 
@@ -584,28 +597,25 @@ def generate_comparison_table(
 
 
 def main():
-    base_dir = Path(__file__).resolve().parent.parent
-    default_csv = base_dir / "data" / "future_skills_dataset.csv"
-
     parser = argparse.ArgumentParser(
         description="Expérimente plusieurs modèles ML pour Future Skills."
     )
     parser.add_argument(
         "--csv",
         type=str,
-        default=str(default_csv),
-        help=f"Chemin vers le dataset CSV (par défaut: {default_csv})",
+        default=str(DEFAULT_DATASET),
+        help=f"Chemin vers le dataset CSV (par défaut: {DEFAULT_DATASET})",
     )
     parser.add_argument(
         "--output",
         type=str,
-        default=str(base_dir / "results" / "experiment_results.json"),
+        default=str(DEFAULT_RESULTS_JSON),
         help="Output path for JSON results.",
     )
     parser.add_argument(
         "--markdown",
         type=str,
-        default=str(base_dir / "MODEL_COMPARISON.md"),
+        default=str(DEFAULT_MARKDOWN),
         help="Output path for markdown report.",
     )
 

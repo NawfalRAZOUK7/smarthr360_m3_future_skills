@@ -55,9 +55,11 @@ htmlcov/
 *~
 .DS_Store
 
-# ML Models and Results
-ml/models/*.pkl
-ml/results/*.json
+# ML Artifacts (models, datasets, results, cache)
+artifacts/models/
+artifacts/results/
+artifacts/datasets/
+artifacts/cache/
 
 # Logs
 logs/*.log
@@ -75,7 +77,3 @@ dmypy.json
 .coverage
 coverage.xml
 *.cover
-
-# Joblib cache (sklearn pipeline cache)
-auto/joblib/
-auto/

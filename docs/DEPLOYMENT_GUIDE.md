@@ -103,7 +103,7 @@ RATELIMIT_USE_CACHE=default
 
 # ML Settings
 FUTURE_SKILLS_USE_ML=True
-ML_MODEL_PATH=ml/models/
+ML_MODEL_PATH=artifacts/models/
 ML_MODEL_VERSION=v1.0.0
 
 # File Storage
@@ -870,7 +870,7 @@ pg_dump -U smarthr360_user smarthr360 | gzip > $BACKUP_DIR/db_$DATE.sql.gz
 tar -czf $BACKUP_DIR/media_$DATE.tar.gz media/
 
 # Backup ML models
-tar -czf $BACKUP_DIR/models_$DATE.tar.gz ml/models/
+tar -czf $BACKUP_DIR/models_$DATE.tar.gz artifacts/models/
 
 # Remove backups older than 30 days
 find $BACKUP_DIR -name "*.gz" -mtime +30 -delete

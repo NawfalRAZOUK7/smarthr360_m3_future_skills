@@ -386,7 +386,7 @@ from future_skills.services.training_service import ModelTrainer
 
 # 1. Create trainer
 trainer = ModelTrainer(
-    dataset_path="ml/data/training_data.csv",
+   dataset_path="artifacts/datasets/training_data.csv",
     test_split=0.2
 )
 
@@ -404,7 +404,7 @@ print(f"Accuracy: {metrics['accuracy']:.3f}")
 print(f"F1 Score: {metrics['f1_score']:.3f}")
 
 # 4. Save model
-model_path = "ml/models/model_v1.0.0.pkl"
+model_path = "artifacts/models/model_v1.0.0.pkl"
 trainer.save_model(model_path)
 
 # 5. Save training run (creates version, auto-promotes if better)
@@ -509,8 +509,8 @@ print(json.dumps(report, indent=2))
 
    ```bash
    python manage.py train_model \
-       --dataset ml/data/training_data.csv \
-       --version 1.0.0
+      --dataset artifacts/datasets/training_data.csv \
+      --version 1.0.0
    ```
 
 4. **Verify Integration**

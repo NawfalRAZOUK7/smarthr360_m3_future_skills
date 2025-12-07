@@ -264,7 +264,7 @@ version = create_model_version(
         "recall": 0.90,
         "f1_score": 0.905
     },
-    model_path="ml/models/model_v1.0.0.pkl",
+    model_path="artifacts/models/model_v1.0.0.pkl",
     framework="scikit-learn",
     algorithm="RandomForestClassifier",
     hyperparameters={
@@ -613,7 +613,7 @@ config = get_mlflow_config()
 
 # 2. Create trainer
 trainer = ModelTrainer(
-    dataset_path="ml/data/training_data.csv",
+    dataset_path="artifacts/datasets/training_data.csv",
     test_split=0.2
 )
 
@@ -633,7 +633,7 @@ with config.start_run(run_name="training_v1.0.0", experiment_name="model-trainin
     # (integrated in trainer)
 
     # Save model
-    model_path = "ml/models/model_v1.0.0.pkl"
+    model_path = "artifacts/models/model_v1.0.0.pkl"
     trainer.save_model(model_path)
 
     # Log model to MLflow
@@ -730,7 +730,7 @@ from datetime import datetime, timedelta
 monitor = ModelMonitor(model_name="future-skills-model")
 
 # Load reference data for drift detection
-training_data = pd.read_csv("ml/data/training_data.csv")
+training_data = pd.read_csv("artifacts/datasets/training_data.csv")
 monitor.set_reference_data(training_data)
 
 # Check for drift daily

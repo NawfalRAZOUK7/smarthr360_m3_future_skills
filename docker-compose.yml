@@ -46,7 +46,7 @@ services:
       - .:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-      - ml_models_volume:/app/ml/models
+      - ml_models_volume:/app/artifacts/models
     ports:
       - "8000:8000"
     environment:
@@ -78,7 +78,7 @@ services:
     volumes:
       - .:/app
       - media_volume:/app/media
-      - ml_models_volume:/app/ml/models
+      - ml_models_volume:/app/artifacts/models
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - DEBUG=True

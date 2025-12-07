@@ -12,6 +12,7 @@ Enhanced with advanced retry strategies, monitoring, and error handling.
 import logging
 
 from celery import shared_task
+from django.conf import settings
 from django.contrib.auth import get_user_model
 
 from celery_monitoring import (
@@ -74,7 +75,7 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         # Dispatch task asynchronously
         result = train_model_task.delay(
             training_run_id=1,
-            dataset_path="ml/data/dataset.csv",
+            dataset_path=str(settings.ML_DATASETS_DIR / "dataset.csv"),
             test_split=0.2,
             hyperparameters={"n_estimators": 100, "max_depth": 10}
         )
@@ -158,8 +159,9 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
             state="PROGRESS",
             meta={"stage": "saving_model", "training_run_id": training_run_id},
         )
-        model_path = f"ml/models/{training_run.model_version}.pkl"
-        model_size = trainer.save_model(model_path)
+        model_path = settings.ML_MODELS_DIR / f"{training_run.model_version}.pkl"
+        model_path_str = str(model_path)
+        model_size = trainer.save_model(model_path_str)
         logger.info(f"[CELERY] Model saved: {model_path} ({model_size:,} bytes)")
 
         # === STEP 6: Update TrainingRun with success ===
@@ -169,7 +171,7 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         )
 
         training_run.status = "COMPLETED"
-        training_run.model_path = model_path
+        training_run.model_path = model_path_str
         training_run.accuracy = evaluation_metrics["accuracy"]
         training_run.precision = evaluation_metrics["precision"]
         training_run.recall = evaluation_metrics["recall"]
@@ -193,7 +195,7 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
             "accuracy": training_run.accuracy,
             "f1_score": training_run.f1_score,
             "training_duration_seconds": training_run.training_duration_seconds,
-            "model_path": model_path,
+            "model_path": model_path_str,
             "message": "Training completed successfully",
         }
 

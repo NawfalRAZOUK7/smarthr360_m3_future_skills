@@ -32,35 +32,40 @@ fi
 # Parse command
 COMMAND=${1:-help}
 
+ARTIFACTS_DIR=${ARTIFACTS_DIR:-artifacts}
+MODELS_DIR="${ARTIFACTS_DIR}/models"
+RESULTS_DIR="${ARTIFACTS_DIR}/results"
+DATASETS_DIR="${ARTIFACTS_DIR}/datasets"
+
 case $COMMAND in
     "prepare")
         print_info "Preparing dataset..."
         python ml/scripts/prepare_dataset.py
-        print_success "Dataset prepared: ml/data/future_skills_dataset.csv"
+        print_success "Dataset prepared: ${DATASETS_DIR}/future_skills_dataset.csv"
         ;;
-    
+
     "experiment")
         print_info "Running model experiments..."
         python ml/experiment_future_skills_models.py
-        print_success "Experiments completed. Results: ml/results/experiment_results.json"
+        print_success "Experiments completed. Results: ${RESULTS_DIR}/experiment_results.json"
         echo ""
         print_info "View detailed results:"
-        echo "  python -m json.tool ml/results/experiment_results.json"
+        echo "  python -m json.tool ${RESULTS_DIR}/experiment_results.json"
         ;;
-    
+
     "evaluate")
         print_info "Evaluating trained models..."
         python ml/evaluate_future_skills_models.py
-        print_success "Evaluation completed. Results: ml/results/evaluation_results.json"
+        print_success "Evaluation completed. Results: ${RESULTS_DIR}/evaluation_results.json"
         ;;
-    
+
     "train")
         MODEL=${2:-random_forest}
         print_info "Training $MODEL model..."
         python ml/scripts/train_model.py --model "$MODEL"
         print_success "Model training completed"
         ;;
-    
+
     "predict")
         if [ -z "$2" ]; then
             print_error "Employee ID required"
@@ -79,30 +84,30 @@ for pred in predictions[:5]:
 EOF
         print_success "Predictions generated"
         ;;
-    
+
     "explainability")
         print_info "Running explainability analysis..."
         jupyter nbconvert --execute ml/notebooks/explainability_analysis.ipynb --to html
         print_success "Explainability analysis completed"
         echo "View report: ml/notebooks/explainability_analysis.html"
         ;;
-    
+
     "dataset-analysis")
         print_info "Running dataset analysis..."
         jupyter nbconvert --execute ml/notebooks/dataset_analysis.ipynb --to html
         print_success "Dataset analysis completed"
         echo "View report: ml/notebooks/dataset_analysis.html"
         ;;
-    
+
     "compare")
         print_info "Comparing model performance..."
-        if [ ! -f "ml/results/experiment_results.json" ]; then
+        if [ ! -f "${RESULTS_DIR}/experiment_results.json" ]; then
             print_error "Experiment results not found. Run experiments first: $0 experiment"
             exit 1
         fi
         python <<EOF
 import json
-with open('ml/results/experiment_results.json') as f:
+with open('${RESULTS_DIR}/experiment_results.json') as f:
     results = json.load(f)
 print("\nModel Performance Comparison:")
 print("-" * 70)
@@ -117,7 +122,7 @@ print("-" * 70)
 EOF
         print_success "Comparison completed"
         ;;
-    
+
     "monitor")
         print_info "Checking model performance monitoring..."
         python manage.py shell <<EOF
@@ -132,7 +137,7 @@ if logs.exists():
 EOF
         print_success "Monitoring check completed"
         ;;
-    
+
     "retrain")
         print_info "Retraining models with latest data..."
         python ml/scripts/prepare_dataset.py
@@ -141,24 +146,24 @@ EOF
         print_success "Retraining completed"
         echo ""
         print_info "Next steps:"
-        echo "  1. Review evaluation results: ml/results/evaluation_results.json"
+        echo "  1. Review evaluation results: ${RESULTS_DIR}/evaluation_results.json"
         echo "  2. Update production model if performance improved"
         echo "  3. Run explainability analysis: $0 explainability"
         ;;
-    
+
     "clean")
         print_info "Cleaning ML artifacts..."
         read -p "Remove all trained models and results? (y/n): " confirm
         if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-            rm -rf ml/models/*.joblib
-            rm -rf ml/results/*.json
+            rm -rf ${MODELS_DIR}/*.joblib
+            rm -rf ${RESULTS_DIR}/*.json
             rm -rf ml/notebooks/*.html
             print_success "ML artifacts cleaned"
         else
             print_info "Cleanup cancelled"
         fi
         ;;
-    
+
     "help"|"-h"|"--help")
         echo "SmartHR360 ML Management Script"
         echo ""
@@ -185,7 +190,7 @@ EOF
         echo "  $0 predict 123            # Predict for employee 123"
         exit 0
         ;;
-    
+
     *)
         print_error "Unknown command: $COMMAND"
         echo "Run '$0 help' for usage information"

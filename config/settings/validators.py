@@ -11,6 +11,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
+DEFAULT_REDIS_URL = "redis://localhost:6379/0"
+
+
 class ConfigValidationError(Exception):
     """Raised when configuration validation fails."""
 
@@ -107,8 +110,8 @@ class EnvironmentValidator:
         if must_exist and path.is_file():
             # Check if file is readable
             try:
-                with open(path, "r") as f:
-                    pass
+                with open(path, "r", encoding="utf-8") as file_obj:
+                    file_obj.read(1)
             except Exception as e:
                 self.errors.append(f"❌ {var_name} file is not readable: {e}")
                 return False
@@ -172,19 +175,19 @@ class EnvironmentValidator:
 
         from decouple import Csv, config
 
-        # Base directory
-        BASE_DIR = Path(__file__).resolve().parent.parent.parent
+        csv_cast = Csv
+        base_dir = Path(__file__).resolve().parent.parent.parent
 
         # Common validations (all environments)
-        self._validate_common(config, Csv, BASE_DIR)
+        self._validate_common(config, csv_cast, base_dir)
 
         # Environment-specific validations
         if self.environment == "production":
-            self._validate_production(config, Csv, BASE_DIR)
+            self._validate_production(config, csv_cast)
         elif self.environment == "development":
-            self._validate_development(config, Csv, BASE_DIR)
+            self._validate_development(config)
         elif self.environment == "test":
-            self._validate_test(config, Csv, BASE_DIR)
+            self._validate_test(config)
 
         return {
             "valid": len(self.errors) == 0,
@@ -193,7 +196,7 @@ class EnvironmentValidator:
             "environment": self.environment,
         }
 
-    def _validate_common(self, config, Csv, BASE_DIR):
+    def _validate_common(self, config, csv_cast, base_dir):
         """Validate common settings for all environments."""
         # SECRET_KEY is always required
         secret_key = config("SECRET_KEY", default="")
@@ -208,7 +211,7 @@ class EnvironmentValidator:
 
         # ALLOWED_HOSTS
         allowed_hosts = config(
-            "ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv()
+            "ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=csv_cast()
         )
         if not allowed_hosts:
             self.warnings.append("⚠️  ALLOWED_HOSTS is empty")
@@ -221,16 +224,27 @@ class EnvironmentValidator:
             )
 
         # Celery
-        celery_broker = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+        celery_broker = config("CELERY_BROKER_URL", default=DEFAULT_REDIS_URL)
         self.validate_url("CELERY_BROKER_URL", celery_broker, ["redis", "amqp"])
 
         celery_backend = config(
-            "CELERY_RESULT_BACKEND", default="redis://localhost:6379/0"
+            "CELERY_RESULT_BACKEND", default=DEFAULT_REDIS_URL
         )
         self.validate_url("CELERY_RESULT_BACKEND", celery_backend, ["redis", "amqp"])
 
         # ML Settings
-        ml_model_path = BASE_DIR / "ml" / "models" / "future_skills_model.pkl"
+        artifacts_root = Path(
+            config("ARTIFACTS_ROOT", default=str(base_dir / "artifacts"))
+        )
+        ml_models_dir = Path(
+            config("ML_MODELS_DIR", default=str(artifacts_root / "models"))
+        )
+        ml_model_path = Path(
+            config(
+                "FUTURE_SKILLS_MODEL_PATH",
+                default=str(ml_models_dir / "future_skills_model.pkl"),
+            )
+        )
         use_ml = config("FUTURE_SKILLS_USE_ML", default=True, cast=bool)
 
         if use_ml and not ml_model_path.exists():
@@ -238,7 +252,7 @@ class EnvironmentValidator:
                 f"⚠️  FUTURE_SKILLS_USE_ML is True but model file does not exist: {ml_model_path}"
             )
 
-    def _validate_production(self, config, Csv, BASE_DIR):
+    def _validate_production(self, config, csv_cast):
         """Validate production-specific settings."""
         # DEBUG must be False
         debug = config("DEBUG", default=False, cast=bool)
@@ -246,7 +260,7 @@ class EnvironmentValidator:
             self.errors.append("❌ DEBUG must be False in production")
 
         # ALLOWED_HOSTS must be set
-        allowed_hosts = config("ALLOWED_HOSTS", default="", cast=Csv())
+        allowed_hosts = config("ALLOWED_HOSTS", default="", cast=csv_cast())
         if not allowed_hosts:
             self.errors.append("❌ ALLOWED_HOSTS must be explicitly set in production")
 
@@ -282,17 +296,17 @@ class EnvironmentValidator:
             )
 
         # CORS settings
-        cors_origins = config("CORS_ALLOWED_ORIGINS", default="", cast=Csv())
+        cors_origins = config("CORS_ALLOWED_ORIGINS", default="", cast=csv_cast())
         if not cors_origins:
             self.warnings.append(
                 "⚠️  CORS_ALLOWED_ORIGINS should be explicitly set in production"
             )
 
-    def _validate_development(self, config, Csv, BASE_DIR):
+    def _validate_development(self, config):
         """Validate development-specific settings."""
         # No strict requirements for development
 
-    def _validate_test(self, config, Csv, BASE_DIR):
+    def _validate_test(self, config):
         """Validate test-specific settings."""
         # Test environment should use simpler backends
 
@@ -367,7 +381,7 @@ def get_env_info() -> Dict[str, Any]:
         ),
         "database_url_set": bool(config("DATABASE_URL", default=None)),
         "celery_broker": config(
-            "CELERY_BROKER_URL", default="redis://localhost:6379/0"
+            "CELERY_BROKER_URL", default=DEFAULT_REDIS_URL
         ),
         "use_ml": config("FUTURE_SKILLS_USE_ML", default=True, cast=bool),
         "ml_model_exists": (

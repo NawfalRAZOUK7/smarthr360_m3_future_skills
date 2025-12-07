@@ -816,8 +816,8 @@ def train_model():
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred))
 
-    # Save model
-    model_path = "ml/models/skill_prediction_model_v1.pkl"
+    # Save model under artifacts/models to align with shared storage
+    model_path = "artifacts/models/skill_prediction_model_v1.pkl"
     joblib.dump(model, model_path)
     print(f"\nModel saved to: {model_path}")
 
@@ -826,6 +826,8 @@ def train_model():
 if __name__ == "__main__":
     train_model()
 ```
+
+> Configure `settings.ML_MODEL_PATH` (and the corresponding env var) to point at `BASE_DIR / "artifacts/models"` so the runtime loader resolves the same location used during training.
 
 ### Using the Model
 

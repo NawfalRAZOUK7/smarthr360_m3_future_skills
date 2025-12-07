@@ -190,11 +190,12 @@ This major release represents a complete restructuring and modernization of the 
 ### Added
 
 - Organized ML directory structure:
-  - ml/models/ - Trained ML models
+  - artifacts/models/ - Trained ML models
+  - artifacts/datasets/ - ML datasets
+  - artifacts/results/ - Experiment results
+  - artifacts/cache/joblib/ - Serialized preprocessing caches
   - ml/notebooks/ - Jupyter notebooks
   - ml/scripts/ - ML scripts and utilities
-  - ml/data/ - ML datasets
-  - ml/results/ - Experiment results
   - ml/docs/ - ML documentation
 - Comprehensive ML documentation:
   - ml/docs/README.md - ML overview
