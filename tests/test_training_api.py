@@ -5,15 +5,18 @@ Test script for Training API endpoints (Section 2.4)
 
 import os
 import sys
+import pytest
 
 # Setup paths first
 sys.path.insert(0, "/Users/nawfalrazouk/smarthr360_m3_future_skills")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
 
 # Setup Django
 import django
 
 django.setup()
+
+pytestmark = pytest.mark.django_db
 
 # Now import Django models
 from django.conf import settings
@@ -208,6 +211,8 @@ def main():
 
     # Create API client and authenticate
     client = APIClient()
+    # Use both session login and DRF force_authenticate to ensure auth is applied
+    client.login(username=user.username, password="testpass123")
     client.force_authenticate(user=user)
 
     try:

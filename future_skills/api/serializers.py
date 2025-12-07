@@ -501,7 +501,7 @@ class TrainModelRequestSerializer(serializers.Serializer):
         max_value=0.5,
         help_text="Test set split ratio (0.1 to 0.5)",
     )
-    hyperparameters = serializers.JSONField(
+    hyperparameters = serializers.DictField(
         required=False,
         default=dict,
         help_text="Model hyperparameters (n_estimators, max_depth, etc.)",

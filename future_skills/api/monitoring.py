@@ -108,6 +108,10 @@ class VersionInfoView(APIView):
         from .versioning import get_version_info
 
         version_data = get_version_info()
+        # Provide explicit keys expected by tests
+        version_data["current_version"] = version_data.get("current", "v2")
+        version_data.setdefault("available_versions", version_data.get("supported", []))
+        version_data.setdefault("deprecated_versions", version_data.get("deprecated", []))
         version_data.update(
             {
                 "server_time": timezone.now().isoformat(),

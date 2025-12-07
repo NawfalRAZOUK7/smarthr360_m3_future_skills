@@ -8,6 +8,7 @@ logging, and integration with Django's TrainingRun model for MLOps tracking.
 """
 
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -134,6 +135,23 @@ class ModelTrainer:
         logger.info(
             f"ModelTrainer initialized: dataset={dataset_path}, test_split={test_split}"
         )
+
+    # Backwards-compatible accessors for legacy code/tests expecting uppercase attrs
+    @property
+    def X_train(self):
+        return self.x_train
+
+    @property
+    def X_test(self):
+        return self.x_test
+
+    @property
+    def Y_train(self):
+        return self.y_train
+
+    @property
+    def Y_test(self):
+        return self.y_test
 
     def load_data(self) -> None:
         """
@@ -639,27 +657,61 @@ class ModelTrainer:
         self, *, model_version: str, model_path: str, notes: str
     ):
         """Create the ModelVersion instance with consistent metadata."""
+        def _semver_fallback(version: str) -> str:
+            # Generate a semver-compatible build metadata string for arbitrary tags
+            cleaned = re.sub(r"[^A-Za-z0-9]+", "-", version).strip("-") or "manual"
+            return f"0.0.0+{cleaned}"
 
-        return create_model_version(
-            version_string=model_version,
-            metrics={
-                "accuracy": self.metrics["accuracy"],
-                "precision": self.metrics["precision"],
-                "recall": self.metrics["recall"],
-                "f1_score": self.metrics["f1_score"],
-                "training_time": self.training_duration_seconds,
-            },
-            model_path=model_path,
-            framework=ModelFramework.SCIKIT_LEARN,
-            algorithm="RandomForestClassifier",
-            hyperparameters=self.hyperparameters,
-            training_dataset_size=(len(self.x_train) if self.x_train is not None else 0),
-            training_features=self.available_features,
-            target_classes=["LOW", "MEDIUM", "HIGH"],
-            mlflow_run_id=getattr(self, "mlflow_run_id", None),
-            stage=ModelStage.STAGING,
-            description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
-        )
+        try:
+            return create_model_version(
+                version_string=model_version,
+                metrics={
+                    "accuracy": self.metrics["accuracy"],
+                    "precision": self.metrics["precision"],
+                    "recall": self.metrics["recall"],
+                    "f1_score": self.metrics["f1_score"],
+                    "training_time": self.training_duration_seconds,
+                },
+                model_path=model_path,
+                framework=ModelFramework.SCIKIT_LEARN,
+                algorithm="RandomForestClassifier",
+                hyperparameters=self.hyperparameters,
+                training_dataset_size=(len(self.x_train) if self.x_train is not None else 0),
+                training_features=self.available_features,
+                target_classes=["LOW", "MEDIUM", "HIGH"],
+                mlflow_run_id=getattr(self, "mlflow_run_id", None),
+                stage=ModelStage.STAGING,
+                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
+                original_version=model_version,
+            )
+        except ValueError:
+            fallback_version = _semver_fallback(model_version)
+            logger.warning(
+                "Non-semver model_version '%s' detected; using fallback '%s'",
+                model_version,
+                fallback_version,
+            )
+            return create_model_version(
+                version_string=fallback_version,
+                metrics={
+                    "accuracy": self.metrics["accuracy"],
+                    "precision": self.metrics["precision"],
+                    "recall": self.metrics["recall"],
+                    "f1_score": self.metrics["f1_score"],
+                    "training_time": self.training_duration_seconds,
+                },
+                model_path=model_path,
+                framework=ModelFramework.SCIKIT_LEARN,
+                algorithm="RandomForestClassifier",
+                hyperparameters=self.hyperparameters,
+                training_dataset_size=(len(self.x_train) if self.x_train is not None else 0),
+                training_features=self.available_features,
+                target_classes=["LOW", "MEDIUM", "HIGH"],
+                mlflow_run_id=getattr(self, "mlflow_run_id", None),
+                stage=ModelStage.STAGING,
+                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
+                original_version=model_version,
+            )
 
     def _handle_auto_promotion(
         self,
