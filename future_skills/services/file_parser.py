@@ -400,16 +400,6 @@ def _validate_excel_row(
         employee_data["current_skills"] = skills_list
 
     return employee_data, errors
-                else:
-                    skills_list = [
-                        s.strip() for s in current_skills.split(",") if s.strip()
-                    ]
-            else:
-                skills_list = [current_skills]
-
-            employee_data["current_skills"] = skills_list
-
-    return employee_data, errors
 
 
 def parse_employee_file(

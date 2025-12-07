@@ -5,6 +5,7 @@ Provides flexible API versioning through URL path and Accept header negotiation.
 Supports multiple API versions with deprecation warnings and backward compatibility.
 """
 
+import re
 import warnings
 
 from django.utils.translation import gettext_lazy as _
@@ -23,7 +24,7 @@ class URLPathVersioning(NamespaceVersioning):
     This is the primary versioning method as it's explicit and cache-friendly.
     """
 
-    default_version = "v1"
+    default_version = "v2"
     allowed_versions = ["v1", "v2"]
     version_param = "version"
 
@@ -64,7 +65,7 @@ class CustomAcceptHeaderVersioning(AcceptHeaderVersioning):
     This is an alternative method for clients that prefer header-based versioning.
     """
 
-    default_version = "v1"
+    default_version = "v2"
     allowed_versions = ["v1", "v2"]
     version_param = "version"
 
@@ -73,17 +74,13 @@ class CustomAcceptHeaderVersioning(AcceptHeaderVersioning):
         Determine API version from Accept header.
         Supports vendor-specific media types.
         """
-        media_type = request.accepted_media_type
+        media_type = request.META.get("HTTP_ACCEPT", "")
         version = self.default_version
 
         if media_type and "vnd.smarthr360" in media_type:
-            # Extract version from vendor media type
-            # e.g., application/vnd.smarthr360.v1+json -> v1
-            parts = media_type.split(".")
-            for part in parts:
-                if part.startswith("v") and part[1:].isdigit():
-                    version = part
-                    break
+            match = re.search(r"v(\d+)", media_type)
+            if match:
+                version = f"v{match.group(1)}"
 
         if version not in self.allowed_versions:
             raise NotAcceptable(
@@ -91,6 +88,9 @@ class CustomAcceptHeaderVersioning(AcceptHeaderVersioning):
                     ", ".join(self.allowed_versions)
                 )
             )
+
+        # Normalize Accept so content negotiation succeeds with vendor headers
+        request.META["HTTP_ACCEPT"] = "application/json"
 
         # Check for deprecated versions
         if version == "v1":
@@ -153,6 +153,26 @@ DEFAULT_VERSIONING_CLASS = URLPathVersioning
 
 # Alternative: Accept header versioning (for clients that prefer headers)
 ALTERNATIVE_VERSIONING_CLASS = CustomAcceptHeaderVersioning
+
+
+class HybridVersioning(URLPathVersioning):
+    """Attempt URL path versioning first, then fall back to Accept header."""
+
+    def determine_version(self, request, *args, **kwargs):
+        resolver_namespace = getattr(getattr(request, "resolver_match", None), "namespace", None)
+
+        if resolver_namespace:
+            try:
+                return super().determine_version(request, *args, **kwargs)
+            except Exception:
+                pass
+
+        # Fallback to Accept header parsing (no exceptions) for non-namespaced routes
+        header_versioner = CustomAcceptHeaderVersioning()
+        try:
+            return header_versioner.determine_version(request, *args, **kwargs)
+        except Exception:
+            return header_versioner.default_version
 
 
 def get_api_version(request):

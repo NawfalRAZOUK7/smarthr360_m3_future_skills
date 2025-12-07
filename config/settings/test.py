@@ -64,7 +64,21 @@ REST_FRAMEWORK = {
     **REST_FRAMEWORK,  # inherit from base
     "PAGE_SIZE": 10,
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # Disable throttling during tests to avoid 429s
+    "DEFAULT_THROTTLE_CLASSES": [],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100000/hour",
+        "user": "100000/hour",
+        "burst": "100000/hour",
+        "sustained": "100000/day",
+    },
 }
+
+# Disable middleware-level rate limiting in tests
+DISABLE_RATE_LIMITING = True
+
+# Bypass IP-based throttling for local test client
+THROTTLE_BYPASS_IPS = ["127.0.0.1", "::1"]
 
 # Security settings - relaxed for tests
 SECURE_SSL_REDIRECT = False

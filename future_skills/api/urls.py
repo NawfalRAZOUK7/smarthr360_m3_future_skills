@@ -27,6 +27,12 @@ router.register(r"employees", EmployeeViewSet, basename="employee")
 urlpatterns = [
     # Include router URLs (employee-list, employee-detail, etc.)
     path("", include(router.urls)),
+    # Default predictions endpoint (Accept header/default version = v2)
+    path(
+        "predictions/",
+        FutureSkillPredictionListAPIView.as_view(),
+        name="predictions-default",
+    ),
     # Liste des prédictions
     path(
         "future-skills/",

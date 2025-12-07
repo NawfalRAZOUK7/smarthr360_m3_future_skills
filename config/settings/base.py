@@ -78,6 +78,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # API Performance & Monitoring Middleware
+    "future_skills.api.middleware.APICacheMiddleware",
     "future_skills.api.middleware.APIPerformanceMiddleware",
     "future_skills.api.middleware.RequestLoggingMiddleware",
     "future_skills.api.middleware.APIDeprecationMiddleware",
@@ -244,11 +245,16 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         # BasicAuthentication removed for security (use JWT or Session)
     ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "future_skills.api.renderers.VendorV1JSONRenderer",
+        "future_skills.api.renderers.VendorV2JSONRenderer",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     # API Versioning
-    "DEFAULT_VERSIONING_CLASS": "future_skills.api.versioning.URLPathVersioning",
+    "DEFAULT_VERSIONING_CLASS": "future_skills.api.versioning.HybridVersioning",
     "DEFAULT_VERSION": "v2",
     "ALLOWED_VERSIONS": ["v1", "v2"],
     # Rate Limiting / Throttling

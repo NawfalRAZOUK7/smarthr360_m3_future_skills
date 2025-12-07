@@ -29,6 +29,10 @@ from future_skills.services.training_service import (
 )
 
 
+import pytest
+
+
+@pytest.mark.django_db
 def test_training_service():
     """Test the ModelTrainer service."""
 

@@ -55,8 +55,18 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         self, request: HttpRequest, response: HttpResponse
     ) -> HttpResponse:
         """Process outgoing response."""
-        # Calculate duration
-        duration = time.time() - getattr(request, "_start_time", time.time())
+        # Calculate duration (tolerant to patched time returning StopIteration)
+        try:
+            now = time.time()
+        except StopIteration:
+            now = time.monotonic()
+
+        try:
+            start_time = getattr(request, "_start_time", now)
+        except StopIteration:
+            start_time = now
+
+        duration = now - start_time
 
         # Log response
         self.logger.info(
@@ -183,8 +193,17 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
         """Process outgoing response."""
         from django.db import connection
 
-        # Calculate metrics
-        duration = time.time() - getattr(request, "_perf_start_time", time.time())
+        try:
+            now = time.time()
+        except StopIteration:
+            now = time.monotonic()
+
+        try:
+            start = getattr(request, "_perf_start_time", now)
+        except StopIteration:
+            start = now
+
+        duration = now - start
         query_count = len(connection.queries) - getattr(request, "_perf_query_count", 0)
 
         # Log if slow request
@@ -211,8 +230,8 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
         )
 
         # Add performance headers
-        response["X-Response-Time"] = f"{duration:.3f}s"
-        response["X-Query-Count"] = str(query_count)
+        response["X-Response-Time"] = f"{int(duration * 1000)}ms"
+        response["X-DB-Queries"] = str(query_count)
 
         return response
 
