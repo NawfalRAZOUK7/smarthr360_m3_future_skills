@@ -1,0 +1,10 @@
+artifact_location: /Users/nawfalrazouk/smarthr360_m3_future_skills/mlruns/artifacts/model-training/models/m-4c9c8a89db7d4ec2877e6591c1d19e37/artifacts
+creation_timestamp: 1765121567377
+experiment_id: '874950809115591886'
+last_updated_timestamp: 1765121576949
+model_id: m-4c9c8a89db7d4ec2877e6591c1d19e37
+model_type: null
+name: model
+source_run_id: 62ac53c69d524ff3920a342d4bac382e
+status: 2
+status_message: null

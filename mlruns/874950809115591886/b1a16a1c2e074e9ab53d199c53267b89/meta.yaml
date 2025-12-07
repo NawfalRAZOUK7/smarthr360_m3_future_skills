@@ -1,0 +1,14 @@
+artifact_uri: /Users/nawfalrazouk/smarthr360_m3_future_skills/mlruns/artifacts/model-training/b1a16a1c2e074e9ab53d199c53267b89/artifacts
+end_time: 1765120545752
+entry_point_name: ''
+experiment_id: '874950809115591886'
+lifecycle_stage: active
+run_id: b1a16a1c2e074e9ab53d199c53267b89
+run_name: training_20251207_151530
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1765120532798
+status: 3
+tags: []
+user_id: nawfalrazouk

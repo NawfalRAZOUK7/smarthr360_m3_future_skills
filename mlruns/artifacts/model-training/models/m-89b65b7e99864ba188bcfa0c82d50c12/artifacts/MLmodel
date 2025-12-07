@@ -1,0 +1,22 @@
+artifact_path: /Users/nawfalrazouk/smarthr360_m3_future_skills/mlruns/artifacts/model-training/models/m-89b65b7e99864ba188bcfa0c82d50c12/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.14.0
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+mlflow_version: 3.7.0
+model_id: m-89b65b7e99864ba188bcfa0c82d50c12
+model_size_bytes: 391485
+model_uuid: m-89b65b7e99864ba188bcfa0c82d50c12
+prompts: null
+run_id: 53473be4b6414b24bd5564e3965fcce2
+utc_time_created: '2025-12-07 16:01:37.302360'
