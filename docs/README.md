@@ -37,6 +37,33 @@ Complete documentation for the SmartHR360 Future Skills AI system.
 - Docker Setup _(coming soon)_
 - Production Guide _(coming soon)_
 
+### Guides & Reference Sheets
+
+- [Setup Guide](guides/SETUP_GUIDE.md) - Full environment setup walkthrough
+- [Quickstart](guides/QUICKSTART.md) - Rapid onboarding checklist
+- [Configuration Cheatsheet](guides/CONFIG_CHEATSHEET.md) - Frequently used config toggles
+- [Resource Sizing Guide](guides/RESOURCE_SIZING_GUIDE.md) - Capacity planning reference
+- [Project Structure](guides/PROJECT_STRUCTURE.md) - Source tree overview
+- [Deployment Example](guides/DEPLOYMENT_EXAMPLE.md) - Sample end-to-end deployment
+- [Kubernetes Deployment](guides/KUBERNETES_DEPLOYMENT.md) - Cluster rollout steps
+- [CI/CD Quick Reference](guides/CI_CD_QUICK_REFERENCE.md) - Pipeline commands at a glance
+- [ML Test Commands](guides/ML_TEST_COMMANDS.md) - Frequently used pytest targets
+- [Workflow Diagram](guides/WORKFLOW_DIAGRAM.md) - Visual system flow
+
+### Reports & Summaries
+
+- [API Architecture Completion](reports/API_ARCHITECTURE_COMPLETION.md) - Status of API deliverables
+- [CI/CD Implementation Summary](reports/CI_CD_IMPLEMENTATION_SUMMARY.md) - Pipeline hardening recap
+- [Configuration Implementation Summary](reports/CONFIGURATION_IMPLEMENTATION_SUMMARY.md) - Environment config updates
+- [Database Optimization Summary](reports/DATABASE_OPTIMIZATION_SUMMARY.md) - DB tuning outcomes
+- [Documentation Summary](reports/DOCUMENTATION_SUMMARY.md) - Docs coverage review
+- [Project Cleanup Summary](reports/PROJECT_CLEANUP_SUMMARY.md) - Technical debt removal log
+- [Testing Strategy Completion](reports/TESTING_STRATEGY_COMPLETION_SUMMARY.md) - QA strategy milestone
+- [Prediction Engine Test Coverage](reports/PREDICTION_ENGINE_TEST_COVERAGE_SUMMARY.md) - Model validation metrics
+- [Training Service Test Coverage](reports/TRAINING_SERVICE_TEST_COVERAGE_SUMMARY.md) - Training API validation metrics
+- [CI Test Failures Fixed](reports/CI_TEST_FAILURES_FIXED.md) - Catalog of resolved CI failures
+- [Coverage Thresholds](reports/COVERAGE_THRESHOLDS.md) - Target coverage matrix
+
 ### Project Milestones
 
 #### Learning Track (LT)
@@ -62,6 +89,10 @@ Complete documentation for the SmartHR360 Future Skills AI system.
 ### Project Overview
 
 - [Complete Overview](overview.md) - Comprehensive project documentation summary
+
+### Runbooks
+
+- [Environment Asset Matrix](runbooks/ENVIRONMENTS.md) - Maps Dockerfiles, Makefiles, and requirements sets to their target environments
 
 ## 🔗 Quick Links
 
@@ -94,6 +125,14 @@ docs/
 │   ├── MT2_*.md
 │   └── MT3_*.md
 ├── deployment/ (planned)
+├── runbooks/
+│   └── ENVIRONMENTS.md
+├── guides/
+│   ├── QUICKSTART.md
+│   └── SETUP_GUIDE.md
+├── reports/
+│   ├── DOCUMENTATION_SUMMARY.md
+│   └── PROJECT_CLEANUP_SUMMARY.md
 └── assets/
     └── screenshots/
 ```

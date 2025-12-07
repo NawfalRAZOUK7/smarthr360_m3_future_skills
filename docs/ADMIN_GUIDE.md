@@ -302,7 +302,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
   -H "Content-Type: application/json" \
   -u admin:password \
   -d '{
-    "dataset_path": "ml/data/future_skills_dataset.csv",
+    "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
     "test_split": 0.2,
     "hyperparameters": {
       "n_estimators": 100,
@@ -350,7 +350,7 @@ curl -X POST http://localhost:8000/api/training/train/ \
   -H "Content-Type: application/json" \
   -u admin:password \
   -d '{
-    "dataset_path": "ml/data/future_skills_dataset.csv",
+    "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
     "test_split": 0.2,
     "hyperparameters": {
       "n_estimators": 150,
@@ -612,11 +612,11 @@ After training, the model is automatically saved and can be activated:
 
 1. **Automatic Activation:** Latest successfully trained model is used automatically
 2. **Manual Activation:** Update `FUTURE_SKILLS_ML_MODEL_PATH` in settings to point to specific model version
-3. **Verification:** Check `ml/models/` directory for `.pkl` or `.joblib` files
+3. **Verification:** Check `artifacts/models/` directory for `.pkl` or `.joblib` files
 
 ```bash
 # List available models
-ls -lh ml/models/
+ls -lh artifacts/models/
 
 # Example output:
 # future_skills_model_v2.1_quarterly.pkl
@@ -881,7 +881,7 @@ print(f'Model Path: {settings.FUTURE_SKILLS_ML_MODEL_PATH}')
 ```bash
 # In .env file
 FUTURE_SKILLS_USE_ML=true
-FUTURE_SKILLS_ML_MODEL_PATH=ml/models/future_skills_model_v2.4_production.pkl
+FUTURE_SKILLS_ML_MODEL_PATH=artifacts/models/future_skills_model_v2.4_production.pkl
 ```
 
 **Method 2: Django Settings**
@@ -889,7 +889,7 @@ FUTURE_SKILLS_ML_MODEL_PATH=ml/models/future_skills_model_v2.4_production.pkl
 ```python
 # In config/settings/base.py
 FUTURE_SKILLS_USE_ML = True
-FUTURE_SKILLS_ML_MODEL_PATH = 'ml/models/future_skills_model_v2.4_production.pkl'
+FUTURE_SKILLS_ML_MODEL_PATH = 'artifacts/models/future_skills_model_v2.4_production.pkl'
 ```
 
 **Restart server after changes**
@@ -1082,9 +1082,9 @@ print(f'Trends in last 30 days: {MarketTrend.objects.filter(created_at__gte=date
 
 1. **Protect Training Data**
 
-   - Store datasets in secure `ml/data/` directory
-   - Don't commit sensitive employee data to Git
-   - Use `.gitignore` for `*.csv` files with PII
+- Store datasets in secure `artifacts/datasets/` directory
+- Don't commit sensitive employee data to Git
+- Use `.gitignore` for `*.csv` files with PII
 
 2. **API Security**
 
@@ -1156,7 +1156,7 @@ Always use `async_training=true` in production to avoid timeouts.
 
 ```bash
 # Verify CSV has required columns
-head -1 ml/data/future_skills_dataset.csv
+head -1 artifacts/datasets/future_skills_dataset.csv
 ```
 
 Required columns: `job_role`, `skill`, `level`, `trend_score`, `internal_usage`, `training_requests`, `scarcity_index`, `hiring_difficulty`, `avg_salary_k`, `horizon_years`
@@ -1164,7 +1164,7 @@ Required columns: `job_role`, `skill`, `level`, `trend_score`, `internal_usage`,
 **Check file permissions:**
 
 ```bash
-ls -l ml/data/future_skills_dataset.csv
+ls -l artifacts/datasets/future_skills_dataset.csv
 # Should be readable
 ```
 
@@ -1177,7 +1177,7 @@ tail -100 logs/future_skills.log | grep ERROR
 **Verify dataset size:**
 
 ```bash
-wc -l ml/data/future_skills_dataset.csv
+wc -l artifacts/datasets/future_skills_dataset.csv
 # Should have at least 100 rows
 ```
 
@@ -1228,7 +1228,7 @@ python manage.py seed_future_skills
 **Check model file exists:**
 
 ```bash
-ls -l ml/models/*.pkl ml/models/*.joblib
+ls -l artifacts/models/*.pkl artifacts/models/*.joblib
 ```
 
 **Verify settings:**
@@ -1249,7 +1249,7 @@ print(f'File exists: {os.path.exists(settings.FUTURE_SKILLS_ML_MODEL_PATH)}')
 curl -X POST http://localhost:8000/api/training/train/ \
   -H "Content-Type: application/json" \
   -u admin:password \
-  -d '{"dataset_path": "ml/data/future_skills_dataset.csv", "async_training": false}'
+  -d '{"dataset_path": "artifacts/datasets/future_skills_dataset.csv", "async_training": false}'
 ```
 
 #### 4. Slow API Responses

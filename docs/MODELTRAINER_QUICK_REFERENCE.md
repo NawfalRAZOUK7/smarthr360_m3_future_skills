@@ -24,7 +24,7 @@ from future_skills.services.training_service import (
 
 ```python
 # 1. Initialize
-trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
 
 # 2. Load data
 trainer.load_data()
@@ -33,8 +33,8 @@ trainer.load_data()
 metrics = trainer.train(n_estimators=100)
 
 # 4. Save
-trainer.save_model("ml/models/my_model.pkl")
-trainer.save_training_run("v1.0", "ml/models/my_model.pkl")
+trainer.save_model("artifacts/models/my_model.pkl")
+trainer.save_training_run("v1.0", "artifacts/models/my_model.pkl")
 ```
 
 ---
@@ -43,7 +43,7 @@ trainer.save_training_run("v1.0", "ml/models/my_model.pkl")
 
 ```python
 trainer = ModelTrainer(
-    dataset_path="ml/data/future_skills_dataset.csv",  # Required
+    dataset_path="artifacts/datasets/future_skills_dataset.csv",  # Required
     test_split=0.2,                                     # Optional (default: 0.2)
     random_state=42                                     # Optional (default: 42)
 )
@@ -141,7 +141,7 @@ Returns same metrics dict as `train()`.
 **Purpose:** Persist trained model to disk
 
 ```python
-trainer.save_model("ml/models/my_model.pkl")
+trainer.save_model("artifacts/models/my_model.pkl")
 ```
 
 **Creates directory if needed**  
@@ -185,7 +185,7 @@ importances = trainer.get_feature_importance()
 ```python
 training_run = trainer.save_training_run(
     model_version="v1.0",                         # Required
-    model_path="ml/models/my_model.pkl",          # Required
+    model_path="artifacts/models/my_model.pkl",   # Required
     user=request.user,                            # Optional
     notes="Production model with tuned params"    # Optional
 )
@@ -248,11 +248,11 @@ ModelTrainerError (Base)
 
 ```python
 try:
-    trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+    trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
     trainer.load_data()
     metrics = trainer.train(n_estimators=100)
-    trainer.save_model("ml/models/v1.pkl")
-    trainer.save_training_run("v1.0", "ml/models/v1.pkl")
+    trainer.save_model("artifacts/models/v1.pkl")
+    trainer.save_training_run("v1.0", "artifacts/models/v1.pkl")
 
 except DataLoadError as e:
     print(f"❌ Data loading failed: {e}")
@@ -277,7 +277,7 @@ from future_skills.services.training_service import (
 def train_and_deploy(version: str, estimators: int = 100):
     """Train model and save to database."""
 
-    trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+    trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
 
     try:
         # Load & validate data
@@ -298,7 +298,7 @@ def train_and_deploy(version: str, estimators: int = 100):
         print(f"✅ Top features: {', '.join(f[0] for f in top_3)}")
 
         # Save model
-        model_path = f"ml/models/future_skills_{version}.pkl"
+        model_path = f"artifacts/models/future_skills_{version}.pkl"
         trainer.save_model(model_path)
         print(f"✅ Saved: {model_path}")
 
@@ -341,15 +341,15 @@ python manage.py shell
 from future_skills.services.training_service import ModelTrainer
 
 # Quick test
-trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
 trainer.load_data()
 metrics = trainer.train(n_estimators=50)
 
 print(f"Accuracy: {metrics['accuracy']:.2%}")
 print(f"Training time: {trainer.training_duration_seconds:.3f}s")
 
-trainer.save_model("ml/models/test.pkl")
-trainer.save_training_run("test_v1", "ml/models/test.pkl")
+trainer.save_model("artifacts/models/test.pkl")
+trainer.save_training_run("test_v1", "artifacts/models/test.pkl")
 ```
 
 ---

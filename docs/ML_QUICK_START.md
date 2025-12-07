@@ -83,10 +83,10 @@ print('✅ Configuration loaded successfully')
 
 ```bash
 # Ensure you have training data
-ls ml/data/training_data.csv
+ls artifacts/datasets/training_data.csv
 
 # If not, create sample data or export from database
-python manage.py export_future_skills_dataset --output ml/data/training_data.csv
+python manage.py export_future_skills_dataset --output artifacts/datasets/training_data.csv
 ```
 
 ### 2. Train Model (Command Line)
@@ -94,7 +94,7 @@ python manage.py export_future_skills_dataset --output ml/data/training_data.csv
 ```bash
 # Train model with MLflow tracking
 python manage.py train_model \
-    --dataset ml/data/training_data.csv \
+    --dataset artifacts/datasets/training_data.csv \
     --version 1.0.0 \
     --n-estimators 200 \
     --max-depth 10
@@ -107,7 +107,7 @@ from future_skills.services.training_service import ModelTrainer
 
 # Initialize trainer
 trainer = ModelTrainer(
-    dataset_path="ml/data/training_data.csv",
+    dataset_path="artifacts/datasets/training_data.csv",
     test_split=0.2
 )
 
@@ -133,7 +133,7 @@ print(f"""
 """)
 
 # Save model
-model_path = "ml/models/model_v1.0.0.pkl"
+model_path = "artifacts/models/model_v1.0.0.pkl"
 trainer.save_model(model_path)
 print(f"✅ Model saved to {model_path}")
 

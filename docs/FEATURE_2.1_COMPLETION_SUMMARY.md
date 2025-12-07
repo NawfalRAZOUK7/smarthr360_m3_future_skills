@@ -42,7 +42,7 @@ Successfully implemented Django management command for ML model training with da
 - **Arguments:**
 
   ```bash
-  --dataset           # CSV path (default: ml/data/future_skills_dataset.csv)
+  --dataset           # CSV path (default: artifacts/datasets/future_skills_dataset.csv)
   --model-version     # Version ID (default: auto-generated timestamp)
   --save-path         # Model output path (default: settings.FUTURE_SKILLS_MODEL_PATH)
   --test-split        # Test ratio (default: 0.2)
@@ -64,14 +64,14 @@ Successfully implemented Django management command for ML model training with da
 
   ```
   🚀 TRAINING FUTURE SKILLS ML MODEL
-  📊 Dataset:       ml/data/future_skills_dataset.csv
+  📊 Dataset:       artifacts/datasets/future_skills_dataset.csv
   🏷️  Version:       test_v1
   🎯 Accuracy:     98.61%
   📊 Precision:    98.64%
   🎪 Recall:       98.61%
   🎭 F1-Score:     98.60%
   ⏱️  Duration:     0.2 seconds
-  💾 Model saved:  ml/models/future_skills_model.pkl
+  💾 Model saved:  artifacts/models/future_skills_model.pkl
   🗄️  Database ID:  1
 
   📈 Per-Class Metrics:
@@ -102,8 +102,8 @@ python manage.py train_future_skills_model \
 
 - ✅ Command registered and accessible
 - ✅ Training completed successfully (0.2s)
-- ✅ Model saved to disk: `ml/models/future_skills_model.pkl`
-- ✅ Metadata saved to JSON: `ml/models/future_skills_model.json`
+- ✅ Model saved to disk: `artifacts/models/future_skills_model.pkl`
+- ✅ Metadata saved to JSON: `artifacts/models/future_skills_model.json`
 - ✅ Database record created (ID: 1)
 - ✅ Accuracy: 98.61%, F1: 98.60%
 - ✅ All fields populated correctly

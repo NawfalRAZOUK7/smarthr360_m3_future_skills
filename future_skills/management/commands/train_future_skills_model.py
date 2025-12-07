@@ -8,7 +8,7 @@ logging execution details to the TrainingRun database model.
 
 Usage:
     python manage.py train_future_skills_model
-    python manage.py train_future_skills_model --dataset ml/data/custom_dataset.csv
+    python manage.py train_future_skills_model --dataset artifacts/datasets/custom_dataset.csv
     python manage.py train_future_skills_model --version v2 --n-estimators 300
     python manage.py train_future_skills_model --test-split 0.25 --random-state 123
 """
@@ -39,7 +39,7 @@ class Command(BaseCommand):
             "--dataset",
             type=str,
             default=None,
-            help="Path to the training dataset CSV (default: ml/data/future_skills_dataset.csv)",
+            help="Path to the training dataset CSV (default: artifacts/datasets/future_skills_dataset.csv)",
         )
         parser.add_argument(
             "--model-version",
@@ -89,9 +89,8 @@ class Command(BaseCommand):
         notes = options["notes"]
 
         # Default paths
-        base_dir = Path(settings.BASE_DIR)
         if dataset_path is None:
-            dataset_path = base_dir / "ml" / "data" / "future_skills_dataset.csv"
+            dataset_path = settings.ML_DATASETS_DIR / "future_skills_dataset.csv"
         else:
             dataset_path = Path(dataset_path)
 

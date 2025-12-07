@@ -172,72 +172,71 @@ class Command(BaseCommand):
     def _print_analysis(self, analysis):
         """Print analysis in human-readable format."""
         self.stdout.write(f"Total Events: {analysis['total_events']}\n")
+        self._print_event_types(analysis["event_types"])
+        self._print_severities(analysis["severities"])
+        self._print_security_metrics(analysis)
+        self._print_top_entities("IP Addresses", analysis["top_ips"])
+        self._print_top_entities("Users", analysis["top_users"])
+        self._print_recent_events(
+            "Suspicious Activities", analysis["recent_suspicious"], formatter=self._format_message_event
+        )
+        self._print_recent_events(
+            "Auth Failures", analysis["recent_auth_failures"], formatter=self._format_auth_failure
+        )
 
-        # Event types
+    def _print_event_types(self, event_types):
         self.stdout.write(self.style.SUCCESS("\nEvent Types:"))
-        for event_type, count in sorted(
-            analysis["event_types"].items(), key=lambda x: x[1], reverse=True
-        ):
+        for event_type, count in sorted(event_types.items(), key=lambda x: x[1], reverse=True):
             self.stdout.write(f"  {event_type}: {count}")
 
-        # Severities
+    def _print_severities(self, severities):
         self.stdout.write(self.style.SUCCESS("\nSeverity Levels:"))
-        for severity, count in sorted(analysis["severities"].items()):
-            style = (
-                self.style.ERROR
-                if severity == "ERROR"
-                else self.style.WARNING if severity == "WARNING" else self.style.SUCCESS
-            )
+        for severity, count in sorted(severities.items()):
+            style = self._severity_style(severity)
             self.stdout.write(style(f"  {severity}: {count}"))
 
-        # Security metrics
+    def _print_security_metrics(self, analysis):
         self.stdout.write(self.style.WARNING("\nSecurity Metrics:"))
-        self.stdout.write(
-            f"  Failed Authentication Attempts: {analysis['auth_failures']}"
-        )
-        self.stdout.write(
-            f"  Suspicious Activities: {analysis['suspicious_activities']}"
-        )
-        self.stdout.write(
-            f"  Rate Limited Requests: {analysis['rate_limited_requests']}"
-        )
-        self.stdout.write(f"  Blocked IPs: {analysis['blocked_ips']}")
+        metrics = {
+            "Failed Authentication Attempts": analysis["auth_failures"],
+            "Suspicious Activities": analysis["suspicious_activities"],
+            "Rate Limited Requests": analysis["rate_limited_requests"],
+            "Blocked IPs": analysis["blocked_ips"],
+        }
+        for label, value in metrics.items():
+            self.stdout.write(f"  {label}: {value}")
 
-        # Top IPs
-        if analysis["top_ips"]:
-            self.stdout.write(self.style.SUCCESS("\nTop IP Addresses:"))
-            for ip, count in analysis["top_ips"][:5]:
-                self.stdout.write(f"  {ip}: {count} requests")
+    def _print_top_entities(self, label, entries, unit: str = "requests"):
+        if not entries:
+            return
+        self.stdout.write(self.style.SUCCESS(f"\nTop {label}:"))
+        for name, count in entries[:5]:
+            self.stdout.write(f"  {name}: {count} {unit}")
 
-        # Top users
-        if analysis["top_users"]:
-            self.stdout.write(self.style.SUCCESS("\nTop Users:"))
-            for user, count in analysis["top_users"][:5]:
-                self.stdout.write(f"  {user}: {count} requests")
-
-        # Recent suspicious activities
-        if analysis["recent_suspicious"]:
-            self.stdout.write(
-                self.style.WARNING(
-                    f'\nRecent Suspicious Activities ({len(analysis["recent_suspicious"])}):'
-                )
+    def _print_recent_events(self, label, events, formatter):
+        if not events:
+            return
+        self.stdout.write(
+            self.style.WARNING(
+                f"\nRecent {label} ({len(events)}):"
             )
-            for event in analysis["recent_suspicious"][-5:]:
-                self.stdout.write(
-                    f"  {event.get('asctime', 'N/A')}: {event.get('message', 'N/A')}"
-                )
-
-        # Recent auth failures
-        if analysis["recent_auth_failures"]:
-            self.stdout.write(
-                self.style.WARNING(
-                    f'\nRecent Auth Failures ({len(analysis["recent_auth_failures"])}):'
-                )
-            )
-            for event in analysis["recent_auth_failures"][-5:]:
-                timestamp = event.get("asctime", "N/A")
-                username = event.get("username", "unknown")
-                ip_address = event.get("ip_address", "unknown")
-                self.stdout.write(f"  {timestamp}: {username} from {ip_address}")
-
+        )
+        for event in events[-5:]:
+            self.stdout.write(f"  {formatter(event)}")
         self.stdout.write("\n")
+
+    def _format_message_event(self, event):
+        return f"{event.get('asctime', 'N/A')}: {event.get('message', 'N/A')}"
+
+    def _format_auth_failure(self, event):
+        timestamp = event.get("asctime", "N/A")
+        username = event.get("username", "unknown")
+        ip_address = event.get("ip_address", "unknown")
+        return f"{timestamp}: {username} from {ip_address}"
+
+    def _severity_style(self, severity):
+        if severity == "ERROR":
+            return self.style.ERROR
+        if severity == "WARNING":
+            return self.style.WARNING
+        return self.style.SUCCESS

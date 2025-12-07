@@ -10,6 +10,7 @@ to execute tasks synchronously during testing without requiring Redis.
 
 from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -102,9 +103,10 @@ class CeleryTrainingTest(TestCase):
         Note: This test requires Celery eager mode or will skip if Redis is unavailable.
         """
         # Create a TrainingRun record with all required fields
+        dataset = str(settings.ML_DATASETS_DIR / "future_skills_dataset.csv")
         training_run = TrainingRun.objects.create(
             model_version="test_celery_direct",
-            dataset_path="ml/data/future_skills_dataset.csv",
+            dataset_path=dataset,
             model_path="",
             test_split=0.2,
             status="RUNNING",
@@ -124,7 +126,7 @@ class CeleryTrainingTest(TestCase):
         try:
             result = train_model_task(
                 training_run_id=training_run.id,
-                dataset_path="ml/data/future_skills_dataset.csv",
+                dataset_path=dataset,
                 test_split=0.2,
                 hyperparameters={"n_estimators": 20, "max_depth": 5},
             )
@@ -228,6 +230,9 @@ class CeleryTrainingTest(TestCase):
                 },
                 format="json",
             )
+
+            # Ensure API accepted the request before checking DB side-effects
+            self.assertIn(response.status_code, {200, 201, 202})
 
             # Verify TrainingRun was created
             self.assertEqual(TrainingRun.objects.count(), initial_count + 1)

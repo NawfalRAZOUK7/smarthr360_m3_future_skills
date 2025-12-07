@@ -107,7 +107,7 @@ from ml.model_versioning import create_model_version, ModelVersionManager
 version = create_model_version(
     version_string="1.0.0",
     metrics={"accuracy": 0.92, "f1_score": 0.91},
-    model_path="ml/models/model_v1.0.0.pkl",
+    model_path="artifacts/models/model_v1.0.0.pkl",
     framework="scikit-learn",
     stage="Production"
 )
@@ -200,7 +200,7 @@ from future_skills.services.training_service import ModelTrainer
 
 # Create trainer
 trainer = ModelTrainer(
-    dataset_path="ml/data/training_data.csv",
+    dataset_path="artifacts/datasets/training_data.csv",
     test_split=0.2
 )
 
@@ -214,12 +214,12 @@ metrics = trainer.train(
 )
 
 # Save model
-trainer.save_model("ml/models/model_v1.0.0.pkl")
+trainer.save_model("artifacts/models/model_v1.0.0.pkl")
 
 # Save run (creates version, auto-promotes if better)
 training_run = trainer.save_training_run(
     model_version="1.0.0",
-    model_path="ml/models/model_v1.0.0.pkl",
+    model_path="artifacts/models/model_v1.0.0.pkl",
     notes="Production model",
     auto_promote=True
 )
@@ -258,7 +258,7 @@ mlflow ui --port 5000
 
 ```bash
 python manage.py train_model \
-    --dataset ml/data/training_data.csv \
+    --dataset artifacts/datasets/training_data.csv \
     --version 1.0.0 \
     --n-estimators 200
 ```

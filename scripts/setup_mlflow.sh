@@ -65,10 +65,11 @@ echo "Step 2: Creating directory structure..."
 echo "--------------------------------------"
 
 # Create directories
-mkdir -p ml/data
-mkdir -p ml/models
-mkdir -p ml/versions
-mkdir -p ml/logs/predictions
+mkdir -p artifacts/datasets
+mkdir -p artifacts/models
+mkdir -p artifacts/results
+mkdir -p artifacts/logs/predictions
+mkdir -p artifacts/cache/joblib
 mkdir -p mlruns/artifacts
 
 echo -e "${GREEN}✓${NC} Directories created"
@@ -204,7 +205,7 @@ echo "   Then visit: http://localhost:5000"
 echo ""
 echo "2. Train your first model:"
 echo "   python manage.py train_model \\"
-echo "       --dataset ml/data/training_data.csv \\"
+echo "       --dataset artifacts/datasets/training_data.csv \\"
 echo "       --version 1.0.0 \\"
 echo "       --n-estimators 200"
 echo ""

@@ -8,6 +8,10 @@ MANAGE := $(PYTHON) manage.py
 SETTINGS := config.settings.development
 MODEL_VERSION := v1
 N_ESTIMATORS := 200
+ARTIFACTS_DIR ?= artifacts
+ML_MODELS_DIR ?= $(ARTIFACTS_DIR)/models
+ML_RESULTS_DIR ?= $(ARTIFACTS_DIR)/results
+ML_DATASETS_DIR ?= $(ARTIFACTS_DIR)/datasets
 
 # Colors for output
 RED := \033[0;31m
@@ -248,12 +252,12 @@ ml-prepare:
 ml-experiment:
 	@echo "$(BLUE)🔬 Running model experiments...$(NC)"
 	$(PYTHON) ml/experiment_future_skills_models.py
-	@echo "$(GREEN)✓ Experiments complete: ml/results/experiment_results.json$(NC)"
+	@echo "$(GREEN)✓ Experiments complete: $(ML_RESULTS_DIR)/experiment_results.json$(NC)"
 
 ml-evaluate:
 	@echo "$(BLUE)📊 Evaluating trained models...$(NC)"
 	$(PYTHON) ml/evaluate_future_skills_models.py
-	@echo "$(GREEN)✓ Evaluation complete: ml/results/evaluation_results.json$(NC)"
+	@echo "$(GREEN)✓ Evaluation complete: $(ML_RESULTS_DIR)/evaluation_results.json$(NC)"
 
 ml-train:
 	@echo "$(BLUE)🎓 Training model (version: $(MODEL_VERSION))...$(NC)"
@@ -335,7 +339,7 @@ clean-models:
 	@echo "$(YELLOW)⚠️  WARNING: This will delete all ML model files!$(NC)"
 	@echo "Press Ctrl+C to cancel, Enter to continue..."
 	@read dummy
-	rm -rf ml/models/*.joblib ml/results/*.json 2>/dev/null || true
+	rm -rf $(ML_MODELS_DIR)/*.joblib $(ML_RESULTS_DIR)/*.json 2>/dev/null || true
 	@echo "$(GREEN)✓ Model files deleted$(NC)"
 
 clean-all: clean clean-test

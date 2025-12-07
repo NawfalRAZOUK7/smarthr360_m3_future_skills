@@ -74,8 +74,8 @@ ml/notebooks/
 .ipynb_checkpoints/
 
 # ML artifacts (mounted as volumes)
-ml/results/*.json
-ml/data/*.csv
+artifacts/results/*.json
+artifacts/datasets/*.csv
 
 # Media files (handled by volumes)
 media/

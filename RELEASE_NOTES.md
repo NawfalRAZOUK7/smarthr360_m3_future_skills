@@ -533,7 +533,7 @@ Choose between ML and Rules engines:
 
 ```bash
 FUTURE_SKILLS_USE_ML=true
-FUTURE_SKILLS_ML_MODEL_PATH=ml/models/future_skills_model_v2.4_production.pkl
+FUTURE_SKILLS_ML_MODEL_PATH=artifacts/models/future_skills_model_v2.4_production.pkl
 ```
 
 **For Rules:**
@@ -627,7 +627,7 @@ FUTURE_SKILLS_USE_ML=false
      -H "Content-Type: application/json" \
      -u admin:password \
      -d '{
-       "dataset_path": "ml/data/future_skills_dataset.csv",
+      "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
        "async_training": true
      }'
    ```

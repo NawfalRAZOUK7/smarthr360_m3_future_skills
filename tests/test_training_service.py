@@ -20,6 +20,8 @@ django.setup()
 
 from pathlib import Path
 
+from django.conf import settings
+
 from future_skills.services.training_service import (
     DataLoadError,
     ModelTrainer,
@@ -35,7 +37,7 @@ def test_training_service():
     print("=" * 70)
 
     # Dataset path
-    dataset_path = Path("ml/data/future_skills_dataset.csv")
+    dataset_path = settings.ML_DATASETS_DIR / "future_skills_dataset.csv"
 
     if not dataset_path.exists():
         print(f"❌ Dataset not found: {dataset_path}")
@@ -78,7 +80,7 @@ def test_training_service():
 
         # Save model
         print("\n5️⃣  Saving model...")
-        model_path = Path("ml/models/test_service_model.pkl")
+        model_path = settings.ML_MODELS_DIR / "test_service_model.pkl"
         trainer.save_model(str(model_path))
         print(f"✅ Model saved: {model_path} ({model_path.stat().st_size} bytes)")
 

@@ -47,6 +47,14 @@ logging.basicConfig(
 
 # Add the parent directory to sys.path to import Django modules
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BASE_DIR.parent
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+DATASETS_DIR = ARTIFACTS_DIR / "datasets"
+MODELS_DIR = ARTIFACTS_DIR / "models"
+RESULTS_DIR = ARTIFACTS_DIR / "results"
+
+for directory in (ARTIFACTS_DIR, DATASETS_DIR, MODELS_DIR, RESULTS_DIR):
+    directory.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(BASE_DIR))
 
 # Configure Django settings
@@ -558,25 +566,25 @@ def main():
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=BASE_DIR / "ml" / "data" / "future_skills_dataset.csv",
+        default=DATASETS_DIR / "future_skills_dataset.csv",
         help="Path to the dataset CSV file",
     )
     parser.add_argument(
         "--model",
         type=Path,
-        default=BASE_DIR / "ml" / "models" / "future_skills_model.pkl",
+        default=MODELS_DIR / "future_skills_model.pkl",
         help="Path to the trained ML model",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=BASE_DIR / "docs" / "ml" / "ML_VS_RULES_COMPARISON.md",
+        default=RESULTS_DIR / "ML_VS_RULES_COMPARISON.md",
         help="Path for the output comparison report",
     )
     parser.add_argument(
         "--json-output",
         type=Path,
-        default=BASE_DIR / "ml" / "results" / "evaluation_results.json",
+        default=RESULTS_DIR / "evaluation_results.json",
         help="Path for JSON output with detailed metrics",
     )
 

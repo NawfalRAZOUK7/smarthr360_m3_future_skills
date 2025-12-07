@@ -1,11 +1,16 @@
 # future_skills/api/views.py
 
+import os
+
+from django.conf import settings
+from django.db import transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
@@ -21,6 +26,7 @@ from ..models import (
 )
 from ..permissions import IsHRStaff, IsHRStaffOrManager
 from ..services.prediction_engine import recalculate_predictions
+from ..services.file_parser import parse_employee_file
 from ..services.recommendation_engine import generate_recommendations_from_predictions
 from .serializers import (
     AddSkillToEmployeeSerializer,
@@ -45,6 +51,94 @@ from .serializers import (
 ERROR_MESSAGES = {
     "HORIZON_YEARS_INTEGER": "horizon_years must be an integer.",
 }
+
+
+class BulkEmployeeProcessingMixin:
+    """Shared helpers for bulk employee operations."""
+
+    def _process_employee_batch(self, employees_data):
+        created_count = 0
+        updated_count = 0
+        errors = []
+
+        with transaction.atomic():
+            for idx, employee_data in enumerate(employees_data):
+                try:
+                    if self._upsert_employee(employee_data):
+                        updated_count += 1
+                    else:
+                        created_count += 1
+                except Exception as exc:  # pragma: no cover - defensive
+                    errors.append(self._format_employee_error(idx, employee_data, exc))
+
+        return {
+            "created_count": created_count,
+            "updated_count": updated_count,
+            "failed_count": len(errors),
+            "errors": errors,
+        }
+
+    def _upsert_employee(self, employee_data):
+        email = employee_data.get("email")
+        existing_employee = Employee.objects.filter(email=email).first()
+
+        if existing_employee:
+            for field, value in employee_data.items():
+                if field != "id":
+                    setattr(existing_employee, field, value)
+            existing_employee.save()
+            return True
+
+        Employee.objects.create(**employee_data)
+        return False
+
+    def _format_employee_error(self, idx, employee_data, exc):
+        return {
+            "row": idx + 1,
+            "email": employee_data.get("email", "unknown"),
+            "error": str(exc),
+        }
+
+    def _maybe_generate_predictions(
+        self,
+        *,
+        auto_predict,
+        horizon_years,
+        request_user,
+        trigger,
+    ):
+        if not auto_predict:
+            return False, 0, []
+
+        try:
+            total_predictions = recalculate_predictions(
+                horizon_years=horizon_years,
+                run_by=request_user if getattr(request_user, "is_authenticated", False) else None,
+                parameters={"trigger": trigger},
+            )
+            return True, total_predictions, []
+        except Exception as exc:  # pragma: no cover - defensive
+            return (
+                False,
+                0,
+                [
+                    {
+                        "row": None,
+                        "email": None,
+                        "error": f"Prediction generation failed: {exc}",
+                    }
+                ],
+            )
+
+    def _determine_status_label(self, failed_count):
+        return "success" if failed_count == 0 else "partial_success"
+
+    def _determine_http_status(self, failed_count):
+        return (
+            status.HTTP_201_CREATED
+            if failed_count == 0
+            else status.HTTP_207_MULTI_STATUS
+        )
 
 
 class FutureSkillPredictionPagination(PageNumberPagination):
@@ -718,7 +812,7 @@ class BulkPredictAPIView(APIView):
         return Response(results, status=status.HTTP_200_OK)
 
 
-class BulkEmployeeImportAPIView(APIView):
+class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
     """
     Bulk import/update employees from JSON data with automatic prediction generation.
 
@@ -839,103 +933,39 @@ class BulkEmployeeImportAPIView(APIView):
     permission_classes = [IsHRStaff]  # Only DRH/Responsable RH
 
     def post(self, request, *args, **kwargs):
-        from django.db import transaction
-
-        # Validate input
         input_serializer = BulkEmployeeImportSerializer(data=request.data)
         if not input_serializer.is_valid():
             return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        employees_data = input_serializer.validated_data["employees"]
-        auto_predict = input_serializer.validated_data["auto_predict"]
-        horizon_years = input_serializer.validated_data["horizon_years"]
+        validated = input_serializer.validated_data
+        batch_results = self._process_employee_batch(validated["employees"])
+        predictions_generated, total_predictions, prediction_errors = (
+            self._maybe_generate_predictions(
+                auto_predict=validated["auto_predict"],
+                horizon_years=validated["horizon_years"],
+                request_user=request.user,
+                trigger="bulk_employee_import",
+            )
+        )
 
-        # Track results
-        created_count = 0
-        updated_count = 0
-        failed_count = 0
-        errors = []
-        created_employees = []
-        updated_employees = []
-
-        # Process each employee within a transaction
-        with transaction.atomic():
-            for idx, employee_data in enumerate(employees_data):
-                try:
-                    email = employee_data.get("email")
-
-                    # Check if employee exists by email
-                    existing_employee = Employee.objects.filter(email=email).first()
-
-                    if existing_employee:
-                        # Update existing employee
-                        for field, value in employee_data.items():
-                            if field != "id":  # Don't update ID
-                                setattr(existing_employee, field, value)
-                        existing_employee.save()
-                        updated_count += 1
-                        updated_employees.append(existing_employee)
-                    else:
-                        # Create new employee
-                        new_employee = Employee.objects.create(**employee_data)
-                        created_count += 1
-                        created_employees.append(new_employee)
-
-                except Exception as e:
-                    failed_count += 1
-                    errors.append(
-                        {
-                            "row": idx + 1,
-                            "email": employee_data.get("email", "unknown"),
-                            "error": str(e),
-                        }
-                    )
-
-        # Auto-generate predictions if requested
-        predictions_generated = False
-        total_predictions = 0
-
-        if auto_predict:
-            # Recalculate predictions for all job roles
-            try:
-                total_predictions = recalculate_predictions(
-                    horizon_years=horizon_years,
-                    run_by=request.user if request.user.is_authenticated else None,
-                    parameters={"trigger": "bulk_employee_import"},
-                )
-                predictions_generated = True
-            except Exception as e:
-                # Log but don't fail the entire import
-                errors.append(
-                    {
-                        "row": None,
-                        "email": None,
-                        "error": f"Prediction generation failed: {str(e)}",
-                    }
-                )
-
-        # Build response
+        errors = batch_results["errors"] + prediction_errors
         response_data = {
-            "status": "success" if failed_count == 0 else "partial_success",
-            "created": created_count,
-            "updated": updated_count,
-            "failed": failed_count,
-            "errors": errors if errors else [],
+            "status": self._determine_status_label(batch_results["failed_count"]),
+            "created": batch_results["created_count"],
+            "updated": batch_results["updated_count"],
+            "failed": batch_results["failed_count"],
+            "errors": errors,
             "predictions_generated": predictions_generated,
             "total_predictions": total_predictions if predictions_generated else 0,
         }
 
         return Response(
             response_data,
-            status=(
-                status.HTTP_201_CREATED
-                if failed_count == 0
-                else status.HTTP_207_MULTI_STATUS
-            ),
+            status=self._determine_http_status(batch_results["failed_count"]),
         )
 
 
-class BulkEmployeeUploadAPIView(APIView):
+class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
     """
     File upload endpoint for bulk employee import from CSV/Excel/JSON files.
 
@@ -1111,141 +1141,21 @@ class BulkEmployeeUploadAPIView(APIView):
     }
 
     def post(self, request, *args, **kwargs):
-        import os
-
-        from ..services.file_parser import parse_employee_file
-
-        # Validate file presence
-        if "file" not in request.FILES:
-            return Response(
-                {
-                    "status": "error",
-                    "message": "No file provided",
-                    "errors": [{"field": "file", "error": "File is required"}],
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        uploaded_file = request.FILES["file"]
-
-        # Validate file size
-        if uploaded_file.size > self.MAX_FILE_SIZE:
-            return Response(
-                {
-                    "status": "error",
-                    "message": "File too large",
-                    "errors": [
-                        {
-                            "field": "file",
-                            "error": f"File size exceeds maximum limit of {self.MAX_FILE_SIZE / (1024 * 1024):.1f}MB",
-                        }
-                    ],
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Validate file extension
-        filename = uploaded_file.name
-        _, file_extension = os.path.splitext(filename)
-        file_extension = file_extension.lower()
-
-        if file_extension not in self.ALLOWED_EXTENSIONS:
-            return Response(
-                {
-                    "status": "error",
-                    "message": "Invalid file type",
-                    "errors": [
-                        {
-                            "field": "file",
-                            "error": f'File type {file_extension} not supported. Allowed: {", ".join(self.ALLOWED_EXTENSIONS)}',
-                        }
-                    ],
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Validate MIME type (additional security check)
-        content_type = uploaded_file.content_type
-        if content_type and content_type not in self.ALLOWED_MIME_TYPES:
-            return Response(
-                {
-                    "status": "error",
-                    "message": "Invalid file format",
-                    "errors": [
-                        {
-                            "field": "file",
-                            "error": f"MIME type {content_type} not allowed",
-                        }
-                    ],
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Parse file based on extension
         try:
-            if file_extension == ".json":
-                # Handle JSON format
-                employees, parse_errors = self._parse_json_file(uploaded_file)
-            else:
-                # Handle CSV/Excel formats
-                employees, parse_errors = parse_employee_file(
-                    uploaded_file, file_extension
-                )
-
-            if parse_errors:
-                return Response(
-                    {
-                        "status": "error",
-                        "message": "File parsing failed",
-                        "errors": parse_errors,
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            if not employees:
-                return Response(
-                    {
-                        "status": "error",
-                        "message": "No valid employee data found in file",
-                        "errors": [
-                            {
-                                "field": "file",
-                                "error": "File contains no valid employee records",
-                            }
-                        ],
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        except Exception as e:
+            uploaded_file = self._get_uploaded_file(request)
+            filename, file_extension = self._validate_file_metadata(uploaded_file)
+            employees = self._parse_uploaded_employees(uploaded_file, file_extension)
+        except ValidationError as exc:
+            return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:  # pragma: no cover - defensive
             return Response(
-                {
-                    "status": "error",
-                    "message": "Failed to process file",
-                    "errors": [{"field": "file", "error": str(e)}],
-                },
+                self._build_generic_file_error(str(exc)),
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get optional parameters from form data
-        auto_predict = request.data.get("auto_predict", "true").lower() in [
-            "true",
-            "1",
-            "yes",
-        ]
-        try:
-            horizon_years = int(request.data.get("horizon_years", 5))
-        except ValueError:
-            horizon_years = 5
-
-        # Validate and import employees using BulkEmployeeImportSerializer
-        import_data = {
-            "employees": employees,
-            "auto_predict": auto_predict,
-            "horizon_years": horizon_years,
-        }
-
-        serializer = BulkEmployeeImportSerializer(data=import_data)
+        serializer = BulkEmployeeImportSerializer(
+            data=self._build_import_payload(request, employees)
+        )
         if not serializer.is_valid():
             return Response(
                 {
@@ -1256,102 +1166,155 @@ class BulkEmployeeUploadAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Process the import (reuse logic from BulkEmployeeImportAPIView)
-        from django.db import transaction
+        validated = serializer.validated_data
+        batch_results = self._process_employee_batch(validated["employees"])
+        predictions_generated, total_predictions, prediction_errors = (
+            self._maybe_generate_predictions(
+                auto_predict=validated["auto_predict"],
+                horizon_years=validated["horizon_years"],
+                request_user=request.user,
+                trigger="bulk_employee_upload",
+            )
+        )
 
-        employees_data = serializer.validated_data["employees"]
-        auto_predict = serializer.validated_data["auto_predict"]
-        horizon_years = serializer.validated_data["horizon_years"]
-
-        # Track results
-        created_count = 0
-        updated_count = 0
-        failed_count = 0
-        errors = []
-        created_employees = []
-        updated_employees = []
-
-        # Process each employee within a transaction
-        with transaction.atomic():
-            for idx, employee_data in enumerate(employees_data):
-                try:
-                    email = employee_data.get("email")
-
-                    # Check if employee exists by email
-                    existing_employee = Employee.objects.filter(email=email).first()
-
-                    if existing_employee:
-                        # Update existing employee
-                        for field, value in employee_data.items():
-                            if field != "id":  # Don't update ID
-                                setattr(existing_employee, field, value)
-                        existing_employee.save()
-                        updated_count += 1
-                        updated_employees.append(existing_employee)
-                    else:
-                        # Create new employee
-                        new_employee = Employee.objects.create(**employee_data)
-                        created_count += 1
-                        created_employees.append(new_employee)
-
-                except Exception as e:
-                    failed_count += 1
-                    errors.append(
-                        {
-                            "row": idx + 1,
-                            "email": employee_data.get("email", "unknown"),
-                            "error": str(e),
-                        }
-                    )
-
-        # Auto-generate predictions if requested
-        predictions_generated = False
-        total_predictions = 0
-
-        if auto_predict:
-            # Recalculate predictions for all job roles
-            try:
-                total_predictions = recalculate_predictions(
-                    horizon_years=horizon_years,
-                    run_by=request.user if request.user.is_authenticated else None,
-                    parameters={"trigger": "bulk_employee_upload"},
-                )
-                predictions_generated = True
-            except Exception as e:
-                # Log but don't fail the entire import
-                errors.append(
-                    {
-                        "row": None,
-                        "email": None,
-                        "error": f"Prediction generation failed: {str(e)}",
-                    }
-                )
-
-        # Build response
+        errors = batch_results["errors"] + prediction_errors
         response_data = {
-            "status": "success" if failed_count == 0 else "partial_success",
+            "status": self._determine_status_label(batch_results["failed_count"]),
             "message": f"File processed: {filename}",
             "file_info": {
                 "filename": filename,
                 "size_bytes": uploaded_file.size,
                 "format": file_extension,
             },
-            "created": created_count,
-            "updated": updated_count,
-            "failed": failed_count,
-            "errors": errors if errors else [],
+            "created": batch_results["created_count"],
+            "updated": batch_results["updated_count"],
+            "failed": batch_results["failed_count"],
+            "errors": errors,
             "predictions_generated": predictions_generated,
             "total_predictions": total_predictions if predictions_generated else 0,
         }
 
         return Response(
             response_data,
-            status=(
-                status.HTTP_201_CREATED
-                if failed_count == 0
-                else status.HTTP_207_MULTI_STATUS
-            ),
+            status=self._determine_http_status(batch_results["failed_count"]),
         )
+
+    def _get_uploaded_file(self, request):
+        if "file" not in request.FILES:
+            raise ValidationError(
+                {
+                    "status": "error",
+                    "message": "No file provided",
+                    "errors": [{"field": "file", "error": "File is required"}],
+                }
+            )
+        return request.FILES["file"]
+
+    def _validate_file_metadata(self, uploaded_file):
+        if uploaded_file.size > self.MAX_FILE_SIZE:
+            raise ValidationError(
+                {
+                    "status": "error",
+                    "message": "File too large",
+                    "errors": [
+                        {
+                            "field": "file",
+                            "error": f"File size exceeds maximum limit of {self.MAX_FILE_SIZE / (1024 * 1024):.1f}MB",
+                        }
+                    ],
+                }
+            )
+
+        filename = uploaded_file.name
+        _, file_extension = os.path.splitext(filename)
+        file_extension = file_extension.lower()
+
+        if file_extension not in self.ALLOWED_EXTENSIONS:
+            allowed = ", ".join(sorted(self.ALLOWED_EXTENSIONS))
+            raise ValidationError(
+                {
+                    "status": "error",
+                    "message": "Invalid file type",
+                    "errors": [
+                        {
+                            "field": "file",
+                            "error": f"File type {file_extension} not supported. Allowed: {allowed}",
+                        }
+                    ],
+                }
+            )
+
+        content_type = uploaded_file.content_type
+        if content_type and content_type not in self.ALLOWED_MIME_TYPES:
+            raise ValidationError(
+                {
+                    "status": "error",
+                    "message": "Invalid file format",
+                    "errors": [
+                        {
+                            "field": "file",
+                            "error": f"MIME type {content_type} not allowed",
+                        }
+                    ],
+                }
+            )
+
+        return filename, file_extension
+
+    def _parse_uploaded_employees(self, uploaded_file, file_extension):
+        if file_extension == ".json":
+            employees, parse_errors = self._parse_json_file(uploaded_file)
+        else:
+            employees, parse_errors = parse_employee_file(uploaded_file, file_extension)
+
+        if parse_errors:
+            raise ValidationError(
+                {
+                    "status": "error",
+                    "message": "File parsing failed",
+                    "errors": parse_errors,
+                }
+            )
+
+        if not employees:
+            raise ValidationError(
+                {
+                    "status": "error",
+                    "message": "No valid employee data found in file",
+                    "errors": [
+                        {
+                            "field": "file",
+                            "error": "File contains no valid employee records",
+                        }
+                    ],
+                }
+            )
+
+        return employees
+
+    def _build_import_payload(self, request, employees):
+        auto_predict = request.data.get("auto_predict", "true").lower() in [
+            "true",
+            "1",
+            "yes",
+        ]
+        try:
+            horizon_years = int(request.data.get("horizon_years", 5))
+        except ValueError:
+            horizon_years = 5
+
+        return {
+            "employees": employees,
+            "auto_predict": auto_predict,
+            "horizon_years": horizon_years,
+        }
+
+    def _build_generic_file_error(self, message):
+        return {
+            "status": "error",
+            "message": "Failed to process file",
+            "errors": [{"field": "file", "error": message}],
+        }
 
     def _parse_json_file(self, file):
         """
@@ -1478,7 +1441,7 @@ class TrainingRunPagination(PageNumberPagination):
     2. Performs train/test split
     3. Trains Random Forest classifier with hyperparameters
     4. Evaluates on test set (accuracy, precision, recall, F1)
-    5. Saves model to `ml/models/` directory
+    5. Saves model to `artifacts/models/` directory
     6. Records metrics in TrainingRun
 
     **Hyperparameters**:
@@ -1495,7 +1458,7 @@ class TrainingRunPagination(PageNumberPagination):
     **Example Request (Sync)**:
     ```json
     {
-      "dataset_path": "ml/data/future_skills_dataset.csv",
+    "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
       "test_split": 0.2,
       "hyperparameters": {
         "n_estimators": 150,
@@ -1510,7 +1473,7 @@ class TrainingRunPagination(PageNumberPagination):
     **Example Request (Async)**:
     ```json
     {
-      "dataset_path": "ml/data/future_skills_dataset.csv",
+    "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
       "test_split": 0.2,
       "async_training": true,
       "model_version": "v2.2_background"
@@ -1522,7 +1485,7 @@ class TrainingRunPagination(PageNumberPagination):
         OpenApiExample(
             "Synchronous training with custom hyperparameters",
             value={
-                "dataset_path": "ml/data/future_skills_dataset.csv",
+                "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
                 "test_split": 0.2,
                 "hyperparameters": {
                     "n_estimators": 150,
@@ -1538,7 +1501,7 @@ class TrainingRunPagination(PageNumberPagination):
         OpenApiExample(
             "Asynchronous background training",
             value={
-                "dataset_path": "ml/data/future_skills_dataset.csv",
+                "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
                 "test_split": 0.25,
                 "async_training": True,
                 "model_version": "v3.0_background",
@@ -1564,7 +1527,7 @@ class TrainModelAPIView(APIView):
 
     Body:
     {
-        "dataset_path": "ml/data/future_skills_dataset.csv",
+        "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
         "test_split": 0.2,
         "hyperparameters": {
             "n_estimators": 100,
@@ -1739,7 +1702,7 @@ class TrainModelAPIView(APIView):
             logger.info(f"Training completed: accuracy={metrics['accuracy']:.2%}")
 
             # Save model
-            model_dir = Path("ml/models")
+            model_dir = settings.ML_MODELS_DIR
             model_dir.mkdir(parents=True, exist_ok=True)
             model_path = model_dir / f"{model_version}.pkl"
             trainer.save_model(str(model_path))

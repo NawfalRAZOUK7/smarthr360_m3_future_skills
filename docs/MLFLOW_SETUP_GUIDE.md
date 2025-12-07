@@ -124,7 +124,7 @@ python manage.py runserver
 ```bash
 # Train and track with MLflow
 python manage.py train_model \
-    --dataset ml/data/training_data.csv \
+    --dataset artifacts/datasets/training_data.csv \
     --version 1.0.0 \
     --n-estimators 200
 ```
@@ -415,7 +415,7 @@ from future_skills.services.training_service import ModelTrainer
 
 # Create trainer
 trainer = ModelTrainer(
-    dataset_path="ml/data/training_data.csv",
+    dataset_path="artifacts/datasets/training_data.csv",
     test_split=0.2
 )
 
@@ -430,7 +430,7 @@ metrics = trainer.train(
 )
 
 # Save model
-model_path = "ml/models/model_v1.0.0.pkl"
+model_path = "artifacts/models/model_v1.0.0.pkl"
 trainer.save_model(model_path)
 
 # Save training run (creates version, promotes if better)

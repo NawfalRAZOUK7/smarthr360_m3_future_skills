@@ -3,6 +3,7 @@
 import csv
 import os
 import random
+from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -223,7 +224,7 @@ class Command(BaseCommand):
             "--output",
             type=str,
             default=None,
-            help="Chemin du fichier CSV de sortie (par défaut: BASE_DIR/ml/data/future_skills_dataset.csv).",
+            help="Chemin du fichier CSV de sortie (par défaut: BASE_DIR/artifacts/datasets/future_skills_dataset.csv).",
         )
 
     def handle(self, *args, **options):
@@ -233,9 +234,11 @@ class Command(BaseCommand):
         # Déterminer le chemin de sortie
         output_path = options["output"]
         if not output_path:
-            ml_data_dir = os.path.join(settings.BASE_DIR, "ml", "data")
-            os.makedirs(ml_data_dir, exist_ok=True)
-            output_path = os.path.join(ml_data_dir, "future_skills_dataset.csv")
+            ml_data_dir = settings.ML_DATASETS_DIR
+            ml_data_dir.mkdir(parents=True, exist_ok=True)
+            output_path = ml_data_dir / "future_skills_dataset.csv"
+        else:
+            output_path = Path(output_path)
 
         self.stdout.write(self.style.WARNING(f"Export du dataset vers : {output_path}"))
 

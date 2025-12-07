@@ -249,7 +249,7 @@ services:
 ```yaml
 - name: Check ML model artifacts
   run: |
-    test -d ml/models || mkdir -p ml/models
+    test -d artifacts/models || mkdir -p artifacts/models
     echo "ML model directory exists"
 ```
 

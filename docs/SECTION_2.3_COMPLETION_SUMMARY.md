@@ -35,7 +35,7 @@ Section 2.3 introduces a **comprehensive service layer** for ML training operati
 
 ```python
 trainer = ModelTrainer(
-    dataset_path="ml/data/future_skills_dataset.csv",
+    dataset_path="artifacts/datasets/future_skills_dataset.csv",
     test_split=0.2,
     random_state=42
 )
@@ -82,7 +82,7 @@ ModelTrainerError      # Base exception
 **Logs:**
 
 ```
-[INFO] Loading dataset from: ml/data/future_skills_dataset.csv
+[INFO] Loading dataset from: artifacts/datasets/future_skills_dataset.csv
 [INFO] Loaded 357 rows
 [INFO] Using 11 features
 [INFO] Categorical features: ['job_role_name', 'skill_name', ...]
@@ -190,7 +190,7 @@ trainer.train(
 **Example:**
 
 ```python
-trainer.save_model("ml/models/future_skills_v5.pkl")
+trainer.save_model("artifacts/models/future_skills_v5.pkl")
 ```
 
 **Features:**
@@ -202,7 +202,7 @@ trainer.save_model("ml/models/future_skills_v5.pkl")
 **Logs:**
 
 ```
-[INFO] Saving model to: ml/models/future_skills_v5.pkl
+[INFO] Saving model to: artifacts/models/future_skills_v5.pkl
 [INFO] Model saved successfully: 104872 bytes
 ```
 
@@ -254,7 +254,7 @@ trainer.save_model("ml/models/future_skills_v5.pkl")
 ```python
 training_run = trainer.save_training_run(
     model_version="v5.0",
-    model_path="ml/models/future_skills_v5.pkl",
+    model_path="artifacts/models/future_skills_v5.pkl",
     notes="Increased n_estimators to 200"
 )
 ```
@@ -320,13 +320,13 @@ cd /Users/nawfalrazouk/smarthr360_m3_future_skills
 python manage.py shell << 'EOF'
 from future_skills.services.training_service import ModelTrainer
 
-trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
 trainer.load_data()
 metrics = trainer.train(n_estimators=50)
-trainer.save_model("ml/models/test_service_model.pkl")
+trainer.save_model("artifacts/models/test_service_model.pkl")
 training_run = trainer.save_training_run(
     model_version="test_service_v1",
-    model_path="ml/models/test_service_model.pkl"
+    model_path="artifacts/models/test_service_model.pkl"
 )
 EOF
 ```
@@ -354,7 +354,7 @@ except DataLoadError as e:
 ### Test 3: Failed Training Run Tracking ✅
 
 ```python
-trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
 trainer.hyperparameters = {"n_estimators": 100}
 failed_run = trainer.save_failed_training_run(
     model_version="test_failure_v1",
@@ -417,7 +417,7 @@ All operations logged at INFO level, errors at ERROR level.
 ```python
 from future_skills.services.training_service import ModelTrainer
 
-trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
 trainer.load_data()
 metrics = trainer.train(n_estimators=100)
 
@@ -428,7 +428,7 @@ print(f"F1-Score: {metrics['f1_score']:.2%}")
 ### **Example 2: Custom Hyperparameters**
 
 ```python
-trainer = ModelTrainer("ml/data/future_skills_dataset.csv", test_split=0.25)
+trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv", test_split=0.25)
 trainer.load_data()
 
 metrics = trainer.train(
@@ -439,10 +439,10 @@ metrics = trainer.train(
     class_weight='balanced_subsample'
 )
 
-trainer.save_model("ml/models/custom_model.pkl")
+trainer.save_model("artifacts/models/custom_model.pkl")
 trainer.save_training_run(
     model_version="custom_v1",
-    model_path="ml/models/custom_model.pkl",
+    model_path="artifacts/models/custom_model.pkl",
     notes="Increased tree depth and samples"
 )
 ```
@@ -450,7 +450,7 @@ trainer.save_training_run(
 ### **Example 3: Feature Importance Analysis**
 
 ```python
-trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
 trainer.load_data()
 trainer.train()
 
@@ -469,11 +469,11 @@ from future_skills.services.training_service import (
 )
 
 try:
-    trainer = ModelTrainer("ml/data/future_skills_dataset.csv")
+    trainer = ModelTrainer("artifacts/datasets/future_skills_dataset.csv")
     trainer.load_data()
     trainer.train(n_estimators=100)
-    trainer.save_model("ml/models/new_model.pkl")
-    trainer.save_training_run("v6.0", "ml/models/new_model.pkl")
+    trainer.save_model("artifacts/models/new_model.pkl")
+    trainer.save_training_run("v6.0", "artifacts/models/new_model.pkl")
 
 except DataLoadError as e:
     print(f"Data loading failed: {e}")

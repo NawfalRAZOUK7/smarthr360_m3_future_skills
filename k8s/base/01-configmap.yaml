@@ -29,7 +29,7 @@ data:
 
   # ML Settings
   FUTURE_SKILLS_USE_ML: "True"
-  ML_MODEL_PATH: "/app/ml/models"
+  ML_MODEL_PATH: "/app/artifacts/models"
 
   # Security Settings
   SECURE_SSL_REDIRECT: "True"

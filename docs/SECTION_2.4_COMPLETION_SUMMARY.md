@@ -59,7 +59,7 @@ Section 2.4 introduces **REST API endpoints** for training ML models and managin
 
 **Fields:**
 
-- `dataset_path` (default: `ml/data/future_skills_dataset.csv`)
+- `dataset_path` (default: `artifacts/datasets/future_skills_dataset.csv`)
 - `test_split` (default: 0.2, range: 0.1-0.5)
 - `hyperparameters` (JSONField, validated)
 - `model_version` (auto-generated if not provided)
@@ -99,7 +99,7 @@ Section 2.4 introduces **REST API endpoints** for training ML models and managin
 
 ```json
 {
-  "dataset_path": "ml/data/future_skills_dataset.csv",
+  "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
   "test_split": 0.2,
   "hyperparameters": {
     "n_estimators": 100,
@@ -159,7 +159,7 @@ Section 2.4 introduces **REST API endpoints** for training ML models and managin
 4. Initialize ModelTrainer
 5. Load data
 6. Train model with hyperparameters
-7. Save model to `ml/models/<version>.pkl`
+7. Save model to `artifacts/models/<version>.pkl`
 8. Update TrainingRun with status='COMPLETED' and metrics
 9. Return response with training_run_id and metrics
 
@@ -257,8 +257,8 @@ GET /api/training/runs/10/
   "id": 10,
   "run_date": "2025-11-27T16:30:00Z",
   "model_version": "v3.0",
-  "model_path": "ml/models/v3.0.pkl",
-  "dataset_path": "ml/data/future_skills_dataset.csv",
+  "model_path": "artifacts/models/v3.0.pkl",
+  "dataset_path": "artifacts/datasets/future_skills_dataset.csv",
   "status": "COMPLETED",
   "error_message": null,
   "accuracy": 0.9861,
