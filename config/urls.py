@@ -15,6 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import importlib
+import pkgutil
+
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -36,6 +39,47 @@ from future_skills.api.monitoring import (
     ReadyCheckView,
     VersionInfoView,
 )
+
+
+def discover_future_skills_urls():
+    future_skills_pkg = importlib.import_module("future_skills")
+    discovered = []
+
+    for module_info in pkgutil.walk_packages(
+        future_skills_pkg.__path__, prefix="future_skills."
+    ):
+        module_name = module_info.name
+        if not (module_name.endswith(".urls") or "_urls" in module_name):
+            continue
+
+        module = importlib.import_module(module_name)
+        suffix = module_name.removeprefix("future_skills.")
+
+        if suffix.endswith(".urls"):
+            suffix = suffix[: -len(".urls")]
+        elif suffix.endswith("_urls"):
+            suffix = suffix[: -len("_urls")]
+
+        subpath = suffix.replace(".", "/")
+
+        if subpath == "api":
+            subpath = ""
+        elif subpath.startswith("api/"):
+            subpath = subpath[len("api/") :]
+
+        subpath = subpath.strip("/")
+
+        prefix = f"api/future-skills/{subpath}" if subpath else "api/future-skills/"
+        if not prefix.endswith("/"):
+            prefix = f"{prefix}/"
+
+        discovered.append((prefix, module))
+
+    discovered.sort(key=lambda item: item[0])
+    return [path(prefix, include(module.__name__)) for prefix, module in discovered]
+
+
+discovered_future_skills_urls = discover_future_skills_urls()
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -72,4 +116,5 @@ urlpatterns = [
     # Monitoring & Observability
     path("", include("django_prometheus.urls")),  # Prometheus metrics at /metrics
     path("health/", include("health_check.urls")),  # Django health checks at /health/
+    *discovered_future_skills_urls,
 ]
