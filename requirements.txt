@@ -1,3 +1,10 @@
+# Aggregate optional stacks
+-r requirements_celery.txt
+-r requirements_logging.txt
+-r requirements_ml.txt
+-r requirements_security.txt
+-r ml/requirements.txt
+
 Django>=5.2.0,<6.0
 djangorestframework>=3.16.0
 drf-spectacular>=0.27.0
