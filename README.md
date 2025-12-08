@@ -32,6 +32,15 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+## 🐍 Python Versions
+
+- Use Python 3.12 (or 3.11/3.10) when you need `shap`/`numba` support.
+- You can also keep a latest-Python venv (e.g., 3.14), but `shap`/`numba` will be skipped there.
+- Example dual-venv setup:
+   - `python3.12 -m venv .venv312 && source .venv312/bin/activate && pip install -r requirements.txt`
+   - `python3.14 -m venv .venv314 && source .venv314/bin/activate && pip install -r requirements.txt`
+   - Activate the venv that matches your workload (`shap`/ML → 3.12; general use → 3.14).
+
 ## ⚙️ Configuration
 
 SmartHR360 uses environment variables for configuration. See the [Configuration Guide](docs/CONFIGURATION.md) for complete details.
