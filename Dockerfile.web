@@ -1,11 +1,8 @@
 
 # syntax=docker/dockerfile:1.4
 
-# Build argument for base image
-ARG BASE_IMAGE
-
 # --- Builder stage: build assets and collect static files ---
-FROM ${BASE_IMAGE} as builder
+FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as builder
 
 WORKDIR /app
 
