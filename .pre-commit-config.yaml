@@ -4,7 +4,7 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
-        language_version: python3.11
+        language_version: python3.12
         args: ["--line-length=120"]
 
   # Import sorting
@@ -78,7 +78,7 @@ repos:
 
 # Configuration
 default_language_version:
-  python: python3.11
+  python: python3.12
 
 # Global excludes
 exclude: |

@@ -1,0 +1,65 @@
+# Docker Compose override for ML pipeline and MLflow
+version: "3.8"
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.3
+    # container_name: smarthr360_mlflow
+    command: mlflow server --backend-store-uri=sqlite:///mlflow.db --default-artifact-root=/mlflow/artifacts --host 0.0.0.0 --port 5000
+    ports:
+      - "5500:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://0.0.0.0:5000
+      - MLFLOW_BACKEND_STORE_URI=sqlite:///mlflow.db
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    volumes:
+      - ./mlflow_data:/mlflow
+    networks:
+      - smarthr360-network
+
+  ml_pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    # container_name: smarthr360_ml_pipeline
+    env_file:
+      - .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    networks:
+      - smarthr360-network
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/app:cached
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - ml_models_volume:/app/artifacts/models
+      - logs_volume:/app/logs
+    ports:
+      - "8010:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PYTHONUNBUFFERED=1
+      - PIP_NO_CACHE_DIR=1
+      - PIP_DISABLE_PIP_VERSION_CHECK=1
+      - PIP_DEFAULT_TIMEOUT=100
+    # Run onboarding and ML pipeline steps on container startup
+    # Entrypoint and command are defined in Dockerfile.ml
+
+volumes:
+  static_volume:
+  media_volume:
+  ml_models_volume:
+  logs_volume:
+  mlflow_data:
+
+networks:
+  smarthr360-network:
+    driver: bridge

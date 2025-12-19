@@ -1,76 +1,160 @@
 #!/bin/bash
 
-# Celery Monitoring Setup Script
-# Sets up and starts Celery worker, beat, and Flower monitoring
+# SmartHR360 Celery Monitoring Local Setup Script
+# This script is for LOCAL Python onboarding only (not for Docker onboarding).
+# For Docker onboarding, use scripts/docker-setup.sh instead.
 
-set -e
+set -e  # Exit on error
 
-echo "=========================================="
-echo "SmartHR360 Celery Monitoring Setup"
+# ==========================================
+echo "🚀 SmartHR360 Celery Monitoring Local Setup"
 echo "=========================================="
 echo ""
 
-# Colors
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Check if running in virtual environment
-if [ -z "$VIRTUAL_ENV" ]; then
-    echo -e "${YELLOW}Warning: Not running in a virtual environment${NC}"
-    echo "Activate your virtual environment first:"
-    echo "  source .venv/bin/activate"
-    echo ""
-    read -p "Continue anyway? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+print_success() { echo -e "${GREEN}✓ $1${NC}"; }
+print_error() { echo -e "${RED}✗ $1${NC}"; }
+print_info() { echo -e "${YELLOW}ℹ $1${NC}"; }
+
+
+# --- Robust Python/venv selection (prefer .venv312, fallback .venv314, else python3) ---
+print_info "Checking Python version and venv..."
+if [ -d ".venv312" ]; then
+    PYTHON_BIN=".venv312/bin/python"
+    VENV_NAME=".venv312"
+elif [ -d ".venv314" ]; then
+    PYTHON_BIN=".venv314/bin/python"
+    VENV_NAME=".venv314"
+else
+    PYTHON_BIN="python3"
+    VENV_NAME="(system/global)"
+fi
+PYTHON_VERSION=$($PYTHON_BIN --version 2>&1 | awk '{print $2}')
+print_success "Python $PYTHON_VERSION detected ($VENV_NAME)"
+
+# --- Warn if not in project venv ---
+if [ -z "$VIRTUAL_ENV" ] || [[ "$VIRTUAL_ENV" != *smarthr360_m3_future_skills* ]]; then
+    print_info "You are not in the project virtual environment."
+    echo "It's recommended to activate one: source $VENV_NAME/bin/activate"
+    read -p "Continue anyway? (y/n): " continue_anyway
+    if [[ ! $continue_anyway =~ ^[Yy]$ ]]; then
+        print_error "Aborting setup. Activate the project venv and rerun."
         exit 1
     fi
+else
+    print_success "Virtual environment: $VIRTUAL_ENV"
 fi
 
-# Check Python version
-echo "Checking Python version..."
-PYTHON_VERSION=$(python --version 2>&1 | awk '{print $2}')
-echo -e "${GREEN}✓${NC} Python $PYTHON_VERSION"
-
-# Check if Redis is running
-echo ""
-echo "Checking Redis connection..."
-if redis-cli ping > /dev/null 2>&1; then
-    echo -e "${GREEN}✓${NC} Redis is running"
+# --- Install Celery monitoring dependencies ---
+print_info "Installing Celery monitoring dependencies from requirements_celery.txt..."
+if [ -f "requirements_celery.txt" ]; then
+    $PYTHON_BIN -m pip install -r requirements_celery.txt
+    print_success "Celery monitoring dependencies installed"
 else
-    echo -e "${RED}✗${NC} Redis is not running"
-    echo "Start Redis with: redis-server"
+    print_error "requirements_celery.txt not found. Please provide it."
     exit 1
 fi
 
-# Install/upgrade Celery monitoring dependencies
-echo ""
-echo "Installing Celery monitoring dependencies..."
-pip install -q --upgrade \
-    flower \
-    django-celery-results \
-    django-celery-beat \
-    tenacity \
-    pybreaker \
-    prometheus-client
+# --- Setup secrets.env for Celery Monitoring (if needed) ---
+print_info "Checking for secrets.env (needed for Flower auth or external monitoring)..."
+if [ ! -f "secrets.env" ]; then
+    if [ -f "secrets.example" ]; then
+        cp secrets.example secrets.env
+        print_success "secrets.env created from secrets.example"
+        print_info "Update secrets.env with your Flower or external monitoring credentials if needed."
+    else
+        print_info "No secrets.example found. Skipping secrets.env setup."
+    fi
+else
+    print_info "secrets.env already exists."
+fi
 
-echo -e "${GREEN}✓${NC} Dependencies installed"
+# --- Setup .env for Celery Monitoring (if needed) ---
+print_info "Checking for .env file..."
+if [ ! -f ".env" ]; then
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+        print_success ".env created from .env.example"
+        print_info "Update .env with any required environment variables for Celery/monitoring."
+    else
+        print_info "No .env.example found. Skipping .env setup."
+    fi
+else
+    print_info ".env already exists."
+fi
 
-# Run migrations
-echo ""
-echo "Running database migrations..."
-python manage.py migrate --noinput
-echo -e "${GREEN}✓${NC} Migrations complete"
+# --- Robust Redis Connection Check (support Docker/local) ---
+REDIS_HOST=${REDIS_HOST:-localhost}
+REDIS_PORT=${REDIS_PORT:-6379}
+print_info "Checking Redis connection at $REDIS_HOST:$REDIS_PORT..."
 
-# Check if directories exist
-echo ""
-echo "Creating log directories..."
+REDIS_OK=0
+if command -v redis-cli > /dev/null 2>&1; then
+    if redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" ping | grep -q PONG; then
+        REDIS_OK=1
+    else
+        print_info "redis-cli found, but ping failed. Output: $(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" ping 2>&1)"
+    fi
+else
+    print_info "redis-cli not found. Trying nc..."
+fi
+
+if [ $REDIS_OK -eq 0 ]; then
+    if command -v nc > /dev/null 2>&1; then
+        if nc -z "$REDIS_HOST" "$REDIS_PORT"; then
+            REDIS_OK=1
+        else
+            print_info "nc could not connect to $REDIS_HOST:$REDIS_PORT."
+        fi
+    else
+        print_info "nc not found. Trying Python socket..."
+    fi
+fi
+
+if [ $REDIS_OK -eq 0 ]; then
+    python3 - <<EOF
+import socket
+try:
+    s = socket.create_connection(("$REDIS_HOST", int("$REDIS_PORT")), timeout=2)
+    s.close()
+    exit(0)
+except Exception as e:
+    print(f"Python socket check failed: {e}")
+    exit(1)
+EOF
+    if [ $? -eq 0 ]; then
+        REDIS_OK=1
+    fi
+fi
+
+if [ $REDIS_OK -eq 1 ]; then
+    print_success "Redis is running at $REDIS_HOST:$REDIS_PORT"
+else
+    print_error "Redis is NOT running or not reachable at $REDIS_HOST:$REDIS_PORT.\nDiagnostics:"
+    print_info "- redis-cli: $(command -v redis-cli || echo not found)"
+    print_info "- nc: $(command -v nc || echo not found)"
+    print_info "- Host: $REDIS_HOST, Port: $REDIS_PORT"
+    print_info "- Try: redis-cli -h $REDIS_HOST -p $REDIS_PORT ping"
+    print_info "- Try: nc -z $REDIS_HOST $REDIS_PORT"
+    exit 1
+fi
+
+# --- Run Django Migrations ---
+print_info "Running database migrations..."
+$PYTHON_BIN manage.py migrate --noinput
+print_success "Migrations complete"
+
+# --- Create Required Directories ---
+print_info "Creating log directories..."
 mkdir -p logs/celery
-echo -e "${GREEN}✓${NC} Log directories created"
+print_success "Log directories created"
 
-# Function to check if port is in use
+# --- Check for Port/Process Conflicts ---
 check_port() {
     local port=$1
     if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
@@ -80,70 +164,47 @@ check_port() {
     fi
 }
 
-# Check if Flower is already running
 if check_port 5555; then
-    echo -e "${YELLOW}Warning: Port 5555 is already in use${NC}"
-    echo "Flower may already be running"
+    print_info "Port 5555 is already in use. Flower may already be running."
 fi
 
-# Check if celery workers are running
 if pgrep -f "celery.*worker" > /dev/null; then
-    echo -e "${YELLOW}Warning: Celery worker process already running${NC}"
-    echo "Kill existing workers with: pkill -f 'celery.*worker'"
+    print_info "Celery worker process already running. Kill with: pkill -f 'celery.*worker'"
 fi
 
+# --- Final Summary and Next Steps ---
 echo ""
 echo "=========================================="
-echo "Setup Complete!"
+print_success "Celery monitoring local setup complete!"
+echo ""
+echo "Next steps:"
+echo "  1. Activate virtual environment: source .venv/bin/activate"
+echo "  2. Update .env and secrets.env with your configuration if needed"
+echo "  3. Start Celery Worker:"
+echo "     celery -A config worker --loglevel=info --concurrency=4"
+echo "  4. Start Celery Beat (scheduled tasks):"
+echo "     celery -A config beat --loglevel=info"
+echo "  5. Start Flower Monitoring UI:"
+echo "     celery -A config flower --port=5555"
+echo "     Access at: http://localhost:5555"
+echo "  6. Start Prometheus Exporter (optional):"
+echo "     celery-exporter --broker redis://localhost:6379/0"
+echo "     Metrics at: http://localhost:9808/metrics"
+echo "  7. View documentation:"
+echo "     - Monitoring Guide: docs/CELERY_MONITORING_GUIDE.md"
 echo "=========================================="
 echo ""
-echo "Next Steps:"
-echo ""
-echo "1. Start Celery Worker:"
-echo "   ${GREEN}celery -A config worker --loglevel=info --concurrency=4${NC}"
-echo ""
-echo "2. Start Celery Beat (scheduled tasks):"
-echo "   ${GREEN}celery -A config beat --loglevel=info${NC}"
-echo ""
-echo "3. Start Flower Monitoring UI:"
-echo "   ${GREEN}celery -A config flower --port=5555${NC}"
-echo "   Access at: ${GREEN}http://localhost:5555${NC}"
-echo ""
-echo "4. Start Prometheus Exporter (optional):"
-echo "   ${GREEN}celery-exporter --broker redis://localhost:6379/0${NC}"
-echo "   Metrics at: ${GREEN}http://localhost:9808/metrics${NC}"
-echo ""
+echo "If you want to use Docker for onboarding, use: scripts/docker-setup.sh"
 echo "=========================================="
-echo "Useful Commands:"
-echo "=========================================="
-echo ""
-echo "Check worker status:"
-echo "  ${GREEN}celery -A config inspect stats${NC}"
-echo ""
-echo "View active tasks:"
-echo "  ${GREEN}celery -A config inspect active${NC}"
-echo ""
-echo "Purge all queues:"
-echo "  ${GREEN}celery -A config purge${NC}"
-echo ""
-echo "Monitor events:"
-echo "  ${GREEN}celery -A config events${NC}"
-echo ""
-echo "=========================================="
-echo "Documentation:"
-echo "=========================================="
-echo ""
-echo "Complete guide: ${GREEN}docs/CELERY_MONITORING_GUIDE.md${NC}"
-echo ""
 
-# Offer to start services
+# --- Offer to Start Services ---
 echo ""
-read -p "Start Celery worker now? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+read -p "Start Celery worker now? (y/n): " start_worker
+if [[ $start_worker =~ ^[Yy]$ ]]; then
     echo ""
-    echo "Starting Celery worker..."
-    echo "Press Ctrl+C to stop"
+    echo "Starting Celery worker in background..."
+    echo "You can stop it later with: pkill -f 'celery.*worker'"
     echo ""
-    celery -A config worker --loglevel=info --concurrency=4
+    nohup $PYTHON_BIN -m celery -A config worker --loglevel=info --concurrency=4 > celery_worker.log 2>&1 &
+    echo "Celery worker started in background. Logs: celery_worker.log"
 fi

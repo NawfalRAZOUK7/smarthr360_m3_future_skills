@@ -1,12 +1,13 @@
 {
   "codecov.token": "c7d0b1f7-4779-49ef-86f8-323e7e2d545f",
   "codecov.apiUrl": "https://codecov.io",
-  "workbench.colorCustomizations": {
-    "editorInfo.foreground": "#0080ff6a"
-  },
   "python.testing.pytestArgs": [
     "tests"
   ],
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "python-envs.pythonProjects": [],
+  "workbench.colorCustomizations": {
+    "editorInfo.foreground": "#0080ff6a"
+  }
 }

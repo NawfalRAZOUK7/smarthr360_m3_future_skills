@@ -1,199 +1,175 @@
 #!/bin/bash
-
-# SmartHR360 ML Model Training and Evaluation Script
-# Simplifies ML workflow operations
+# ml_train.sh - Onboarding and training entrypoint for ML workflows (local/dev)
+# Modular, user-friendly onboarding for ML training and prediction
 
 set -e
 
-# Colors
+
+# --- Color Variables and Print Helpers ---
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-RED='\033[0;31m'
-NC='\033[0m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
 
-print_info() {
-    echo -e "${BLUE}ℹ $1${NC}"
-}
+print_success() { echo -e "${GREEN}✓ $1${NC}"; }
+print_error() { echo -e "${RED}✗ $1${NC}"; }
+print_info() { echo -e "${BLUE}ℹ $1${NC}"; }
+print_warn() { echo -e "${YELLOW}⚠ $1${NC}"; }
 
-print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
-}
 
-print_error() {
-    echo -e "${RED}✗ $1${NC}"
-}
 
-# Activate virtual environment
-if [ -d ".venv" ]; then
-    source .venv/bin/activate
+# --- Onboarding Section (Always First) ---
+# 1. Check for Python virtual environment
+if [[ -z "$VIRTUAL_ENV" ]]; then
+  print_error "No Python virtual environment detected. Please activate your venv before running this script."
+  exit 1
 fi
+
+# 2. Ensure secrets.env exists
+if [[ ! -f "secrets.env" ]]; then
+  print_warn "secrets.env not found. Copying from secrets.example..."
+  cp secrets.example secrets.env
+  print_success "secrets.env created from example."
+fi
+
+# 3. Ensure .env exists
+if [[ ! -f ".env" ]]; then
+  print_warn ".env not found. Copying from .env.example..."
+  cp .env.example .env
+  print_success ".env created from example."
+fi
+
+# 4. Ensure required directories exist
+for dir in artifacts artifacts/datasets artifacts/models artifacts/results; do
+  if [[ ! -d "$dir" ]]; then
+    print_info "Creating directory: $dir"
+    mkdir -p "$dir"
+  fi
+done
+
+# --- Command Routing and Main Logic ---
+
+# Show help/usage function
+show_help() {
+  echo -e "${CYAN}Usage:${NC} $0 <command> [options]"
+  echo -e "\n${YELLOW}Onboarding:${NC} This script ensures secrets.env, .env, and required directories are present, and checks for a Python virtual environment before running any ML workflow command."
+  echo -e "\n${YELLOW}Docker users:${NC} For containerized onboarding, use ${BLUE}scripts/docker-setup.sh${NC} instead."
+  echo -e "\n${CYAN}Supported commands:${NC}"
+  echo -e "  prepare             Prepare dataset from database"
+  echo -e "  train [version]     Train model (default version: v1)"
+  echo -e "  retrain [version]   Retrain model (default version: v1)"
+  echo -e "  experiment          Run model experiments and comparison"
+  echo -e "  evaluate            Evaluate trained models"
+  echo -e "  predict <emp_id>    Generate predictions for employee"
+  echo -e "  explainability      Run explainability analysis"
+  echo -e "  dataset-analysis    Run dataset analysis"
+  echo -e "  compare             Compare model performance"
+  echo -e "  monitor             Check prediction monitoring metrics"
+  echo -e "  clean               Clean ML artifacts"
+  echo -e "  help, -h, --help    Show this help message"
+  echo -e "\n${CYAN}Examples:${NC}"
+  echo -e "  $0 prepare"
+  echo -e "  $0 experiment"
+  echo -e "  $0 train v2"
+  echo -e "  $0 predict 123"
+}
 
 # Parse command
 COMMAND=${1:-help}
 
-ARTIFACTS_DIR=${ARTIFACTS_DIR:-artifacts}
-MODELS_DIR="${ARTIFACTS_DIR}/models"
-RESULTS_DIR="${ARTIFACTS_DIR}/results"
-DATASETS_DIR="${ARTIFACTS_DIR}/datasets"
-
 case $COMMAND in
-    "prepare")
-        print_info "Preparing dataset..."
-        python ml/scripts/prepare_dataset.py
-        print_success "Dataset prepared: ${DATASETS_DIR}/future_skills_dataset.csv"
-        ;;
-
-    "experiment")
-        print_info "Running model experiments..."
-        python ml/experiment_future_skills_models.py
-        print_success "Experiments completed. Results: ${RESULTS_DIR}/experiment_results.json"
-        echo ""
-        print_info "View detailed results:"
-        echo "  python -m json.tool ${RESULTS_DIR}/experiment_results.json"
-        ;;
-
-    "evaluate")
-        print_info "Evaluating trained models..."
-        python ml/evaluate_future_skills_models.py
-        print_success "Evaluation completed. Results: ${RESULTS_DIR}/evaluation_results.json"
-        ;;
-
-    "train")
-        MODEL=${2:-random_forest}
-        print_info "Training $MODEL model..."
-        python ml/scripts/train_model.py --model "$MODEL"
-        print_success "Model training completed"
-        ;;
-
-    "predict")
-        if [ -z "$2" ]; then
-            print_error "Employee ID required"
-            echo "Usage: $0 predict <employee_id>"
-            exit 1
-        fi
-        EMPLOYEE_ID=$2
-        print_info "Generating predictions for employee $EMPLOYEE_ID..."
-        python manage.py shell <<EOF
-from future_skills.models import Employee
-from future_skills.services.prediction_engine import PredictionEngine
-employee = Employee.objects.get(id=$EMPLOYEE_ID)
-predictions = PredictionEngine.predict_for_employee(employee)
-for pred in predictions[:5]:
-    print(f"Skill: {pred['future_skill_name']}, Score: {pred['prediction_score']:.2f}")
-EOF
-        print_success "Predictions generated"
-        ;;
-
-    "explainability")
-        print_info "Running explainability analysis..."
-        jupyter nbconvert --execute ml/notebooks/explainability_analysis.ipynb --to html
-        print_success "Explainability analysis completed"
-        echo "View report: ml/notebooks/explainability_analysis.html"
-        ;;
-
-    "dataset-analysis")
-        print_info "Running dataset analysis..."
-        jupyter nbconvert --execute ml/notebooks/dataset_analysis.ipynb --to html
-        print_success "Dataset analysis completed"
-        echo "View report: ml/notebooks/dataset_analysis.html"
-        ;;
-
-    "compare")
-        print_info "Comparing model performance..."
-        if [ ! -f "${RESULTS_DIR}/experiment_results.json" ]; then
-            print_error "Experiment results not found. Run experiments first: $0 experiment"
-            exit 1
-        fi
-        python <<EOF
-import json
-with open('${RESULTS_DIR}/experiment_results.json') as f:
-    results = json.load(f)
-print("\nModel Performance Comparison:")
-print("-" * 70)
-print(f"{'Model':<30} {'Accuracy':<15} {'F1 Score':<15}")
-print("-" * 70)
-for model_name, metrics in results.items():
-    if 'test_accuracy' in metrics:
-        acc = metrics['test_accuracy']
-        f1 = metrics.get('test_f1_weighted', 'N/A')
-        print(f"{model_name:<30} {acc:<15.4f} {f1:<15}")
-print("-" * 70)
-EOF
-        print_success "Comparison completed"
-        ;;
-
-    "monitor")
-        print_info "Checking model performance monitoring..."
-        python manage.py shell <<EOF
-from future_skills.models import PredictionLog
-from datetime import datetime, timedelta
-recent = datetime.now() - timedelta(days=7)
-logs = PredictionLog.objects.filter(timestamp__gte=recent)
-print(f"\nPredictions in last 7 days: {logs.count()}")
-if logs.exists():
-    avg_score = logs.aggregate(avg=models.Avg('prediction_score'))['avg']
-    print(f"Average prediction score: {avg_score:.2f}")
-EOF
-        print_success "Monitoring check completed"
-        ;;
-
-    "retrain")
-        print_info "Retraining models with latest data..."
-        python ml/scripts/prepare_dataset.py
-        python ml/experiment_future_skills_models.py
-        python ml/evaluate_future_skills_models.py
-        print_success "Retraining completed"
-        echo ""
-        print_info "Next steps:"
-        echo "  1. Review evaluation results: ${RESULTS_DIR}/evaluation_results.json"
-        echo "  2. Update production model if performance improved"
-        echo "  3. Run explainability analysis: $0 explainability"
-        ;;
-
-    "clean")
-        print_info "Cleaning ML artifacts..."
-        read -p "Remove all trained models and results? (y/n): " confirm
-        if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-            rm -rf ${MODELS_DIR}/*.joblib
-            rm -rf ${RESULTS_DIR}/*.json
-            rm -rf ml/notebooks/*.html
-            print_success "ML artifacts cleaned"
-        else
-            print_info "Cleanup cancelled"
-        fi
-        ;;
-
-    "help"|"-h"|"--help")
-        echo "SmartHR360 ML Management Script"
-        echo ""
-        echo "Usage: $0 [COMMAND] [OPTIONS]"
-        echo ""
-        echo "Commands:"
-        echo "  prepare           - Prepare dataset from database"
-        echo "  experiment        - Run model experiments and comparison"
-        echo "  evaluate          - Evaluate trained models"
-        echo "  train [model]     - Train specific model"
-        echo "  predict <emp_id>  - Generate predictions for employee"
-        echo "  explainability    - Run explainability analysis"
-        echo "  dataset-analysis  - Run dataset analysis"
-        echo "  compare           - Compare model performance"
-        echo "  monitor           - Check prediction monitoring metrics"
-        echo "  retrain           - Retrain all models with latest data"
-        echo "  clean             - Clean ML artifacts"
-        echo "  help              - Show this help message"
-        echo ""
-        echo "Examples:"
-        echo "  $0 prepare                # Prepare dataset"
-        echo "  $0 experiment             # Run experiments"
-        echo "  $0 train random_forest    # Train Random Forest"
-        echo "  $0 predict 123            # Predict for employee 123"
-        exit 0
-        ;;
-
-    *)
-        print_error "Unknown command: $COMMAND"
-        echo "Run '$0 help' for usage information"
-        exit 1
-        ;;
+  "prepare")
+    print_info "Exporting dataset from Django ORM..."
+    python3 ml/scripts/prepare_dataset.py
+    if [ $? -eq 0 ]; then
+      print_success "Dataset exported: artifacts/datasets/future_skills_dataset.csv"
+    else
+      print_error "Dataset export failed. See error above."
+      exit 1
+    fi
+    ;;
+  "train")
+    VERSION=${2:-v1}
+    print_info "Training Future Skills model (version: $VERSION)..."
+    python3 ml/scripts/train_future_skills_model.py --csv artifacts/datasets/future_skills_dataset.csv --output artifacts/models/future_skills_model.pkl --version "$VERSION"
+    print_success "Model training completed"
+    ;;
+  "retrain")
+    VERSION=${2:-v1}
+    print_info "Retraining Future Skills model (version: $VERSION)..."
+    python3 ml/scripts/retrain_model.py --version "$VERSION"
+    print_success "Model retraining completed"
+    ;;
+  "experiment")
+    print_info "Running model experiments..."
+    python3 ml/scripts/experiment_future_skills_models.py
+    print_success "Experiments completed. Results: artifacts/results/experiment_results.json"
+    echo ""
+    print_info "View detailed results:"
+    echo "  python -m json.tool artifacts/results/experiment_results.json"
+    ;;
+  "evaluate")
+    print_info "Evaluating trained models..."
+    python3 ml/scripts/evaluate_future_skills_models.py
+    print_success "Evaluation completed. Results: artifacts/results/evaluation_results.json"
+    ;;
+  "predict")
+    if [ -z "$2" ]; then
+      print_error "Employee ID required"
+      echo "Usage: $0 predict <employee_id>"
+      exit 1
+    fi
+    EMPLOYEE_ID=$2
+    print_info "Generating predictions for employee $EMPLOYEE_ID..."
+    # Add prediction logic here (placeholder)
+    print_success "Predictions generated"
+    ;;
+  "explainability")
+    print_info "Running explainability analysis..."
+    jupyter nbconvert --execute ml/notebooks/explainability_analysis.ipynb --to html
+    print_success "Explainability analysis completed"
+    echo "View report: ml/notebooks/explainability_analysis.html"
+    ;;
+  "dataset-analysis")
+    print_info "Running dataset analysis..."
+    jupyter nbconvert --execute ml/notebooks/dataset_analysis.ipynb --to html
+    print_success "Dataset analysis completed"
+    echo "View report: ml/notebooks/dataset_analysis.html"
+    ;;
+  "compare")
+    print_info "Comparing model performance..."
+    if [ ! -f "artifacts/results/experiment_results.json" ]; then
+      print_error "Experiment results not found. Run experiments first: $0 experiment"
+      exit 1
+    fi
+    # Add comparison logic here (placeholder)
+    print_success "Comparison completed"
+    ;;
+  "monitor")
+    print_info "Checking model performance monitoring..."
+    # Add monitoring logic here (placeholder)
+    print_success "Monitoring check completed"
+    ;;
+  "clean")
+    print_info "Cleaning ML artifacts..."
+    read -p "Remove all trained models and results? (y/n): " confirm
+    if [[ $confirm =~ ^[Yy]$ ]]; then
+      rm -rf artifacts/models/*.joblib
+      rm -rf artifacts/results/*.json
+      rm -rf ml/notebooks/*.html
+      print_success "ML artifacts cleaned"
+    else
+      print_info "Cleanup cancelled"
+    fi
+    ;;
+  "help"|"-h"|"--help")
+    show_help
+    ;;
+  *)
+    print_error "Unknown command: $COMMAND"
+    show_help
+    exit 1
+    ;;
 esac

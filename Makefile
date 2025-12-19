@@ -1,6 +1,6 @@
 # Makefile for SmartHR360 Module 3 - Future Skills
 
-.PHONY: help install install-dev install-ml test test-unit test-integration test-e2e test-fast test-ml test-api coverage lint format check docker-build docker-up docker-down docker-prod docker-logs docker-shell ml-prepare ml-experiment ml-evaluate ml-train serve shell migrate createsuperuser clean
+.PHONY: help install install-dev install-ml test test-unit test-integration test-e2e test-fast test-ml test-api coverage lint format check docker-base docker-build docker-up docker-down docker-prod docker-logs docker-shell ml-prepare ml-experiment ml-evaluate ml-train serve shell migrate createsuperuser clean
 
 # Default Python interpreter and settings
 PYTHON := python
@@ -198,12 +198,24 @@ pre-commit:
 	pre-commit run --all-files
 
 # ============================================
-# Docker Commands
-# ============================================
-
 docker-build:
 	@echo "$(BLUE)🐳 Building Docker images...$(NC)"
 	docker-compose build
+	@echo "$(GREEN)✓ Docker images built$(NC)"
+
+# Docker Commands
+# ============================================
+
+# Build base image
+docker-base:
+	@echo "$(BLUE)🐳 Building base Docker image...$(NC)"
+	docker build -t smarthr360-base:latest -f Dockerfile.base .
+	@echo "$(GREEN)✓ Base Docker image built$(NC)"
+
+# Build all images (depends on base)
+docker-build: docker-base
+	@echo "$(BLUE)🐳 Building Docker images...$(NC)"
+	docker compose build
 	@echo "$(GREEN)✓ Docker images built$(NC)"
 
 docker-up:

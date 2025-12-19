@@ -1,78 +1,56 @@
+
 # ==============================================================================
-# Dockerfile for Celery Worker
+# Dockerfile for Celery Worker (multi-stage build)
 # ==============================================================================
-FROM python:3.11-slim
 
-# Set build arguments
-ARG APP_USER=smarthr360
-ARG APP_UID=1000
-ARG APP_GID=1000
-
-# Labels
-LABEL maintainer="SmartHR360 Team" \
-      component="celery-worker" \
-      description="Celery Worker for SmartHR360"
-
-# Environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    C_FORCE_ROOT=1
-
-# Install runtime dependencies and create non-root user
-RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-        curl \
-        libpq5 \
-        netcat-traditional \
-        postgresql-client; \
-    rm -rf /var/lib/apt/lists/*; \
-    groupadd -g "${APP_GID}" "${APP_USER}"; \
-    useradd -u "${APP_UID}" -g "${APP_GID}" -m -s /bin/bash "${APP_USER}"
+# --- Builder stage: install build deps, train models ---
+FROM smarthr360-base:latest as builder
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt requirements_ml.txt requirements_celery.txt ./
-RUN pip install --no-cache-dir -r requirements.txt \
-    -r requirements_ml.txt \
-    -r requirements_celery.txt
+# Ensure models directory exists in builder
+RUN mkdir -p /app/ml/models
 
-# Copy application
-COPY --chown=${APP_USER}:${APP_USER} . /app
+# Copy all required source files and folders into builder
+COPY manage.py ./
+COPY pyproject.toml ./
+COPY config/ ./config/
+COPY future_skills/ ./future_skills/
+COPY celery_monitoring/ ./celery_monitoring/
 
-# Create necessary directories and entrypoint
-RUN set -eux; \
-    mkdir -p \
-        logs \
-        media \
-        artifacts/models \
-        artifacts/datasets \
-        artifacts/results \
-        artifacts/cache/joblib; \
-    chown -R "${APP_USER}:${APP_USER}" /app; \
-    printf '%s\n' \
-        '#!/bin/bash' \
-        'set -e' \
-        'echo "Starting Celery Worker..."' \
-        '' \
-        '# Wait for broker' \
-        'if [ -n "$REDIS_HOST" ]; then' \
-        '    echo "Waiting for Redis at $REDIS_HOST:${REDIS_PORT:-6379}..."' \
-        '    for i in {1..30}; do' \
-        '        nc -z "$REDIS_HOST" "${REDIS_PORT:-6379}" && break' \
-        '        echo "Waiting for Redis... ($i/30)"' \
-        '        sleep 2' \
-        '    done' \
-        'fi' \
-        '' \
-        'echo "Celery Worker is ready!"' \
-        'exec "$@"' \
-        > /app/entrypoint.sh; \
-    chmod +x /app/entrypoint.sh
+# ...existing code...
 
-USER ${APP_USER}
+FROM smarthr360-base:latest as final
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+WORKDIR /app
 
-CMD ["celery", "-A", "config", "worker", "-l", "info", "--concurrency=4", "--max-tasks-per-child=1000"]
+COPY manage.py pyproject.toml pytest.ini ./
+COPY config/ ./config/
+COPY future_skills/ ./future_skills/
+COPY celery_monitoring/ ./celery_monitoring/
+
+# (Optional) Run ML model training or pre-compilation
+# Uncomment and adapt the following if you want to train models at build time:
+COPY --from=builder /app/ml/models/ ./ml/models/
+# RUN python ml/train.py --output /app/ml/models
+
+# --- Final stage: minimal runtime image ---
+FROM smarthr360-base:latest as final
+
+WORKDIR /app
+
+# Copy only runtime code and trained models from builder
+COPY --from=builder /app/manage.py ./
+COPY --from=builder /app/pyproject.toml ./
+# (pytest.ini omitted from runtime image)
+COPY --from=builder /app/config/ ./config/
+COPY --from=builder /app/future_skills/ ./future_skills/
+COPY --from=builder /app/celery_monitoring/ ./celery_monitoring/
+RUN mkdir -p /app/ml/models
+COPY --from=builder /app/ml/models/ ./ml/models/
+
+# Copy entrypoint script
+COPY scripts/entrypoints/celery-entrypoint.sh /app/celery-entrypoint.sh
+RUN chmod +x /app/celery-entrypoint.sh
+
+ENTRYPOINT ["/app/celery-entrypoint.sh"]
