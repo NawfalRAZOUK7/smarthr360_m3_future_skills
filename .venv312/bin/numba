@@ -1,0 +1,8 @@
+#!/Users/nawfalrazouk/smarthr360_m3_future_skills/.venv312/bin/python3.12
+# -*- coding: UTF-8 -*-
+from __future__ import absolute_import, division, print_function
+
+from numba.misc.numba_entry import main
+
+if __name__ == "__main__":
+    main()

@@ -1,8 +1,167 @@
+# Environment Setup
+
+1. Copy `.env.docker.example` to `.env.docker` and update values as needed.
+2. Copy `secrets.example` to `secrets.env` and update secrets.
+   Entrypoint scripts for each service are located in `scripts/entrypoints/` and are referenced in the respective Dockerfiles only. Do not modify entrypoints in setup scripts.
+
+## Dockerfiles
+
+All main Dockerfiles are modular and multi-stage. Legacy Dockerfiles have been archived in the `archived/` directory. Only modular Dockerfiles are used for builds.
+
+## Volumes and Artifacts
+
+ML models and other shared assets are handled via Docker volumes, not copied in Dockerfiles. See `docker-compose.yml` for volume configuration. Dockerfiles only copy runtime code and trained models from builder stages.
+
+## 🐳 Docker Build Best Practices
+
+To ensure fast builds and efficient layer caching, follow these Dockerfile guidelines:
+
+- **Copy requirements first:**
+  - Place `COPY requirements*.txt ./` (or similar) before copying the rest of your code.
+  - Run `pip install` immediately after copying requirements, so this layer is only rebuilt when dependencies change.
+- **Copy code last:**
+  - Only copy the main app code after dependencies are installed. This maximizes Docker cache reuse.
+- **Use multi-stage builds:**
+  - Separate build-time and runtime dependencies. Only copy what’s needed for runtime into the final image.
+- **Minimize final image size:**
+  - Only include runtime code, assets, and entrypoints in the final stage.
+- **Leverage .dockerignore:**
+  - Exclude files/folders not needed in the image (e.g., `.git`, `__pycache__`, local data, docs).
+- **Document produced files:**
+  - See `DOCKER_PRODUCED_FILES_PER_STAGE.md` for what each build stage outputs.
+
+For reference, see the main service Dockerfiles and [DOCKER_PRODUCED_FILES_PER_STAGE.md](DOCKER_PRODUCED_FILES_PER_STAGE.md).
+
+## 🚦 CI/CD Test & Lint Container (Planned)
+
+A dedicated CI/CD pipeline stage or container for running tests, linting, and security checks is planned for future implementation. This will further modularize and centralize quality checks, separate from build/runtime images.
+
+- See `.github/workflows/ci.yml` for current pipeline steps (test, lint, security, coverage, ML tests).
+- When ready, a dedicated test/lint container or job will be added for improved isolation and maintainability.
+
+**Status:** _Pending (to be implemented in future CI/CD enhancements)_
+
+## 🧪 Local Testing & Linting
+
+To ensure code quality and correctness, run tests and linting locally before committing changes.
+
+### 1. Environment Setup
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+```
+
+### 2. Running Tests
+
+- **All tests:**
+  ```bash
+  ./scripts/run_tests.sh
+  # or
+  pytest
+  ```
+- **Unit tests only:**
+  ```bash
+  ./scripts/run_tests.sh unit
+  # or
+  pytest future_skills/tests/
+  ```
+- **Integration tests:**
+  ```bash
+  ./scripts/run_tests.sh integration
+  # or
+  pytest tests/integration/
+  ```
+- **End-to-end tests:**
+  ```bash
+  ./scripts/run_tests.sh e2e
+  # or
+  pytest tests/e2e/
+  ```
+- **Coverage report:**
+  ```bash
+  ./scripts/run_tests.sh coverage
+  # or
+  pytest --cov=future_skills --cov-report=html
+  open htmlcov/index.html
+  ```
+- **More options:** See `tests/README.md` and `scripts/run_tests.sh --help` for advanced usage and markers (e.g., `ml`, `api`, `fast`, `failed`).
+
+### 3. Linting & Code Quality
+
+- **Lint with flake8:**
+  ```bash
+  flake8
+  ```
+- **Format with black:**
+  ```bash
+  black .
+  ```
+- **Sort imports with isort:**
+  ```bash
+  isort .
+  ```
+- **Type check with mypy:**
+  ```bash
+  mypy future_skills/
+  ```
+- **Run all pre-commit hooks:**
+  ```bash
+  pre-commit run --all-files
+  ```
+
+### 4. More Info
+
+- See `tests/README.md` for detailed testing instructions, structure, and best practices.
+- See `scripts/README.md` for available scripts and automation.
+- All dev/test tools are in `requirements-dev.txt`.
+
 # SmartHR360 - M3 Future Skills
 
 AI-powered future skills prediction and recommendation system for HR management.
 
 ## 🚀 Quick Start
+
+# 8. Run development server
+
+python manage.py runserver
+
+````
+
+## 🐳 Docker Compose Onboarding
+
+To run the full stack with Docker Compose (web, celery, nginx, db, redis):
+
+```bash
+# 1. Copy Docker environment template
+cp .env.docker.example .env.docker
+
+# 2. Edit .env.docker with your settings (see comments in the file)
+
+# 3. (Optional) For secrets, copy and edit:
+cp secrets.example secrets.env
+# Then configure secrets.env with sensitive values (do NOT commit this file)
+
+# 4. Start all services
+docker-compose up --build
+
+# 5. Access the app at http://localhost:8000
+````
+
+**Notes:**
+
+### Environment & Secrets Onboarding
+
+- `.env.docker.example`: Template for Docker Compose environment variables (non-sensitive, safe to commit)
+- `.env.docker`: Actual Docker Compose environment file (should not be committed)
+- `secrets.env`: Your actual secrets file (never commit this)
+
+**Onboarding steps:**
+
+1. Copy `.env.docker.example` to `.env.docker` and fill in required values.
+2. Copy `secrets.example` to `secrets.env` and fill in secrets as needed.
+   For local (non-Docker) development, continue to use `.env` and `.env.example` as before.
 
 ```bash
 # 1. Setup virtual environment
@@ -16,16 +175,14 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 # Edit .env with your settings (see Configuration section below)
 
+---v---+   +--v--+         +----v-----+
 # 4. Validate configuration
+-------+   +-----+         +----------+
 python manage.py validate_config
 
 # 5. Run migrations
 python manage.py migrate
-
 # 6. Seed initial data
-python manage.py seed_future_skills
-
-# 7. Create superuser
 python manage.py createsuperuser
 
 # 8. Run development server
@@ -37,9 +194,9 @@ python manage.py runserver
 - Use Python 3.12 (or 3.11/3.10) when you need `shap`/`numba` support.
 - You can also keep a latest-Python venv (e.g., 3.14), but `shap`/`numba` will be skipped there.
 - Example dual-venv setup:
-   - `python3.12 -m venv .venv312 && source .venv312/bin/activate && pip install -r requirements.txt`
-   - `python3.14 -m venv .venv314 && source .venv314/bin/activate && pip install -r requirements.txt`
-   - Activate the venv that matches your workload (`shap`/ML → 3.12; general use → 3.14).
+  - `python3.12 -m venv .venv312 && source .venv312/bin/activate && pip install -r requirements.txt`
+  - `python3.14 -m venv .venv314 && source .venv314/bin/activate && pip install -r requirements.txt`
+  - Activate the venv that matches your workload (`shap`/ML → 3.12; general use → 3.14).
 
 ## ⚙️ Configuration
 
@@ -254,6 +411,7 @@ smarthr360_m3_future_skills/
 ## 📄 License
 
 Internal project - All rights reserved
+
 # Test
 
 Test CI/CD Pipeline - 1764377202

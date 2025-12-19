@@ -19,7 +19,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-
 SCRIPTS_DIR = Path(__file__).resolve().parent
 ML_DIR = SCRIPTS_DIR.parent
 PROJECT_ROOT = ML_DIR.parent
@@ -81,10 +80,7 @@ def update_settings_file(model_version: str, model_path: Path):
 
     print("✅ settings.py mis à jour:")
     print(f"   - FUTURE_SKILLS_MODEL_VERSION = 'ml_random_forest_{model_version}'")
-    print(
-        "   - FUTURE_SKILLS_MODEL_PATH default = ML_MODELS_DIR / "
-        f"'{model_filename}'"
-    )
+    print("   - FUTURE_SKILLS_MODEL_PATH default = ML_MODELS_DIR / " f"'{model_filename}'")
     return True
 
 
@@ -146,9 +142,7 @@ def main():
     base_dir = Path(__file__).resolve().parent
     project_root = base_dir.parent
 
-    parser = argparse.ArgumentParser(
-        description="Orchestration complète du retraining du modèle Future Skills"
-    )
+    parser = argparse.ArgumentParser(description="Orchestration complète du retraining du modèle Future Skills")
     parser.add_argument(
         "--version",
         type=str,
@@ -193,10 +187,8 @@ def main():
     if not args.skip_export:
         export_cmd = [
             sys.executable,
-            str(project_root / "manage.py"),
-            "export_future_skills_dataset",
+            str(base_dir / "prepare_dataset.py"),
         ]
-
         if run_command(export_cmd, "Étape 1/3: Export du dataset") != 0:
             print("\n❌ Retraining interrompu à l'étape 1")
             return 1
@@ -204,15 +196,19 @@ def main():
         print("\n⏭️  Étape 1/3: Export du dataset (SKIP)")
 
     # Step 2: Train model
-    model_path = base_dir / "models" / f"future_skills_model_{args.version}.pkl"
+
+    # Use correct paths for training script and dataset
+    model_path = PROJECT_ROOT / "artifacts" / "models" / f"future_skills_model_{args.version}.pkl"
+    dataset_csv = PROJECT_ROOT / "artifacts" / "datasets" / "future_skills_dataset.csv"
+    train_script = PROJECT_ROOT / "ml" / "scripts" / "train_future_skills_model.py"
 
     train_cmd = [
         sys.executable,
-        str(base_dir / "scripts" / "train_future_skills_model.py"),
+        str(train_script),
         "--csv",
-        str(base_dir / "data" / "future_skills_dataset.csv"),
+        str(dataset_csv),
         "--output",
-        str(base_dir / "models" / f"future_skills_model_{args.version}.pkl"),
+        str(model_path),
         "--version",
         args.version,
         "--n-estimators",
@@ -240,9 +236,7 @@ def main():
     if args.auto_update_settings:
         print("\n🔧 Mise à jour automatique de config/settings.py...")
         update_settings_file(args.version, model_path)
-        print(
-            "\n⚠️  ATTENTION: Redémarrez le serveur Django pour appliquer les changements!"
-        )
+        print("\n⚠️  ATTENTION: Redémarrez le serveur Django pour appliquer les changements!")
     else:
         print("\n💡 Pour déployer ce modèle en production, mettez à jour manuellement:")
         print("   - config/settings.py:")

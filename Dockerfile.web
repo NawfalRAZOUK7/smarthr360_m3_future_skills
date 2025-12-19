@@ -1,0 +1,42 @@
+
+# syntax=docker/dockerfile:1.4
+
+# --- Builder stage: build assets and collect static files ---
+FROM smarthr360-base:latest as builder
+
+WORKDIR /app
+
+# Copy app code and config for build
+COPY manage.py pyproject.toml pytest.ini ./
+COPY config/ ./config/
+COPY future_skills/ ./future_skills/
+
+# Ensure staticfiles directory exists in builder
+RUN mkdir -p /app/staticfiles
+
+# (Optional) Install Node and npm/yarn if frontend assets exist
+# RUN apt-get update && apt-get install -y nodejs npm
+# COPY frontend/ ./frontend/
+# RUN cd frontend && npm install && npm run build
+
+
+# --- Final stage: minimal runtime image ---
+FROM smarthr360-base:latest as final
+
+WORKDIR /app
+
+# Copy only runtime code and built static files from builder
+COPY --from=builder /app/manage.py ./
+COPY --from=builder /app/pyproject.toml ./
+# (pytest.ini omitted from runtime image)
+COPY --from=builder /app/config/ ./config/
+COPY --from=builder /app/future_skills/ ./future_skills/
+COPY --from=builder /app/staticfiles/ ./staticfiles/
+
+EXPOSE 8000
+
+# Copy entrypoint script
+COPY scripts/entrypoints/web-entrypoint.sh /app/web-entrypoint.sh
+RUN chmod +x /app/web-entrypoint.sh
+
+ENTRYPOINT ["/app/web-entrypoint.sh"]

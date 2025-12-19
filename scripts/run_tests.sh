@@ -33,61 +33,87 @@ echo ""
 
 case $TEST_TYPE in
     "all")
-        print_info "Running all tests with coverage..."
-        pytest --cov=future_skills --cov-report=html --cov-report=term-missing $VERBOSE
-        print_success "All tests completed. Coverage report: htmlcov/index.html"
+        print_info "Running all tests in correct order (no coverage)..."
+        TEST_FILES=(
+            "tests/test_training_service.py"
+            "tests/test_training_api.py"
+            "tests/test_api_v2_smoke.py"
+            "tests/integration/test_api_endpoints.py"
+            "tests/integration/test_ml_integration.py"
+            "tests/integration/test_prediction_flow.py"
+            "tests/e2e/test_user_journeys.py"
+        )
+        for file in "${TEST_FILES[@]}"; do
+            print_info "Running $file ..."
+            pytest "$file" $VERBOSE || exit 1
+        done
+        print_success "All tests completed in correct order."
         ;;
-    
+
     "unit")
         print_info "Running unit tests only..."
         pytest future_skills/tests/ $VERBOSE -m "not slow"
         print_success "Unit tests completed"
         ;;
-    
+
     "integration")
         print_info "Running integration tests..."
         pytest tests/integration/ $VERBOSE
         print_success "Integration tests completed"
         ;;
-    
+
     "e2e")
         print_info "Running end-to-end tests..."
         pytest tests/e2e/ $VERBOSE
         print_success "E2E tests completed"
         ;;
-    
+
     "fast")
         print_info "Running fast tests only (excluding slow tests)..."
         pytest $VERBOSE -m "not slow"
         print_success "Fast tests completed"
         ;;
-    
+
     "ml")
         print_info "Running ML-related tests..."
         pytest $VERBOSE -m "ml"
         print_success "ML tests completed"
         ;;
-    
+
     "api")
         print_info "Running API tests..."
         pytest $VERBOSE -m "api"
         print_success "API tests completed"
         ;;
-    
+
     "coverage")
-        print_info "Generating detailed coverage report..."
-        pytest --cov=future_skills --cov-report=html --cov-report=term-missing --cov-report=json
+        print_info "Generating detailed coverage report in correct order..."
+        # Erase previous coverage data
+        coverage erase
+        TEST_FILES=(
+            "tests/test_training_service.py"
+            "tests/test_training_api.py"
+            "tests/test_api_v2_smoke.py"
+            "tests/integration/test_api_endpoints.py"
+            "tests/integration/test_ml_integration.py"
+            "tests/integration/test_prediction_flow.py"
+            "tests/e2e/test_user_journeys.py"
+        )
+        for file in "${TEST_FILES[@]}"; do
+            print_info "Running $file with coverage..."
+            coverage run --append -m pytest "$file" $VERBOSE || exit 1
+        done
+        coverage html
+        coverage report --show-missing
         print_success "Coverage report generated: htmlcov/index.html"
-        echo ""
-        python -m coverage report --show-missing
         ;;
-    
+
     "failed")
         print_info "Re-running last failed tests..."
         pytest --lf $VERBOSE
         print_success "Failed tests re-run completed"
         ;;
-    
+
     "specific")
         if [ -z "$2" ]; then
             echo "Usage: $0 specific <test_path>"
@@ -98,7 +124,7 @@ case $TEST_TYPE in
         pytest "$2" -v
         print_success "Specific test completed"
         ;;
-    
+
     "help"|"-h"|"--help")
         echo "SmartHR360 Test Runner"
         echo ""
@@ -124,7 +150,7 @@ case $TEST_TYPE in
         echo "  $0 specific tests/integration/test_prediction_flow.py"
         exit 0
         ;;
-    
+
     *)
         echo "Unknown test type: $TEST_TYPE"
         echo "Run '$0 help' for usage information"

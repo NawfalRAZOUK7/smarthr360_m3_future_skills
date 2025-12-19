@@ -23,9 +23,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
 # HSTS settings (HTTP Strict Transport Security)
-SECURE_HSTS_SECONDS = config(
-    "SECURE_HSTS_SECONDS", default=31536000, cast=int
-)  # 1 year
+SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=31536000, cast=int)  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
@@ -35,9 +33,7 @@ if not config("DATABASE_URL", default=None):
     raise ValueError("DATABASE_URL environment variable is required in production")
 
 # Production email backend
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
-)
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
@@ -65,7 +61,7 @@ LOGGING["loggers"]["django"]["level"] = "WARNING"
 LOGGING["handlers"]["error_file"] = {
     "class": "logging.FileHandler",
     "filename": BASE_DIR / "logs" / "errors.log",
-    "formatter": "verbose",
+    "formatter": "json",
     "level": "ERROR",
 }
 LOGGING["loggers"]["django.request"] = {
@@ -81,9 +77,7 @@ FUTURE_SKILLS_ENABLE_MONITORING = True
 # Cache configuration (using Redis in production)
 CACHES = {
     "default": {
-        "BACKEND": config(
-            "CACHE_BACKEND", default="django.core.cache.backends.locmem.LocMemCache"
-        ),
+        "BACKEND": config("CACHE_BACKEND", default="django.core.cache.backends.locmem.LocMemCache"),
         "LOCATION": config("CACHE_LOCATION", default="unique-snowflake"),
     }
 }

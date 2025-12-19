@@ -1,3 +1,5 @@
+# For Django management and celery worker
+django_extensions
 -r requirements.txt
 
 # Testing

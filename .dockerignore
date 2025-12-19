@@ -37,10 +37,22 @@ docs/
 *.md
 README.md
 
-# Tests and coverage
+
+# Tests and coverage (keep tests/ for container testing)
 htmlcov/
 .coverage
 .tox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+pip-wheel-metadata/
+
+# ML/data artifacts and experiment tracking (excluded from build context)
+artifacts/models/
+artifacts/cache/
+mlruns/
+cache/
+monitoring/
 
 # Database files
 *.sqlite3

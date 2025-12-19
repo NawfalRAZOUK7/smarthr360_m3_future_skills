@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# SmartHR360 Development Environment Setup Script
-# This script sets up a complete development environment for the SmartHR360 project
+# SmartHR360 Local Python Development Environment Setup Script
+# This script is for LOCAL Python development only (not Docker/Compose onboarding).
+# For Docker onboarding, use scripts/docker-setup.sh instead.
 
 set -e  # Exit on error
 
-echo "🚀 SmartHR360 Development Environment Setup"
+# ==========================================
+echo "🚀 SmartHR360 Local Development Environment Setup"
 echo "=========================================="
 echo ""
 
@@ -16,29 +18,20 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Function to print colored messages
-print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
-}
+print_success() { echo -e "${GREEN}✓ $1${NC}"; }
+print_error() { echo -e "${RED}✗ $1${NC}"; }
+print_info() { echo -e "${YELLOW}ℹ $1${NC}"; }
 
-print_error() {
-    echo -e "${RED}✗ $1${NC}"
-}
-
-print_info() {
-    echo -e "${YELLOW}ℹ $1${NC}"
-}
-
-# Check Python version
+# --- Check Python version ---
 print_info "Checking Python version..."
 if ! command -v python3 &> /dev/null; then
     print_error "Python 3 is not installed. Please install Python 3.11 or higher."
     exit 1
 fi
-
 PYTHON_VERSION=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
 print_success "Python $PYTHON_VERSION detected"
 
-# Create virtual environment
+# --- Create virtual environment ---
 print_info "Creating virtual environment..."
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv
@@ -47,37 +40,35 @@ else
     print_info "Virtual environment already exists"
 fi
 
-# Activate virtual environment
+# --- Activate virtual environment ---
 print_info "Activating virtual environment..."
 source .venv/bin/activate
 print_success "Virtual environment activated"
 
-# Upgrade pip
+# --- Upgrade pip ---
 print_info "Upgrading pip..."
 pip install --upgrade pip --quiet
 print_success "pip upgraded"
 
-# Install dependencies
+# --- Install dependencies ---
 print_info "Installing Python dependencies..."
 if [ -f "requirements.txt" ]; then
-    pip install -r requirements.txt --quiet
+    pip install -r requirements.txt
     print_success "Production dependencies installed"
 else
     print_error "requirements.txt not found"
     exit 1
 fi
-
 if [ -f "requirements-dev.txt" ]; then
-    pip install -r requirements-dev.txt --quiet
+    pip install -r requirements-dev.txt
     print_success "Development dependencies installed"
 fi
-
 if [ -f "requirements_ml.txt" ]; then
-    pip install -r requirements_ml.txt --quiet
+    pip install -r requirements_ml.txt
     print_success "ML dependencies installed"
 fi
 
-# Create .env file if it doesn't exist
+# --- Setup environment variables ---
 print_info "Setting up environment variables..."
 if [ ! -f ".env" ]; then
     if [ -f ".env.example" ]; then
@@ -91,49 +82,72 @@ else
     print_info ".env file already exists"
 fi
 
-# Run migrations
+# --- Setup secrets.env for local dev (if needed) ---
+print_info "Checking for secrets.env (if your local dev needs secrets)..."
+if [ ! -f "secrets.env" ]; then
+    if [ -f "secrets.example" ]; then
+        cp secrets.example secrets.env
+        print_success "secrets.env file created from secrets.example"
+        print_info "Please update secrets.env with your actual secrets if needed for local dev."
+    else
+        print_info "No secrets.example found. Skipping secrets.env setup."
+    fi
+else
+    print_info "secrets.env file already exists"
+fi
+
+# --- Run migrations ---
 print_info "Running database migrations..."
-python manage.py migrate --settings=config.settings.development
+PYTHON_CMD=".venv312/bin/python"
+if [ ! -x ".venv312/bin/python" ]; then
+  PYTHON_CMD=".venv314/bin/python"
+fi
+$PYTHON_CMD manage.py migrate --settings=config.settings.development
 print_success "Database migrations completed"
 
-# Create superuser prompt
+# --- Create superuser prompt ---
 echo ""
 read -p "Do you want to create a superuser? (y/n): " create_superuser
-if [ "$create_superuser" = "y" ] || [ "$create_superuser" = "Y" ]; then
-    python manage.py createsuperuser --settings=config.settings.development
+echo
+if [[ $create_superuser =~ ^[Yy]$ ]]; then
+    $PYTHON_CMD manage.py createsuperuser --settings=config.settings.development
     print_success "Superuser created"
 fi
 
-# Seed future skills data
+# --- Seed future skills data ---
 echo ""
 read -p "Do you want to seed Future Skills data? (y/n): " seed_data
-if [ "$seed_data" = "y" ] || [ "$seed_data" = "Y" ]; then
+echo
+if [[ $seed_data =~ ^[Yy]$ ]]; then
     print_info "Seeding Future Skills data..."
-    python manage.py seed_future_skills --settings=config.settings.development
+    $PYTHON_CMD manage.py seed_future_skills --settings=config.settings.development
     print_success "Future Skills data seeded"
 fi
 
-# Install pre-commit hooks
+# --- Install pre-commit hooks ---
 echo ""
 read -p "Do you want to install pre-commit hooks? (y/n): " install_hooks
-if [ "$install_hooks" = "y" ] || [ "$install_hooks" = "Y" ]; then
+echo
+if [[ $install_hooks =~ ^[Yy]$ ]]; then
     print_info "Installing pre-commit hooks..."
-    pip install pre-commit --quiet
-    pre-commit install
+    $PYTHON_CMD -m pip install pre-commit
+    $PYTHON_CMD -m pre_commit install
     print_success "Pre-commit hooks installed"
 fi
 
-# Run tests
+# --- Run tests ---
 echo ""
 read -p "Do you want to run tests to verify setup? (y/n): " run_tests
-if [ "$run_tests" = "y" ] || [ "$run_tests" = "Y" ]; then
-    print_info "Running tests..."
-    python manage.py check --settings=config.settings.development
-    pytest future_skills/tests/ -v --tb=short
+echo
+if [[ $run_tests =~ ^[Yy]$ ]]; then
+    print_info "Ensuring scripts/run_tests.sh is executable..."
+    chmod +x ./scripts/run_tests.sh
+    print_info "Running tests via scripts/run_tests.sh..."
+    ./scripts/run_tests.sh
     print_success "Tests completed"
 fi
 
-# Final summary
+# --- Final summary ---
 echo ""
 echo "=========================================="
 print_success "Development environment setup complete!"
@@ -152,4 +166,7 @@ echo "  - Coverage report: pytest --cov=future_skills --cov-report=html"
 echo "  - Code formatting: black ."
 echo "  - Linting: flake8"
 echo "  - Pre-commit check: pre-commit run --all-files"
+echo "=========================================="
+echo ""
+echo "If you want to use Docker for onboarding, use: scripts/docker-setup.sh"
 echo "=========================================="

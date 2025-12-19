@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-smarthr360}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     restart: unless-stopped
@@ -37,8 +37,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: runtime
+      dockerfile: Dockerfile.web
     container_name: smarthr360_web_prod
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2 --worker-class gthread --timeout 120
     volumes:
@@ -51,14 +50,14 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY:-y!2pL6rT9vB3eX7uJ0sA4dF1gH5kN8mC2qW6yR3tU0oP1lV5bS9jE7xZ4cM8nQ4rT1wZ}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smarthr360}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+      - CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com
       - AUTO_MIGRATE=${AUTO_MIGRATE:-false}
     depends_on:
       db:
@@ -88,7 +87,7 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY:-y!2pL6rT9vB3eX7uJ0sA4dF1gH5kN8mC2qW6yR3tU0oP1lV5bS9jE7xZ4cM8nQ4rT1wZ}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smarthr360}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -111,7 +110,7 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY:-y!2pL6rT9vB3eX7uJ0sA4dF1gH5kN8mC2qW6yR3tU0oP1lV5bS9jE7xZ4cM8nQ4rT1wZ}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smarthr360}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
