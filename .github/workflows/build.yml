@@ -57,7 +57,9 @@ jobs:
           file: ./Dockerfile.base
           push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}-base
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}:main-base
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}:latest-base
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}:main-${{ github.sha }}-base
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
