@@ -11,6 +11,9 @@ COPY manage.py pyproject.toml pytest.ini ./
 COPY config/ ./config/
 COPY future_skills/ ./future_skills/
 
+# Copy celery_monitoring for monitoring and metrics
+COPY celery_monitoring/ ./celery_monitoring/
+
 # Ensure staticfiles directory exists in builder
 RUN mkdir -p /app/staticfiles
 
@@ -32,6 +35,14 @@ COPY --from=builder /app/pyproject.toml ./
 COPY --from=builder /app/config/ ./config/
 COPY --from=builder /app/future_skills/ ./future_skills/
 COPY --from=builder /app/staticfiles/ ./staticfiles/
+
+# Copy celery_monitoring for monitoring and metrics
+COPY --from=builder /app/celery_monitoring/ ./celery_monitoring/
+
+
+# Make generate-secrets.sh executable and run it during build
+# COPY scripts/generate-secrets.sh /app/generate-secrets.sh
+# RUN chmod +x /app/generate-secrets.sh && /app/generate-secrets.sh
 
 EXPOSE 8000
 

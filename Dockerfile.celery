@@ -17,6 +17,7 @@ COPY pyproject.toml ./
 COPY config/ ./config/
 COPY future_skills/ ./future_skills/
 COPY celery_monitoring/ ./celery_monitoring/
+COPY ml/ ./ml/
 
 # ...existing code...
 
@@ -31,6 +32,7 @@ COPY celery_monitoring/ ./celery_monitoring/
 
 # (Optional) Run ML model training or pre-compilation
 # Uncomment and adapt the following if you want to train models at build time:
+COPY --from=builder /app/ml/ ./ml/
 COPY --from=builder /app/ml/models/ ./ml/models/
 # RUN python ml/train.py --output /app/ml/models
 
@@ -46,6 +48,7 @@ COPY --from=builder /app/pyproject.toml ./
 COPY --from=builder /app/config/ ./config/
 COPY --from=builder /app/future_skills/ ./future_skills/
 COPY --from=builder /app/celery_monitoring/ ./celery_monitoring/
+COPY --from=builder /app/ml/ ./ml/
 RUN mkdir -p /app/ml/models
 COPY --from=builder /app/ml/models/ ./ml/models/
 

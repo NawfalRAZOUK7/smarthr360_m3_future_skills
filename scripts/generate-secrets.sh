@@ -34,15 +34,37 @@ PYTHON_CMD=$(command -v python3 || command -v python)
 echo -e "${YELLOW}Generating secrets...${NC}"
 echo ""
 
-# Generate Django SECRET_KEY
+# Generate Django SECRET_KEY (ensure it's at least 50 chars)
 echo -e "${BLUE}1. Django SECRET_KEY${NC}"
 DJANGO_SECRET=$(cat <<EOF | $PYTHON_CMD
 from django.core.management.utils import get_random_secret_key
-print(get_random_secret_key())
+import secrets
+import string
+
+# Keep generating until we get a key without $ characters (to avoid shell interpretation)
+while True:
+    key = get_random_secret_key()
+    if '$' not in key and len(key) >= 50:
+        print(key)
+        break
 EOF
 )
 echo "   $DJANGO_SECRET"
-echo ""
+echo "   Length: ${#DJANGO_SECRET}"
+
+# --- Automatically update secrets.env with new Django SECRET_KEY ---
+SECRETS_ENV_FILE="$(dirname "$0")/../secrets.env"
+if [ -f "$SECRETS_ENV_FILE" ]; then
+    # Remove any existing SECRET_KEY line
+    grep -v '^SECRET_KEY=' "$SECRETS_ENV_FILE" > "$SECRETS_ENV_FILE.tmp"
+    mv "$SECRETS_ENV_FILE.tmp" "$SECRETS_ENV_FILE"
+    # Add new SECRET_KEY
+    echo "SECRET_KEY=$DJANGO_SECRET" >> "$SECRETS_ENV_FILE"
+    echo -e "${GREEN}Updated secrets.env with new SECRET_KEY${NC}"
+else
+    echo "SECRET_KEY=$DJANGO_SECRET" > "$SECRETS_ENV_FILE"
+    echo -e "${GREEN}Created secrets.env with new SECRET_KEY${NC}"
+fi
 
 # Generate JWT SECRET_KEY
 echo -e "${BLUE}2. JWT SECRET_KEY${NC}"
@@ -89,8 +111,13 @@ echo "   PROD_REDIS_PASSWORD: $PROD_REDIS_PASSWORD"
 echo ""
 
 # Save to file
-echo -e "${YELLOW}Would you like to save these secrets to a file? (y/n)${NC}"
-read -r SAVE_FILE
+if [ -f "/.dockerenv" ]; then
+    SAVE_FILE="y"
+    echo -e "${YELLOW}Docker detected: automatically saving secrets to file.${NC}"
+else
+    echo -e "${YELLOW}Would you like to save these secrets to a file? (y/n)${NC}"
+    read -r SAVE_FILE
+fi
 
 if [[ "$SAVE_FILE" =~ ^[Yy]$ ]]; then
     OUTPUT_FILE="secrets-$(date +%Y%m%d-%H%M%S).txt"

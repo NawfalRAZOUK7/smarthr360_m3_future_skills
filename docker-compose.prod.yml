@@ -47,10 +47,11 @@ services:
       - logs_volume:/app/logs
     expose:
       - "8000"
+    env_file:
+      - /Users/nawfalrazouk/smarthr360_m3_future_skills/secrets.env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY:-y!2pL6rT9vB3eX7uJ0sA4dF1gH5kN8mC2qW6yR3tU0oP1lV5bS9jE7xZ4cM8nQ4rT1wZ}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smarthr360}
       - REDIS_HOST=redis
@@ -84,10 +85,11 @@ services:
       - media_volume:/app/media
       - ml_models_volume:/app/artifacts/models
       - logs_volume:/app/logs
+    env_file:
+      - /Users/nawfalrazouk/smarthr360_m3_future_skills/secrets.env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY:-y!2pL6rT9vB3eX7uJ0sA4dF1gH5kN8mC2qW6yR3tU0oP1lV5bS9jE7xZ4cM8nQ4rT1wZ}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smarthr360}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -107,10 +109,11 @@ services:
     command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - logs_volume:/app/logs
+    env_file:
+      - /Users/nawfalrazouk/smarthr360_m3_future_skills/secrets.env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY:-y!2pL6rT9vB3eX7uJ0sA4dF1gH5kN8mC2qW6yR3tU0oP1lV5bS9jE7xZ4cM8nQ4rT1wZ}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smarthr360}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -132,6 +135,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
@@ -146,7 +150,8 @@ services:
           "--quiet",
           "--tries=1",
           "--spider",
-          "http://localhost/health",
+          "--no-check-certificate",
+          "https://127.0.0.1/health",
         ]
       interval: 30s
       timeout: 10s
