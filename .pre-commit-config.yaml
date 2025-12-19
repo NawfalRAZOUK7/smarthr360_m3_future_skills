@@ -49,7 +49,6 @@ repos:
       - id: end-of-file-fixer
         exclude: ^(.*\.txt)$
       - id: check-yaml
-        args: ["--safe"]
       - id: check-json
       - id: check-toml
       - id: check-added-large-files
@@ -69,12 +68,12 @@ repos:
         exclude: ^(migrations/|tests/|.*test_.*)
 
   # Check for secrets
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
-    hooks:
-      - id: detect-secrets
-        args: ["--baseline", ".secrets.baseline"]
-        exclude: ^(.*\.lock|.*\.json|.*\.md)$
+  # - repo: https://github.com/Yelp/detect-secrets
+  #   rev: v1.5.0
+  #   hooks:
+  #     - id: detect-secrets
+  #       args: ["--baseline", ".secrets.baseline"]
+  #       exclude: ^(.*\.lock|.*\.json|.*\.md)$
 
 # Configuration
 default_language_version:

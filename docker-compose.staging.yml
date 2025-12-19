@@ -1,0 +1,172 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: smarthr360_db_staging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smarthr360_staging}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
+    volumes:
+      - postgres_data_staging:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smarthr360-staging-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: smarthr360_redis_staging
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data_staging:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smarthr360-staging-network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: smarthr360_web_staging
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --threads 2 --worker-class gthread --timeout 120
+    volumes:
+      - static_volume_staging:/app/staticfiles
+      - media_volume_staging:/app/media
+      - ml_models_volume_staging:/app/artifacts/models
+      - logs_volume_staging:/app/logs
+    expose:
+      - "8000"
+    env_file:
+      - .env.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - DEBUG=False
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - smarthr360-staging-network
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: smarthr360_celery_worker_staging
+    command: celery -A config worker --loglevel=info --concurrency=2 --max-tasks-per-child=500
+    volumes:
+      - media_volume_staging:/app/media
+      - ml_models_volume_staging:/app/artifacts/models
+      - logs_volume_staging:/app/logs
+    env_file:
+      - .env.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - DEBUG=False
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "celery", "-A", "config", "inspect", "active"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - smarthr360-staging-network
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: smarthr360_celery_beat_staging
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - logs_volume_staging:/app/logs
+    env_file:
+      - .env.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - DEBUG=False
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    networks:
+      - smarthr360-staging-network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: smarthr360_nginx_staging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - static_volume_staging:/app/staticfiles
+      - media_volume_staging:/app/media
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/sites-enabled:/etc/nginx/sites-enabled
+    depends_on:
+      - web
+    restart: unless-stopped
+    networks:
+      - smarthr360-staging-network
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: smarthr360_mlflow_staging
+    command: mlflow server --host 0.0.0.0 --port 5500 --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns
+    volumes:
+      - mlflow_data_staging:/app/mlruns
+      - ml_models_volume_staging:/app/artifacts/models
+    ports:
+      - "5500:5500"
+    environment:
+      - MLFLOW_TRACKING_URI=http://localhost:5500
+    restart: unless-stopped
+    networks:
+      - smarthr360-staging-network
+
+volumes:
+  postgres_data_staging:
+    driver: local
+  redis_data_staging:
+    driver: local
+  static_volume_staging:
+    driver: local
+  media_volume_staging:
+    driver: local
+  ml_models_volume_staging:
+    driver: local
+  logs_volume_staging:
+    driver: local
+  mlflow_data_staging:
+    driver: local
+
+networks:
+  smarthr360-staging-network:
+    driver: bridge

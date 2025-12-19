@@ -1,0 +1,90 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_run:
+    workflows: ["Build & Push Docker Images"]
+    types: [completed]
+    branches: [staging]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+
+    environment:
+      name: staging
+      url: https://staging.smarthr360.com
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$STAGING_HOST" >> ~/.ssh/known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+
+      - name: Deploy to staging
+        run: |
+          ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST << 'EOF'
+            cd /opt/smarthr360
+            git pull origin staging
+
+            # Update environment variables
+            cp .env.staging .env
+
+            # Pull latest images
+            docker-compose -f docker-compose.staging.yml pull
+
+            # Deploy with zero downtime
+            docker-compose -f docker-compose.staging.yml up -d --scale web=2
+
+            # Wait for health checks
+            sleep 30
+
+            # Run database migrations
+            docker-compose -f docker-compose.staging.yml exec -T web python manage.py migrate
+
+            # Scale back to normal
+            docker-compose -f docker-compose.staging.yml up -d --scale web=1
+
+            # Clean up old images
+            docker image prune -f
+          EOF
+        env:
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+
+      - name: Run staging tests
+        run: |
+          # Wait for deployment to be ready
+          sleep 60
+
+          # Run smoke tests against staging
+          curl -f https://staging.smarthr360.com/api/health/
+
+          # Run API tests against staging (if available)
+          # pytest tests/e2e/ -v --tb=short \
+          #   --api-url=https://staging.smarthr360.com \
+          #   --api-key=${{ secrets.STAGING_API_KEY }}
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Staging deployment successful!"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Staging deployment failed!"
