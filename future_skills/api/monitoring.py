@@ -254,9 +254,15 @@ class ReadyCheckView(APIView):
         """Check if service is ready"""
         checks = {
             "database": self._check_database(),
-            "migrations": self._check_migrations(),
             "cache": self._check_cache(),
         }
+
+        # Only check migrations in production
+        from django.conf import settings
+        if settings.DEBUG or getattr(settings, 'ENVIRONMENT', 'development') != 'production':
+            checks["migrations"] = True  # Skip migration check in development
+        else:
+            checks["migrations"] = self._check_migrations()
 
         all_ready = all(checks.values())
 

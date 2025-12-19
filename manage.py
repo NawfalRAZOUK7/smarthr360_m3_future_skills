@@ -3,6 +3,15 @@
 import os
 import sys
 
+# Load environment variables from .env files
+from dotenv import load_dotenv
+
+# Load .env file if it exists
+load_dotenv()
+
+# Also load secrets.env if it exists (for production secrets)
+load_dotenv('secrets.env')
+
 
 def main():
     """Run administrative tasks."""
