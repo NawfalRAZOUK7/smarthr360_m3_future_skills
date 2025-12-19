@@ -4,7 +4,7 @@
 # ==============================================================================
 
 # --- Builder stage: install build deps, train models ---
-FROM smarthr360-base:latest as builder
+FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ COPY ml/ ./ml/
 
 # ...existing code...
 
-FROM smarthr360-base:latest as final
+FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as final
 
 WORKDIR /app
 
@@ -37,7 +37,7 @@ COPY --from=builder /app/ml/models/ ./ml/models/
 # RUN python ml/train.py --output /app/ml/models
 
 # --- Final stage: minimal runtime image ---
-FROM smarthr360-base:latest as final
+FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as final
 
 WORKDIR /app
 
