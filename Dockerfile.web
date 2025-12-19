@@ -2,7 +2,7 @@
 # syntax=docker/dockerfile:1.4
 
 # Build argument for base image
-ARG BASE_IMAGE=smarthr360-base:latest
+ARG BASE_IMAGE
 
 # --- Builder stage: build assets and collect static files ---
 FROM ${BASE_IMAGE} as builder
