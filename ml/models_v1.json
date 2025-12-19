@@ -1,7 +1,7 @@
 {
   "model_version": "v1",
-  "training_date": "2025-12-18T23:50:48.825527",
-  "training_duration_seconds": 0.8,
+  "training_date": "2025-12-19T21:50:58.122850",
+  "training_duration_seconds": 8.89,
   "dataset": {
     "csv_path": "/app/artifacts/datasets/future_skills_dataset.csv",
     "total_samples": 358,

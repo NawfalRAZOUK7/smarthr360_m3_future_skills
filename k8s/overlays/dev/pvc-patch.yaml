@@ -1,7 +1,0 @@
-# Patch PVCs for local development with hostpath storage
-- op: replace
-  path: /spec/storageClassName
-  value: hostpath
-- op: replace
-  path: /spec/resources/requests/storage
-  value: 1Gi
