@@ -1,0 +1,95 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - blue
+          - green
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://api.smarthr360.com
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$PRODUCTION_HOST" >> ~/.ssh/known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+
+      - name: Deploy to production
+        run: |
+          ssh -o StrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_HOST << 'EOF'
+            cd /opt/smarthr360
+
+            # Create backup
+            ./scripts/backup.sh
+
+            # Pull latest images
+            docker-compose -f docker-compose.prod.yml pull
+
+            # Standard deployment
+            docker-compose -f docker-compose.prod.yml up -d
+
+            # Run migrations
+            docker-compose -f docker-compose.prod.yml exec -T web python manage.py migrate
+
+            # Health check
+            for i in {1..30}; do
+              if curl -f http://localhost:8000/api/health/; then
+                break
+              fi
+              sleep 10
+            done
+
+            # Clean up
+            docker image prune -f
+            docker volume prune -f
+          EOF
+        env:
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+
+      - name: Run production smoke tests
+        run: |
+          sleep 60
+          curl -f https://api.smarthr360.com/api/health/
+
+      - name: Create deployment tag
+        if: success()
+        run: |
+          git tag -a "deploy-$(date +%Y%m%d-%H%M%S)" -m "Production deployment"
+          git push origin --tags
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "🚀 Production deployment successful!"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "💥 Production deployment failed!"
