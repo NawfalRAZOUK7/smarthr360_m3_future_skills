@@ -1,8 +1,11 @@
 
 # syntax=docker/dockerfile:1.4
 
+# Build argument for base image
+ARG BASE_IMAGE=smarthr360-base:latest
+
 # --- Builder stage: build assets and collect static files ---
-FROM smarthr360-base:latest as builder
+FROM ${BASE_IMAGE} as builder
 
 WORKDIR /app
 
