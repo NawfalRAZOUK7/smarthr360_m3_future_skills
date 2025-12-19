@@ -24,7 +24,7 @@ RUN mkdir -p /app/staticfiles
 
 
 # --- Final stage: minimal runtime image ---
-FROM smarthr360-base:latest as final
+FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as final
 
 WORKDIR /app
 
