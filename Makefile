@@ -188,6 +188,14 @@ format:
 	isort .
 	@echo "$(GREEN)✓ Code formatted$(NC)"
 
+format-check:
+	@echo "$(BLUE)🔍 Checking code formatting...$(NC)"
+	@echo "Checking Black formatting..."
+	black --check . || (echo "$(RED)❌ Code is not properly formatted with Black. Run 'make format' to fix.$(NC)"; exit 1)
+	@echo "Checking isort formatting..."
+	isort --check-only . || (echo "$(RED)❌ Imports are not properly sorted. Run 'make format' to fix.$(NC)"; exit 1)
+	@echo "$(GREEN)✓ Code formatting is correct$(NC)"
+
 check:
 	@echo "$(BLUE)🔍 Running Django system checks...$(NC)"
 	$(MANAGE) check --settings=$(SETTINGS)

@@ -223,7 +223,9 @@ class RateLimitMiddleware(MiddlewareMixin):
     def process_request(self, request):
         try:
             # Skip rate limiting in test/debug or when explicitly disabled
-            if getattr(settings, "DISABLE_RATE_LIMITING", False) or getattr(settings, "DEBUG", False):
+            if getattr(settings, "DISABLE_RATE_LIMITING", False) or getattr(
+                settings, "DEBUG", False
+            ):
                 return None
 
             if not self.cache:

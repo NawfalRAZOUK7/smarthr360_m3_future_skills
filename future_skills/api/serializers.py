@@ -402,9 +402,7 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
                 parameters={"trigger": "bulk_employee_import"},
             )
         except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                "Failed to generate predictions after bulk import: %s", exc
-            )
+            logger.warning("Failed to generate predictions after bulk import: %s", exc)
             return 0
 
 

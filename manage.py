@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Also load secrets.env if it exists (for production secrets)
-load_dotenv('secrets.env')
+load_dotenv("secrets.env")
 
 
 def main():

@@ -80,7 +80,9 @@ def update_settings_file(model_version: str, model_path: Path):
 
     print("✅ settings.py mis à jour:")
     print(f"   - FUTURE_SKILLS_MODEL_VERSION = 'ml_random_forest_{model_version}'")
-    print("   - FUTURE_SKILLS_MODEL_PATH default = ML_MODELS_DIR / " f"'{model_filename}'")
+    print(
+        "   - FUTURE_SKILLS_MODEL_PATH default = ML_MODELS_DIR / " f"'{model_filename}'"
+    )
     return True
 
 
@@ -142,7 +144,9 @@ def main():
     base_dir = Path(__file__).resolve().parent
     project_root = base_dir.parent
 
-    parser = argparse.ArgumentParser(description="Orchestration complète du retraining du modèle Future Skills")
+    parser = argparse.ArgumentParser(
+        description="Orchestration complète du retraining du modèle Future Skills"
+    )
     parser.add_argument(
         "--version",
         type=str,
@@ -198,7 +202,12 @@ def main():
     # Step 2: Train model
 
     # Use correct paths for training script and dataset
-    model_path = PROJECT_ROOT / "artifacts" / "models" / f"future_skills_model_{args.version}.pkl"
+    model_path = (
+        PROJECT_ROOT
+        / "artifacts"
+        / "models"
+        / f"future_skills_model_{args.version}.pkl"
+    )
     dataset_csv = PROJECT_ROOT / "artifacts" / "datasets" / "future_skills_dataset.csv"
     train_script = PROJECT_ROOT / "ml" / "scripts" / "train_future_skills_model.py"
 
@@ -236,7 +245,9 @@ def main():
     if args.auto_update_settings:
         print("\n🔧 Mise à jour automatique de config/settings.py...")
         update_settings_file(args.version, model_path)
-        print("\n⚠️  ATTENTION: Redémarrez le serveur Django pour appliquer les changements!")
+        print(
+            "\n⚠️  ATTENTION: Redémarrez le serveur Django pour appliquer les changements!"
+        )
     else:
         print("\n💡 Pour déployer ce modèle en production, mettez à jour manuellement:")
         print("   - config/settings.py:")

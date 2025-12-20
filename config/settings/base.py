@@ -229,7 +229,13 @@ ML_JOBLIB_CACHE_DIR = Path(
     config("ML_JOBLIB_CACHE_DIR", default=str(ARTIFACTS_ROOT / "cache" / "joblib"))
 )
 
-for directory in (ARTIFACTS_ROOT, ML_MODELS_DIR, ML_RESULTS_DIR, ML_DATASETS_DIR, ML_JOBLIB_CACHE_DIR):
+for directory in (
+    ARTIFACTS_ROOT,
+    ML_MODELS_DIR,
+    ML_RESULTS_DIR,
+    ML_DATASETS_DIR,
+    ML_JOBLIB_CACHE_DIR,
+):
     directory.mkdir(parents=True, exist_ok=True)
 
 # Default primary key field type

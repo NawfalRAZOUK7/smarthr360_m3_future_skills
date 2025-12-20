@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-
 DEFAULT_REDIS_URL = "redis://localhost:6379/0"
 
 
@@ -227,9 +226,7 @@ class EnvironmentValidator:
         celery_broker = config("CELERY_BROKER_URL", default=DEFAULT_REDIS_URL)
         self.validate_url("CELERY_BROKER_URL", celery_broker, ["redis", "amqp"])
 
-        celery_backend = config(
-            "CELERY_RESULT_BACKEND", default=DEFAULT_REDIS_URL
-        )
+        celery_backend = config("CELERY_RESULT_BACKEND", default=DEFAULT_REDIS_URL)
         self.validate_url("CELERY_RESULT_BACKEND", celery_backend, ["redis", "amqp"])
 
         # ML Settings
@@ -380,9 +377,7 @@ def get_env_info() -> Dict[str, Any]:
             "ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv()
         ),
         "database_url_set": bool(config("DATABASE_URL", default=None)),
-        "celery_broker": config(
-            "CELERY_BROKER_URL", default=DEFAULT_REDIS_URL
-        ),
+        "celery_broker": config("CELERY_BROKER_URL", default=DEFAULT_REDIS_URL),
         "use_ml": config("FUTURE_SKILLS_USE_ML", default=True, cast=bool),
         "ml_model_exists": (
             BASE_DIR / "ml" / "models" / "future_skills_model.pkl"

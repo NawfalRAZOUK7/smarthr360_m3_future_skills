@@ -36,7 +36,10 @@ class TestAuthAndHealth:
         resp = api_client.get("/metrics")
         assert resp.status_code == 200
         # Prometheus text format should contain a metric name such as python_info
-        assert b"python_info" in resp.content or b"process_resident_memory_bytes" in resp.content
+        assert (
+            b"python_info" in resp.content
+            or b"process_resident_memory_bytes" in resp.content
+        )
 
 
 @pytest.mark.django_db
