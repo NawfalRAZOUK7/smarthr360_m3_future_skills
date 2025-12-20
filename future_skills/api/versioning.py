@@ -159,7 +159,9 @@ class HybridVersioning(URLPathVersioning):
     """Attempt URL path versioning first, then fall back to Accept header."""
 
     def determine_version(self, request, *args, **kwargs):
-        resolver_namespace = getattr(getattr(request, "resolver_match", None), "namespace", None)
+        resolver_namespace = getattr(
+            getattr(request, "resolver_match", None), "namespace", None
+        )
 
         if resolver_namespace:
             try:

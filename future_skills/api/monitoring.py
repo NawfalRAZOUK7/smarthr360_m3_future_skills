@@ -111,7 +111,9 @@ class VersionInfoView(APIView):
         # Provide explicit keys expected by tests
         version_data["current_version"] = version_data.get("current", "v2")
         version_data.setdefault("available_versions", version_data.get("supported", []))
-        version_data.setdefault("deprecated_versions", version_data.get("deprecated", []))
+        version_data.setdefault(
+            "deprecated_versions", version_data.get("deprecated", [])
+        )
         version_data.update(
             {
                 "server_time": timezone.now().isoformat(),
@@ -259,7 +261,11 @@ class ReadyCheckView(APIView):
 
         # Only check migrations in production
         from django.conf import settings
-        if settings.DEBUG or getattr(settings, 'ENVIRONMENT', 'development') != 'production':
+
+        if (
+            settings.DEBUG
+            or getattr(settings, "ENVIRONMENT", "development") != "production"
+        ):
             checks["migrations"] = True  # Skip migration check in development
         else:
             checks["migrations"] = self._check_migrations()

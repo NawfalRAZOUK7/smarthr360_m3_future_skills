@@ -1,10 +1,9 @@
 # Test Training API endpoints (Section 2.4)
 
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.test import TestCase
 from rest_framework.test import APIClient
-
-from django.conf import settings
 
 from future_skills.models import TrainingRun
 
@@ -75,9 +74,7 @@ class TrainingAPITest(TestCase):
     def test_train_model_small(self):
         """Test training a small model."""
         request_data = {
-            "dataset_path": str(
-                settings.ML_DATASETS_DIR / "future_skills_dataset.csv"
-            ),
+            "dataset_path": str(settings.ML_DATASETS_DIR / "future_skills_dataset.csv"),
             "test_split": 0.2,
             "hyperparameters": {
                 "n_estimators": 20,

@@ -5,6 +5,7 @@ Test script for Training API endpoints (Section 2.4)
 
 import os
 import sys
+
 import pytest
 
 # Setup paths first
@@ -109,9 +110,7 @@ def test_train_model(client):
 
     # Prepare request data
     request_data = {
-        "dataset_path": str(
-            settings.ML_DATASETS_DIR / "future_skills_dataset.csv"
-        ),
+        "dataset_path": str(settings.ML_DATASETS_DIR / "future_skills_dataset.csv"),
         "test_split": 0.2,
         "hyperparameters": {
             "n_estimators": 30,  # Small for fast testing

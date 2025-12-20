@@ -11,7 +11,6 @@ import json
 from numbers import Number
 from typing import Any, Dict, List, Optional, Tuple
 
-
 REQUIRED_HEADERS = {"name", "email", "department", "position"}
 REQUIRED_FIELD_ERRORS = {
     "name": "Name is required",
@@ -342,7 +341,9 @@ def _validate_csv_row(
         employee_data["job_role_name"] = job_role_name
 
     current_skills_raw = row.get("current_skills", "")
-    skills_list = _extract_current_skills(current_skills_raw) if current_skills_raw else []
+    skills_list = (
+        _extract_current_skills(current_skills_raw) if current_skills_raw else []
+    )
     if skills_list:
         employee_data["current_skills"] = skills_list
 
@@ -363,6 +364,7 @@ def _validate_excel_row(
         Tuple of (employee_data, errors)
     """
     import pandas as pd
+
     errors: List[Dict[str, str]] = []
     employee_data: Dict[str, Any] = {}
 
@@ -395,7 +397,9 @@ def _validate_excel_row(
         employee_data["job_role_name"] = job_role_name
 
     current_skills_raw = _normalize_value(row.get("current_skills"))
-    skills_list = _extract_current_skills(current_skills_raw) if current_skills_raw else []
+    skills_list = (
+        _extract_current_skills(current_skills_raw) if current_skills_raw else []
+    )
     if skills_list:
         employee_data["current_skills"] = skills_list
 

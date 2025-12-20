@@ -422,7 +422,9 @@ class ModelTrainer:
                 ("preprocess", preprocessor),
                 ("clf", clf),
             ],
-            memory=str(settings.ML_JOBLIB_CACHE_DIR),  # Cache transformers  # noqa: S106
+            memory=str(
+                settings.ML_JOBLIB_CACHE_DIR
+            ),  # Cache transformers  # noqa: S106
         )
 
         return pipeline
@@ -657,6 +659,7 @@ class ModelTrainer:
         self, *, model_version: str, model_path: str, notes: str
     ):
         """Create the ModelVersion instance with consistent metadata."""
+
         def _semver_fallback(version: str) -> str:
             # Generate a semver-compatible build metadata string for arbitrary tags
             cleaned = re.sub(r"[^A-Za-z0-9]+", "-", version).strip("-") or "manual"
@@ -676,12 +679,15 @@ class ModelTrainer:
                 framework=ModelFramework.SCIKIT_LEARN,
                 algorithm="RandomForestClassifier",
                 hyperparameters=self.hyperparameters,
-                training_dataset_size=(len(self.x_train) if self.x_train is not None else 0),
+                training_dataset_size=(
+                    len(self.x_train) if self.x_train is not None else 0
+                ),
                 training_features=self.available_features,
                 target_classes=["LOW", "MEDIUM", "HIGH"],
                 mlflow_run_id=getattr(self, "mlflow_run_id", None),
                 stage=ModelStage.STAGING,
-                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
+                description=notes
+                or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
                 original_version=model_version,
             )
         except ValueError:
@@ -704,12 +710,15 @@ class ModelTrainer:
                 framework=ModelFramework.SCIKIT_LEARN,
                 algorithm="RandomForestClassifier",
                 hyperparameters=self.hyperparameters,
-                training_dataset_size=(len(self.x_train) if self.x_train is not None else 0),
+                training_dataset_size=(
+                    len(self.x_train) if self.x_train is not None else 0
+                ),
                 training_features=self.available_features,
                 target_classes=["LOW", "MEDIUM", "HIGH"],
                 mlflow_run_id=getattr(self, "mlflow_run_id", None),
                 stage=ModelStage.STAGING,
-                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
+                description=notes
+                or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
                 original_version=model_version,
             )
 

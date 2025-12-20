@@ -8,9 +8,10 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
@@ -24,10 +25,9 @@ from ..models import (
     Skill,
     TrainingRun,
 )
-from rest_framework.permissions import AllowAny
 from ..permissions import IsHRStaff, IsHRStaffOrManager
-from ..services.prediction_engine import recalculate_predictions
 from ..services.file_parser import parse_employee_file
+from ..services.prediction_engine import recalculate_predictions
 from ..services.recommendation_engine import generate_recommendations_from_predictions
 from .serializers import (
     AddSkillToEmployeeSerializer,
@@ -114,7 +114,11 @@ class BulkEmployeeProcessingMixin:
         try:
             total_predictions = recalculate_predictions(
                 horizon_years=horizon_years,
-                run_by=request_user if getattr(request_user, "is_authenticated", False) else None,
+                run_by=(
+                    request_user
+                    if getattr(request_user, "is_authenticated", False)
+                    else None
+                ),
                 parameters={"trigger": trigger},
             )
             return True, total_predictions, []
@@ -1559,6 +1563,7 @@ class TrainModelAPIView(APIView):
         "task_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     }
     """
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -1577,11 +1582,12 @@ class TrainModelAPIView(APIView):
         """
         Train a new model synchronously or asynchronously.
         """
-        import logging
-        import json
         import ast
+        import json
+        import logging
         from datetime import datetime
         from pathlib import Path
+
         from django.contrib.auth import get_user_model
         from django.http import QueryDict
 
@@ -1597,10 +1603,18 @@ class TrainModelAPIView(APIView):
         raw_hyperparameters_input = request.data.get("hyperparameters")
         if not isinstance(raw_hyperparameters_input, dict):
             try:
-                body_data = json.loads(request.body.decode() or "{}") if hasattr(request, "body") else {}
+                body_data = (
+                    json.loads(request.body.decode() or "{}")
+                    if hasattr(request, "body")
+                    else {}
+                )
             except Exception:
                 body_data = {}
-            body_hyperparameters = body_data.get("hyperparameters") if isinstance(body_data, dict) else None
+            body_hyperparameters = (
+                body_data.get("hyperparameters")
+                if isinstance(body_data, dict)
+                else None
+            )
             if isinstance(body_hyperparameters, dict):
                 raw_hyperparameters_input = body_hyperparameters
             elif isinstance(request.data, QueryDict):
@@ -1678,12 +1692,16 @@ class TrainModelAPIView(APIView):
             else:
                 import re
 
-                match = re.search(r"n_estimators[^0-9]*([0-9]+)", str(raw_hyperparameters_input))
+                match = re.search(
+                    r"n_estimators[^0-9]*([0-9]+)", str(raw_hyperparameters_input)
+                )
                 if match:
                     n_estimators_candidate = match.group(1)
                 elif isinstance(raw_hyperparameters_input, (list, tuple)):
                     names = [str(item) for item in raw_hyperparameters_input]
-                    if len(names) == 1 and any("n_estimators" in name for name in names):
+                    if len(names) == 1 and any(
+                        "n_estimators" in name for name in names
+                    ):
                         return Response(
                             {
                                 "error": "Invalid request data",
@@ -1705,7 +1723,9 @@ class TrainModelAPIView(APIView):
                             parsed = ast.literal_eval(raw_hyperparameters_input)
                         except Exception:
                             parsed = None
-                    raw_hyperparameters_input = parsed if isinstance(parsed, dict) else {}
+                    raw_hyperparameters_input = (
+                        parsed if isinstance(parsed, dict) else {}
+                    )
                 else:
                     return Response(
                         {
@@ -1724,7 +1744,11 @@ class TrainModelAPIView(APIView):
                     return Response(
                         {
                             "error": "Invalid request data",
-                            "details": {"hyperparameters": {"n_estimators": "Must be an integer"}},
+                            "details": {
+                                "hyperparameters": {
+                                    "n_estimators": "Must be an integer"
+                                }
+                            },
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -1745,18 +1769,30 @@ class TrainModelAPIView(APIView):
             serializer_input = {}
             for key, values in request.data.lists():
                 if key == "hyperparameters":
-                    serializer_input[key] = raw_hyperparameters_input if isinstance(raw_hyperparameters_input, dict) else {}
+                    serializer_input[key] = (
+                        raw_hyperparameters_input
+                        if isinstance(raw_hyperparameters_input, dict)
+                        else {}
+                    )
                 else:
                     serializer_input[key] = values[0] if len(values) == 1 else values
         else:
-            serializer_input = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
+            serializer_input = (
+                request.data.copy()
+                if hasattr(request.data, "copy")
+                else dict(request.data)
+            )
             if raw_hyperparameters_input is not None:
                 serializer_input["hyperparameters"] = raw_hyperparameters_input
 
         logger.debug(
             "[train_model] raw_hyperparameters_input=%s, serializer_input_hparams=%s, data_type=%s",
             raw_hyperparameters_input,
-            serializer_input.get("hyperparameters") if isinstance(serializer_input, dict) else None,
+            (
+                serializer_input.get("hyperparameters")
+                if isinstance(serializer_input, dict)
+                else None
+            ),
             type(request.data),
         )
 
@@ -1790,7 +1826,9 @@ class TrainModelAPIView(APIView):
                     parsed_hyperparameters = ast.literal_eval(raw_hyperparameters)
                 except (ValueError, SyntaxError):
                     parsed_hyperparameters = None
-        elif raw_hyperparameters is not None and isinstance(raw_hyperparameters, (list, tuple)):
+        elif raw_hyperparameters is not None and isinstance(
+            raw_hyperparameters, (list, tuple)
+        ):
             # Handle cases where the payload arrives as a single-element list
             if len(raw_hyperparameters) == 1:
                 candidate = raw_hyperparameters[0]
@@ -1818,7 +1856,9 @@ class TrainModelAPIView(APIView):
                 parsed_hyperparameters = None
 
         if raw_hyperparameters is not None:
-            if parsed_hyperparameters is None or not isinstance(parsed_hyperparameters, dict):
+            if parsed_hyperparameters is None or not isinstance(
+                parsed_hyperparameters, dict
+            ):
                 if isinstance(hyperparameters, dict) and hyperparameters:
                     parsed_hyperparameters = hyperparameters
                 else:
@@ -1828,7 +1868,9 @@ class TrainModelAPIView(APIView):
 
                         match = re.search(r"n_estimators[^0-9]*([0-9]+)", raw_str)
                         if match:
-                            parsed_hyperparameters = {"n_estimators": int(match.group(1))}
+                            parsed_hyperparameters = {
+                                "n_estimators": int(match.group(1))
+                            }
                     if parsed_hyperparameters is None:
                         parsed_hyperparameters = {}
             hyperparameters = parsed_hyperparameters
@@ -1872,7 +1914,9 @@ class TrainModelAPIView(APIView):
                 return Response(
                     {
                         "error": "Invalid request data",
-                        "details": {"hyperparameters": {"n_estimators": "Must be an integer"}},
+                        "details": {
+                            "hyperparameters": {"n_estimators": "Must be an integer"}
+                        },
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -2196,6 +2240,7 @@ class TrainingRunListAPIView(ListAPIView):
 
     Returns paginated list of training runs with basic metrics.
     """
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -2204,6 +2249,7 @@ class TrainingRunListAPIView(ListAPIView):
 
     def get_authenticators(self):
         return []
+
     serializer_class = TrainingRunSerializer
     pagination_class = TrainingRunPagination
 
@@ -2271,6 +2317,7 @@ class TrainingRunDetailAPIView(RetrieveAPIView):
     - Dataset information
     - Error messages (if failed)
     """
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -2279,5 +2326,6 @@ class TrainingRunDetailAPIView(RetrieveAPIView):
 
     def get_authenticators(self):
         return []
+
     serializer_class = TrainingRunDetailSerializer
     queryset = TrainingRun.objects.select_related("trained_by").all()

@@ -424,9 +424,11 @@ def _estimate_training_requests(job_role: JobRole, skill: Skill) -> float:
     """
 
     skill_name = (skill.name or "").lower()
-    base_requests = 40.0 if any(
-        keyword in skill_name for keyword in ("data", "ia", "ai", "cloud")
-    ) else 10.0
+    base_requests = (
+        40.0
+        if any(keyword in skill_name for keyword in ("data", "ia", "ai", "cloud"))
+        else 10.0
+    )
 
     dept = (getattr(job_role, "department", "") or "").lower()
     if dept.startswith("hr"):

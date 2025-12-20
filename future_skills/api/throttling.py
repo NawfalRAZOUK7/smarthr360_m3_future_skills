@@ -9,11 +9,9 @@ import time
 
 from django.conf import settings
 from django.core.cache import cache
-from rest_framework.throttling import (  # noqa: TID252 - reusing DRF helpers
-    AnonRateThrottle as DRFAnonRateThrottle,
-    ScopedRateThrottle as DRFScopedRateThrottle,
-    UserRateThrottle as DRFUserRateThrottle,
-)
+from rest_framework.throttling import AnonRateThrottle as DRFAnonRateThrottle  # noqa: TID252 - reusing DRF helpers
+from rest_framework.throttling import ScopedRateThrottle as DRFScopedRateThrottle
+from rest_framework.throttling import UserRateThrottle as DRFUserRateThrottle
 
 
 def _parse_rate(rate):
@@ -69,7 +67,9 @@ class BaseSimpleThrottle:
         self.request = None
 
     def get_rate(self):
-        rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
+        rates = getattr(settings, "REST_FRAMEWORK", {}).get(
+            "DEFAULT_THROTTLE_RATES", {}
+        )
         return self.rate or rates.get(self.scope)
 
     def get_cache_key(self, request, view):
@@ -128,8 +128,14 @@ class BaseSimpleThrottle:
             self.allow_request(request, view)
 
         now = self.timer()
-        remaining = max(self.num_requests - len(self.history), 0) if self.num_requests else 0
-        reset = int(self.history[0] + self.duration) if self.history else int(now + (self.duration or 0))
+        remaining = (
+            max(self.num_requests - len(self.history), 0) if self.num_requests else 0
+        )
+        reset = (
+            int(self.history[0] + self.duration)
+            if self.history
+            else int(now + (self.duration or 0))
+        )
 
         return {
             "X-RateLimit-Limit": str(self.num_requests or 0),

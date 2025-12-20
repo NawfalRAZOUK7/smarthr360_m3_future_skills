@@ -178,15 +178,21 @@ class Command(BaseCommand):
         self._print_top_entities("IP Addresses", analysis["top_ips"])
         self._print_top_entities("Users", analysis["top_users"])
         self._print_recent_events(
-            "Suspicious Activities", analysis["recent_suspicious"], formatter=self._format_message_event
+            "Suspicious Activities",
+            analysis["recent_suspicious"],
+            formatter=self._format_message_event,
         )
         self._print_recent_events(
-            "Auth Failures", analysis["recent_auth_failures"], formatter=self._format_auth_failure
+            "Auth Failures",
+            analysis["recent_auth_failures"],
+            formatter=self._format_auth_failure,
         )
 
     def _print_event_types(self, event_types):
         self.stdout.write(self.style.SUCCESS("\nEvent Types:"))
-        for event_type, count in sorted(event_types.items(), key=lambda x: x[1], reverse=True):
+        for event_type, count in sorted(
+            event_types.items(), key=lambda x: x[1], reverse=True
+        ):
             self.stdout.write(f"  {event_type}: {count}")
 
     def _print_severities(self, severities):
@@ -216,11 +222,7 @@ class Command(BaseCommand):
     def _print_recent_events(self, label, events, formatter):
         if not events:
             return
-        self.stdout.write(
-            self.style.WARNING(
-                f"\nRecent {label} ({len(events)}):"
-            )
-        )
+        self.stdout.write(self.style.WARNING(f"\nRecent {label} ({len(events)}):"))
         for event in events[-5:]:
             self.stdout.write(f"  {formatter(event)}")
         self.stdout.write("\n")

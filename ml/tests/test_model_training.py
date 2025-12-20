@@ -464,9 +464,7 @@ class TestFeatureImportance:
         values = list(feature_importance.values())
 
         # Check descending order without strict float equality
-        assert all(
-            values[i] >= values[i + 1] - 1e-9 for i in range(len(values) - 1)
-        )
+        assert all(values[i] >= values[i + 1] - 1e-9 for i in range(len(values) - 1))
 
     def test_feature_importance_without_training(self, sample_dataset):
         """Test that feature importance fails if model not trained."""

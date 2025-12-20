@@ -15,7 +15,9 @@ from config.apm_config import initialize_apm
 from config.logging_config import setup_logging
 
 # Use the settings module set by environment variable or default
-settings_module = os.environ.get("DJANGO_SETTINGS_MODULE", "config.settings.development")
+settings_module = os.environ.get(
+    "DJANGO_SETTINGS_MODULE", "config.settings.development"
+)
 with open("/app/debug_wsgi.log", "w") as f:
     f.write(f"WSGI: DJANGO_SETTINGS_MODULE is: {settings_module}\n")
 

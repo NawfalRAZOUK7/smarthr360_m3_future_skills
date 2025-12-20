@@ -21,7 +21,9 @@ for parent in current.parents:
         PROJECT_ROOT = parent
         break
 else:
-    print("[ERROR] Could not find project root (manage.py/config). Please check your project structure.")
+    print(
+        "[ERROR] Could not find project root (manage.py/config). Please check your project structure."
+    )
     sys.exit(1)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.base")
@@ -39,7 +41,9 @@ except Exception as e:
 try:
     from future_skills.models import FutureSkillPrediction, JobRole, Skill
 except ImportError:
-    print("[ERROR] Could not import FutureSkillPrediction model. Is Django app installed?")
+    print(
+        "[ERROR] Could not import FutureSkillPrediction model. Is Django app installed?"
+    )
     sys.exit(1)
 
 

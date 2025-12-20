@@ -20,6 +20,7 @@ django.setup()
 
 from pathlib import Path
 
+import pytest
 from django.conf import settings
 
 from future_skills.services.training_service import (
@@ -27,9 +28,6 @@ from future_skills.services.training_service import (
     ModelTrainer,
     TrainingError,
 )
-
-
-import pytest
 
 
 @pytest.mark.django_db

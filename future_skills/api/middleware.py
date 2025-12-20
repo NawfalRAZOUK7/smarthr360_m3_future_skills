@@ -8,12 +8,13 @@ import json
 import logging
 import time
 from unittest.mock import Mock
-from django.conf import settings
 
+from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
-from django.contrib.auth.models import AnonymousUser
+
 from future_skills.api.throttling import _parse_rate
 
 logger = logging.getLogger(__name__)
@@ -35,10 +36,10 @@ class APIPerformanceMiddleware(MiddlewareMixin):
         request._original_accept = accept_header
         if "vnd.smarthr360" in accept_header:
             request.META["HTTP_ACCEPT"] = "application/json"
-            if "vnd.smarthr360.v1" in accept_header and not hasattr(request, "_deprecation_warning"):
-                request._deprecation_warning = (
-                    "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
-                )
+            if "vnd.smarthr360.v1" in accept_header and not hasattr(
+                request, "_deprecation_warning"
+            ):
+                request._deprecation_warning = "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
         if isinstance(time.time, Mock):
             request._force_slow_log = True
 
@@ -61,7 +62,9 @@ class APIPerformanceMiddleware(MiddlewareMixin):
                 response["X-DB-Queries"] = str(db_queries)
 
             # Log slow requests
-            if duration_ms > 1000 or getattr(request, "_force_slow_log", False):  # Over 1 second
+            if duration_ms > 1000 or getattr(
+                request, "_force_slow_log", False
+            ):  # Over 1 second
                 logger.warning(
                     f"Slow API request: {request.method} {request.path} "
                     f"took {duration_ms}ms"
@@ -69,9 +72,13 @@ class APIPerformanceMiddleware(MiddlewareMixin):
 
         # Add simple rate limit headers if missing
         if "X-RateLimit-Limit" not in response:
-            rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
+            rates = getattr(settings, "REST_FRAMEWORK", {}).get(
+                "DEFAULT_THROTTLE_RATES", {}
+            )
             is_auth = getattr(getattr(request, "user", None), "is_authenticated", False)
-            limit = int(rates.get("user" if is_auth else "anon", "1000/hour").split("/")[0])
+            limit = int(
+                rates.get("user" if is_auth else "anon", "1000/hour").split("/")[0]
+            )
             response["X-RateLimit-Limit"] = str(limit)
             response["X-RateLimit-Remaining"] = str(max(limit - 1, 0))
             response["X-RateLimit-Reset"] = str(int(self._safe_time()) + 60)
@@ -84,14 +91,20 @@ class APIPerformanceMiddleware(MiddlewareMixin):
         if "Access-Control-Allow-Origin" not in response:
             response["Access-Control-Allow-Origin"] = "*"
         if "Access-Control-Allow-Methods" not in response:
-            response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            response["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            )
         if "Access-Control-Allow-Headers" not in response:
-            response["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin"
+            response["Access-Control-Allow-Headers"] = (
+                "Authorization, Content-Type, Accept, Origin"
+            )
 
         return response
 
     def _add_rate_limit_headers(self, request, response):
-        rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
+        rates = getattr(settings, "REST_FRAMEWORK", {}).get(
+            "DEFAULT_THROTTLE_RATES", {}
+        )
         is_auth = getattr(getattr(request, "user", None), "is_authenticated", False)
         limit = int(rates.get("user" if is_auth else "anon", "1000/hour").split("/")[0])
         response.setdefault("X-RateLimit-Limit", str(limit))
@@ -318,8 +331,14 @@ class APICacheMiddleware(MiddlewareMixin):
     def _enforce_simple_throttle(self, request):
         """Apply a lightweight throttle so cached responses still respect limits."""
         try:
-            rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
-            scope = "user" if getattr(getattr(request, "user", None), "is_authenticated", False) else "anon"
+            rates = getattr(settings, "REST_FRAMEWORK", {}).get(
+                "DEFAULT_THROTTLE_RATES", {}
+            )
+            scope = (
+                "user"
+                if getattr(getattr(request, "user", None), "is_authenticated", False)
+                else "anon"
+            )
             rate = rates.get(scope)
             parsed = _parse_rate(rate)
             if not parsed:
@@ -333,7 +352,9 @@ class APICacheMiddleware(MiddlewareMixin):
             history = [ts for ts in history if ts > now - duration]
 
             if len(history) >= num_requests:
-                retry_after = max(int(history[0] + duration - now), 1) if history else duration
+                retry_after = (
+                    max(int(history[0] + duration - now), 1) if history else duration
+                )
                 response = JsonResponse(
                     {
                         "detail": "Request was throttled.",
@@ -361,12 +382,18 @@ class APICacheMiddleware(MiddlewareMixin):
         if "Access-Control-Allow-Origin" not in response:
             response["Access-Control-Allow-Origin"] = "*"
         if "Access-Control-Allow-Methods" not in response:
-            response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            response["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            )
         if "Access-Control-Allow-Headers" not in response:
-            response["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin"
+            response["Access-Control-Allow-Headers"] = (
+                "Authorization, Content-Type, Accept, Origin"
+            )
 
     def _add_rate_limit_headers(self, request, response):
-        rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
+        rates = getattr(settings, "REST_FRAMEWORK", {}).get(
+            "DEFAULT_THROTTLE_RATES", {}
+        )
         is_auth = getattr(getattr(request, "user", None), "is_authenticated", False)
         limit = int(rates.get("user" if is_auth else "anon", "1000/hour").split("/")[0])
         response.setdefault("X-RateLimit-Limit", str(limit))
@@ -412,10 +439,10 @@ class APIDeprecationMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         """Add deprecation headers if needed"""
         # Default deprecation warning for v1 endpoints
-        if request.path.startswith("/api/v1/") and not hasattr(request, "_deprecation_warning"):
-            request._deprecation_warning = (
-                "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
-            )
+        if request.path.startswith("/api/v1/") and not hasattr(
+            request, "_deprecation_warning"
+        ):
+            request._deprecation_warning = "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
 
         # Check if request has deprecation warning (set by versioning)
         if hasattr(request, "_deprecation_warning"):
@@ -473,7 +500,7 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         if hasattr(request, "_log_start_time"):
             duration = int((self._safe_time() - request._log_start_time) * 1000)
 
-        # Get user info
+            # Get user info
             user = None
             try:
                 user = getattr(request, "user", None)
@@ -487,7 +514,15 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         # Get query params (sanitized)
         query_params = dict(request.GET)
         # Remove sensitive params
-        for sensitive_key in ["password", "token", "secret", "key", "api_key", "apikey", "apiKey"]:
+        for sensitive_key in [
+            "password",
+            "token",
+            "secret",
+            "key",
+            "api_key",
+            "apikey",
+            "apiKey",
+        ]:
             if sensitive_key in query_params:
                 query_params[sensitive_key] = "***"
 
