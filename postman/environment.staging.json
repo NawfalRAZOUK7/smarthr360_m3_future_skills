@@ -1,0 +1,10 @@
+{
+  "id": "smarthr360-future-skills-env-staging",
+  "name": "SmartHR360 Future Skills - Staging",
+  "values": [
+    { "key": "base_url", "value": "https://staging.example.com", "enabled": true },
+    { "key": "access_token", "value": "", "enabled": true, "type": "text" },
+    { "key": "refresh_token", "value": "", "enabled": true, "type": "text" }
+  ],
+  "_postman_variable_scope": "environment"
+}

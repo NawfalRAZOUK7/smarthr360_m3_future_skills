@@ -424,7 +424,7 @@ def _estimate_scarcity_index(job_role: JobRole, skill: Skill, internal_usage: fl
     elif "innovation" in dept:
         scarcity += 0.05
 
-    return max(0.0, min(1.0, scarcity))
+    return round(max(0.0, min(1.0, scarcity)), 3)
 
 
 # ---------------------------------------------------------------------------
@@ -533,16 +533,37 @@ def _build_batch_prediction_payload(
     skills: list[Skill],
     horizon_years: int,
 ) -> list[Dict[str, int]]:
-    """Create the payload consumed by PredictionEngine.batch_predict."""
-    return [
-        {
-            "job_role_id": job_role.id,
-            "skill_id": skill.id,
-            "horizon_years": horizon_years,
-        }
-        for job_role in job_roles
-        for skill in skills
-    ]
+    """Create the payload consumed by PredictionEngine.batch_predict with safe defaults."""
+    payload: list[Dict[str, Any]] = []
+
+    for job_role in job_roles:
+        for skill in skills:
+            trend_score = _find_relevant_trend(job_role, skill)
+            internal_usage = _estimate_internal_usage(job_role, skill)
+            training_requests = _estimate_training_requests(job_role, skill)
+            scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
+
+            payload.append(
+                {
+                    "job_role_id": job_role.id,
+                    "skill_id": skill.id,
+                    "horizon_years": horizon_years,
+                    "job_role_name": job_role.name,
+                    "skill_name": skill.name,
+                    "skill_category": (skill.category or "Unspecified"),
+                    "job_department": (job_role.department or "General"),
+                    "trend_score": trend_score,
+                    "internal_usage": internal_usage,
+                    "training_requests": training_requests,
+                    "scarcity_index": scarcity_index,
+                    # Sensible defaults to satisfy ML feature set even if data is sparse
+                    "hiring_difficulty": 0.5,
+                    "avg_salary_k": 50.0,
+                    "economic_indicator": 0.5,
+                }
+            )
+
+    return payload
 
 
 def _persist_prediction_results(

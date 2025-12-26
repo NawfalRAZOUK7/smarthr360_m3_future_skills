@@ -19,7 +19,7 @@ print_error() { echo -e "${RED}✗ $1${NC}"; }
 print_warn() { echo -e "${YELLOW}⚠ $1${NC}"; }
 
 # --- Logging setup ---
-LOG_FILE="docker-build.log"
+LOG_FILE="var/docker-build.log"
 echo "=========================================="
 print_info "SmartHR360 Docker Build (logging to $LOG_FILE)"
 echo "=========================================="
@@ -52,7 +52,7 @@ case $COMMAND in
 
         "dev")
                 print_info "Building and starting development environment... (logging to $LOG_FILE)"
-                $COMPOSE up -d --build >> "$LOG_FILE" 2>&1
+                $COMPOSE -f compose/compose/docker-compose.yml up -d --build >> "$LOG_FILE" 2>&1
                 if [ $? -ne 0 ]; then
                     print_error "Development environment failed to start. See $LOG_FILE for details."
                     tail -20 "$LOG_FILE"
@@ -61,7 +61,7 @@ case $COMMAND in
                 print_success "Development environment is running"
                 echo ""
                 echo "Services:"
-                $COMPOSE ps
+                $COMPOSE -f compose/compose/docker-compose.yml ps
                 echo ""
                 echo "Access the application at: http://localhost:8000"
                 echo "View logs: $COMPOSE logs -f"
@@ -106,7 +106,7 @@ case $COMMAND in
         print_info "Generating predictions for test employee (ID: 1)... (logging to $LOG_FILE)"
         bash scripts/ml_train.sh predict 1 >> "$LOG_FILE" 2>&1 || print_warn "(Prediction step skipped or failed)"
         print_info "Building and starting production environment... (logging to $LOG_FILE)"
-        $COMPOSE -f docker-compose.prod.yml up -d --build >> "$LOG_FILE" 2>&1
+        $COMPOSE -f compose/compose/docker-compose.prod.yml up -d --build >> "$LOG_FILE" 2>&1
         if [ $? -ne 0 ]; then
             print_error "Production environment failed to start. See $LOG_FILE for details."
             tail -20 "$LOG_FILE"
@@ -115,7 +115,7 @@ case $COMMAND in
         print_success "Production environment is running"
         echo ""
         echo "Services:"
-        $COMPOSE -f docker-compose.prod.yml ps
+        $COMPOSE -f compose/compose/docker-compose.prod.yml ps
         echo ""
         echo "Access the application at: http://localhost"
         ;;
@@ -142,7 +142,7 @@ case $COMMAND in
         fi
         print_info "Building Docker image for $ENV environment... (logging to $LOG_FILE)"
         if [ "$ENV" = "prod" ]; then
-            $COMPOSE -f docker-compose.prod.yml build >> "$LOG_FILE" 2>&1
+            $COMPOSE -f compose/docker-compose.prod.yml build >> "$LOG_FILE" 2>&1
         else
             $COMPOSE build >> "$LOG_FILE" 2>&1
         fi
@@ -159,7 +159,7 @@ case $COMMAND in
         ENV=${2:-dev}
         print_info "Stopping Docker containers... (logging to $LOG_FILE)"
         if [ "$ENV" = "prod" ]; then
-            $COMPOSE -f docker-compose.prod.yml down >> "$LOG_FILE" 2>&1
+            $COMPOSE -f compose/docker-compose.prod.yml down >> "$LOG_FILE" 2>&1
         else
             $COMPOSE down >> "$LOG_FILE" 2>&1
         fi
@@ -176,7 +176,7 @@ case $COMMAND in
         ENV=${2:-dev}
         print_info "Restarting Docker containers... (logging to $LOG_FILE)"
         if [ "$ENV" = "prod" ]; then
-            $COMPOSE -f docker-compose.prod.yml restart >> "$LOG_FILE" 2>&1
+            $COMPOSE -f compose/docker-compose.prod.yml restart >> "$LOG_FILE" 2>&1
         else
             $COMPOSE restart >> "$LOG_FILE" 2>&1
         fi
@@ -231,7 +231,7 @@ case $COMMAND in
         read -p "This will remove all containers, volumes, and images. Continue? (y/n): " confirm
         if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
             $COMPOSE down -v >> "$LOG_FILE" 2>&1
-            $COMPOSE -f docker-compose.prod.yml down -v >> "$LOG_FILE" 2>&1
+            $COMPOSE -f compose/docker-compose.prod.yml down -v >> "$LOG_FILE" 2>&1
             docker system prune -af >> "$LOG_FILE" 2>&1
             print_success "Docker resources cleaned"
         else
@@ -247,7 +247,7 @@ case $COMMAND in
         $COMPOSE ps
         echo ""
         echo "Production:"
-        $COMPOSE -f docker-compose.prod.yml ps
+        $COMPOSE -f compose/docker-compose.prod.yml ps
         ;;
 
 

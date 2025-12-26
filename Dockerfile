@@ -9,11 +9,11 @@
 # ==============================================================================
 # Stage 1: Builder
 # ==============================================================================
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Set build arguments
 ARG BUILD_ENV=production
-ARG PYTHON_VERSION=3.11
+ARG PYTHON_VERSION=3.12
 
 # Environment variables for build stage
 ENV PYTHONUNBUFFERED=1 \
@@ -49,8 +49,7 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements files
-COPY requirements.txt requirements_ml.txt requirements_logging.txt requirements_security.txt requirements_celery.txt ./
-COPY ml/requirements.txt ./ml/requirements.txt
+COPY requirements/requirements.txt requirements/requirements_ml.txt requirements/requirements_logging.txt requirements/requirements_security.txt requirements/requirements_celery.txt requirements/requirements-all.txt ./requirements/
 
 # Install Python dependencies in virtual environment with BuildKit pip cache, with retry loop for network errors
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -58,17 +57,15 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         n=0; \
         until [ "$n" -ge 5 ]; do \
             pip install --upgrade pip setuptools wheel && \
-            pip install --no-cache-dir -r requirements.txt && \
-            pip install --no-cache-dir -r requirements_ml.txt && \
-            pip install --no-cache-dir -r requirements_logging.txt && \
-            pip install --no-cache-dir -r requirements_security.txt && break; \
+            pip install --no-cache-dir -r requirements/requirements-all.txt && break; \
             n=$((n+1)); \
             echo "pip install failed, retrying in 10s... ($n/5)"; \
             sleep 10; \
         done
 
 
-COPY manage.py pyproject.toml pytest.ini requirements*.txt ./
+WORKDIR /build/app
+COPY manage.py pyproject.toml pytest.ini ./
 COPY config/ ./config/
 COPY future_skills/ ./future_skills/
 COPY celery_monitoring/ ./celery_monitoring/
@@ -76,7 +73,6 @@ COPY tests/ ./tests/
 # Copy ML scripts and onboarding scripts
 COPY ml/ ./ml/
 COPY scripts/ ./scripts/
-WORKDIR /build/app
 
 # Create necessary directories
 RUN mkdir -p \
@@ -94,7 +90,7 @@ RUN python manage.py collectstatic --noinput --clear || true
 # ==============================================================================
 # Stage 2: Runtime
 # ==============================================================================
-FROM python:3.11-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 # Set runtime arguments
 ARG APP_USER=smarthr360

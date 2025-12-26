@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1766768014053
+current_stage: None
+description: null
+last_updated_timestamp: 1766768014053
+name: future-skills-model
+run_id: e699b875341e4f2888bc3c8a06e41805
+run_link: null
+source: /Users/nawfalrazouk/smarthr360_m3_future_skills/mlruns/artifacts/model-training/e699b875341e4f2888bc3c8a06e41805/artifacts/model
+status: READY
+status_message: null
+storage_location: /Users/nawfalrazouk/smarthr360_m3_future_skills/mlruns/artifacts/model-training/e699b875341e4f2888bc3c8a06e41805/artifacts/model
+user_id: null
+version: 102

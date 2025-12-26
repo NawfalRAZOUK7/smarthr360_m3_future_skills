@@ -23,8 +23,8 @@ set -e
 PROJECT_ROOT="$(dirname "$(dirname "$0")")"
 cd "$PROJECT_ROOT"
 
-DEV_COMPOSE="docker-compose.yml"
-PROD_COMPOSE="docker-compose.prod.yml"
+DEV_COMPOSE="compose/compose/docker-compose.yml"
+PROD_COMPOSE="compose/compose/docker-compose.prod.yml"
 
 MODE="dev"
 STEPS=()

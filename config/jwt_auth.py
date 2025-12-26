@@ -184,6 +184,7 @@ def logout_view(request):
     Requires the refresh token in the request body.
     """
     try:
+        from rest_framework_simplejwt.exceptions import TokenError
         from rest_framework_simplejwt.tokens import RefreshToken
 
         refresh_token = request.data.get("refresh")
@@ -193,8 +194,20 @@ def logout_view(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        token = RefreshToken(refresh_token)
-        token.blacklist()
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except TokenError as exc:
+            # Treat already-blacklisted/invalid tokens as a successful, idempotent logout
+            logger.info(
+                "JWT token already blacklisted or invalid during logout: %s",
+                exc,
+                extra={
+                    "user_id": request.user.id,
+                    "username": request.user.username,
+                    "event": "jwt_logout_already_blacklisted",
+                },
+            )
 
         logger.info(
             f"JWT token blacklisted for user: {request.user.username}",

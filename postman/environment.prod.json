@@ -1,0 +1,10 @@
+{
+  "id": "smarthr360-future-skills-env-prod",
+  "name": "SmartHR360 Future Skills - Prod",
+  "values": [
+    { "key": "base_url", "value": "https://api.example.com", "enabled": true },
+    { "key": "access_token", "value": "", "enabled": true, "type": "text" },
+    { "key": "refresh_token", "value": "", "enabled": true, "type": "text" }
+  ],
+  "_postman_variable_scope": "environment"
+}

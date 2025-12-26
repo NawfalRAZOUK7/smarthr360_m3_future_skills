@@ -1,0 +1,3 @@
+name,email,department,position,job_role_id,current_skills
+Alice Demo,alice.demo@example.com,Data,Data Analyst,1,"Python;Data Analysis"
+Bob Demo,bob.demo@example.com,Operations,Project Manager,1,"Project Management;Communication"

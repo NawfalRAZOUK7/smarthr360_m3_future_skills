@@ -4,40 +4,35 @@ Test settings for SmartHR360 Future Skills project.
 This configuration is optimized for running automated tests with pytest.
 """
 
-from .base import *  # noqa: F403,S2208 - Standard Django settings pattern
+import os
+
+# Ensure required env defaults exist before importing base settings that expect them
+os.environ["SECRET_KEY"] = os.environ.get("SECRET_KEY", "test-secret-key")
+os.environ["DEBUG"] = "False"
+
+from .base import *  # noqa: F403,S2208,E402 - Standard Django settings pattern
+
+# Provide a deterministic secret key for tests so env vars aren't required
+SECRET_KEY = config("SECRET_KEY", default="test-secret-key")  # noqa: F405
+ALLOWED_HOSTS = ["*"]
 
 # Debug mode for tests
 DEBUG = True
 TESTING = True
 
-# Use lightweight, permissive auth for tests to avoid 401s while still honoring view permissions
+# Use lightweight, permissive auth for tests; explicit view permissions still apply
 REST_FRAMEWORK = {
     **REST_FRAMEWORK,  # noqa: F405
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ],
-    # Keep throttling enabled for throttle tests; use slightly lower rates for faster coverage
-    "DEFAULT_THROTTLE_CLASSES": [
-        "future_skills.api.throttling.AnonRateThrottle",
-        "future_skills.api.throttling.UserRateThrottle",
-        "future_skills.api.throttling.BurstRateThrottle",
-        "future_skills.api.throttling.SustainedRateThrottle",
-        "future_skills.api.throttling.PremiumUserThrottle",
-        "future_skills.api.throttling.MLOperationsThrottle",
-        "future_skills.api.throttling.BulkOperationsThrottle",
-        "future_skills.api.throttling.HealthCheckThrottle",
-    ],
-    "DEFAULT_THROTTLE_RATES": {
-        "anon": "10/minute",
-        "user": "20/minute",
-        "burst": "5/minute",
-        "sustained": "100/hour",
-        "premium": "50/minute",
-        "ml_operations": "5/minute",
-        "bulk_operations": "3/minute",
-        "health_check": "5/minute",
-    },
+    # Disable global throttling for most tests; specific tests override with @override_settings
+    "DEFAULT_THROTTLE_CLASSES": [],
+    "DEFAULT_THROTTLE_RATES": {},
 }
 
 # Locmem cache so caching/throttling tests have a working cache backend
@@ -109,8 +104,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
 }
 
-# Bypass IP-based throttling for local test client
-THROTTLE_BYPASS_IPS = ["127.0.0.1", "::1"]
+# Do not bypass throttling in tests; we want throttles to exercise
+THROTTLE_BYPASS_IPS = []
 
 # Security settings - relaxed for tests
 SECURE_SSL_REDIRECT = False

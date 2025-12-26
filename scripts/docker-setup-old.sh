@@ -66,7 +66,7 @@ fi
 # Accept environment argument: dev (default) or prod
 ENV=${1:-dev}
 if [ "$ENV" = "prod" ]; then
-    COMPOSE="docker-compose -f docker-compose.prod.yml"
+    COMPOSE="docker-compose -f compose/docker-compose.prod.yml"
 else
     COMPOSE="docker-compose"
 fi
@@ -168,10 +168,10 @@ echo "   - Password: postgres"
 echo ""
 echo "📝 Useful commands:"
 if [ "$ENV" = "prod" ]; then
-    echo "   - View logs: docker-compose -f docker-compose.prod.yml logs -f"
-    echo "   - Stop services: docker-compose -f docker-compose.prod.yml down"
-    echo "   - Restart services: docker-compose -f docker-compose.prod.yml restart"
-    echo "   - Run tests: docker-compose -f docker-compose.prod.yml exec web pytest"
+    echo "   - View logs: docker-compose -f compose/docker-compose.prod.yml logs -f"
+    echo "   - Stop services: docker-compose -f compose/docker-compose.prod.yml down"
+    echo "   - Restart services: docker-compose -f compose/docker-compose.prod.yml restart"
+    echo "   - Run tests: docker-compose -f compose/docker-compose.prod.yml exec web pytest"
 else
     echo "   - View logs: docker-compose logs -f"
     echo "   - Stop services: docker-compose down"
@@ -247,7 +247,7 @@ fi
 # Accept environment argument: dev (default) or prod
 ENV=${1:-dev}
 if [ "$ENV" = "prod" ]; then
-    COMPOSE="docker-compose -f docker-compose.prod.yml"
+    COMPOSE="docker-compose -f compose/docker-compose.prod.yml"
 else
     COMPOSE="docker-compose"
 fi
@@ -352,10 +352,10 @@ echo "   - Password: postgres"
 echo ""
 echo "📝 Useful commands:"
 if [ "$ENV" = "prod" ]; then
-    echo "   - View logs: docker-compose -f docker-compose.prod.yml logs -f"
-    echo "   - Stop services: docker-compose -f docker-compose.prod.yml down"
-    echo "   - Restart services: docker-compose -f docker-compose.prod.yml restart"
-    echo "   - Run tests: docker-compose -f docker-compose.prod.yml exec web pytest"
+    echo "   - View logs: docker-compose -f compose/docker-compose.prod.yml logs -f"
+    echo "   - Stop services: docker-compose -f compose/docker-compose.prod.yml down"
+    echo "   - Restart services: docker-compose -f compose/docker-compose.prod.yml restart"
+    echo "   - Run tests: docker-compose -f compose/docker-compose.prod.yml exec web pytest"
 else
     echo "   - View logs: docker-compose logs -f"
     echo "   - Stop services: docker-compose down"

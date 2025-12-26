@@ -65,11 +65,11 @@ case $COMMAND in
             exit 1
         fi
         print_info "Building and starting production environment..."
-        docker-compose -f docker-compose.prod.yml up -d --build
+        docker-compose -f compose/docker-compose.prod.yml up -d --build
         print_success "Production environment is running"
         echo ""
         echo "Services:"
-        docker-compose -f docker-compose.prod.yml ps
+        docker-compose -f compose/docker-compose.prod.yml ps
         echo ""
         echo "Access the application at: http://localhost"
         ;;
@@ -95,7 +95,7 @@ case $COMMAND in
         fi
         print_info "Building Docker image for $ENV environment..."
         if [ "$ENV" = "prod" ]; then
-            docker-compose -f docker-compose.prod.yml build
+            docker-compose -f compose/docker-compose.prod.yml build
         else
             docker-compose build
         fi
@@ -106,7 +106,7 @@ case $COMMAND in
         ENV=${2:-dev}
         print_info "Stopping Docker containers..."
         if [ "$ENV" = "prod" ]; then
-            docker-compose -f docker-compose.prod.yml down
+            docker-compose -f compose/docker-compose.prod.yml down
         else
             docker-compose down
         fi
@@ -117,7 +117,7 @@ case $COMMAND in
         ENV=${2:-dev}
         print_info "Restarting Docker containers..."
         if [ "$ENV" = "prod" ]; then
-            docker-compose -f docker-compose.prod.yml restart
+            docker-compose -f compose/docker-compose.prod.yml restart
         else
             docker-compose restart
         fi
@@ -152,7 +152,7 @@ case $COMMAND in
         read -p "This will remove all containers, volumes, and images. Continue? (y/n): " confirm
         if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
             docker-compose down -v
-            docker-compose -f docker-compose.prod.yml down -v
+            docker-compose -f compose/docker-compose.prod.yml down -v
             docker system prune -af
             print_success "Docker resources cleaned"
         else
@@ -167,7 +167,7 @@ case $COMMAND in
         docker-compose ps
         echo ""
         echo "Production:"
-        docker-compose -f docker-compose.prod.yml ps
+        docker-compose -f compose/docker-compose.prod.yml ps
         ;;
 
     "help"|"-h"|"--help")

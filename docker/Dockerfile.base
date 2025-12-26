@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1.4
+FROM python:3.12-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    gcc \
+    g++ \
+    git \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy all requirements files
+COPY requirements/requirements.txt requirements/requirements_ml.txt requirements/requirements_logging.txt requirements/requirements_security.txt requirements/requirements_celery.txt requirements/requirements-all.txt ./requirements/
+
+# Install Python dependencies (with retry loop for robustness)
+RUN set -eux; \
+    n=0; \
+    until [ "$n" -ge 5 ]; do \
+      pip install --upgrade pip setuptools wheel && \
+      pip install --no-cache-dir -r requirements/requirements-all.txt && break; \
+      n=$((n+1)); \
+      echo "pip install failed, retrying in 10s... ($n/5)"; \
+      sleep 10; \
+    done
+
+# Default command (override in child images)
+CMD ["python3"]

@@ -17,7 +17,7 @@ echo "Starting backup: $BACKUP_NAME"
 
 # Database backup
 echo "Creating database backup..."
-docker-compose -f docker-compose.prod.yml exec -T db pg_dump -U postgres smarthr360 > "$BACKUP_DIR/${BACKUP_NAME}_db.sql"
+docker-compose -f compose/docker-compose.prod.yml exec -T db pg_dump -U postgres smarthr360 > "$BACKUP_DIR/${BACKUP_NAME}_db.sql"
 
 # Compress database backup
 gzip "$BACKUP_DIR/${BACKUP_NAME}_db.sql"
@@ -34,7 +34,7 @@ tar -czf "$BACKUP_DIR/${BACKUP_NAME}_ml.tar.gz" -C /opt/smarthr360 artifacts/
 echo "Creating configuration backup..."
 tar -czf "$BACKUP_DIR/${BACKUP_NAME}_config.tar.gz" \
     .env \
-    docker-compose.prod.yml \
+    compose/docker-compose.prod.yml \
     nginx/nginx.conf
 
 # Create backup manifest

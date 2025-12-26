@@ -54,17 +54,17 @@ if ! check_endpoint "$HEALTH_CHECK_URL" "Django Health Check" 10; then
 fi
 
 # Database connectivity
-if ! check_service "Database" "docker-compose -f docker-compose.prod.yml exec -T db pg_isready -U postgres -d smarthr360"; then
+if ! check_service "Database" "docker-compose -f compose/docker-compose.prod.yml exec -T db pg_isready -U postgres -d smarthr360"; then
     ((FAILED_CHECKS++))
 fi
 
 # Redis connectivity
-if ! check_service "Redis" "docker-compose -f docker-compose.prod.yml exec -T redis redis-cli ping | grep -q PONG"; then
+if ! check_service "Redis" "docker-compose -f compose/docker-compose.prod.yml exec -T redis redis-cli ping | grep -q PONG"; then
     ((FAILED_CHECKS++))
 fi
 
 # Celery worker status
-if ! check_service "Celery Worker" "docker-compose -f docker-compose.prod.yml exec -T celery celery -A config inspect active | grep -q 'OK'"; then
+if ! check_service "Celery Worker" "docker-compose -f compose/docker-compose.prod.yml exec -T celery celery -A config inspect active | grep -q 'OK'"; then
     ((FAILED_CHECKS++))
 fi
 

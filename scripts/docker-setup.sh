@@ -4,7 +4,7 @@ set -e
 # ==========================================
 # SmartHR360 Docker Setup Script
 # ==========================================
-LOG_FILE="docker-setup.log"
+LOG_FILE="var/docker-setup.log"
 echo "=========================================="
 echo -e "\033[0;34mSmartHR360 Docker Setup (logging to $LOG_FILE)\033[0m"
 echo "=========================================="
@@ -43,7 +43,7 @@ if ! command -v docker &> /dev/null; then
     echo "❌ Docker is not installed. Please install Docker first."
     exit 1
 fi
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker-compose &> /dev/null && ! docker compose version >/dev/null 2>&1; then
     echo "❌ Docker Compose is not installed. Please install Docker Compose first."
     exit 1
 fi
@@ -131,7 +131,7 @@ echo "[docker-setup] Environment argument: $ENV (default: dev)"
 echo "🔎 Parsing environment argument (default: dev)..."
 ENV=${1:-dev}
 if [ "$ENV" = "prod" ]; then
-    COMPOSE="docker-compose -f docker-compose.prod.yml"
+    COMPOSE="docker-compose -f compose/docker-compose.prod.yml"
 else
     COMPOSE="docker-compose"
 fi
@@ -383,10 +383,10 @@ echo "   - Password: postgres"
 echo ""
 echo "📝 Useful commands:"
 if [ "$ENV" = "prod" ]; then
-    echo "   - View logs: docker-compose -f docker-compose.prod.yml logs -f"
-    echo "   - Stop services: docker-compose -f docker-compose.prod.yml down"
-    echo "   - Restart services: docker-compose -f docker-compose.prod.yml restart"
-    echo "   - Run tests: docker-compose -f docker-compose.prod.yml exec web pytest"
+    echo "   - View logs: docker-compose -f compose/docker-compose.prod.yml logs -f"
+    echo "   - Stop services: docker-compose -f compose/docker-compose.prod.yml down"
+    echo "   - Restart services: docker-compose -f compose/docker-compose.prod.yml restart"
+    echo "   - Run tests: docker-compose -f compose/docker-compose.prod.yml exec web pytest"
 else
     echo "   - View logs: docker-compose logs -f"
     echo "   - Stop services: docker-compose down"
