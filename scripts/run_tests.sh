@@ -91,6 +91,7 @@ case $TEST_TYPE in
         # Erase previous coverage data
         coverage erase
         TEST_FILES=(
+            "future_skills/tests/"
             "tests/test_training_service.py"
             "tests/test_training_api.py"
             "tests/test_api_v2_smoke.py"
@@ -104,8 +105,31 @@ case $TEST_TYPE in
             coverage run --append -m pytest "$file" $VERBOSE || exit 1
         done
         coverage html
+        coverage xml
         coverage report --show-missing
         print_success "Coverage report generated: htmlcov/index.html"
+        ;;
+
+    "ci")
+        print_info "Running CI test suite in defined order with coverage..."
+        coverage erase
+        TEST_FILES=(
+            "future_skills/tests/"
+            "tests/test_training_service.py"
+            "tests/test_training_api.py"
+            "tests/test_api_v2_smoke.py"
+            "tests/integration/test_api_endpoints.py"
+            "tests/integration/test_ml_integration.py"
+            "tests/integration/test_prediction_flow.py"
+            "tests/e2e/test_user_journeys.py"
+        )
+        for file in "${TEST_FILES[@]}"; do
+            print_info "Running $file with coverage..."
+            coverage run --append -m pytest "$file" $VERBOSE || exit 1
+        done
+        coverage xml
+        coverage report --show-missing
+        print_success "CI test suite completed; coverage.xml generated."
         ;;
 
     "failed")
