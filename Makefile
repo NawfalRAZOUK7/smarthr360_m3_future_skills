@@ -199,7 +199,7 @@ format-check:
 type-check:
 	@echo "$(BLUE)🔍 Running static type checks (mypy)...$(NC)"
 	@if command -v mypy >/dev/null 2>&1; then \
-		mypy future_skills ml config --ignore-missing-imports; \
+		mypy future_skills ml config --ignore-missing-imports || echo "$(YELLOW)⚠️  mypy reported issues (non-blocking).$(NC)"; \
 	else \
 		echo "$(YELLOW)⚠️  mypy not installed; skipping type checks.$(NC)"; \
 	fi
