@@ -27,7 +27,7 @@ repos:
     rev: 1.7.10
     hooks:
       - id: bandit
-        args: ["-ll", "-r", "--skip", "B101"]
+        args: ["-ll", "-r", "-x", "future_skills/tests,ml/tests,tests"]
         files: ^(future_skills/|config/|ml/)
 
   # Django checks
