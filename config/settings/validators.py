@@ -187,7 +187,11 @@ class EnvironmentValidator:
             self.warnings.append("⚠️  SECRET_KEY should be at least 50 characters long")
 
         # DEBUG
-        debug = config("DEBUG", default=False, cast=bool)
+        try:
+            debug = config("DEBUG", default=False, cast=bool)
+        except ValueError:
+            debug = False
+            self.warnings.append("⚠️  DEBUG value is invalid; using False.")
         self.validate_optional("DEBUG", debug, bool)
 
         # ALLOWED_HOSTS
@@ -224,7 +228,11 @@ class EnvironmentValidator:
     def _validate_production(self, config, csv_cast):
         """Validate production-specific settings."""
         # DEBUG must be False
-        debug = config("DEBUG", default=False, cast=bool)
+        try:
+            debug = config("DEBUG", default=False, cast=bool)
+        except ValueError:
+            debug = False
+            self.warnings.append("⚠️  DEBUG value is invalid; treating as False.")
         if debug:
             self.errors.append("❌ DEBUG must be False in production")
 

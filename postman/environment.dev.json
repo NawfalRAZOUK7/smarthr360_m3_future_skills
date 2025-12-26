@@ -1,0 +1,14 @@
+{
+  "id": "smarthr360-future-skills-env-dev",
+  "name": "SmartHR360 Future Skills - Dev",
+  "values": [
+    { "key": "base_url", "value": "http://127.0.0.1:8001", "enabled": true },
+    { "key": "username", "value": "postman", "enabled": true },
+    { "key": "password", "value": "postman123!", "enabled": true },
+    { "key": "employee_id", "value": "", "enabled": true, "type": "text" },
+    { "key": "job_role_id", "value": "", "enabled": true, "type": "text" },
+    { "key": "access_token", "value": "", "enabled": true, "type": "text" },
+    { "key": "refresh_token", "value": "", "enabled": true, "type": "text" }
+  ],
+  "_postman_variable_scope": "environment"
+}

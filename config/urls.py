@@ -18,6 +18,7 @@ Including another URLconf
 import importlib
 import pkgutil
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -39,6 +40,10 @@ def discover_future_skills_urls():
     for module_info in pkgutil.walk_packages(future_skills_pkg.__path__, prefix="future_skills."):
         module_name = module_info.name
         if not (module_name.endswith(".urls") or "_urls" in module_name):
+            continue
+
+        # Skip versioned API URL modules that are already wired explicitly
+        if module_name.endswith(".v1_urls") or module_name.endswith(".v2_urls"):
             continue
 
         module = importlib.import_module(module_name)
@@ -105,3 +110,9 @@ urlpatterns = [
     path("health/", include("health_check.urls")),  # Django health checks at /health/
     *discovered_future_skills_urls,
 ]
+
+# Debug toolbar (only in DEBUG and if installed)
+if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
+    import debug_toolbar  # type: ignore
+
+    urlpatterns = [path("__debug__/", include(debug_toolbar.urls))] + urlpatterns

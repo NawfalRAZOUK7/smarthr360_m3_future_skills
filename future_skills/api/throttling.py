@@ -85,6 +85,10 @@ class BaseSimpleThrottle:
         self.view = view
         self.request = request
 
+        # Superusers should not be throttled
+        if getattr(getattr(request, "user", None), "is_superuser", False):
+            return True
+
         # Bypass if IP is whitelisted
         bypass_ips = getattr(settings, "THROTTLE_BYPASS_IPS", [])
         if self.get_ident(request) in bypass_ips:
@@ -135,7 +139,8 @@ class BaseSimpleThrottle:
 
         now = self.timer()
         remaining = max(self.num_requests - len(self.history), 0) if self.num_requests else 0
-        reset = int(self.history[0] + self.duration) if self.history else int(now + (self.duration or 0))
+        reset_base = self.history[0] + self.duration if self.history else now + (self.duration or 0)
+        reset = int(reset_base + 1)  # ensure strictly in the future
 
         return {
             "X-RateLimit-Limit": str(self.num_requests or 0),

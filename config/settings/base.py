@@ -24,8 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# This should be overridden in environment-specific settings
-DEBUG = config("DEBUG", default=False, cast=bool)
+# This should be overridden in environment-specific settings. Gracefully handle
+# unexpected values (e.g., "WARN") by falling back to False instead of crashing.
+try:
+    DEBUG = config("DEBUG", default=False, cast=bool)
+except ValueError:
+    DEBUG = False
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
@@ -105,6 +109,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
 
 
 # Database
@@ -545,7 +554,7 @@ CSP_FRAME_ANCESTORS = ("'none'",)
 AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
 AXES_COOLOFF_TIME = timedelta(minutes=30)  # Lock duration
-AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
+AXES_LOCK_OUT_PARAMETERS = ["username", "ip_address"]
 AXES_RESET_ON_SUCCESS = True
 
 # ============================================================================

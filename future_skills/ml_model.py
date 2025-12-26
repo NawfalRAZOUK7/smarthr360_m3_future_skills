@@ -102,6 +102,13 @@ class FutureSkillsModel:
         data = {
             "job_role_name": [job_role_name],
             "skill_name": [skill_name],
+            # Catégoriels additionnels attendus par le pipeline
+            "skill_category": ["Unspecified"],
+            "job_department": ["General"],
+            # Numériques additionnels attendus par le pipeline
+            "hiring_difficulty": [0.5],
+            "avg_salary_k": [50.0],
+            "economic_indicator": [0.5],
             "trend_score": [trend_score],
             "internal_usage": [internal_usage],
             "training_requests": [training_requests],

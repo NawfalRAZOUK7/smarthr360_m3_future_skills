@@ -1,0 +1,790 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "SmartHR360 - Module 3 - Future Skills",
+    "description": "Collection pour tester les API du Module 3 - Comp\u00e9tences Futures, Tendances du March\u00e9 et Recommandations RH",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "JWT authentication endpoints (shared across API versions)",
+      "item": [
+        {
+          "name": "POST Obtain Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"drh_user\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token",
+                ""
+              ]
+            },
+            "description": "Obtenir un JWT pour les appels API prot\u00e9g\u00e9s"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"<refresh_token>\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/refresh/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token",
+                "refresh",
+                ""
+              ]
+            },
+            "description": "Rafra\u00eechir un JWT via le token de refresh"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout",
+                ""
+              ]
+            },
+            "description": "R\u00e9voquer un token et se d\u00e9connecter"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Verify Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<access_token>\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/verify/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify",
+                ""
+              ]
+            },
+            "description": "V\u00e9rifier la validit\u00e9 d'un JWT"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health & Monitoring",
+      "description": "Endpoints de supervision (health, readiness, liveness, m\u00e9triques)",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health",
+                ""
+              ]
+            },
+            "description": "Health check applicatif"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Ready",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ready/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ready",
+                ""
+              ]
+            },
+            "description": "Readiness probe"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/alive/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "alive",
+                ""
+              ]
+            },
+            "description": "Liveness probe"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Version Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/version/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "version",
+                ""
+              ]
+            },
+            "description": "Informations de version de l'API"
+          },
+          "response": []
+        },
+        {
+          "name": "GET API Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/metrics/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "metrics",
+                ""
+              ]
+            },
+            "description": "M\u00e9triques DRF expos\u00e9es pour Prometheus"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Prometheus /metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            },
+            "description": "Endpoint Prometheus fourni par django-prometheus"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "API v2 (current)",
+      "description": "Version actuelle. L'API v1 est d\u00e9pr\u00e9ci\u00e9e (sunset 2026-06-01)",
+      "item": [
+        {
+          "name": "GET Predictions (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/predictions/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "predictions",
+                ""
+              ]
+            },
+            "description": "Liste des pr\u00e9dictions (renomm\u00e9 depuis /future-skills/ en v1)"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Recalculate Predictions (v2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"horizon_years\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/predictions/recalculate/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "predictions",
+                "recalculate",
+                ""
+              ]
+            },
+            "description": "Recalcule et met \u00e0 jour les pr\u00e9dictions (v2)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Recommendations (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/recommendations/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "recommendations",
+                ""
+              ]
+            },
+            "description": "Recommandations RH (renomm\u00e9 depuis /hr-investment-recommendations/ en v1)"
+          },
+          "response": []
+        },
+        {
+          "name": "POST ML Predict (v2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_role_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/ml/predict/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "ml",
+                "predict",
+                ""
+              ]
+            },
+            "description": "Pr\u00e9diction ML namespac\u00e9e en v2"
+          },
+          "response": []
+        },
+        {
+          "name": "POST ML Recommend (v2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_role_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/ml/recommend/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "ml",
+                "recommend",
+                ""
+              ]
+            },
+            "description": "Recommandations ML namespac\u00e9es en v2"
+          },
+          "response": []
+        },
+        {
+          "name": "POST ML Bulk Predict (v2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employees\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/ml/bulk-predict/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "ml",
+                "bulk-predict",
+                ""
+              ]
+            },
+            "description": "Pr\u00e9dictions en bulk (namespac\u00e9 ML)"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Bulk Import Employees (v2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employees\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/bulk/employees/import/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "bulk",
+                "employees",
+                "import",
+                ""
+              ]
+            },
+            "description": "Import JSON des employ\u00e9s (v2)"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Bulk Upload Employees (v2)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/bulk/employees/upload/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "bulk",
+                "employees",
+                "upload",
+                ""
+              ]
+            },
+            "description": "Upload fichier pour import employ\u00e9s (v2)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Training Runs (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/ml/training-runs/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "ml",
+                "training-runs",
+                ""
+              ]
+            },
+            "description": "Liste des runs d'entra\u00eenement (v2)"
+          },
+          "response": []
+        },
+        {
+          "name": "POST ML Train (v2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"model_version\":\"v2\",\"async\":false}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/ml/train/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "ml",
+                "train",
+                ""
+              ]
+            },
+            "description": "Train model (v2, namespaced under ml/)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Training Run Detail (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/ml/training-runs/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "ml",
+                "training-runs",
+                "1",
+                ""
+              ]
+            },
+            "description": "Detail view of a training run by id"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Future Skills",
+      "item": [
+        {
+          "name": "GET Predictions (v2 alias)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/predictions/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "predictions",
+                ""
+              ]
+            },
+            "description": "R\u00e9cup\u00e8re la liste des comp\u00e9tences futures pr\u00e9dites.\nPermissions : DRH, Responsable RH, Manager"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Recalculate Predictions (v2 alias)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"horizon_years\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/predictions/recalculate/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "predictions",
+                "recalculate",
+                ""
+              ]
+            },
+            "description": "Recalcule les pr\u00e9dictions de comp\u00e9tences futures **et** g\u00e9n\u00e8re les recommandations RH associ\u00e9es.\n\nPermissions : DRH, Responsable RH uniquement\n\nR\u00e9ponse attendue (exemple) :\n```json\n{\n  \"horizon_years\": 5,\n  \"total_predictions\": 8,\n  \"total_recommendations\": 3\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Recommendations (v2 alias)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/recommendations/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "recommendations",
+                ""
+              ]
+            },
+            "description": "R\u00e9cup\u00e8re les recommandations d'investissement RH g\u00e9n\u00e9r\u00e9es \u00e0 partir des pr\u00e9dictions de comp\u00e9tences futures.\nPermissions : DRH, Responsable RH, Manager"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints pour la gestion des comp\u00e9tences futures et des recommandations RH",
+      "auth": {
+        "type": "basic",
+        "basic": [
+          {
+            "key": "username",
+            "value": "drh_user",
+            "type": "string"
+          },
+          {
+            "key": "password",
+            "value": "password123",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market Trends & Economic Reports",
+      "item": [
+        {
+          "name": "GET Market Trends (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/market-trends/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "market-trends",
+                "",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025",
+                  "description": "Ann\u00e9e des tendances",
+                  "disabled": true
+                },
+                {
+                  "key": "sector",
+                  "value": "RH",
+                  "description": "Secteur (RH, Tech, etc.)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "R\u00e9cup\u00e8re les tendances du march\u00e9.\nPermissions : DRH, Responsable RH, Manager"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Economic Reports (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/economic-reports/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "economic-reports",
+                "",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025",
+                  "description": "Ann\u00e9e du rapport \u00e9conomique",
+                  "disabled": true
+                },
+                {
+                  "key": "sector",
+                  "value": "Tech",
+                  "description": "Secteur concern\u00e9 (Tech, RH, Industrie, etc.)",
+                  "disabled": true
+                },
+                {
+                  "key": "indicator",
+                  "value": "Taux ch\u00f4mage IT",
+                  "description": "Filtrer par nom d'indicateur (contient...)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "R\u00e9cup\u00e8re les rapports / indicateurs \u00e9conomiques utilis\u00e9s comme inputs macro (taux de ch\u00f4mage, investissements, etc.).\nPermissions : DRH, Responsable RH, Manager"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints pour consulter les tendances du march\u00e9 et les rapports \u00e9conomiques",
+      "auth": {
+        "type": "basic",
+        "basic": [
+          {
+            "key": "username",
+            "value": "drh_user",
+            "type": "string"
+          },
+          {
+            "key": "password",
+            "value": "password123",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "drh_user",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "password123",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ]
+}

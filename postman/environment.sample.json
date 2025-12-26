@@ -1,0 +1,12 @@
+{
+  "id": "smarthr360-future-skills-env-sample",
+  "name": "SmartHR360 Future Skills (Sample)",
+  "values": [
+    { "key": "base_url", "value": "http://localhost:8000", "enabled": true },
+    { "key": "access_token", "value": "", "enabled": true, "type": "text" },
+    { "key": "refresh_token", "value": "", "enabled": true, "type": "text" }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2025-01-01T00:00:00.000Z",
+  "_postman_exported_using": "Postman"
+}

@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "SmartHR360 - Smoke",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "POST Obtain Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health & Monitoring",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Version",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/version/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "version",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "API v2 Smoke",
+      "item": [
+        {
+          "name": "GET Predictions (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/predictions/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "predictions",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Recommendations (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/recommendations/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "recommendations",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}

@@ -41,6 +41,10 @@ try:
 except ImportError:
     pass
 
+# Relax login protection in dev (avoid Axes lockouts during automated tests)
+MIDDLEWARE = [mw for mw in MIDDLEWARE if mw != "axes.middleware.AxesMiddleware"]
+AXES_ENABLED = False
+
 # Development database (SQLite for simplicity)
 DATABASES = {
     "default": {
@@ -68,8 +72,8 @@ STATICFILES_DIRS = []
 LOGGING["handlers"]["console"]["level"] = "DEBUG"
 LOGGING["loggers"]["future_skills"]["level"] = "DEBUG"
 
-# ML settings for development
-FUTURE_SKILLS_USE_ML = config("FUTURE_SKILLS_USE_ML", default=True, cast=bool)
+# ML settings for development (default to rules-only unless explicitly enabled)
+FUTURE_SKILLS_USE_ML = config("FUTURE_SKILLS_USE_ML", default=False, cast=bool)
 FUTURE_SKILLS_ENABLE_MONITORING = True
 
 print("🚀 Running in DEVELOPMENT mode")

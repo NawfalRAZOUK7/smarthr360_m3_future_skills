@@ -1,6 +1,5 @@
 # future_skills/permissions.py
 
-from django.conf import settings
 from rest_framework.permissions import BasePermission
 
 # On part sur des groupes Django pour représenter les rôles.
@@ -17,8 +16,6 @@ def _user_in_groups(user, group_names) -> bool:
     """
     Vérifie si l'utilisateur appartient à au moins un des groupes donnés.
     """
-    if getattr(settings, "TESTING", False):
-        return True
     if not user or not user.is_authenticated:
         return False
 

@@ -12,6 +12,13 @@ ARTIFACTS_DIR ?= artifacts
 ML_MODELS_DIR ?= $(ARTIFACTS_DIR)/models
 ML_RESULTS_DIR ?= $(ARTIFACTS_DIR)/results
 ML_DATASETS_DIR ?= $(ARTIFACTS_DIR)/datasets
+CHOSEN_PORT ?= $(shell $(PYTHON) scripts/choose_port.py)
+
+# Load auxiliary makefiles (celery/logging/security) while keeping this as the primary entrypoint.
+MAKEFILE_INCLUDES := $(wildcard makefiles/Makefile.*)
+ifneq ($(MAKEFILE_INCLUDES),)
+include $(MAKEFILE_INCLUDES)
+endif
 
 # Colors for output
 RED := \033[0;31m
@@ -53,6 +60,7 @@ help:
 	@echo "  make check                Run Django system checks"
 	@echo "  make security-scan        Run safety and bandit (non-blocking in CI)"
 	@echo "  make pre-commit           Run pre-commit hooks on all files"
+	@echo "  make postman-smoke        Run Postman smoke collection via Newman"
 	@echo ""
 	@echo "$(YELLOW)🐳 Docker Commands:$(NC)"
 	@echo "  make docker-build         Build Docker images"
@@ -72,6 +80,8 @@ help:
 	@echo "  make ml-compare           Compare model performance"
 	@echo "  make ml-retrain           Full retraining pipeline"
 	@echo "  make ml-explainability    Run explainability analysis"
+	@echo "  make ml-repair            Reinstall core ML deps (numpy/pandas/shap)"
+	@echo "  make serve-ml             Run dev server with ML enabled (FUTURE_SKILLS_USE_ML=true)"
 	@echo ""
 	@echo "$(YELLOW)🔧 Development Commands:$(NC)"
 	@echo "  make serve                Run Django development server"
@@ -99,17 +109,17 @@ help:
 
 install:
 	@echo "$(GREEN)📦 Installing production dependencies...$(NC)"
-	pip install -r requirements.txt
+	pip install -r requirements/requirements.txt
 	@echo "$(GREEN)✓ Production dependencies installed$(NC)"
 
 install-dev:
 	@echo "$(GREEN)📦 Installing full development stack (app + dev + ML + celery + logging + security)...$(NC)"
-	pip install -r requirements-all.txt
+	pip install -r requirements/requirements-all.txt
 	@echo "$(GREEN)✓ Full development dependencies installed$(NC)"
 
 install-ml:
 	@echo "$(GREEN)📦 Installing ML dependencies...$(NC)"
-	pip install -r requirements_ml.txt
+	pip install -r requirements/requirements_ml.txt
 	@echo "$(GREEN)✓ ML dependencies installed$(NC)"
 
 setup:
@@ -214,19 +224,13 @@ pre-commit:
 	@echo "$(BLUE)🔍 Running pre-commit hooks...$(NC)"
 	pre-commit run --all-files
 
-security-scan:
-	@echo "$(BLUE)🔒 Running security scans (safety + bandit)...$(NC)"
-	@echo "Running safety (allows failure)..."
-	@safety check --output text || true
-	@echo "Running bandit (allows failure)..."
-	@bandit -r future_skills/ -f json -o security-report.json || true
-	@echo "$(GREEN)✓ Security scan complete (see security-report.json for bandit results)$(NC)"
-
-# ============================================
-docker-build:
-	@echo "$(BLUE)🐳 Building Docker images...$(NC)"
-	docker-compose build
-	@echo "$(GREEN)✓ Docker images built$(NC)"
+postman-smoke:
+	@echo "$(BLUE)📫 Running Postman smoke tests (Newman)...$(NC)"
+	@if ! command -v newman >/dev/null 2>&1 && ! command -v npx >/dev/null 2>&1; then \
+		echo "$(RED)Newman not found. Install with: npm install -g newman$(NC)"; \
+		exit 1; \
+	fi
+	@bash scripts/run_postman.sh -c postman/collection_smoke.json
 
 # Docker Commands
 # ============================================
@@ -234,47 +238,47 @@ docker-build:
 # Build base image
 docker-base:
 	@echo "$(BLUE)🐳 Building base Docker image...$(NC)"
-	docker build -t smarthr360-base:latest -f Dockerfile.base .
+	docker build -t smarthr360-base:latest -f docker/Dockerfile.base .
 	@echo "$(GREEN)✓ Base Docker image built$(NC)"
 
 # Build all images (depends on base)
 docker-build: docker-base
 	@echo "$(BLUE)🐳 Building Docker images...$(NC)"
-	docker compose build
+	docker compose -f compose/docker-compose.yml build
 	@echo "$(GREEN)✓ Docker images built$(NC)"
 
 docker-up:
 	@echo "$(BLUE)🐳 Starting development environment...$(NC)"
-	docker-compose up -d
+	docker compose -f compose/docker-compose.yml up -d
 	@echo "$(GREEN)✓ Development environment running$(NC)"
-	@docker-compose ps
+	@docker compose -f compose/docker-compose.yml ps
 
 docker-down:
 	@echo "$(BLUE)🐳 Stopping Docker containers...$(NC)"
-	docker-compose down
+	docker compose -f compose/docker-compose.yml down
 	@echo "$(GREEN)✓ Containers stopped$(NC)"
 
 docker-prod:
 	@echo "$(BLUE)🐳 Starting production environment...$(NC)"
-	docker-compose -f docker-compose.prod.yml up -d --build
+	docker compose -f compose/docker-compose.prod.yml up -d --build
 	@echo "$(GREEN)✓ Production environment running$(NC)"
-	@docker-compose -f docker-compose.prod.yml ps
+	@docker compose -f compose/docker-compose.prod.yml ps
 
 docker-logs:
 	@echo "$(BLUE)📋 Docker logs:$(NC)"
-	docker-compose logs -f
+	docker compose -f compose/docker-compose.yml logs -f
 
 docker-shell:
 	@echo "$(BLUE)🐚 Opening shell in web container...$(NC)"
-	docker-compose exec web /bin/bash
+	docker compose -f compose/docker-compose.yml exec web /bin/bash
 
 docker-test:
 	@echo "$(BLUE)🧪 Running tests in Docker...$(NC)"
-	docker-compose exec web pytest --cov=future_skills
+	docker compose -f compose/docker-compose.yml exec web pytest --cov=future_skills
 
 docker-clean:
 	@echo "$(YELLOW)⚠️  Cleaning Docker resources...$(NC)"
-	docker-compose down -v
+	docker compose -f compose/docker-compose.yml down -v
 	docker system prune -f
 
 # ============================================
@@ -314,13 +318,24 @@ ml-explainability:
 	jupyter nbconvert --execute ml/notebooks/explainability_analysis.ipynb --to html
 	@echo "$(GREEN)✓ Analysis complete: ml/notebooks/explainability_analysis.html$(NC)"
 
+ml-repair:
+	@echo "$(BLUE)🩹 Reinstalling core ML dependencies (numpy/pandas/shap)...$(NC)"
+	pip install --force-reinstall 'numpy==1.26.4' 'pandas>=2.3,<2.4' 'shap==0.49.1'
+	@echo "$(GREEN)✓ ML dependencies refreshed$(NC)"
+
 # ============================================
 # Development Commands
 # ============================================
 
 serve:
 	@echo "$(BLUE)🚀 Starting Django development server...$(NC)"
-	$(MANAGE) runserver --settings=$(SETTINGS)
+	@echo "$(YELLOW)➡️  Using port $(CHOSEN_PORT) (set PORT to override, will auto-fallback if busy)$(NC)"
+	$(MANAGE) runserver 0.0.0.0:$(CHOSEN_PORT) --settings=$(SETTINGS)
+
+serve-ml:
+	@echo "$(BLUE)🚀 Starting Django development server with ML enabled...$(NC)"
+	@echo "$(YELLOW)➡️  Using port $(CHOSEN_PORT) (set PORT to override, will auto-fallback if busy)$(NC)"
+	FUTURE_SKILLS_USE_ML=true $(MANAGE) runserver 0.0.0.0:$(CHOSEN_PORT) --settings=$(SETTINGS)
 
 shell:
 	@echo "$(BLUE)🐚 Opening Django shell...$(NC)"

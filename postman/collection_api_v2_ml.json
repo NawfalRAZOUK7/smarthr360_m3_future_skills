@@ -1,0 +1,76 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "SmartHR360 API v2 - ML",
+    "description": "Collection pour tester les API du Module 3 - Comp\u00e9tences Futures, Tendances du March\u00e9 et Recommandations RH",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "API v2 (current)",
+      "item": [
+        {
+          "name": "POST Bulk Upload Employees (v2)",
+          "disabled": false,
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{bulk_upload_file}}"
+                },
+                {
+                  "key": "auto_predict",
+                  "value": "false",
+                  "type": "text"
+                },
+                {
+                  "key": "horizon_years",
+                  "value": "5",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/bulk/employees/upload/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "bulk",
+                "employees",
+                "upload",
+                ""
+              ]
+            },
+            "description": "Upload fichier pour import employ\u00e9s (v2) avec CSV d'exemple"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ]
+}

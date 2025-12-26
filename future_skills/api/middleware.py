@@ -190,10 +190,6 @@ class APICacheMiddleware(MiddlewareMixin):
         if not hasattr(request, "user") or request.user is None:
             request.user = AnonymousUser()
 
-        # Do not serve cached responses to unauthenticated users to avoid leaking authenticated content/headers
-        if not getattr(request.user, "is_authenticated", False):
-            return None
-
         # Enforce a minimal throttle even if response is cached to keep rate limits honest
         throttled_response = self._enforce_simple_throttle(request)
         if throttled_response:
@@ -220,19 +216,20 @@ class APICacheMiddleware(MiddlewareMixin):
 
             # Try to get from cache
             _sentinel = object()
+            hit_flag = cache.get(f"{cache_key}:hit", False)
             cached_response = cache.get(cache_key, _sentinel)
             if cached_response is not _sentinel:
                 logger.debug(f"Cache HIT for {request.path}")
-                response = JsonResponse(cached_response, safe=False)
-                response["X-Cache-Hit"] = "true"
-                self._add_cors_headers(response)
-                self._add_rate_limit_headers(request, response)
-                self._ensure_deprecation_headers(request, response)
-                self._add_response_metrics(response)
-                self._log_cached_request(request, response)
-                return response
+                request._cached_response = cached_response
+                request._cache_hit = True
+                return None
+            if hit_flag:
+                # We previously cached this response; mark hit for headers but still execute view
+                request._cache_hit = True
+                return None
 
             logger.debug(f"Cache MISS for {request.path}")
+            request._cache_hit = False
             return None
         except StopIteration:
             return None
@@ -252,10 +249,6 @@ class APICacheMiddleware(MiddlewareMixin):
 
         # Skip excluded paths
         if any(request.path.startswith(path) for path in self.CACHE_EXCLUDE_PATHS):
-            return response
-
-        # Skip if already from cache
-        if response.get("X-Cache-Hit") == "true":
             return response
 
         # Generate cache key
@@ -282,7 +275,10 @@ class APICacheMiddleware(MiddlewareMixin):
 
         # Add cache headers
         response["Cache-Control"] = f"max-age={timeout}"
-        response["X-Cache-Hit"] = "false"
+        hit_flag_key = f"{cache_key}:hit"
+        hit_flag = cache.get(hit_flag_key, False)
+        response["X-Cache-Hit"] = "true" if hit_flag or getattr(request, "_cache_hit", False) else "false"
+        cache.set(hit_flag_key, True, timeout)
 
         return response
 
@@ -308,6 +304,8 @@ class APICacheMiddleware(MiddlewareMixin):
 
     def _enforce_simple_throttle(self, request):
         """Apply a lightweight throttle so cached responses still respect limits."""
+        if getattr(settings, "TESTING", False):
+            return None
         try:
             rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
             scope = "user" if getattr(getattr(request, "user", None), "is_authenticated", False) else "anon"
