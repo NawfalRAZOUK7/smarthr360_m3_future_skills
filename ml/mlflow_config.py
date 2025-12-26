@@ -81,9 +81,7 @@ class MLflowConfig:
         2. Django settings.MLFLOW_TRACKING_URI
         3. Default local file-based tracking
         """
-        tracking_uri = os.environ.get(
-            "MLFLOW_TRACKING_URI", getattr(settings, "MLFLOW_TRACKING_URI", None)
-        )
+        tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", getattr(settings, "MLFLOW_TRACKING_URI", None))
 
         if not tracking_uri:
             # Default to local file-based tracking
@@ -234,9 +232,7 @@ class MLflowConfig:
             logger.error(f"Error in MLflow run: {e}")
             raise
 
-    def log_model_metrics(
-        self, metrics: Dict[str, float], step: Optional[int] = None
-    ) -> None:
+    def log_model_metrics(self, metrics: Dict[str, float], step: Optional[int] = None) -> None:
         """
         Log multiple metrics at once.
 
@@ -256,9 +252,7 @@ class MLflowConfig:
         """
         mlflow.log_params(params)
 
-    def log_artifact_directory(
-        self, local_dir: str, artifact_path: Optional[str] = None
-    ) -> None:
+    def log_artifact_directory(self, local_dir: str, artifact_path: Optional[str] = None) -> None:
         """
         Log a directory as an artifact.
 
@@ -294,9 +288,7 @@ class MLflowConfig:
 
         try:
             # Register model
-            model_version = mlflow.register_model(
-                model_uri=model_uri, name=model_name, tags=tags
-            )
+            model_version = mlflow.register_model(model_uri=model_uri, name=model_name, tags=tags)
 
             # Update description if provided
             if description:
@@ -306,9 +298,7 @@ class MLflowConfig:
                     description=description,
                 )
 
-            logger.info(
-                f"Registered model '{model_name}' version {model_version.version}"
-            )
+            logger.info(f"Registered model '{model_name}' version {model_version.version}")
 
             return model_version
 
@@ -316,9 +306,7 @@ class MLflowConfig:
             logger.error(f"Failed to register model: {e}")
             raise
 
-    def transition_model_stage(
-        self, model_name: str, version: str, stage: str, archive_existing: bool = True
-    ) -> None:
+    def transition_model_stage(self, model_name: str, version: str, stage: str, archive_existing: bool = True) -> None:
         """
         Transition a model version to a different stage.
 
@@ -339,17 +327,13 @@ class MLflowConfig:
                 archive_existing_versions=archive_existing,
             )
 
-            logger.info(
-                f"Transitioned model '{model_name}' version {version} to {stage}"
-            )
+            logger.info(f"Transitioned model '{model_name}' version {version} to {stage}")
 
         except Exception as e:
             logger.error(f"Failed to transition model stage: {e}")
             raise
 
-    def get_latest_model_version(
-        self, model_name: Optional[str] = None, stage: Optional[str] = None
-    ) -> Optional[Any]:
+    def get_latest_model_version(self, model_name: Optional[str] = None, stage: Optional[str] = None) -> Optional[Any]:
         """
         Get the latest version of a registered model.
 
@@ -383,9 +367,7 @@ class MLflowConfig:
             logger.error(f"Failed to get latest model version: {e}")
             return None
 
-    def get_production_model_uri(
-        self, model_name: Optional[str] = None
-    ) -> Optional[str]:
+    def get_production_model_uri(self, model_name: Optional[str] = None) -> Optional[str]:
         """
         Get the URI of the current production model.
 
@@ -466,15 +448,11 @@ class MLflowConfig:
         order_direction = "ASC" if ascending else "DESC"
         order_by = [f"metrics.{metric_name} {order_direction}"]
 
-        runs = self.search_runs(
-            experiment_name=experiment_name, max_results=1, order_by=order_by
-        )
+        runs = self.search_runs(experiment_name=experiment_name, max_results=1, order_by=order_by)
 
         return runs[0] if runs else None
 
-    def cleanup_old_runs(
-        self, experiment_name: str, days_to_keep: int = 90, dry_run: bool = True
-    ) -> int:
+    def cleanup_old_runs(self, experiment_name: str, days_to_keep: int = 90, dry_run: bool = True) -> int:
         """
         Clean up old runs from an experiment.
 

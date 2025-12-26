@@ -1,4 +1,5 @@
 # ml/tests/test_prediction_quality.py
+# nosec B101
 
 """
 Prediction Quality Tests for Future Skills ML Model.
@@ -22,16 +23,10 @@ class TestPredictionQuality:
         engine = PredictionEngine()
 
         for horizon in [1, 3, 5, 10]:
-            score, level, rationale, explanation = engine.predict(
-                sample_job_role.id, sample_skill.id, horizon
-            )
+            score, level, rationale, explanation = engine.predict(sample_job_role.id, sample_skill.id, horizon)
 
-            assert (
-                0 <= score <= 100
-            ), f"Score {score} out of range for horizon {horizon}"
-            assert isinstance(
-                score, (int, float)
-            ), f"Score should be numeric, got {type(score)}"
+            assert 0 <= score <= 100, f"Score {score} out of range for horizon {horizon}"
+            assert isinstance(score, (int, float)), f"Score should be numeric, got {type(score)}"
             assert level in ["LOW", "MEDIUM", "HIGH"], f"Invalid level: {level}"
             assert isinstance(rationale, str), "Rationale should be a string"
 
@@ -46,9 +41,7 @@ class TestPredictionQuality:
             results.append((score, level))
 
         # All results should be identical (deterministic)
-        assert (
-            len(set(results)) == 1
-        ), "Predictions should be deterministic for same inputs"
+        assert len(set(results)) == 1, "Predictions should be deterministic for same inputs"
 
     def test_horizon_impact(self, sample_job_role, sample_skill):
         """Test that longer horizons can have different predictions."""
@@ -56,9 +49,7 @@ class TestPredictionQuality:
 
         predictions = {}
         for horizon in [1, 3, 5, 10]:
-            score, level, _, _ = engine.predict(
-                sample_job_role.id, sample_skill.id, horizon
-            )
+            score, level, _, _ = engine.predict(sample_job_role.id, sample_skill.id, horizon)
             predictions[horizon] = (score, level)
 
         # Store all scores and levels
@@ -81,9 +72,7 @@ class TestPredictionQuality:
         if level == "HIGH":
             assert score >= 70, f"HIGH level should have score >= 70, got {score}"
         elif level == "MEDIUM":
-            assert (
-                40 <= score < 70
-            ), f"MEDIUM level should have 40 <= score < 70, got {score}"
+            assert 40 <= score < 70, f"MEDIUM level should have 40 <= score < 70, got {score}"
         elif level == "LOW":
             assert score < 40, f"LOW level should have score < 40, got {score}"
         else:
@@ -92,10 +81,7 @@ class TestPredictionQuality:
     def test_batch_prediction_consistency(self, sample_job_role, db):
         """Test that batch predictions match individual predictions."""
         # Create test skills
-        skills = [
-            Skill.objects.create(name=f"Skill {i}", category="Technical")
-            for i in range(3)
-        ]
+        skills = [Skill.objects.create(name=f"Skill {i}", category="Technical") for i in range(3)]
 
         engine = PredictionEngine()
 
@@ -117,26 +103,17 @@ class TestPredictionQuality:
         batch_results = engine.batch_predict(predictions_data)
 
         # Compare - batch results should match individual results
-        assert len(batch_results) == len(
-            individual_results
-        ), "Batch should return same count as individual"
+        assert len(batch_results) == len(individual_results), "Batch should return same count as individual"
 
         for i, result in enumerate(batch_results):
             expected_score, expected_level = individual_results[i]
-            assert (
-                result["score"] == expected_score
-            ), f"Batch score mismatch at index {i}"
-            assert (
-                result["level"] == expected_level
-            ), f"Batch level mismatch at index {i}"
+            assert result["score"] == expected_score, f"Batch score mismatch at index {i}"
+            assert result["level"] == expected_level, f"Batch level mismatch at index {i}"
 
     def test_multiple_job_roles_predictions(self, sample_skill, db):
         """Test predictions across multiple job roles."""
         # Create multiple job roles
-        job_roles = [
-            JobRole.objects.create(name=f"Role {i}", department="Engineering")
-            for i in range(3)
-        ]
+        job_roles = [JobRole.objects.create(name=f"Role {i}", department="Engineering") for i in range(3)]
 
         engine = PredictionEngine()
 
@@ -163,10 +140,7 @@ class TestPredictionQuality:
     def test_multiple_skills_predictions(self, sample_job_role, db):
         """Test predictions across multiple skills."""
         # Create multiple skills
-        skills = [
-            Skill.objects.create(name=f"Test Skill {i}", category="Technical")
-            for i in range(5)
-        ]
+        skills = [Skill.objects.create(name=f"Test Skill {i}", category="Technical") for i in range(5)]
 
         engine = PredictionEngine()
 
@@ -191,9 +165,7 @@ class TestPredictionEdgeCases:
         """Test prediction with minimum horizon (1 year)."""
         engine = PredictionEngine()
 
-        score, level, rationale, _ = engine.predict(
-            sample_job_role.id, sample_skill.id, 1
-        )
+        score, level, rationale, _ = engine.predict(sample_job_role.id, sample_skill.id, 1)
 
         assert 0 <= score <= 100
         assert level in ["LOW", "MEDIUM", "HIGH"]
@@ -203,9 +175,7 @@ class TestPredictionEdgeCases:
         """Test prediction with large horizon (20 years)."""
         engine = PredictionEngine()
 
-        score, level, rationale, _ = engine.predict(
-            sample_job_role.id, sample_skill.id, 20
-        )
+        score, level, rationale, _ = engine.predict(sample_job_role.id, sample_skill.id, 20)
 
         assert 0 <= score <= 100
         assert level in ["LOW", "MEDIUM", "HIGH"]
@@ -227,9 +197,7 @@ class TestPredictionEdgeCases:
 
         # Should handle gracefully (not crash)
         try:
-            score, level, _, _ = engine.predict(
-                999999, sample_skill.id, 5  # Non-existent ID
-            )
+            score, level, _, _ = engine.predict(999999, sample_skill.id, 5)  # Non-existent ID
             # If it doesn't raise, check it returns valid defaults
             assert 0 <= score <= 100
             assert level in ["LOW", "MEDIUM", "HIGH"]
@@ -243,9 +211,7 @@ class TestPredictionEdgeCases:
 
         # Should handle gracefully (not crash)
         try:
-            score, level, _, _ = engine.predict(
-                sample_job_role.id, 999999, 5  # Non-existent ID
-            )
+            score, level, _, _ = engine.predict(sample_job_role.id, 999999, 5)  # Non-existent ID
             # If it doesn't raise, check it returns valid defaults
             assert 0 <= score <= 100
             assert level in ["LOW", "MEDIUM", "HIGH"]
@@ -319,9 +285,7 @@ class TestPredictionExplanation:
         """Test explanation differences between ML and rules-based predictions."""
         # Rules engine (uses_ml=False by default in test settings)
         rules_engine = PredictionEngine(use_ml=False)
-        _, _, _, rules_explanation = rules_engine.predict(
-            sample_job_role.id, sample_skill.id, 5
-        )
+        _, _, _, rules_explanation = rules_engine.predict(sample_job_role.id, sample_skill.id, 5)
 
         # Rules-based explanation is typically empty dict
         assert isinstance(rules_explanation, dict)
@@ -338,10 +302,7 @@ class TestBatchPredictionQuality:
     def test_large_batch_prediction(self, sample_job_role, db):
         """Test batch prediction with large number of items."""
         # Create many skills
-        skills = [
-            Skill.objects.create(name=f"Skill {i}", category="Technical")
-            for i in range(20)
-        ]
+        skills = [Skill.objects.create(name=f"Skill {i}", category="Technical") for i in range(20)]
 
         engine = PredictionEngine()
 
@@ -371,10 +332,7 @@ class TestBatchPredictionQuality:
     def test_batch_prediction_ordering(self, sample_job_role, db):
         """Test that batch predictions maintain input order."""
         # Create skills with specific order
-        skills = [
-            Skill.objects.create(name=f"Skill_{i:03d}", category="Technical")
-            for i in range(5)
-        ]
+        skills = [Skill.objects.create(name=f"Skill_{i:03d}", category="Technical") for i in range(5)]
 
         engine = PredictionEngine()
 

@@ -1,5 +1,4 @@
-"""
-API Performance Middleware
+"""API performance middleware utilities.
 
 Provides request/response timing, caching, compression, and performance monitoring.
 """
@@ -21,8 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class APIPerformanceMiddleware(MiddlewareMixin):
-    """
-    Middleware to track API request performance and add timing headers.
+    """Middleware to track API request performance and add timing headers.
 
     Adds the following response headers:
     - X-Response-Time: Request processing time in milliseconds
@@ -31,15 +29,15 @@ class APIPerformanceMiddleware(MiddlewareMixin):
     """
 
     def process_request(self, request):
-        """Mark request start time"""
+        """Mark request start time."""
         accept_header = request.META.get("HTTP_ACCEPT", "")
         request._original_accept = accept_header
         if "vnd.smarthr360" in accept_header:
             request.META["HTTP_ACCEPT"] = "application/json"
-            if "vnd.smarthr360.v1" in accept_header and not hasattr(
-                request, "_deprecation_warning"
-            ):
-                request._deprecation_warning = "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
+            if "vnd.smarthr360.v1" in accept_header and not hasattr(request, "_deprecation_warning"):
+                request._deprecation_warning = (
+                    "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
+                )
         if isinstance(time.time, Mock):
             request._force_slow_log = True
 
@@ -47,7 +45,7 @@ class APIPerformanceMiddleware(MiddlewareMixin):
         request._db_queries_before = self._get_db_query_count()
 
     def process_response(self, request, response):
-        """Add performance headers to response"""
+        """Add performance headers to response."""
         if hasattr(request, "_start_time"):
             # Calculate request duration
             duration = self._safe_time() - request._start_time
@@ -62,23 +60,14 @@ class APIPerformanceMiddleware(MiddlewareMixin):
                 response["X-DB-Queries"] = str(db_queries)
 
             # Log slow requests
-            if duration_ms > 1000 or getattr(
-                request, "_force_slow_log", False
-            ):  # Over 1 second
-                logger.warning(
-                    f"Slow API request: {request.method} {request.path} "
-                    f"took {duration_ms}ms"
-                )
+            if duration_ms > 1000 or getattr(request, "_force_slow_log", False):  # Over 1 second
+                logger.warning(f"Slow API request: {request.method} {request.path} " f"took {duration_ms}ms")
 
         # Add simple rate limit headers if missing
         if "X-RateLimit-Limit" not in response:
-            rates = getattr(settings, "REST_FRAMEWORK", {}).get(
-                "DEFAULT_THROTTLE_RATES", {}
-            )
+            rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
             is_auth = getattr(getattr(request, "user", None), "is_authenticated", False)
-            limit = int(
-                rates.get("user" if is_auth else "anon", "1000/hour").split("/")[0]
-            )
+            limit = int(rates.get("user" if is_auth else "anon", "1000/hour").split("/")[0])
             response["X-RateLimit-Limit"] = str(limit)
             response["X-RateLimit-Remaining"] = str(max(limit - 1, 0))
             response["X-RateLimit-Reset"] = str(int(self._safe_time()) + 60)
@@ -91,20 +80,14 @@ class APIPerformanceMiddleware(MiddlewareMixin):
         if "Access-Control-Allow-Origin" not in response:
             response["Access-Control-Allow-Origin"] = "*"
         if "Access-Control-Allow-Methods" not in response:
-            response["Access-Control-Allow-Methods"] = (
-                "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-            )
+            response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         if "Access-Control-Allow-Headers" not in response:
-            response["Access-Control-Allow-Headers"] = (
-                "Authorization, Content-Type, Accept, Origin"
-            )
+            response["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin"
 
         return response
 
     def _add_rate_limit_headers(self, request, response):
-        rates = getattr(settings, "REST_FRAMEWORK", {}).get(
-            "DEFAULT_THROTTLE_RATES", {}
-        )
+        rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
         is_auth = getattr(getattr(request, "user", None), "is_authenticated", False)
         limit = int(rates.get("user" if is_auth else "anon", "1000/hour").split("/")[0])
         response.setdefault("X-RateLimit-Limit", str(limit))
@@ -113,9 +96,7 @@ class APIPerformanceMiddleware(MiddlewareMixin):
 
     def _ensure_deprecation_headers(self, request, response):
         if request.path.startswith("/api/v1/") and "X-API-Deprecation" not in response:
-            response["X-API-Deprecation"] = (
-                "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
-            )
+            response["X-API-Deprecation"] = "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
             response["X-API-Sunset-Date"] = "2026-06-01"
             response["Link"] = '</api/docs/migration/>; rel="deprecation"'
 
@@ -139,9 +120,7 @@ class APIPerformanceMiddleware(MiddlewareMixin):
         # Ensure deprecation headers for v1 Accept header requests even on unversioned routes
         accept_header = getattr(request, "_original_accept", "")
         if "vnd.smarthr360.v1" in accept_header and "X-API-Deprecation" not in response:
-            response["X-API-Deprecation"] = (
-                "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
-            )
+            response["X-API-Deprecation"] = "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
             response["X-API-Sunset-Date"] = "2026-06-01"
             response["Link"] = '</api/docs/migration/>; rel="deprecation"'
 
@@ -162,15 +141,14 @@ class APIPerformanceMiddleware(MiddlewareMixin):
                 return 0.0
 
     def _get_db_query_count(self):
-        """Get current database query count"""
+        """Get current database query count."""
         from django.db import connection
 
         return len(connection.queries) if hasattr(connection, "queries") else 0
 
 
 class APICacheMiddleware(MiddlewareMixin):
-    """
-    Middleware for HTTP caching of API responses.
+    """Middleware for HTTP caching of API responses.
 
     Supports:
     - Cache-Control headers
@@ -207,7 +185,7 @@ class APICacheMiddleware(MiddlewareMixin):
     }
 
     def process_request(self, request):
-        """Check if request can be served from cache"""
+        """Check if request can be served from cache."""
         # Ensure request has a user attribute to avoid AttributeError in tests or when auth middleware is absent
         if not hasattr(request, "user") or request.user is None:
             request.user = AnonymousUser()
@@ -260,7 +238,7 @@ class APICacheMiddleware(MiddlewareMixin):
             return None
 
     def process_response(self, request, response):
-        """Cache successful GET responses"""
+        """Cache successful GET responses."""
         if response is None:
             return response
 
@@ -309,7 +287,7 @@ class APICacheMiddleware(MiddlewareMixin):
         return response
 
     def _get_cache_key(self, request):
-        """Generate cache key for request"""
+        """Generate cache key for request."""
         # Include path, query string, and auth state
         query_string = request.META.get("QUERY_STRING", "")
         user_part = "anon"
@@ -322,7 +300,7 @@ class APICacheMiddleware(MiddlewareMixin):
         return f"api_cache:{user_part}:{request.path}:{query_string}"
 
     def _get_cache_timeout(self, path):
-        """Get cache timeout for specific path"""
+        """Get cache timeout for specific path."""
         for pattern, timeout in self.CACHE_TIMEOUTS.items():
             if path.startswith(pattern):
                 return timeout
@@ -331,14 +309,8 @@ class APICacheMiddleware(MiddlewareMixin):
     def _enforce_simple_throttle(self, request):
         """Apply a lightweight throttle so cached responses still respect limits."""
         try:
-            rates = getattr(settings, "REST_FRAMEWORK", {}).get(
-                "DEFAULT_THROTTLE_RATES", {}
-            )
-            scope = (
-                "user"
-                if getattr(getattr(request, "user", None), "is_authenticated", False)
-                else "anon"
-            )
+            rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
+            scope = "user" if getattr(getattr(request, "user", None), "is_authenticated", False) else "anon"
             rate = rates.get(scope)
             parsed = _parse_rate(rate)
             if not parsed:
@@ -352,9 +324,7 @@ class APICacheMiddleware(MiddlewareMixin):
             history = [ts for ts in history if ts > now - duration]
 
             if len(history) >= num_requests:
-                retry_after = (
-                    max(int(history[0] + duration - now), 1) if history else duration
-                )
+                retry_after = max(int(history[0] + duration - now), 1) if history else duration
                 response = JsonResponse(
                     {
                         "detail": "Request was throttled.",
@@ -382,18 +352,12 @@ class APICacheMiddleware(MiddlewareMixin):
         if "Access-Control-Allow-Origin" not in response:
             response["Access-Control-Allow-Origin"] = "*"
         if "Access-Control-Allow-Methods" not in response:
-            response["Access-Control-Allow-Methods"] = (
-                "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-            )
+            response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         if "Access-Control-Allow-Headers" not in response:
-            response["Access-Control-Allow-Headers"] = (
-                "Authorization, Content-Type, Accept, Origin"
-            )
+            response["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin"
 
     def _add_rate_limit_headers(self, request, response):
-        rates = getattr(settings, "REST_FRAMEWORK", {}).get(
-            "DEFAULT_THROTTLE_RATES", {}
-        )
+        rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
         is_auth = getattr(getattr(request, "user", None), "is_authenticated", False)
         limit = int(rates.get("user" if is_auth else "anon", "1000/hour").split("/")[0])
         response.setdefault("X-RateLimit-Limit", str(limit))
@@ -402,9 +366,7 @@ class APICacheMiddleware(MiddlewareMixin):
 
     def _ensure_deprecation_headers(self, request, response):
         if request.path.startswith("/api/v1/") and "X-API-Deprecation" not in response:
-            response["X-API-Deprecation"] = (
-                "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
-            )
+            response["X-API-Deprecation"] = "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
             response["X-API-Sunset-Date"] = "2026-06-01"
             response["Link"] = '</api/docs/migration/>; rel="deprecation"'
 
@@ -427,8 +389,7 @@ class APICacheMiddleware(MiddlewareMixin):
 
 
 class APIDeprecationMiddleware(MiddlewareMixin):
-    """
-    Middleware to add deprecation warnings to API responses.
+    """Middleware to add deprecation warnings to API responses.
 
     Adds headers for deprecated API versions:
     - X-API-Deprecation: Warning message
@@ -437,11 +398,9 @@ class APIDeprecationMiddleware(MiddlewareMixin):
     """
 
     def process_response(self, request, response):
-        """Add deprecation headers if needed"""
+        """Add deprecation headers if needed."""
         # Default deprecation warning for v1 endpoints
-        if request.path.startswith("/api/v1/") and not hasattr(
-            request, "_deprecation_warning"
-        ):
+        if request.path.startswith("/api/v1/") and not hasattr(request, "_deprecation_warning"):
             request._deprecation_warning = "API v1 is deprecated. Please migrate to v2 before sunset date 2026-06-01."
 
         # Check if request has deprecation warning (set by versioning)
@@ -467,8 +426,7 @@ class APIDeprecationMiddleware(MiddlewareMixin):
 
 
 class RequestLoggingMiddleware(MiddlewareMixin):
-    """
-    Middleware to log all API requests for audit and debugging.
+    """Middleware to log all API requests for audit and debugging.
 
     Logs:
     - Request method, path, and query parameters
@@ -484,13 +442,13 @@ class RequestLoggingMiddleware(MiddlewareMixin):
     ]
 
     def process_request(self, request):
-        """Log request start"""
+        """Log request start."""
         request._log_start_time = self._safe_time()
         if not hasattr(request, "user") or request.user is None:
             request.user = AnonymousUser()
 
     def process_response(self, request, response):
-        """Log request completion"""
+        """Log request completion."""
         # Skip excluded paths
         if any(request.path.startswith(path) for path in self.EXCLUDE_PATHS):
             return response
@@ -553,23 +511,18 @@ class RequestLoggingMiddleware(MiddlewareMixin):
 
 
 class CORSHeadersMiddleware(MiddlewareMixin):
-    """
-    Simple CORS middleware for API responses.
+    """Simple CORS middleware for API responses.
 
     Note: For production, use django-cors-headers package instead.
     This is a simple implementation for development/testing.
     """
 
     def process_response(self, request, response):
-        """Add CORS headers to API responses"""
+        """Add CORS headers to API responses."""
         if request.path.startswith("/api/"):
             response["Access-Control-Allow-Origin"] = "*"
-            response["Access-Control-Allow-Methods"] = (
-                "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-            )
-            response["Access-Control-Allow-Headers"] = (
-                "Content-Type, Authorization, X-Requested-With"
-            )
+            response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            response["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
             response["Access-Control-Max-Age"] = "3600"
             response["Access-Control-Expose-Headers"] = (
                 "X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-Response-Time"

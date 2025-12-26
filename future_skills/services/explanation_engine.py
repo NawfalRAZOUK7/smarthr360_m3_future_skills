@@ -50,8 +50,7 @@ try:
 except ImportError:
     SHAP_AVAILABLE = False
     logger.warning(
-        "SHAP non disponible. Les explications détaillées ne seront pas générées. "
-        "Installez avec: pip install shap"
+        "SHAP non disponible. Les explications détaillées ne seront pas générées. " "Installez avec: pip install shap"
     )
 
 
@@ -126,17 +125,13 @@ class ExplanationEngine:
                 cat_transformer = preprocessor.named_transformers_["cat"]
                 if hasattr(cat_transformer, "get_feature_names_out"):
                     # Récupérer les features originales
-                    cat_features = preprocessor.transformers_[0][
-                        2
-                    ]  # Liste des colonnes cat
+                    cat_features = preprocessor.transformers_[0][2]  # Liste des colonnes cat
                     cat_names = cat_transformer.get_feature_names_out(cat_features)
                     feature_names.extend(cat_names)
 
             # Features numériques
             if "num" in preprocessor.named_transformers_:
-                num_features = preprocessor.transformers_[1][
-                    2
-                ]  # Liste des colonnes num
+                num_features = preprocessor.transformers_[1][2]  # Liste des colonnes num
                 feature_names.extend(num_features)
 
         except Exception as exc:
@@ -385,10 +380,7 @@ class ExplanationEngine:
         """
         # Calculer un niveau basique
         score = (
-            trend_score * 0.4
-            + scarcity_index * 0.3
-            + (1 - internal_usage) * 0.2
-            + min(training_requests / 10, 1) * 0.1
+            trend_score * 0.4 + scarcity_index * 0.3 + (1 - internal_usage) * 0.2 + min(training_requests / 10, 1) * 0.1
         )
 
         if score >= 0.7:
@@ -422,11 +414,7 @@ class ExplanationEngine:
         if training_requests > 5:
             factors.append("demandes de formation nombreuses")
 
-        explanation = (
-            f"{prefix} {' + '.join(factors)}"
-            if factors
-            else f"{prefix} facteurs variés"
-        )
+        explanation = f"{prefix} {' + '.join(factors)}" if factors else f"{prefix} facteurs variés"
 
         return {
             "text": explanation,

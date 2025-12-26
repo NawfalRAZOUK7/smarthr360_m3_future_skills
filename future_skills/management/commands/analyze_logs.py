@@ -1,5 +1,6 @@
 """
-Log Analysis Management Command
+Log Analysis Management Command.
+
 Analyzes application logs for errors, performance issues, and patterns.
 """
 
@@ -83,9 +84,7 @@ class Command(BaseCommand):
         logs = self._parse_log_file(log_file, hours)
 
         if not logs:
-            self.stdout.write(
-                self.style.WARNING("No logs found in specified time range")
-            )
+            self.stdout.write(self.style.WARNING("No logs found in specified time range"))
             return
 
         # Analyze logs
@@ -109,14 +108,10 @@ class Command(BaseCommand):
                     log_entry = json.loads(line.strip())
 
                     # Parse timestamp
-                    timestamp_str = log_entry.get(
-                        "timestamp", log_entry.get("time", "")
-                    )
+                    timestamp_str = log_entry.get("timestamp", log_entry.get("time", ""))
                     if timestamp_str:
                         try:
-                            timestamp = datetime.fromisoformat(
-                                timestamp_str.replace("Z", "+00:00")
-                            )
+                            timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
                             if timestamp.tzinfo:
                                 timestamp = timestamp.replace(tzinfo=None)
 
@@ -144,12 +139,8 @@ class Command(BaseCommand):
         analysis = {
             "total_logs": len(logs),
             "time_range": {
-                "start": min(
-                    log.get("_parsed_timestamp", datetime.now()) for log in logs
-                ),
-                "end": max(
-                    log.get("_parsed_timestamp", datetime.now()) for log in logs
-                ),
+                "start": min(log.get("_parsed_timestamp", datetime.now()) for log in logs),
+                "end": max(log.get("_parsed_timestamp", datetime.now()) for log in logs),
             },
         }
 
@@ -161,27 +152,16 @@ class Command(BaseCommand):
         errors = [log for log in logs if log.get("level") in ["ERROR", "CRITICAL"]]
         analysis["errors"] = {
             "count": len(errors),
-            "by_type": dict(
-                Counter(log.get("event", "unknown") for log in errors).most_common(
-                    top_n
-                )
-            ),
+            "by_type": dict(Counter(log.get("event", "unknown") for log in errors).most_common(top_n)),
             "recent": errors[-top_n:] if errors else [],
         }
 
         # Performance analysis
         if show_performance:
-            performance_logs = [
-                log
-                for log in logs
-                if "duration_seconds" in log or "response_time" in log
-            ]
+            performance_logs = [log for log in logs if "duration_seconds" in log or "response_time" in log]
 
             if performance_logs:
-                durations = [
-                    log.get("duration_seconds", log.get("response_time", 0))
-                    for log in performance_logs
-                ]
+                durations = [log.get("duration_seconds", log.get("response_time", 0)) for log in performance_logs]
 
                 analysis["performance"] = {
                     "total_requests": len(performance_logs),
@@ -191,25 +171,20 @@ class Command(BaseCommand):
                     "slow_requests": [
                         log
                         for log in performance_logs
-                        if log.get("duration_seconds", log.get("response_time", 0))
-                        > 1.0
+                        if log.get("duration_seconds", log.get("response_time", 0)) > 1.0
                     ][:top_n],
                 }
 
         # Request analysis
         request_logs = [log for log in logs if "path" in log and "method" in log]
         if request_logs:
-            endpoints = [
-                f"{log.get('method')} {log.get('path')}" for log in request_logs
-            ]
+            endpoints = [f"{log.get('method')} {log.get('path')}" for log in request_logs]
 
             analysis["requests"] = {
                 "total": len(request_logs),
                 "by_endpoint": dict(Counter(endpoints).most_common(top_n)),
                 "by_method": dict(Counter(log.get("method") for log in request_logs)),
-                "by_status": dict(
-                    Counter(log.get("status_code") for log in request_logs)
-                ),
+                "by_status": dict(Counter(log.get("status_code") for log in request_logs)),
             }
 
         # User analysis
@@ -217,33 +192,25 @@ class Command(BaseCommand):
         if user_logs:
             analysis["users"] = {
                 "active_users": len(set(log.get("user_id") for log in user_logs)),
-                "top_users": dict(
-                    Counter(log.get("user_id") for log in user_logs).most_common(top_n)
-                ),
+                "top_users": dict(Counter(log.get("user_id") for log in user_logs).most_common(top_n)),
             }
 
         return analysis
 
-    def _print_analysis(
-        self, analysis: Dict[str, Any], errors_only: bool, show_performance: bool
-    ):
+    def _print_analysis(self, analysis: Dict[str, Any], errors_only: bool, show_performance: bool):
         """Print analysis in human-readable format."""
         if not errors_only:
             # Summary
             self.stdout.write(self.style.HTTP_INFO("Summary:"))
             self.stdout.write(self.style.HTTP_INFO("-" * 80))
             self.stdout.write(f"Total logs: {analysis['total_logs']}")
-            self.stdout.write(
-                f"Time range: {analysis['time_range']['start']} to {analysis['time_range']['end']}"
-            )
+            self.stdout.write(f"Time range: {analysis['time_range']['start']} to {analysis['time_range']['end']}")
             self.stdout.write("")
 
             # By level
             self.stdout.write(self.style.HTTP_INFO("Log Levels:"))
             self.stdout.write(self.style.HTTP_INFO("-" * 80))
-            for level, count in sorted(
-                analysis["by_level"].items(), key=lambda x: x[1], reverse=True
-            ):
+            for level, count in sorted(analysis["by_level"].items(), key=lambda x: x[1], reverse=True):
                 if level in ["ERROR", "CRITICAL"]:
                     self.stdout.write(self.style.ERROR(f"  {level}: {count}"))
                 elif level == "WARNING":
@@ -256,9 +223,7 @@ class Command(BaseCommand):
         if analysis["errors"]["count"] > 0:
             self.stdout.write(self.style.HTTP_INFO("Errors:"))
             self.stdout.write(self.style.HTTP_INFO("-" * 80))
-            self.stdout.write(
-                self.style.ERROR(f"Total errors: {analysis['errors']['count']}")
-            )
+            self.stdout.write(self.style.ERROR(f"Total errors: {analysis['errors']['count']}"))
 
             if analysis["errors"]["by_type"]:
                 self.stdout.write("")
@@ -288,11 +253,7 @@ class Command(BaseCommand):
 
             if perf["slow_requests"]:
                 self.stdout.write("")
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"Slow requests (> 1s): {len(perf['slow_requests'])}"
-                    )
-                )
+                self.stdout.write(self.style.WARNING(f"Slow requests (> 1s): {len(perf['slow_requests'])}"))
                 for req in perf["slow_requests"][:5]:
                     duration = req.get("duration_seconds", req.get("response_time", 0))
                     path = req.get("path", "unknown")

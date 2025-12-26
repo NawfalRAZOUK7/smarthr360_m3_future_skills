@@ -12,22 +12,15 @@ Or as a standalone test:
 import os
 import sys
 
-import django
-
-# Setup Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
 
-from pathlib import Path
+import django  # noqa: E402
+import pytest  # noqa: E402
+from django.conf import settings  # noqa: E402
 
-import pytest
-from django.conf import settings
+from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError  # noqa: E402
 
-from future_skills.services.training_service import (
-    DataLoadError,
-    ModelTrainer,
-    TrainingError,
-)
+django.setup()  # noqa: E402
 
 
 @pytest.mark.django_db
@@ -48,17 +41,13 @@ def test_training_service():
     try:
         # Initialize trainer
         print("\n1️⃣  Initializing ModelTrainer...")
-        trainer = ModelTrainer(
-            dataset_path=str(dataset_path), test_split=0.2, random_state=42
-        )
+        trainer = ModelTrainer(dataset_path=str(dataset_path), test_split=0.2, random_state=42)
         print("✅ Trainer initialized")
 
         # Load data
         print("\n2️⃣  Loading data...")
         trainer.load_data()
-        print(
-            f"✅ Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test"
-        )
+        print(f"✅ Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test")
         print(f"   Features: {len(trainer.available_features)}")
         print(f"   Categorical: {trainer.categorical_features}")
         print(f"   Numeric: {trainer.numeric_features}")

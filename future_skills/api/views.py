@@ -1,5 +1,7 @@
 # future_skills/api/views.py
 
+"""API views for the future skills application."""
+
 import os
 
 from django.conf import settings
@@ -114,11 +116,7 @@ class BulkEmployeeProcessingMixin:
         try:
             total_predictions = recalculate_predictions(
                 horizon_years=horizon_years,
-                run_by=(
-                    request_user
-                    if getattr(request_user, "is_authenticated", False)
-                    else None
-                ),
+                run_by=(request_user if getattr(request_user, "is_authenticated", False) else None),
                 parameters={"trigger": trigger},
             )
             return True, total_predictions, []
@@ -139,17 +137,11 @@ class BulkEmployeeProcessingMixin:
         return "success" if failed_count == 0 else "partial_success"
 
     def _determine_http_status(self, failed_count):
-        return (
-            status.HTTP_201_CREATED
-            if failed_count == 0
-            else status.HTTP_207_MULTI_STATUS
-        )
+        return status.HTTP_201_CREATED if failed_count == 0 else status.HTTP_207_MULTI_STATUS
 
 
 class FutureSkillPredictionPagination(PageNumberPagination):
-    """
-    Custom pagination for future skill predictions.
-    """
+    """Custom pagination for future skill predictions."""
 
     page_size = 10
     page_size_query_param = "page_size"
@@ -157,9 +149,7 @@ class FutureSkillPredictionPagination(PageNumberPagination):
 
 
 class EmployeePagination(PageNumberPagination):
-    """
-    Custom pagination for employees.
-    """
+    """Custom pagination for employees."""
 
     page_size = 10
     page_size_query_param = "page_size"
@@ -219,8 +209,7 @@ class EmployeePagination(PageNumberPagination):
     },
 )
 class FutureSkillPredictionListAPIView(ListAPIView):
-    """
-    Liste les prédictions de compétences futures.
+    """Liste les prédictions de compétences futures.
 
     Filtres possibles (query params):
       - job_role_id
@@ -236,6 +225,7 @@ class FutureSkillPredictionListAPIView(ListAPIView):
     queryset = FutureSkillPrediction.objects.all().order_by("-created_at", "id")
 
     def get_queryset(self):
+        """Filter queryset based on query parameters."""
         queryset = super().get_queryset()
 
         job_role_id = self.request.query_params.get("job_role_id")
@@ -331,7 +321,8 @@ class FutureSkillPredictionListAPIView(ListAPIView):
 )
 class RecalculateFutureSkillsAPIView(APIView):
     """
-    Recalcule toutes les prédictions FutureSkillPrediction
+    Recalcule toutes les prédictions FutureSkillPrediction.
+
     via le moteur de règles simple puis génère les recommandations RH..
 
     Body JSON optionnel :
@@ -344,6 +335,7 @@ class RecalculateFutureSkillsAPIView(APIView):
     permission_classes = [IsHRStaff]
 
     def post(self, request, *args, **kwargs):
+        """Handle POST request to recalculate future skills predictions."""
         horizon_years = request.data.get("horizon_years", 5)
 
         try:
@@ -365,9 +357,7 @@ class RecalculateFutureSkillsAPIView(APIView):
         )
 
         # 2) Générer les recommandations RH à partir des prédictions HIGH
-        total_recommendations = generate_recommendations_from_predictions(
-            horizon_years=horizon_years
-        )
+        total_recommendations = generate_recommendations_from_predictions(horizon_years=horizon_years)
 
         return Response(
             {
@@ -380,15 +370,18 @@ class RecalculateFutureSkillsAPIView(APIView):
 
 
 class MarketTrendListAPIView(APIView):
-    """
-    Liste les tendances marché utilisées pour alimenter le module 3.
-      GET /api/market-trends/?year=2025&sector=Tech
+    """Liste les tendances marché utilisées pour alimenter le module 3.
+
+    GET /api/market-trends/?year=2025&sector=Tech
     """
 
     # DRH + Responsable RH + Manager (lecture)
     permission_classes = [IsHRStaffOrManager]
 
     def get(self, request, *args, **kwargs):
+        """
+        Retrieve a list of market trends, optionally filtered by year and sector.
+        """
         queryset = MarketTrend.objects.all()
 
         year = request.query_params.get("year")
@@ -412,18 +405,20 @@ class MarketTrendListAPIView(APIView):
 
 
 class EconomicReportListAPIView(APIView):
-    """
-    Liste les rapports / indicateurs économiques utilisés par le module 3.
+    """Liste les rapports / indicateurs économiques utilisés par le module 3.
 
     Filtres possibles :
-      - year
-      - sector
-      - indicator (contient)
+        - year
+        - sector
+        - indicator (contient)
     """
 
     permission_classes = [IsHRStaffOrManager]
 
     def get(self, request, *args, **kwargs):
+        """
+        Retrieve a list of economic reports, optionally filtered by year, sector, and indicator.
+        """
         queryset = EconomicReport.objects.all()
 
         year = request.query_params.get("year")
@@ -451,23 +446,22 @@ class EconomicReportListAPIView(APIView):
 
 
 class HRInvestmentRecommendationListAPIView(APIView):
-    """
-    Liste les recommandations RH générées à partir des prédictions
-    de compétences futures.
+    """Liste les recommandations RH générées à partir des prédictions de compétences futures.
 
     Filtres :
-      - horizon_years
-      - skill_id
-      - job_role_id
-      - priority_level
+        - horizon_years
+        - skill_id
+        - job_role_id
+        - priority_level
     """
 
     permission_classes = [IsHRStaffOrManager]
 
     def get(self, request, *args, **kwargs):
-        queryset = HRInvestmentRecommendation.objects.select_related(
-            "skill", "job_role"
-        )
+        """
+        Retrieve a list of HR investment recommendations, optionally filtered by horizon_years, skill_id, job_role_id, and priority_level.
+        """
+        queryset = HRInvestmentRecommendation.objects.select_related("skill", "job_role")
 
         horizon_years = request.query_params.get("horizon_years")
         skill_id = request.query_params.get("skill_id")
@@ -498,8 +492,7 @@ class HRInvestmentRecommendationListAPIView(APIView):
 
 
 class EmployeeViewSet(ModelViewSet):
-    """
-    ViewSet for Employee CRUD operations.
+    """ViewSet for Employee CRUD operations.
 
     Provides:
     - GET /api/employees/ - List all employees
@@ -519,8 +512,8 @@ class EmployeeViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="add-skill")
     def add_skill(self, request, pk=None):
-        """
-        Add a skill to an employee's skills ManyToMany relationship.
+        """Add a skill to an employee's skills ManyToMany relationship.
+
         POST /api/employees/{id}/add-skill/
         Body: {"skill_id": 5}
         """
@@ -554,8 +547,8 @@ class EmployeeViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="remove-skill")
     def remove_skill(self, request, pk=None):
-        """
-        Remove a skill from an employee's skills ManyToMany relationship.
+        """Remove a skill from an employee's skills ManyToMany relationship.
+
         POST /api/employees/{id}/remove-skill/
         Body: {"skill_id": 5}
         """
@@ -589,8 +582,8 @@ class EmployeeViewSet(ModelViewSet):
 
     @action(detail=True, methods=["put"], url_path="skills")
     def update_skills(self, request, pk=None):
-        """
-        Replace all employee skills at once using ManyToMany .set().
+        """Replace all employee skills at once using ManyToMany .set().
+
         PUT /api/employees/{id}/skills/
         Body: {"skill_ids": [1, 2, 3]}
         """
@@ -624,8 +617,7 @@ class EmployeeViewSet(ModelViewSet):
 
 
 class PredictSkillsAPIView(APIView):
-    """
-    Generate skill predictions for a specific employee.
+    """Generate skill predictions for a specific employee.
 
     POST /api/predict-skills/
     Body: {
@@ -640,6 +632,9 @@ class PredictSkillsAPIView(APIView):
     permission_classes = [IsHRStaffOrManager]
 
     def post(self, request, *args, **kwargs):
+        """
+        Generate and return predicted skills for a specific employee based on input data.
+        """
         # Validate input
         input_serializer = PredictSkillsRequestSerializer(data=request.data)
         if not input_serializer.is_valid():
@@ -680,8 +675,7 @@ class PredictSkillsAPIView(APIView):
 
 
 class RecommendSkillsAPIView(APIView):
-    """
-    Generate personalized skill recommendations for an employee.
+    """Generate personalized skill recommendations for an employee.
 
     POST /api/recommend-skills/
     Body: {
@@ -695,6 +689,10 @@ class RecommendSkillsAPIView(APIView):
     permission_classes = [IsHRStaffOrManager]
 
     def post(self, request, *args, **kwargs):
+        """Handle POST request to recommend skills for an employee based on input data.
+
+        This method processes the request data, validates it, and returns a list of recommended skills for the specified employee.
+        """
         # Validate input
         input_serializer = RecommendSkillsRequestSerializer(data=request.data)
         if not input_serializer.is_valid():
@@ -714,9 +712,7 @@ class RecommendSkillsAPIView(APIView):
 
         # Get high priority predictions for this job role
         predictions = (
-            FutureSkillPrediction.objects.filter(
-                job_role=employee.job_role, level__in=["HIGH", "MEDIUM"]
-            )
+            FutureSkillPrediction.objects.filter(job_role=employee.job_role, level__in=["HIGH", "MEDIUM"])
             .select_related("skill")
             .order_by("-score")
         )
@@ -725,9 +721,7 @@ class RecommendSkillsAPIView(APIView):
         if exclude_current:
             current_skill_names = [s.lower() for s in employee.current_skills]
             predictions = predictions.exclude(
-                skill__name__icontains=lambda name: any(
-                    cs in name.lower() for cs in current_skill_names
-                )
+                skill__name__icontains=lambda name: any(cs in name.lower() for cs in current_skill_names)
             )
             # Manual filtering since Django ORM doesn't support complex icontains with list
             filtered_predictions = []
@@ -756,8 +750,7 @@ class RecommendSkillsAPIView(APIView):
 
 
 class BulkPredictAPIView(APIView):
-    """
-    Generate predictions for multiple employees at once.
+    """Generate predictions for multiple employees at once.
 
     POST /api/bulk-predict/
     Body: {
@@ -770,6 +763,10 @@ class BulkPredictAPIView(APIView):
     permission_classes = [IsHRStaffOrManager]
 
     def post(self, request, *args, **kwargs):
+        """Handle POST request to generate predictions for multiple employees.
+
+        This method validates the input, retrieves employee data, and returns predictions for each employee in the request.
+        """
         # Validate input
         input_serializer = BulkPredictRequestSerializer(data=request.data)
         if not input_serializer.is_valid():
@@ -778,9 +775,7 @@ class BulkPredictAPIView(APIView):
         employee_ids = input_serializer.validated_data["employee_ids"]
 
         # Get all employees with their job roles
-        employees = Employee.objects.filter(pk__in=employee_ids).select_related(
-            "job_role"
-        )
+        employees = Employee.objects.filter(pk__in=employee_ids).select_related("job_role")
 
         # Generate predictions for each
         results = {}
@@ -813,8 +808,7 @@ class BulkPredictAPIView(APIView):
 
 
 class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
-    """
-    Bulk import/update employees from JSON data with automatic prediction generation.
+    """Bulk import/update employees from JSON data with automatic prediction generation.
 
     This endpoint allows HR staff (DRH/Responsable RH) to create or update multiple
     employees in a single API call. The operation is performed within a database
@@ -933,19 +927,21 @@ class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
     permission_classes = [IsHRStaff]  # Only DRH/Responsable RH
 
     def post(self, request, *args, **kwargs):
+        """Handle POST request to bulk import or update employees from JSON data.
+
+        This method validates the input, processes the employee batch, and optionally generates predictions for the imported employees.
+        """
         input_serializer = BulkEmployeeImportSerializer(data=request.data)
         if not input_serializer.is_valid():
             return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         validated = input_serializer.validated_data
         batch_results = self._process_employee_batch(validated["employees"])
-        predictions_generated, total_predictions, prediction_errors = (
-            self._maybe_generate_predictions(
-                auto_predict=validated["auto_predict"],
-                horizon_years=validated["horizon_years"],
-                request_user=request.user,
-                trigger="bulk_employee_import",
-            )
+        predictions_generated, total_predictions, prediction_errors = self._maybe_generate_predictions(
+            auto_predict=validated["auto_predict"],
+            horizon_years=validated["horizon_years"],
+            request_user=request.user,
+            trigger="bulk_employee_import",
         )
 
         errors = batch_results["errors"] + prediction_errors
@@ -966,8 +962,7 @@ class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
 
 
 class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
-    """
-    File upload endpoint for bulk employee import from CSV/Excel/JSON files.
+    """File upload endpoint for bulk employee import from CSV/Excel/JSON files.
 
     This endpoint allows HR staff to upload CSV, Excel, or JSON files containing
     employee data for bulk import. Files are validated, parsed, and processed
@@ -994,17 +989,14 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
     **Supported File Formats:**
 
     1. **CSV Format (.csv):**
-    ```csv
     first_name,last_name,email,job_role_id,skills
     John,Doe,john.doe@company.com,1,"Python;Django;REST API"
     Jane,Smith,jane.smith@company.com,2,"JavaScript;React;Node.js"
-    ```
 
     2. **Excel Format (.xlsx, .xls):**
     Same columns as CSV, but in Excel spreadsheet format
 
     3. **JSON Format (.json):**
-    ```json
     [
         {
             "first_name": "John",
@@ -1021,15 +1013,13 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
             "skills": ["JavaScript", "React", "Node.js"]
         }
     ]
-    ```
 
     **Skill Format Support (CSV/Excel):**
-    - Semicolon-separated: `"Python;Django;REST API"`
-    - Comma-separated: `"Python,Django,REST API"`
-    - JSON array string: `"[\"Python\", \"Django\", \"REST API\"]"`
+    - Semicolon-separated: "Python;Django;REST API"
+    - Comma-separated: "Python,Django,REST API"
+    - JSON array string: "[\"Python\", \"Django\", \"REST API\"]"
 
     **Success Response (201 CREATED):**
-    ```json
     {
         "status": "success",
         "message": "File uploaded and processed successfully",
@@ -1041,27 +1031,19 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
         "predictions_generated": true,
         "total_predictions": 15
     }
-    ```
 
     **File Validation Errors (400 BAD REQUEST):**
-    ```json
     {
         "error": "File size exceeds 10MB limit"
     }
-    ```
-    ```json
     {
         "error": "Invalid file type. Allowed: .csv, .xlsx, .xls, .json"
     }
-    ```
-    ```json
     {
         "error": "MIME type text/plain not allowed"
     }
-    ```
 
     **Parsing Errors (400 BAD REQUEST):**
-    ```json
     {
         "status": "error",
         "message": "File parsing failed",
@@ -1076,7 +1058,6 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
             }
         ]
     }
-    ```
 
     **Behavior:**
     - Validates file size (max 10MB)
@@ -1090,23 +1071,18 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
     - Uses transaction.atomic() for data integrity
 
     **Example cURL (CSV):**
-    ```bash
     curl -X POST http://localhost:8000/api/bulk-upload/employees/ \
       -H "Authorization: Bearer YOUR_TOKEN" \
       -F "file=@employees.csv"
-    ```
 
     **Example cURL (Excel):**
-    ```bash
     curl -X POST http://localhost:8000/api/bulk-upload/employees/ \
       -H "Authorization: Bearer YOUR_TOKEN" \
       -F "file=@employees.xlsx" \
       -F "auto_predict=true" \
       -F "horizon_years=10"
-    ```
 
     **Example Python Requests:**
-    ```python
     import requests
 
     url = 'http://localhost:8000/api/bulk-upload/employees/'
@@ -1116,11 +1092,10 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
 
     response = requests.post(url, headers=headers, files=files, data=data)
     print(response.json())
-    ```
 
     **Template File:**
     A sample CSV template is available at:
-    `future_skills/services/employees_import_template.csv`
+    future_skills/services/employees_import_template.csv
 
     **See Also:**
     - BulkEmployeeImportAPIView for JSON data import
@@ -1141,6 +1116,10 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
     }
 
     def post(self, request, *args, **kwargs):
+        """Handle POST request to upload and process a file for bulk employee import.
+
+        This method validates the uploaded file, parses employee data, and processes the import. It returns a summary of the import results and any errors encountered.
+        """
         try:
             uploaded_file = self._get_uploaded_file(request)
             filename, file_extension = self._validate_file_metadata(uploaded_file)
@@ -1153,9 +1132,7 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = BulkEmployeeImportSerializer(
-            data=self._build_import_payload(request, employees)
-        )
+        serializer = BulkEmployeeImportSerializer(data=self._build_import_payload(request, employees))
         if not serializer.is_valid():
             return Response(
                 {
@@ -1168,13 +1145,11 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
 
         validated = serializer.validated_data
         batch_results = self._process_employee_batch(validated["employees"])
-        predictions_generated, total_predictions, prediction_errors = (
-            self._maybe_generate_predictions(
-                auto_predict=validated["auto_predict"],
-                horizon_years=validated["horizon_years"],
-                request_user=request.user,
-                trigger="bulk_employee_upload",
-            )
+        predictions_generated, total_predictions, prediction_errors = self._maybe_generate_predictions(
+            auto_predict=validated["auto_predict"],
+            horizon_years=validated["horizon_years"],
+            request_user=request.user,
+            trigger="bulk_employee_upload",
         )
 
         errors = batch_results["errors"] + prediction_errors
@@ -1317,8 +1292,7 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
         }
 
     def _parse_json_file(self, file):
-        """
-        Parse JSON file containing employee data.
+        """Parse JSON file containing employee data.
 
         Expected format:
         {
@@ -1395,9 +1369,7 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
         except json.JSONDecodeError as e:
             return [], [{"row": 0, "field": "file", "error": f"Invalid JSON: {str(e)}"}]
         except Exception as e:
-            return [], [
-                {"row": 0, "field": "file", "error": f"Failed to parse JSON: {str(e)}"}
-            ]
+            return [], [{"row": 0, "field": "file", "error": f"Failed to parse JSON: {str(e)}"}]
 
 
 # ============================================================================
@@ -1406,9 +1378,7 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
 
 
 class TrainingRunPagination(PageNumberPagination):
-    """
-    Custom pagination for training runs.
-    """
+    """Custom pagination for training runs."""
 
     page_size = 20
     page_size_query_param = "page_size"
@@ -1568,34 +1538,26 @@ class TrainModelAPIView(APIView):
     authentication_classes = []
 
     def get_permissions(self):
+        """Return the list of permissions that this view requires."""
         return [permission() for permission in self.permission_classes]
 
     def get_authenticators(self):
-        return []
-
-    def get_authenticators(self):
+        """Return authenticators, skipping them in DEBUG mode."""
         if getattr(settings, "DEBUG", False):
             return []
         return super().get_authenticators()
 
     def post(self, request, *args, **kwargs):
-        """
-        Train a new model synchronously or asynchronously.
-        """
+        """Train a new model synchronously or asynchronously."""
         import ast
         import json
         import logging
         from datetime import datetime
-        from pathlib import Path
 
         from django.contrib.auth import get_user_model
         from django.http import QueryDict
 
-        from ..services.training_service import (
-            DataLoadError,
-            ModelTrainer,
-            TrainingError,
-        )
+        from ..services.training_service import DataLoadError, ModelTrainer, TrainingError
 
         logger = logging.getLogger("future_skills.api.views")
 
@@ -1603,18 +1565,10 @@ class TrainModelAPIView(APIView):
         raw_hyperparameters_input = request.data.get("hyperparameters")
         if not isinstance(raw_hyperparameters_input, dict):
             try:
-                body_data = (
-                    json.loads(request.body.decode() or "{}")
-                    if hasattr(request, "body")
-                    else {}
-                )
+                body_data = json.loads(request.body.decode() or "{}") if hasattr(request, "body") else {}
             except Exception:
                 body_data = {}
-            body_hyperparameters = (
-                body_data.get("hyperparameters")
-                if isinstance(body_data, dict)
-                else None
-            )
+            body_hyperparameters = body_data.get("hyperparameters") if isinstance(body_data, dict) else None
             if isinstance(body_hyperparameters, dict):
                 raw_hyperparameters_input = body_hyperparameters
             elif isinstance(request.data, QueryDict):
@@ -1692,16 +1646,12 @@ class TrainModelAPIView(APIView):
             else:
                 import re
 
-                match = re.search(
-                    r"n_estimators[^0-9]*([0-9]+)", str(raw_hyperparameters_input)
-                )
+                match = re.search(r"n_estimators[^0-9]*([0-9]+)", str(raw_hyperparameters_input))
                 if match:
                     n_estimators_candidate = match.group(1)
                 elif isinstance(raw_hyperparameters_input, (list, tuple)):
                     names = [str(item) for item in raw_hyperparameters_input]
-                    if len(names) == 1 and any(
-                        "n_estimators" in name for name in names
-                    ):
+                    if len(names) == 1 and any("n_estimators" in name for name in names):
                         return Response(
                             {
                                 "error": "Invalid request data",
@@ -1723,9 +1673,7 @@ class TrainModelAPIView(APIView):
                             parsed = ast.literal_eval(raw_hyperparameters_input)
                         except Exception:
                             parsed = None
-                    raw_hyperparameters_input = (
-                        parsed if isinstance(parsed, dict) else {}
-                    )
+                    raw_hyperparameters_input = parsed if isinstance(parsed, dict) else {}
                 else:
                     return Response(
                         {
@@ -1744,11 +1692,7 @@ class TrainModelAPIView(APIView):
                     return Response(
                         {
                             "error": "Invalid request data",
-                            "details": {
-                                "hyperparameters": {
-                                    "n_estimators": "Must be an integer"
-                                }
-                            },
+                            "details": {"hyperparameters": {"n_estimators": "Must be an integer"}},
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -1770,29 +1714,19 @@ class TrainModelAPIView(APIView):
             for key, values in request.data.lists():
                 if key == "hyperparameters":
                     serializer_input[key] = (
-                        raw_hyperparameters_input
-                        if isinstance(raw_hyperparameters_input, dict)
-                        else {}
+                        raw_hyperparameters_input if isinstance(raw_hyperparameters_input, dict) else {}
                     )
                 else:
                     serializer_input[key] = values[0] if len(values) == 1 else values
         else:
-            serializer_input = (
-                request.data.copy()
-                if hasattr(request.data, "copy")
-                else dict(request.data)
-            )
+            serializer_input = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
             if raw_hyperparameters_input is not None:
                 serializer_input["hyperparameters"] = raw_hyperparameters_input
 
         logger.debug(
             "[train_model] raw_hyperparameters_input=%s, serializer_input_hparams=%s, data_type=%s",
             raw_hyperparameters_input,
-            (
-                serializer_input.get("hyperparameters")
-                if isinstance(serializer_input, dict)
-                else None
-            ),
+            (serializer_input.get("hyperparameters") if isinstance(serializer_input, dict) else None),
             type(request.data),
         )
 
@@ -1826,9 +1760,7 @@ class TrainModelAPIView(APIView):
                     parsed_hyperparameters = ast.literal_eval(raw_hyperparameters)
                 except (ValueError, SyntaxError):
                     parsed_hyperparameters = None
-        elif raw_hyperparameters is not None and isinstance(
-            raw_hyperparameters, (list, tuple)
-        ):
+        elif raw_hyperparameters is not None and isinstance(raw_hyperparameters, (list, tuple)):
             # Handle cases where the payload arrives as a single-element list
             if len(raw_hyperparameters) == 1:
                 candidate = raw_hyperparameters[0]
@@ -1856,9 +1788,7 @@ class TrainModelAPIView(APIView):
                 parsed_hyperparameters = None
 
         if raw_hyperparameters is not None:
-            if parsed_hyperparameters is None or not isinstance(
-                parsed_hyperparameters, dict
-            ):
+            if parsed_hyperparameters is None or not isinstance(parsed_hyperparameters, dict):
                 if isinstance(hyperparameters, dict) and hyperparameters:
                     parsed_hyperparameters = hyperparameters
                 else:
@@ -1868,9 +1798,7 @@ class TrainModelAPIView(APIView):
 
                         match = re.search(r"n_estimators[^0-9]*([0-9]+)", raw_str)
                         if match:
-                            parsed_hyperparameters = {
-                                "n_estimators": int(match.group(1))
-                            }
+                            parsed_hyperparameters = {"n_estimators": int(match.group(1))}
                     if parsed_hyperparameters is None:
                         parsed_hyperparameters = {}
             hyperparameters = parsed_hyperparameters
@@ -1886,18 +1814,14 @@ class TrainModelAPIView(APIView):
                 n_estimators_value = match.group(1)
 
         if n_estimators_value is None:
-            initial_hyperparameters = request_serializer.initial_data.get(
-                "hyperparameters"
-            )
+            initial_hyperparameters = request_serializer.initial_data.get("hyperparameters")
             if initial_hyperparameters:
                 if isinstance(initial_hyperparameters, dict):
                     n_estimators_value = initial_hyperparameters.get("n_estimators")
                 else:
                     import re
 
-                    match = re.search(
-                        r"n_estimators[^0-9]*([0-9]+)", str(initial_hyperparameters)
-                    )
+                    match = re.search(r"n_estimators[^0-9]*([0-9]+)", str(initial_hyperparameters))
                     if match:
                         n_estimators_value = match.group(1)
 
@@ -1914,9 +1838,7 @@ class TrainModelAPIView(APIView):
                 return Response(
                     {
                         "error": "Invalid request data",
-                        "details": {
-                            "hyperparameters": {"n_estimators": "Must be an integer"}
-                        },
+                        "details": {"hyperparameters": {"n_estimators": "Must be an integer"}},
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -1995,10 +1917,7 @@ class TrainModelAPIView(APIView):
                     hyperparameters=hyperparameters,
                 )
 
-                logger.info(
-                    f"Celery task dispatched: task_id={task.id}, "
-                    f"training_run_id={training_run.id}"
-                )
+                logger.info(f"Celery task dispatched: task_id={task.id}, " f"training_run_id={training_run.id}")
 
                 # Return immediately with RUNNING status
                 return Response(
@@ -2018,9 +1937,7 @@ class TrainModelAPIView(APIView):
                 training_run.error_message = f"Failed to dispatch Celery task: {str(e)}"
                 training_run.save()
 
-                logger.error(
-                    f"Celery dispatch failed: run_id={training_run.id}, error={str(e)}"
-                )
+                logger.error(f"Celery dispatch failed: run_id={training_run.id}, error={str(e)}")
 
                 return Response(
                     {
@@ -2044,9 +1961,7 @@ class TrainModelAPIView(APIView):
 
             # Load data
             trainer.load_data()
-            logger.info(
-                f"Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test"
-            )
+            logger.info(f"Data loaded: {len(trainer.X_train)} train, {len(trainer.X_test)} test")
 
             # Train model with provided hyperparameters
             metrics = trainer.train(**hyperparameters)
@@ -2071,11 +1986,7 @@ class TrainModelAPIView(APIView):
             training_run.test_samples = len(trainer.X_test)
             training_run.training_duration_seconds = trainer.training_duration_seconds
             training_run.per_class_metrics = metrics.get("per_class_metrics", {})
-            training_run.features_used = (
-                list(trainer.X_train.columns)
-                if hasattr(trainer.X_train, "columns")
-                else []
-            )
+            training_run.features_used = list(trainer.X_train.columns) if hasattr(trainer.X_train, "columns") else []
 
             # Update hyperparameters from trainer
             if hasattr(trainer, "hyperparameters"):
@@ -2112,9 +2023,7 @@ class TrainModelAPIView(APIView):
             training_run.error_message = f"Data loading error: {str(e)}"
             training_run.save()
 
-            logger.error(
-                f"Training failed (data load): run_id={training_run.id}, error={str(e)}"
-            )
+            logger.error(f"Training failed (data load): run_id={training_run.id}, error={str(e)}")
 
             return Response(
                 {
@@ -2132,9 +2041,7 @@ class TrainModelAPIView(APIView):
             training_run.error_message = f"Training error: {str(e)}"
             training_run.save()
 
-            logger.error(
-                f"Training failed (training): run_id={training_run.id}, error={str(e)}"
-            )
+            logger.error(f"Training failed (training): run_id={training_run.id}, error={str(e)}")
 
             return Response(
                 {
@@ -2227,8 +2134,7 @@ class TrainModelAPIView(APIView):
     },
 )
 class TrainingRunListAPIView(ListAPIView):
-    """
-    List all training runs with pagination.
+    """List all training runs with pagination.
 
     GET /api/training/runs/
 
@@ -2245,18 +2151,18 @@ class TrainingRunListAPIView(ListAPIView):
     authentication_classes = []
 
     def get_permissions(self):
+        """Return the list of permissions that this view requires."""
         return [permission() for permission in self.permission_classes]
 
     def get_authenticators(self):
+        """Return the list of authenticators that this view uses (empty by default)."""
         return []
 
     serializer_class = TrainingRunSerializer
     pagination_class = TrainingRunPagination
 
     def get_queryset(self):
-        """
-        Get filtered queryset based on query parameters.
-        """
+        """Get filtered queryset based on query parameters."""
         queryset = TrainingRun.objects.select_related("trained_by").all()
 
         # Filter by status
@@ -2304,8 +2210,7 @@ class TrainingRunListAPIView(ListAPIView):
     },
 )
 class TrainingRunDetailAPIView(RetrieveAPIView):
-    """
-    Get detailed information about a specific training run.
+    """Get detailed information about a specific training run.
 
     GET /api/training/runs/<id>/
 

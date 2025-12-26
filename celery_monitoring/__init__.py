@@ -55,24 +55,11 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Optional, Tuple, Type
 
 from celery import Task
-from celery.exceptions import (
-    Ignore,
-    Reject,
-    Retry,
-    SoftTimeLimitExceeded,
-    TimeLimitExceeded,
-)
+from celery.exceptions import Ignore, Reject, Retry, SoftTimeLimitExceeded, TimeLimitExceeded
 from django.core.cache import cache
 from django.utils import timezone
 from pybreaker import CircuitBreaker, CircuitBreakerError
-from tenacity import (
-    after_log,
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import after_log, before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
@@ -171,9 +158,7 @@ def retry_with_exponential_backoff(
                 retry_count = self.request.retries
 
                 if retry_count >= max_retries:
-                    logger.error(
-                        f"Task {self.name} failed after {max_retries} retries: {exc}"
-                    )
+                    logger.error(f"Task {self.name} failed after {max_retries} retries: {exc}")
                     raise
 
                 # Calculate exponential backoff delay
@@ -207,9 +192,7 @@ def retry_with_exponential_backoff(
 CIRCUIT_BREAKERS = {}
 
 
-def get_circuit_breaker(
-    name: str, fail_max: int = 5, reset_timeout: int = 60
-) -> CircuitBreaker:
+def get_circuit_breaker(name: str, fail_max: int = 5, reset_timeout: int = 60) -> CircuitBreaker:
     """
     Get or create a circuit breaker for a specific service.
 
@@ -238,9 +221,7 @@ def get_circuit_breaker(
 
 def _circuit_breaker_listener(cb, old_state, new_state):
     """Log circuit breaker state changes."""
-    logger.warning(
-        f"Circuit breaker '{cb.name}' changed state: {old_state} -> {new_state}"
-    )
+    logger.warning(f"Circuit breaker '{cb.name}' changed state: {old_state} -> {new_state}")
 
 
 def with_circuit_breaker(name: str, fail_max: int = 5, reset_timeout: int = 60):
@@ -272,9 +253,7 @@ def with_circuit_breaker(name: str, fail_max: int = 5, reset_timeout: int = 60):
                 # Call function through circuit breaker
                 return breaker.call(func, *args, **kwargs)
             except CircuitBreakerError as e:
-                logger.error(
-                    f"Circuit breaker '{name}' is OPEN, blocking call to {func.__name__}"
-                )
+                logger.error(f"Circuit breaker '{name}' is OPEN, blocking call to {func.__name__}")
                 # Don't retry, just fail fast
                 raise Reject(str(e), requeue=False)
 
@@ -288,9 +267,7 @@ def with_circuit_breaker(name: str, fail_max: int = 5, reset_timeout: int = 60):
 # ============================================================================
 
 
-def with_dead_letter_queue(
-    max_retries: int = 3, dead_letter_queue: str = "dead_letter_queue"
-):
+def with_dead_letter_queue(max_retries: int = 3, dead_letter_queue: str = "dead_letter_queue"):
     """
     Decorator that sends permanently failed tasks to a dead letter queue.
 
@@ -322,8 +299,7 @@ def with_dead_letter_queue(
                     from celery_monitoring.dead_letter import send_to_dead_letter_queue
 
                     logger.error(
-                        f"Task {self.name} failed permanently after {max_retries} retries, "
-                        f"sending to DLQ: {exc}"
+                        f"Task {self.name} failed permanently after {max_retries} retries, " f"sending to DLQ: {exc}"
                     )
 
                     send_to_dead_letter_queue(
@@ -380,10 +356,7 @@ def rate_limit(calls: int = 10, period: int = 60):
             if call_count >= calls:
                 # Rate limit exceeded
                 wait_time = cache.ttl(cache_key)
-                logger.warning(
-                    f"Rate limit exceeded for {func.__name__}, "
-                    f"retry in {wait_time}s"
-                )
+                logger.warning(f"Rate limit exceeded for {func.__name__}, " f"retry in {wait_time}s")
                 raise Retry(countdown=wait_time)
 
             # Increment call count
@@ -431,16 +404,12 @@ def with_timeout(soft_timeout: int = 300, hard_timeout: int = 600):
                 return func(self, *args, **kwargs)
             except SoftTimeLimitExceeded:
                 logger.warning(
-                    f"Task {self.name} exceeded soft time limit ({soft_timeout}s), "
-                    f"attempting graceful shutdown"
+                    f"Task {self.name} exceeded soft time limit ({soft_timeout}s), " f"attempting graceful shutdown"
                 )
                 # Attempt to save partial results or cleanup
                 raise
             except TimeLimitExceeded:
-                logger.error(
-                    f"Task {self.name} exceeded hard time limit ({hard_timeout}s), "
-                    f"forcefully terminated"
-                )
+                logger.error(f"Task {self.name} exceeded hard time limit ({hard_timeout}s), " f"forcefully terminated")
                 raise
 
         return wrapper
@@ -478,17 +447,12 @@ def idempotent(timeout: int = 3600):
             import json
 
             key_data = {"func": func.__name__, "args": args, "kwargs": kwargs}
-            key_hash = hashlib.md5(
-                json.dumps(key_data, sort_keys=True).encode()
-            ).hexdigest()
+            key_hash = hashlib.md5(json.dumps(key_data, sort_keys=True).encode(), usedforsecurity=False).hexdigest()
             cache_key = f"idempotent:{key_hash}"
 
             # Check if task already executed
             if cache.get(cache_key):
-                logger.info(
-                    f"Task {func.__name__} already executed (idempotency key: {key_hash}), "
-                    f"skipping"
-                )
+                logger.info(f"Task {func.__name__} already executed (idempotency key: {key_hash}), " f"skipping")
                 return None
 
             # Execute task
@@ -542,9 +506,7 @@ def with_advanced_retry(
 
         # Add rate limiting if specified
         if rate_limit_calls:
-            decorated_func = rate_limit(
-                calls=rate_limit_calls, period=rate_limit_period
-            )(decorated_func)
+            decorated_func = rate_limit(calls=rate_limit_calls, period=rate_limit_period)(decorated_func)
 
         # Add circuit breaker if specified
         if use_circuit_breaker:
@@ -553,14 +515,10 @@ def with_advanced_retry(
 
         # Add dead letter queue if specified
         if use_dead_letter_queue:
-            decorated_func = with_dead_letter_queue(max_retries=max_retries)(
-                decorated_func
-            )
+            decorated_func = with_dead_letter_queue(max_retries=max_retries)(decorated_func)
 
         # Add exponential backoff
-        decorated_func = retry_with_exponential_backoff(max_retries=max_retries)(
-            decorated_func
-        )
+        decorated_func = retry_with_exponential_backoff(max_retries=max_retries)(decorated_func)
 
         return decorated_func
 

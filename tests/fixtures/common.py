@@ -182,12 +182,8 @@ def prediction_test_scenario(db):
 
     # Create future skills that should be predicted
     predicted_skills = [
-        FutureSkill.objects.create(
-            skill_name="Machine Learning", category="Technical", importance_score=0.90
-        ),
-        FutureSkill.objects.create(
-            skill_name="Data Visualization", category="Technical", importance_score=0.85
-        ),
+        FutureSkill.objects.create(skill_name="Machine Learning", category="Technical", importance_score=0.90),
+        FutureSkill.objects.create(skill_name="Data Visualization", category="Technical", importance_score=0.85),
     ]
 
     return {
@@ -267,9 +263,7 @@ Bob Wilson,bob@example.com,Sales,Representative,"CRM,Communication"
 @pytest.fixture
 def mock_ml_predictions(mocker):
     """Mocks ML model predictions for testing without actual model."""
-    mock_predict = mocker.patch(
-        "future_skills.services.prediction_engine.PredictionEngine.predict"
-    )
+    mock_predict = mocker.patch("future_skills.services.prediction_engine.PredictionEngine.predict")
     mock_predict.return_value = {
         "predictions": [SKILL_AI_ML, "Cloud Computing", "DevOps"],
         "confidence_scores": [0.85, 0.78, 0.72],
@@ -281,9 +275,7 @@ def mock_ml_predictions(mocker):
 @pytest.fixture
 def mock_recommendation_engine(mocker):
     """Mocks recommendation engine for testing."""
-    mock_recommend = mocker.patch(
-        "future_skills.services.recommendation_engine.RecommendationEngine.recommend"
-    )
+    mock_recommend = mocker.patch("future_skills.services.recommendation_engine.RecommendationEngine.recommend")
     mock_recommend.return_value = {
         "recommendations": [
             {"skill_name": "Machine Learning", "score": 0.90},

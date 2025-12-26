@@ -1,6 +1,4 @@
-"""
-JWT Authentication Configuration and Views
-==========================================
+"""JWT Authentication Configuration and Views.
 
 This module provides JWT (JSON Web Token) authentication for the SmartHR360 API.
 Uses djangorestframework-simplejwt with enhanced security features.
@@ -57,12 +55,15 @@ JWT_SETTINGS = {
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """
-    Custom JWT serializer that adds additional user information to the token response.
-    """
+    """Custom JWT serializer that adds additional user information to the token response."""
 
     @classmethod
     def get_token(cls, user):
+        """Generate JWT token with custom user claims.
+
+        Extends the base token with username, email, staff status,
+        user groups, and issuance timestamp.
+        """
         token = super().get_token(user)
 
         # Add custom claims
@@ -81,6 +82,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
+        """Validate the token and add user information to the response."""
         data = super().validate(attrs)
 
         # Add extra responses data
@@ -90,11 +92,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "email": self.user.email if hasattr(self.user, "email") else "",
             "is_staff": self.user.is_staff,
             "is_superuser": self.user.is_superuser,
-            "groups": (
-                list(self.user.groups.values_list("name", flat=True))
-                if hasattr(self.user, "groups")
-                else []
-            ),
+            "groups": (list(self.user.groups.values_list("name", flat=True)) if hasattr(self.user, "groups") else []),
         }
 
         # Log successful login
@@ -111,13 +109,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    """
-    Custom token obtain view with additional logging and security checks.
-    """
+    """Custom token obtain view with additional logging and security checks."""
 
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
+        """Handle POST request for token obtain with logging."""
         # Log login attempt
         username = request.data.get("username", "unknown")
         logger.info(
@@ -163,11 +160,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 class CustomTokenRefreshView(TokenRefreshView):
-    """
-    Custom token refresh view with logging.
-    """
+    """Custom token refresh view with logging."""
 
     def post(self, request, *args, **kwargs):
+        """Handle POST request for token refresh with logging."""
         logger.debug(
             "JWT token refresh attempt",
             extra={
@@ -209,9 +205,7 @@ def logout_view(request):
             },
         )
 
-        return Response(
-            {"message": "Successfully logged out"}, status=status.HTTP_200_OK
-        )
+        return Response({"message": "Successfully logged out"}, status=status.HTTP_200_OK)
 
     except Exception as e:
         logger.error(
@@ -232,9 +226,7 @@ def logout_view(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def verify_token_view(request):
-    """
-    Endpoint to verify if the current token is valid.
-    """
+    """Endpoint to verify if the current token is valid."""
     return Response(
         {
             "valid": True,

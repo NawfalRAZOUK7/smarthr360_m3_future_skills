@@ -4,8 +4,6 @@ Django models for Celery monitoring.
 Register these models in your app's models.py or create a separate app.
 """
 
-from django.db import models
-
 from celery_monitoring.dead_letter import DeadLetterTask
 from celery_monitoring.monitoring import TaskExecution
 

@@ -13,18 +13,14 @@ Tests cover:
 - Global instance management
 """
 
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
-from ml.mlflow_config import (
-    MLflowConfig,
-    get_mlflow_client,
-    get_mlflow_config,
-    initialize_mlflow,
-)
+from ml.mlflow_config import MLflowConfig, get_mlflow_client, get_mlflow_config, initialize_mlflow
 
 
 class TestMLflowConfigInitialization:
@@ -34,7 +30,7 @@ class TestMLflowConfigInitialization:
     @patch.dict("os.environ", {}, clear=True)
     def test_init_default_configuration(self, mock_settings):
         """Test initialization with default configuration."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_settings.MLFLOW_TRACKING_URI = None
         mock_settings.MLFLOW_ARTIFACT_LOCATION = None
         mock_settings.MLFLOW_BACKEND_STORE_URI = None
@@ -59,7 +55,7 @@ class TestMLflowConfigInitialization:
     def test_tracking_uri_from_settings(self, mock_settings):
         """Test tracking URI is read from Django settings."""
         mock_settings.MLFLOW_TRACKING_URI = "http://localhost:5000"
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
 
         config = MLflowConfig()
         assert config.tracking_uri == "http://localhost:5000"
@@ -68,7 +64,7 @@ class TestMLflowConfigInitialization:
     @patch.dict("os.environ", {}, clear=True)
     def test_tracking_uri_default_file_based(self, mock_settings):
         """Test default file-based tracking URI is created."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_settings.MLFLOW_TRACKING_URI = None
 
         config = MLflowConfig()
@@ -87,15 +83,13 @@ class TestMLflowConfigInitialization:
     def test_artifact_location_from_settings(self, mock_settings):
         """Test artifact location from Django settings."""
         mock_settings.MLFLOW_ARTIFACT_LOCATION = "/settings/artifacts"
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
 
         config = MLflowConfig()
         assert config.artifact_location == "/settings/artifacts"
 
     @patch("ml.mlflow_config.settings")
-    @patch.dict(
-        "os.environ", {"MLFLOW_BACKEND_STORE_URI": "postgresql://db:5432/mlflow"}
-    )
+    @patch.dict("os.environ", {"MLFLOW_BACKEND_STORE_URI": "postgresql://db:5432/mlflow"})
     def test_backend_store_uri_from_environment(self, mock_settings):
         """Test backend store URI from environment."""
         config = MLflowConfig()
@@ -105,7 +99,7 @@ class TestMLflowConfigInitialization:
     @patch.dict("os.environ", {}, clear=True)
     def test_backend_store_uri_default_sqlite(self, mock_settings):
         """Test default SQLite backend store URI."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_settings.MLFLOW_BACKEND_STORE_URI = None
 
         config = MLflowConfig()
@@ -119,11 +113,9 @@ class TestMLflowConfigSetup:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_setup_initializes_mlflow(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_setup_initializes_mlflow(self, mock_settings, mock_client_class, mock_mlflow):
         """Test that setup initializes MLflow correctly."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -141,7 +133,7 @@ class TestMLflowConfigSetup:
     @patch("ml.mlflow_config.settings")
     def test_setup_idempotent(self, mock_settings, mock_client_class, mock_mlflow):
         """Test that setup can be called multiple times safely."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -156,16 +148,12 @@ class TestMLflowConfigSetup:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_setup_creates_default_experiments(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_setup_creates_default_experiments(self, mock_settings, mock_client_class, mock_mlflow):
         """Test that setup creates default experiments."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
-        mock_client.get_experiment_by_name.return_value = (
-            None  # Experiments don't exist
-        )
+        mock_client.get_experiment_by_name.return_value = None  # Experiments don't exist
         mock_client.create_experiment.return_value = "exp_123"
 
         config = MLflowConfig()
@@ -177,11 +165,9 @@ class TestMLflowConfigSetup:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_setup_skips_existing_experiments(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_setup_skips_existing_experiments(self, mock_settings, mock_client_class, mock_mlflow):
         """Test that existing experiments are not recreated."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()  # Experiment exists
@@ -195,11 +181,9 @@ class TestMLflowConfigSetup:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_setup_handles_initialization_error(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_setup_handles_initialization_error(self, mock_settings, mock_client_class, mock_mlflow):
         """Test error handling during setup."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_mlflow.set_tracking_uri.side_effect = Exception("Connection failed")
 
         config = MLflowConfig()
@@ -218,7 +202,7 @@ class TestMLflowConfigRunTracking:
     @patch("ml.mlflow_config.settings")
     def test_start_run_basic(self, mock_settings, mock_client_class, mock_mlflow):
         """Test starting a basic run."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -240,7 +224,7 @@ class TestMLflowConfigRunTracking:
     @patch("ml.mlflow_config.settings")
     def test_start_run_with_tags(self, mock_settings, mock_client_class, mock_mlflow):
         """Test starting a run with custom tags."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -261,11 +245,9 @@ class TestMLflowConfigRunTracking:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_start_run_with_experiment_name(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_start_run_with_experiment_name(self, mock_settings, mock_client_class, mock_mlflow):
         """Test starting a run in specific experiment."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -289,7 +271,7 @@ class TestMLflowConfigRunTracking:
     @patch("ml.mlflow_config.settings")
     def test_start_run_nested(self, mock_settings, mock_client_class, mock_mlflow):
         """Test starting a nested run."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -309,11 +291,9 @@ class TestMLflowConfigRunTracking:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_start_run_auto_initializes(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_start_run_auto_initializes(self, mock_settings, mock_client_class, mock_mlflow):
         """Test that start_run auto-initializes if not setup."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -333,11 +313,9 @@ class TestMLflowConfigRunTracking:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_start_run_logs_system_tags(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_start_run_logs_system_tags(self, mock_settings, mock_client_class, mock_mlflow):
         """Test that system tags are logged automatically."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -361,19 +339,15 @@ class TestMLflowConfigRunTracking:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_start_run_handles_error(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_start_run_handles_error(self, mock_settings, mock_client_class, mock_mlflow):
         """Test error handling in run context."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
 
         # Simulate error during run
-        mock_mlflow.start_run.return_value.__enter__ = Mock(
-            side_effect=Exception("Run error")
-        )
+        mock_mlflow.start_run.return_value.__enter__ = Mock(side_effect=Exception("Run error"))
 
         config = MLflowConfig()
         config.setup()
@@ -423,9 +397,7 @@ class TestMLflowConfigLogging:
 
         config.log_artifact_directory("/path/to/artifacts")
 
-        mock_mlflow.log_artifacts.assert_called_once_with(
-            "/path/to/artifacts", artifact_path=None
-        )
+        mock_mlflow.log_artifacts.assert_called_once_with("/path/to/artifacts", artifact_path=None)
 
     @patch("ml.mlflow_config.mlflow")
     def test_log_artifact_directory_with_path(self, mock_mlflow):
@@ -434,9 +406,7 @@ class TestMLflowConfigLogging:
 
         config.log_artifact_directory("/path/to/artifacts", artifact_path="models")
 
-        mock_mlflow.log_artifacts.assert_called_once_with(
-            "/path/to/artifacts", artifact_path="models"
-        )
+        mock_mlflow.log_artifacts.assert_called_once_with("/path/to/artifacts", artifact_path="models")
 
 
 class TestMLflowConfigModelRegistry:
@@ -447,7 +417,7 @@ class TestMLflowConfigModelRegistry:
     @patch("ml.mlflow_config.settings")
     def test_register_model_basic(self, mock_settings, mock_client_class, mock_mlflow):
         """Test basic model registration."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -467,11 +437,9 @@ class TestMLflowConfigModelRegistry:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_register_model_with_custom_name(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_register_model_with_custom_name(self, mock_settings, mock_client_class, mock_mlflow):
         """Test registering model with custom name."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -491,11 +459,9 @@ class TestMLflowConfigModelRegistry:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_register_model_with_tags(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_register_model_with_tags(self, mock_settings, mock_client_class, mock_mlflow):
         """Test registering model with tags."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -516,11 +482,9 @@ class TestMLflowConfigModelRegistry:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_register_model_with_description(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_register_model_with_description(self, mock_settings, mock_client_class, mock_mlflow):
         """Test registering model with description."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -539,11 +503,9 @@ class TestMLflowConfigModelRegistry:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_register_model_auto_initializes(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_register_model_auto_initializes(self, mock_settings, mock_client_class, mock_mlflow):
         """Test that register_model auto-initializes."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -561,11 +523,9 @@ class TestMLflowConfigModelRegistry:
     @patch("ml.mlflow_config.mlflow")
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_register_model_handles_error(
-        self, mock_settings, mock_client_class, mock_mlflow
-    ):
+    def test_register_model_handles_error(self, mock_settings, mock_client_class, mock_mlflow):
         """Test error handling during model registration."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -582,7 +542,7 @@ class TestMLflowConfigModelRegistry:
     @patch("ml.mlflow_config.settings")
     def test_transition_model_stage(self, mock_settings, mock_client_class):
         """Test transitioning model stage."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -603,7 +563,7 @@ class TestMLflowConfigModelRegistry:
     @patch("ml.mlflow_config.settings")
     def test_transition_model_stage_no_archive(self, mock_settings, mock_client_class):
         """Test transitioning model stage without archiving."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -611,26 +571,20 @@ class TestMLflowConfigModelRegistry:
         config = MLflowConfig()
         config.setup()
 
-        config.transition_model_stage(
-            "my-model", "1", "Staging", archive_existing=False
-        )
+        config.transition_model_stage("my-model", "1", "Staging", archive_existing=False)
 
         call_kwargs = mock_client.transition_model_version_stage.call_args[1]
         assert call_kwargs["archive_existing_versions"] is False
 
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_transition_model_stage_handles_error(
-        self, mock_settings, mock_client_class
-    ):
+    def test_transition_model_stage_handles_error(self, mock_settings, mock_client_class):
         """Test error handling during stage transition."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
-        mock_client.transition_model_version_stage.side_effect = Exception(
-            "Transition failed"
-        )
+        mock_client.transition_model_version_stage.side_effect = Exception("Transition failed")
 
         config = MLflowConfig()
         config.setup()
@@ -646,7 +600,7 @@ class TestMLflowConfigModelRetrieval:
     @patch("ml.mlflow_config.settings")
     def test_get_latest_model_version(self, mock_settings, mock_client_class):
         """Test getting latest model version."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -666,11 +620,9 @@ class TestMLflowConfigModelRetrieval:
 
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_get_latest_model_version_with_stage_filter(
-        self, mock_settings, mock_client_class
-    ):
+    def test_get_latest_model_version_with_stage_filter(self, mock_settings, mock_client_class):
         """Test getting latest model version filtered by stage."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -692,11 +644,9 @@ class TestMLflowConfigModelRetrieval:
 
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_get_latest_model_version_no_versions(
-        self, mock_settings, mock_client_class
-    ):
+    def test_get_latest_model_version_no_versions(self, mock_settings, mock_client_class):
         """Test getting latest version when none exist."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -711,11 +661,9 @@ class TestMLflowConfigModelRetrieval:
 
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_get_latest_model_version_handles_error(
-        self, mock_settings, mock_client_class
-    ):
+    def test_get_latest_model_version_handles_error(self, mock_settings, mock_client_class):
         """Test error handling when retrieving model version."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -732,7 +680,7 @@ class TestMLflowConfigModelRetrieval:
     @patch("ml.mlflow_config.settings")
     def test_get_production_model_uri(self, mock_settings, mock_client_class):
         """Test getting production model URI."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -751,11 +699,9 @@ class TestMLflowConfigModelRetrieval:
 
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_get_production_model_uri_no_production(
-        self, mock_settings, mock_client_class
-    ):
+    def test_get_production_model_uri_no_production(self, mock_settings, mock_client_class):
         """Test getting production URI when no production model exists."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = Mock()
@@ -776,7 +722,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_search_runs_basic(self, mock_settings, mock_client_class):
         """Test basic run search."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -799,7 +745,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_search_runs_with_filter(self, mock_settings, mock_client_class):
         """Test searching runs with filter."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -820,7 +766,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_search_runs_with_max_results(self, mock_settings, mock_client_class):
         """Test searching runs with max results limit."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -841,7 +787,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_search_runs_with_order_by(self, mock_settings, mock_client_class):
         """Test searching runs with custom ordering."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -862,7 +808,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_search_runs_experiment_not_found(self, mock_settings, mock_client_class):
         """Test searching runs when experiment doesn't exist."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = None
@@ -878,7 +824,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_search_runs_handles_error(self, mock_settings, mock_client_class):
         """Test error handling during run search."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -898,7 +844,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_get_best_run(self, mock_settings, mock_client_class):
         """Test getting best run by metric."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -922,7 +868,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_get_best_run_ascending(self, mock_settings, mock_client_class):
         """Test getting best run with ascending order (loss metric)."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -945,7 +891,7 @@ class TestMLflowConfigRunSearch:
     @patch("ml.mlflow_config.settings")
     def test_get_best_run_no_runs(self, mock_settings, mock_client_class):
         """Test getting best run when no runs exist."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -968,11 +914,9 @@ class TestMLflowConfigCleanup:
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
     @patch("ml.mlflow_config.datetime")
-    def test_cleanup_old_runs_dry_run(
-        self, mock_datetime, mock_settings, mock_client_class
-    ):
+    def test_cleanup_old_runs_dry_run(self, mock_datetime, mock_settings, mock_client_class):
         """Test cleanup in dry-run mode."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -991,9 +935,7 @@ class TestMLflowConfigCleanup:
         config = MLflowConfig()
         config.setup()
 
-        count = config.cleanup_old_runs(
-            "test-experiment", days_to_keep=90, dry_run=True
-        )
+        count = config.cleanup_old_runs("test-experiment", days_to_keep=90, dry_run=True)
 
         assert count == 1
         mock_client.delete_run.assert_not_called()
@@ -1001,11 +943,9 @@ class TestMLflowConfigCleanup:
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
     @patch("ml.mlflow_config.datetime")
-    def test_cleanup_old_runs_delete(
-        self, mock_datetime, mock_settings, mock_client_class
-    ):
+    def test_cleanup_old_runs_delete(self, mock_datetime, mock_settings, mock_client_class):
         """Test cleanup with actual deletion."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -1023,20 +963,16 @@ class TestMLflowConfigCleanup:
         config = MLflowConfig()
         config.setup()
 
-        count = config.cleanup_old_runs(
-            "test-experiment", days_to_keep=30, dry_run=False
-        )
+        count = config.cleanup_old_runs("test-experiment", days_to_keep=30, dry_run=False)
 
         assert count == 1
         mock_client.delete_run.assert_called_once_with("run123")
 
     @patch("ml.mlflow_config.MlflowClient")
     @patch("ml.mlflow_config.settings")
-    def test_cleanup_old_runs_experiment_not_found(
-        self, mock_settings, mock_client_class
-    ):
+    def test_cleanup_old_runs_experiment_not_found(self, mock_settings, mock_client_class):
         """Test cleanup when experiment doesn't exist."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_client.get_experiment_by_name.return_value = None
@@ -1052,7 +988,7 @@ class TestMLflowConfigCleanup:
     @patch("ml.mlflow_config.settings")
     def test_cleanup_old_runs_handles_error(self, mock_settings, mock_client_class):
         """Test error handling during cleanup."""
-        mock_settings.BASE_DIR = Path("/tmp/test")
+        mock_settings.BASE_DIR = Path(tempfile.gettempdir()) / "smarthr360_test"
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 

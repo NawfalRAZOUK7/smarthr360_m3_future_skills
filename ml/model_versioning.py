@@ -78,12 +78,8 @@ class ModelMetrics(BaseModel):
     f1_score: Optional[float] = Field(None, ge=0.0, le=1.0)
     roc_auc: Optional[float] = Field(None, ge=0.0, le=1.0)
     log_loss: Optional[float] = Field(None, ge=0.0)
-    training_time: Optional[float] = Field(
-        None, ge=0.0, description="Training time in seconds"
-    )
-    inference_time: Optional[float] = Field(
-        None, ge=0.0, description="Average inference time in ms"
-    )
+    training_time: Optional[float] = Field(None, ge=0.0, description="Training time in seconds")
+    inference_time: Optional[float] = Field(None, ge=0.0, description="Average inference time in ms")
 
     # Custom metrics
     custom_metrics: Dict[str, float] = Field(default_factory=dict)
@@ -107,11 +103,7 @@ class ModelMetrics(BaseModel):
 
     def to_dict(self) -> Dict[str, float]:
         """Convert metrics to dictionary."""
-        metrics_dict = {
-            k: v
-            for k, v in self.dict().items()
-            if v is not None and k != "custom_metrics"
-        }
+        metrics_dict = {k: v for k, v in self.dict().items() if v is not None and k != "custom_metrics"}
         metrics_dict.update(self.custom_metrics)
         return metrics_dict
 
@@ -124,9 +116,7 @@ class ModelMetadata(BaseModel):
 
     # Model info
     framework: ModelFramework = ModelFramework.SCIKIT_LEARN
-    algorithm: Optional[str] = Field(
-        None, description="Algorithm name (e.g., RandomForest)"
-    )
+    algorithm: Optional[str] = Field(None, description="Algorithm name (e.g., RandomForest)")
     model_path: Optional[str] = Field(None, description="Path to model file")
     model_size_mb: Optional[float] = Field(None, ge=0.0)
 
@@ -367,9 +357,7 @@ class ModelVersionManager:
         filtered_versions = self.versions
 
         if stage:
-            filtered_versions = [
-                v for v in filtered_versions if v.metadata and v.metadata.stage == stage
-            ]
+            filtered_versions = [v for v in filtered_versions if v.metadata and v.metadata.stage == stage]
 
         if stable_only:
             filtered_versions = [v for v in filtered_versions if v.is_stable()]
@@ -415,26 +403,18 @@ class ModelVersionManager:
 
         # Compare metrics
         new_metric = new_version.metadata.metrics.get_primary_metric(metric_name)
-        current_metric = current_version.metadata.metrics.get_primary_metric(
-            metric_name
-        )
+        current_metric = current_version.metadata.metrics.get_primary_metric(metric_name)
 
         improvement = new_metric - current_metric
 
         if improvement < improvement_threshold:
-            return False, (
-                f"Insufficient improvement: {improvement:.4f} "
-                f"(threshold: {improvement_threshold:.4f})"
-            )
+            return False, (f"Insufficient improvement: {improvement:.4f} " f"(threshold: {improvement_threshold:.4f})")
 
         return True, (
-            f"Significant improvement: {improvement:.4f} "
-            f"({metric_name}: {current_metric:.4f} → {new_metric:.4f})"
+            f"Significant improvement: {improvement:.4f} " f"({metric_name}: {current_metric:.4f} → {new_metric:.4f})"
         )
 
-    def auto_version(
-        self, current_version: Optional[ModelVersion] = None, change_type: str = "patch"
-    ) -> ModelVersion:
+    def auto_version(self, current_version: Optional[ModelVersion] = None, change_type: str = "patch") -> ModelVersion:
         """
         Automatically generate next version number.
 
@@ -523,9 +503,7 @@ class ModelVersionManager:
 
         return comparison
 
-    def archive_old_versions(
-        self, keep_latest: int = 5, keep_production: bool = True
-    ) -> int:
+    def archive_old_versions(self, keep_latest: int = 5, keep_production: bool = True) -> int:
         """
         Archive old model versions.
 

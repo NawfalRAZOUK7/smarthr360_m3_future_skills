@@ -60,9 +60,7 @@ class TestModelMonitoring:
         log_file = tmp_path / "test_predictions.jsonl"
         settings.FUTURE_SKILLS_MONITORING_LOG = log_file
 
-        _log_prediction_for_monitoring(
-            job_role_id=1, skill_id=5, predicted_level="HIGH", score=85.0, engine="ml"
-        )
+        _log_prediction_for_monitoring(job_role_id=1, skill_id=5, predicted_level="HIGH", score=85.0, engine="ml")
 
         # Log file should not be created
         assert not log_file.exists()
@@ -232,9 +230,7 @@ class TestModelMonitoring:
         # Directory doesn't exist yet
         assert not log_dir.exists()
 
-        _log_prediction_for_monitoring(
-            job_role_id=1, skill_id=5, predicted_level="HIGH", score=85.0, engine="ml"
-        )
+        _log_prediction_for_monitoring(job_role_id=1, skill_id=5, predicted_level="HIGH", score=85.0, engine="ml")
 
         # Directory should be created
         assert log_dir.exists()
@@ -308,9 +304,7 @@ class TestMonitoringIntegration:
 
         settings.FUTURE_SKILLS_ENABLE_MONITORING = True
 
-        _log_prediction_for_monitoring(
-            job_role_id=1, skill_id=5, predicted_level="HIGH", score=85.0, engine="ml"
-        )
+        _log_prediction_for_monitoring(job_role_id=1, skill_id=5, predicted_level="HIGH", score=85.0, engine="ml")
 
         # Should use default path
         assert default_log_path.exists()

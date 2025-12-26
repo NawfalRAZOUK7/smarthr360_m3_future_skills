@@ -40,7 +40,6 @@ def _choose_priority_from_level(level: str) -> str:
     This is intentionally simple and transparent so it can be
     documented easily and, if needed, tuned later.
     """
-
     if level == FutureSkillPrediction.LEVEL_HIGH:
         return HRInvestmentRecommendation.PRIORITY_HIGH
     if level == FutureSkillPrediction.LEVEL_MEDIUM:
@@ -56,7 +55,6 @@ def _choose_recommended_action(job_role, skill) -> str:
         contains "soft" → TRAINING.
       - Otherwise → HIRING.
     """
-
     dept = (getattr(job_role, "department", None) or "").lower()
     category = (getattr(skill, "category", None) or "").lower()
 
@@ -73,7 +71,6 @@ def _decide_action(job_role, skill) -> str:
     Some code/tests might still refer to `_decide_action`, so we keep it
     as a thin wrapper around `_choose_recommended_action`.
     """
-
     return _choose_recommended_action(job_role, skill)
 
 
@@ -95,7 +92,6 @@ def generate_recommendations_from_predictions(horizon_years: int = 5) -> int:
 
     Returns the number of recommendations created/updated.
     """
-
     logger.info("========================================")
     logger.info("📊 Starting recommendation generation...")
     logger.info("Horizon: %s years", horizon_years)

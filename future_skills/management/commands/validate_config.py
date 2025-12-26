@@ -13,9 +13,12 @@ from config.settings.validators import print_env_info, validate_environment
 
 
 class Command(BaseCommand):
+    """Django management command to validate environment configuration."""
+
     help = "Validate environment configuration and settings"
 
     def add_arguments(self, parser):
+        """Add command line arguments for the validate_config command."""
         parser.add_argument(
             "--env",
             type=str,
@@ -58,12 +61,8 @@ class Command(BaseCommand):
         is_valid = validate_environment(env, exit_on_error=options["exit_on_error"])
 
         if is_valid:
-            self.stdout.write(
-                self.style.SUCCESS("\n✅ Configuration validation passed!\n")
-            )
+            self.stdout.write(self.style.SUCCESS("\n✅ Configuration validation passed!\n"))
         else:
-            self.stdout.write(
-                self.style.ERROR("\n❌ Configuration validation failed!\n")
-            )
+            self.stdout.write(self.style.ERROR("\n❌ Configuration validation failed!\n"))
             if options["exit_on_error"]:
                 exit(1)

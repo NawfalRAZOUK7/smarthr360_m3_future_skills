@@ -47,9 +47,7 @@ class IsHRStaffOrManager(BasePermission):
       - MANAGER
     """
 
-    message = (
-        "Vous devez être DRH, Responsable RH ou Manager pour accéder à cette ressource."
-    )
+    message = "Vous devez être DRH, Responsable RH ou Manager pour accéder à cette ressource."
 
     def has_permission(self, request, view):
         return _user_in_groups(request.user, MANAGER_GROUPS)

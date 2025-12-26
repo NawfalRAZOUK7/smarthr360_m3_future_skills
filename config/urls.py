@@ -1,8 +1,8 @@
-"""
-URL configuration for config project.
+"""URL configuration for config project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
+
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -20,18 +20,9 @@ import pkgutil
 
 from django.contrib import admin
 from django.urls import include, path
-from drf_spectacular.views import (
-    SpectacularAPIView,
-    SpectacularRedocView,
-    SpectacularSwaggerView,
-)
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
-from config.jwt_auth import (
-    CustomTokenObtainPairView,
-    CustomTokenRefreshView,
-    logout_view,
-    verify_token_view,
-)
+from config.jwt_auth import CustomTokenObtainPairView, CustomTokenRefreshView, logout_view, verify_token_view
 from future_skills.api.monitoring import (
     HealthCheckView,
     LivenessCheckView,
@@ -45,9 +36,7 @@ def discover_future_skills_urls():
     future_skills_pkg = importlib.import_module("future_skills")
     discovered = []
 
-    for module_info in pkgutil.walk_packages(
-        future_skills_pkg.__path__, prefix="future_skills."
-    ):
+    for module_info in pkgutil.walk_packages(future_skills_pkg.__path__, prefix="future_skills."):
         module_name = module_info.name
         if not (module_name.endswith(".urls") or "_urls" in module_name):
             continue
@@ -84,9 +73,7 @@ discovered_future_skills_urls = discover_future_skills_urls()
 urlpatterns = [
     path("admin/", admin.site.urls),
     # JWT Authentication
-    path(
-        "api/auth/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"
-    ),
+    path("api/auth/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path(
         "api/auth/token/refresh/",
         CustomTokenRefreshView.as_view(),

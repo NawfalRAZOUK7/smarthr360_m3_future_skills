@@ -1,5 +1,5 @@
-"""
-Application Performance Monitoring (APM) Configuration
+"""Application Performance Monitoring (APM) Configuration.
+
 SmartHR360 Future Skills Platform
 
 Integrates Elastic APM and Sentry for comprehensive application monitoring,
@@ -15,8 +15,7 @@ from typing import Any, Dict, Optional
 
 
 def get_elastic_apm_config() -> Optional[Dict[str, Any]]:
-    """
-    Get Elastic APM configuration.
+    """Get Elastic APM configuration.
 
     Returns:
         Dict with Elastic APM settings or None if not configured
@@ -25,26 +24,17 @@ def get_elastic_apm_config() -> Optional[Dict[str, Any]]:
         return None
 
     return {
-        "SERVICE_NAME": os.getenv(
-            "ELASTIC_APM_SERVICE_NAME", "smarthr360-future-skills"
-        ),
+        "SERVICE_NAME": os.getenv("ELASTIC_APM_SERVICE_NAME", "smarthr360-future-skills"),
         "SECRET_TOKEN": os.getenv("ELASTIC_APM_SECRET_TOKEN", ""),
         "SERVER_URL": os.getenv("ELASTIC_APM_SERVER_URL"),
         "ENVIRONMENT": os.getenv("ENVIRONMENT", "development"),
         "DEBUG": os.getenv("ELASTIC_APM_DEBUG", "false").lower() == "true",
         # Transaction settings
-        "TRANSACTION_SAMPLE_RATE": float(
-            os.getenv("ELASTIC_APM_TRANSACTION_SAMPLE_RATE", "1.0")
-        ),
-        "TRANSACTION_MAX_SPANS": int(
-            os.getenv("ELASTIC_APM_TRANSACTION_MAX_SPANS", "500")
-        ),
+        "TRANSACTION_SAMPLE_RATE": float(os.getenv("ELASTIC_APM_TRANSACTION_SAMPLE_RATE", "1.0")),
+        "TRANSACTION_MAX_SPANS": int(os.getenv("ELASTIC_APM_TRANSACTION_MAX_SPANS", "500")),
         # Performance monitoring
-        "CAPTURE_BODY": os.getenv(
-            "ELASTIC_APM_CAPTURE_BODY", "errors"
-        ),  # 'off', 'errors', 'transactions', 'all'
-        "CAPTURE_HEADERS": os.getenv("ELASTIC_APM_CAPTURE_HEADERS", "true").lower()
-        == "true",
+        "CAPTURE_BODY": os.getenv("ELASTIC_APM_CAPTURE_BODY", "errors"),  # 'off', 'errors', 'transactions', 'all'
+        "CAPTURE_HEADERS": os.getenv("ELASTIC_APM_CAPTURE_HEADERS", "true").lower() == "true",
         # Distributed tracing
         "DISTRIBUTED_TRACING": True,
         "TRACE_CONTINUATION_STRATEGY": "continue",
@@ -69,8 +59,7 @@ def get_elastic_apm_config() -> Optional[Dict[str, Any]]:
 
 
 def add_custom_context(client: Any, event_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Add custom context to APM events.
+    """Add custom context to APM events.
 
     Args:
         client: APM client instance
@@ -97,8 +86,7 @@ def add_custom_context(client: Any, event_dict: Dict[str, Any]) -> Dict[str, Any
 
 
 def get_sentry_config() -> Optional[Dict[str, Any]]:
-    """
-    Get Sentry configuration.
+    """Get Sentry configuration.
 
     Returns:
         Dict with Sentry settings or None if not configured
@@ -165,11 +153,8 @@ def get_sentry_integrations() -> list:
     return integrations
 
 
-def before_send_sentry(
-    event: Dict[str, Any], hint: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
-    """
-    Process events before sending to Sentry.
+def before_send_sentry(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Process events before sending to Sentry.
 
     Args:
         event: Event dictionary
@@ -203,11 +188,8 @@ def before_send_sentry(
     return event
 
 
-def before_send_transaction(
-    event: Dict[str, Any], hint: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
-    """
-    Process transactions before sending to Sentry.
+def before_send_transaction(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Process transactions before sending to Sentry.
 
     Args:
         event: Event dictionary
@@ -234,8 +216,8 @@ def before_send_transaction(
 
 
 def initialize_apm() -> None:
-    """
-    Initialize APM tools (Elastic APM and Sentry).
+    """Initialize APM tools (Elastic APM and Sentry).
+
     Should be called during application startup.
     """
     # Initialize Elastic APM
@@ -283,8 +265,7 @@ def initialize_apm() -> None:
 
 
 def capture_exception(exception: Exception, **context: Any) -> None:
-    """
-    Capture exception in both Elastic APM and Sentry.
+    """Capture exception in both Elastic APM and Sentry.
 
     Args:
         exception: Exception to capture
@@ -313,8 +294,7 @@ def capture_exception(exception: Exception, **context: Any) -> None:
 
 
 def capture_message(message: str, level: str = "info", **context: Any) -> None:
-    """
-    Capture message in both Elastic APM and Sentry.
+    """Capture message in both Elastic APM and Sentry.
 
     Args:
         message: Message to capture
@@ -343,11 +323,8 @@ def capture_message(message: str, level: str = "info", **context: Any) -> None:
         pass
 
 
-def set_user_context(
-    user_id: Any, username: str = None, email: str = None, **extra: Any
-) -> None:
-    """
-    Set user context for APM.
+def set_user_context(user_id: Any, username: str = None, email: str = None, **extra: Any) -> None:
+    """Set user context for APM.
 
     Args:
         user_id: User ID
@@ -382,8 +359,7 @@ def set_user_context(
 
 
 def set_custom_context(key: str, value: Any) -> None:
-    """
-    Set custom context for APM.
+    """Set custom context for APM.
 
     Args:
         key: Context key

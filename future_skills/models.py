@@ -1,10 +1,12 @@
+"""Core models for the Future Skills application."""
+
 from django.conf import settings
 from django.db import models
 
 
 class Skill(models.Model):
-    """
-    Représente une compétence (technique, soft skill, métier, etc.)
+    """Représente une compétence (technique, soft skill, métier, etc.).
+
     Exemple : Python, Gestion de projet, IA générative...
     """
 
@@ -15,11 +17,11 @@ class Skill(models.Model):
         null=True,
         help_text="Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)",
     )
-    description = models.TextField(
-        blank=True, null=True, help_text="Description optionnelle de la compétence."
-    )
+    description = models.TextField(blank=True, null=True, help_text="Description optionnelle de la compétence.")
 
     class Meta:
+        """Meta options for Skill model."""
+
         verbose_name = "Compétence"
         verbose_name_plural = "Compétences"
         ordering = ["name"]
@@ -29,12 +31,13 @@ class Skill(models.Model):
         ]
 
     def __str__(self):
+        """Return the string representation of the Skill."""
         return self.name
 
 
 class JobRole(models.Model):
-    """
-    Représente un poste / métier dans l’entreprise.
+    """Représente un poste / métier dans l’entreprise.
+
     Exemple : Data Engineer, Responsable RH, Développeur Fullstack...
     """
 
@@ -45,11 +48,11 @@ class JobRole(models.Model):
         null=True,
         help_text="Département ou direction (ex : IT, RH, Finance...).",
     )
-    description = models.TextField(
-        blank=True, null=True, help_text="Description optionnelle du rôle."
-    )
+    description = models.TextField(blank=True, null=True, help_text="Description optionnelle du rôle.")
 
     class Meta:
+        """Meta options for JobRole model."""
+
         verbose_name = "Rôle professionnel"
         verbose_name_plural = "Rôles professionnels"
         ordering = ["name"]
@@ -59,14 +62,12 @@ class JobRole(models.Model):
         ]
 
     def __str__(self):
+        """Return the string representation of the JobRole."""
         return self.name
 
 
 class MarketTrend(models.Model):
-    """
-    Tendance marché / technologique utilisée comme input
-    pour la prédiction des compétences futures.
-    """
+    """Tendance marché / technologique utilisée comme input pour la prédiction des compétences futures."""
 
     title = models.CharField(max_length=200)
     source_name = models.CharField(
@@ -78,16 +79,14 @@ class MarketTrend(models.Model):
         max_length=150,
         help_text="Secteur / domaine concerné (ex : Tech, RH, Industrie...).",
     )
-    trend_score = models.FloatField(
-        help_text="Score de tendance entre 0 et 1 (0 = faible, 1 = très forte tendance)."
-    )
-    description = models.TextField(
-        blank=True, null=True, help_text="Description ou résumé de la tendance."
-    )
+    trend_score = models.FloatField(help_text="Score de tendance entre 0 et 1 (0 = faible, 1 = très forte tendance).")
+    description = models.TextField(blank=True, null=True, help_text="Description ou résumé de la tendance.")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        """Meta options for MarketTrend model."""
+
         verbose_name = "Tendance marché"
         verbose_name_plural = "Tendances marché"
         ordering = ["-year", "-trend_score"]
@@ -95,19 +94,18 @@ class MarketTrend(models.Model):
             models.Index(fields=["-year"]),
             models.Index(fields=["sector"]),
             models.Index(fields=["-trend_score"]),
-            models.Index(
-                fields=["sector", "-year"]
-            ),  # Composite for sector+year queries
+            models.Index(fields=["sector", "-year"]),  # Composite for sector+year queries
         ]
 
     def __str__(self):
+        """Return a string representation of the MarketTrend instance."""
         return f"{self.title} ({self.year})"
 
 
 class FutureSkillPrediction(models.Model):
-    """
-    Prédiction de besoin futur d’une compétence pour un métier donné
-    à horizon N années.
+    """Predict future skill needs for a job role over N years.
+
+    Prédiction de besoin futur d’une compétence pour un métier donné à horizon N années.
     """
 
     LEVEL_LOW = "LOW"
@@ -130,9 +128,7 @@ class FutureSkillPrediction(models.Model):
         on_delete=models.CASCADE,
         related_name="future_skill_predictions",
     )
-    horizon_years = models.PositiveIntegerField(
-        help_text="Horizon de prédiction en années (ex : 3, 5...)."
-    )
+    horizon_years = models.PositiveIntegerField(help_text="Horizon de prédiction en années (ex : 3, 5...).")
 
     # Tu peux choisir : 0–100 ou 0–1. Ici on part sur 0–100 pour être plus lisible.
     score = models.FloatField(help_text="Score de besoin futur (0–100).")
@@ -158,6 +154,8 @@ class FutureSkillPrediction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        """Meta options for FutureSkillPrediction model."""
+
         verbose_name = "Prédiction de compétence future"
         verbose_name_plural = "Prédictions de compétences futures"
         # Un couple (job_role, skill, horizon) est logique unique :
@@ -175,15 +173,14 @@ class FutureSkillPrediction(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"{self.job_role} - {self.skill} ({self.horizon_years} ans) [{self.level}]"
-        )
+        """Return a string representation of the FutureSkillPrediction instance."""
+        return f"{self.job_role} - {self.skill} ({self.horizon_years} ans) [{self.level}]"
 
 
 class PredictionRun(models.Model):
-    """
-    Trace une exécution du moteur de prédiction
-    (utile pour l’audit et la transparence).
+    """Trace a prediction engine run.
+
+    Trace une exécution du moteur de prédiction (utile pour l’audit et la transparence).
     """
 
     run_date = models.DateTimeField(auto_now_add=True)
@@ -210,6 +207,8 @@ class PredictionRun(models.Model):
     )
 
     class Meta:
+        """Meta options for PredictionRun model."""
+
         verbose_name = "Exécution de prédiction"
         verbose_name_plural = "Exécutions de prédiction"
         ordering = ["-run_date"]
@@ -219,23 +218,33 @@ class PredictionRun(models.Model):
         ]
 
     def __str__(self):
+        """Return a string representation of the PredictionRun instance."""
         return f"Run du {self.run_date} - {self.total_predictions} prédictions"
 
 
 class TrainingRun(models.Model):
+    """Trace an ML model training execution for audit and MLOps tracking.
+
+    Trace une exécution d’entraînement du moteur ML (utile pour l’audit, la reproductibilité, la transparence).
     """
-    Trace an ML model training execution for audit and MLOps tracking.
-    Stores training metrics, parameters, and model information.
-    """
+
+    class Meta:
+        """Meta options for TrainingRun model."""
+
+        verbose_name = "Entraînement ML"
+        verbose_name_plural = "Entraînements ML"
+        ordering = ["-run_date"]
+        indexes = [
+            models.Index(fields=["-run_date"]),
+            models.Index(fields=["model_version"]),
+        ]
 
     run_date = models.DateTimeField(auto_now_add=True)
     model_version = models.CharField(
         max_length=50,
         help_text="Version identifier for the trained model (e.g., 'v1', 'v2.1').",
     )
-    model_path = models.CharField(
-        max_length=500, help_text="File system path where the model was saved."
-    )
+    model_path = models.CharField(max_length=500, help_text="File system path where the model was saved.")
     dataset_path = models.CharField(
         max_length=500,
         blank=True,
@@ -244,15 +253,9 @@ class TrainingRun(models.Model):
     )
 
     # Training parameters
-    test_split = models.FloatField(
-        default=0.2, help_text="Test set split ratio (e.g., 0.2 = 20% test)."
-    )
-    n_estimators = models.IntegerField(
-        default=200, help_text="Number of trees in RandomForest classifier."
-    )
-    random_state = models.IntegerField(
-        default=42, help_text="Random seed for reproducibility."
-    )
+    test_split = models.FloatField(default=0.2, help_text="Test set split ratio (e.g., 0.2 = 20% test).")
+    n_estimators = models.IntegerField(default=200, help_text="Number of trees in RandomForest classifier.")
+    random_state = models.IntegerField(default=42, help_text="Random seed for reproducibility.")
 
     # Training metrics
     accuracy = models.FloatField(help_text="Overall accuracy on test set (0.0 to 1.0).")
@@ -261,16 +264,12 @@ class TrainingRun(models.Model):
     f1_score = models.FloatField(help_text="Weighted average F1-score on test set.")
 
     # Dataset information
-    total_samples = models.IntegerField(
-        help_text="Total number of samples in the dataset."
-    )
+    total_samples = models.IntegerField(help_text="Total number of samples in the dataset.")
     train_samples = models.IntegerField(help_text="Number of samples in training set.")
     test_samples = models.IntegerField(help_text="Number of samples in test set.")
 
     # Training duration
-    training_duration_seconds = models.FloatField(
-        help_text="Total training duration in seconds."
-    )
+    training_duration_seconds = models.FloatField(help_text="Total training duration in seconds.")
 
     # Per-class metrics (stored as JSON)
     per_class_metrics = models.JSONField(
@@ -280,9 +279,7 @@ class TrainingRun(models.Model):
     )
 
     # Feature information
-    features_used = models.JSONField(
-        default=list, blank=True, help_text="List of features used for training."
-    )
+    features_used = models.JSONField(default=list, blank=True, help_text="List of features used for training.")
 
     # User tracking
     trained_by = models.ForeignKey(
@@ -312,9 +309,7 @@ class TrainingRun(models.Model):
         default="COMPLETED",
         help_text="Current status of the training run.",
     )
-    error_message = models.TextField(
-        blank=True, null=True, help_text="Error message if training failed."
-    )
+    error_message = models.TextField(blank=True, null=True, help_text="Error message if training failed.")
 
     # Consolidated hyperparameters (in addition to individual fields)
     hyperparameters = models.JSONField(
@@ -323,23 +318,15 @@ class TrainingRun(models.Model):
         help_text="All hyperparameters used for this training run (consolidated view).",
     )
 
-    class Meta:
-        verbose_name = "Training Run"
-        verbose_name_plural = "Training Runs"
-        ordering = ["-run_date"]
-        indexes = [
-            models.Index(fields=["-run_date"]),
-            models.Index(fields=["model_version"]),
-        ]
-
     def __str__(self):
+        """Return a string representation of the TrainingRun instance."""
         return f"Training {self.model_version} - {self.run_date.strftime('%Y-%m-%d %H:%M')} (acc: {self.accuracy:.2%})"
 
 
 class EconomicReport(models.Model):
-    """
-    Représente un rapport ou indicateur économique utilisé comme input
-    pour la prédiction des compétences futures.
+    """Economic report for trend and recommendation analysis.
+
+    Représente un rapport ou indicateur économique utilisé comme input pour la prédiction des compétences futures.
     Exemples :
       - Taux de chômage dans l'IT
       - Investissements en IA par secteur
@@ -356,9 +343,7 @@ class EconomicReport(models.Model):
         max_length=150,
         help_text="Nom de l’indicateur (ex : 'Taux chômage IT', 'Investissement IA').",
     )
-    value = models.FloatField(
-        help_text="Valeur de l’indicateur (pourcentage, indice, budget…)."
-    )
+    value = models.FloatField(help_text="Valeur de l’indicateur (pourcentage, indice, budget…).")
     sector = models.CharField(
         max_length=150,
         blank=True,
@@ -368,6 +353,8 @@ class EconomicReport(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        """Meta options for EconomicReport model."""
+
         verbose_name = "Rapport économique"
         verbose_name_plural = "Rapports économiques"
         ordering = ["-year", "title"]
@@ -375,23 +362,22 @@ class EconomicReport(models.Model):
             models.Index(fields=["-year"]),
             models.Index(fields=["sector"]),
             models.Index(fields=["indicator"]),
-            models.Index(
-                fields=["sector", "-year"]
-            ),  # Composite for sector+year queries
+            models.Index(fields=["sector", "-year"]),  # Composite for sector+year queries
         ]
 
     def __str__(self):
+        """Return a string representation of the EconomicReport instance."""
         return f"{self.title} ({self.year}) - {self.indicator}"
 
 
 class HRInvestmentRecommendation(models.Model):
-    """
-    Recommandations d'investissement RH à partir des prédictions
-    de compétences futures.
+    """HR investment recommendations based on future skill predictions.
+
+    Recommandations d'investissement RH à partir des prédictions de compétences futures.
 
     Exemple :
-      - former massivement sur Python pour les Data Engineers
-      - lancer une campagne de recrutement sur un profil rare
+        - former massivement sur Python pour les Data Engineers
+        - lancer une campagne de recrutement sur un profil rare
     """
 
     PRIORITY_LOW = "LOW"
@@ -427,9 +413,7 @@ class HRInvestmentRecommendation(models.Model):
         null=True,
         help_text="Rôle cible de la recommandation (optionnel si globale à la compétence).",
     )
-    horizon_years = models.PositiveIntegerField(
-        help_text="Horizon temporel de la recommandation (en années)."
-    )
+    horizon_years = models.PositiveIntegerField(help_text="Horizon temporel de la recommandation (en années).")
     priority_level = models.CharField(
         max_length=10,
         choices=PRIORITY_CHOICES,
@@ -453,6 +437,8 @@ class HRInvestmentRecommendation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        """Meta options for HRInvestmentRecommendation model."""
+
         verbose_name = "Recommandation RH"
         verbose_name_plural = "Recommandations RH"
         ordering = ["-created_at"]
@@ -467,27 +453,24 @@ class HRInvestmentRecommendation(models.Model):
             models.Index(fields=["-created_at"]),
             models.Index(fields=["skill", "priority_level"]),  # Skill by priority
             models.Index(fields=["job_role", "horizon_years"]),  # Role+horizon combo
-            models.Index(
-                fields=["priority_level", "recommended_action"]
-            ),  # Action filtering
+            models.Index(fields=["priority_level", "recommended_action"]),  # Action filtering
         ]
 
     def __str__(self):
+        """Return a string representation of the HRInvestmentRecommendation instance."""
         role = self.job_role.name if self.job_role else "Global"
         return f"{self.skill.name} ({role}, {self.horizon_years} ans) [{self.priority_level}/{self.recommended_action}]"
 
 
 class Employee(models.Model):
-    """
-    Représente un employé dans l'entreprise.
-    Utilisé pour générer des prédictions de compétences personnalisées.
+    """Employee model for advanced HR analytics.
+
+    Représente un employé dans l'entreprise. Utilisé pour générer des prédictions de compétences personnalisées.
     """
 
     name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
-    department = models.CharField(
-        max_length=150, help_text="Département de l'employé (ex : IT, RH, Finance...)."
-    )
+    department = models.CharField(max_length=150, help_text="Département de l'employé (ex : IT, RH, Finance...).")
     position = models.CharField(
         max_length=150,
         help_text="Poste actuel de l'employé (ex : Developer, Manager...).",
@@ -529,4 +512,5 @@ class Employee(models.Model):
         ]
 
     def __str__(self):
+        """Return a string representation of the Employee instance."""
         return f"{self.name} ({self.email})"

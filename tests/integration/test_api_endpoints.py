@@ -15,9 +15,7 @@ from rest_framework import status
 class TestFutureSkillPredictionAPI:
     """Test FutureSkillPrediction API endpoints."""
 
-    def test_list_future_skills(
-        self, authenticated_client, sample_future_skill_prediction
-    ):
+    def test_list_future_skills(self, authenticated_client, sample_future_skill_prediction):
         """Test listing all future skill predictions."""
         url = reverse("future-skills-list")
         response = authenticated_client.get(url)
@@ -28,20 +26,14 @@ class TestFutureSkillPredictionAPI:
         assert "count" in response.data
         assert isinstance(response.data["results"], list)
 
-    def test_filter_by_job_role(
-        self, authenticated_client, sample_future_skill_prediction
-    ):
+    def test_filter_by_job_role(self, authenticated_client, sample_future_skill_prediction):
         """Test filtering predictions by job role."""
         url = reverse("future-skills-list")
-        response = authenticated_client.get(
-            url, {"job_role_id": sample_future_skill_prediction.job_role.id}
-        )
+        response = authenticated_client.get(url, {"job_role_id": sample_future_skill_prediction.job_role.id})
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_filter_by_horizon_years(
-        self, authenticated_client, sample_future_skill_prediction
-    ):
+    def test_filter_by_horizon_years(self, authenticated_client, sample_future_skill_prediction):
         """Test filtering predictions by horizon years."""
         url = reverse("future-skills-list")
         response = authenticated_client.get(url, {"horizon_years": 5})
@@ -121,9 +113,7 @@ class TestAPIAuthentication:
 class TestAPIPagination:
     """Test API pagination."""
 
-    def test_pagination_applied(
-        self, authenticated_client, db, sample_job_role, sample_skill
-    ):
+    def test_pagination_applied(self, authenticated_client, db, sample_job_role, sample_skill):
         """Test that pagination is applied to list endpoints."""
         from future_skills.models import FutureSkillPrediction, JobRole, Skill
 

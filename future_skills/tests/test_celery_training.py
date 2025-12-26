@@ -32,9 +32,7 @@ class CeleryTrainingTest(TestCase):
         self.drh_group = Group.objects.create(name="DRH")
 
         # Create test user
-        self.user = User.objects.create_user(
-            username="test_drh", password="testpass123", email="drh@test.com"
-        )
+        self.user = User.objects.create_user(username="test_drh", password="testpass123", email="drh@test.com")
         self.user.groups.add(self.drh_group)
 
         # Create authenticated API client

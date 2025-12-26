@@ -42,13 +42,7 @@ from typing import Any, Dict, Tuple
 from django.conf import settings
 
 from future_skills.ml_model import FutureSkillsModel
-from future_skills.models import (
-    FutureSkillPrediction,
-    JobRole,
-    MarketTrend,
-    PredictionRun,
-    Skill,
-)
+from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +65,7 @@ except ImportError:
 
 
 class PredictionEngine:
-    """
-    Unified prediction engine that can use either rules-based or ML models.
+    """Unified prediction engine that can use either rules-based or ML models.
 
     Usage:
         engine = PredictionEngine()
@@ -85,21 +78,15 @@ class PredictionEngine:
         model_path=None,
         enable_explanations: bool | None = None,
     ):
-        """
-        Initialize the prediction engine.
+        """Initialize the prediction engine.
 
         Args:
-            use_ml: If True, use ML model. If None, use settings.FUTURE_SKILLS_USE_ML
-            model_path: Path to ML model file. If None, use settings.FUTURE_SKILLS_MODEL_PATH
+            use_ml: If True, use ML model. If None, use settings.FUTURE_SKILLS_USE_ML.
+            model_path: Path to ML model file. If None, use settings.FUTURE_SKILLS_MODEL_PATH.
+            enable_explanations: Toggle SHAP/LIME explanations; defaults to settings flag.
         """
-        self.use_ml = (
-            use_ml
-            if use_ml is not None
-            else getattr(settings, "FUTURE_SKILLS_USE_ML", False)
-        )
-        self.model_path = model_path or getattr(
-            settings, "FUTURE_SKILLS_MODEL_PATH", None
-        )
+        self.use_ml = use_ml if use_ml is not None else getattr(settings, "FUTURE_SKILLS_USE_ML", False)
+        self.model_path = model_path or getattr(settings, "FUTURE_SKILLS_MODEL_PATH", None)
         self.model = None
         self.enable_explanations = (
             enable_explanations
@@ -125,16 +112,11 @@ class PredictionEngine:
                 logger.warning("ML model not available. Using rules-based engine.")
                 self.use_ml = False
         except Exception as e:
-            logger.error(
-                f"Failed to load ML model: {e}. Falling back to rules-based engine."
-            )
+            logger.error(f"Failed to load ML model: {e}. Falling back to rules-based engine.")
             self.use_ml = False
 
-    def predict(
-        self, job_role_id: int, skill_id: int, horizon_years: int
-    ) -> Tuple[float, str, str, Dict]:
-        """
-        Generate a prediction for a given job role, skill, and horizon.
+    def predict(self, job_role_id: int, skill_id: int, horizon_years: int) -> Tuple[float, str, str, Dict]:
+        """Generate a prediction for a given job role, skill, and horizon.
 
         Args:
             job_role_id: ID of the JobRole
@@ -148,9 +130,7 @@ class PredictionEngine:
             score, level, explanation = self._predict_ml(job_role_id, skill_id)
             rationale = self._build_ml_rationale(horizon_years)
         else:
-            score, level, rationale, explanation = self._predict_rules(
-                job_role_id, skill_id
-            )
+            score, level, rationale, explanation = self._predict_rules(job_role_id, skill_id)
 
         return score, level, rationale, explanation
 
@@ -226,12 +206,10 @@ class PredictionEngine:
     @staticmethod
     def _build_ml_rationale(horizon_years: int) -> str:
         """Generate a standard rationale string for ML-based predictions."""
-
         return f"ML prediction based on {horizon_years}-year horizon"
 
     def batch_predict(self, predictions_data: list) -> list:
-        """
-        Generate predictions for multiple job_role/skill/horizon combinations.
+        """Generate predictions for multiple job_role/skill/horizon combinations.
 
         Args:
             predictions_data: List of dicts with keys: job_role_id, skill_id, horizon_years
@@ -273,8 +251,7 @@ def _log_prediction_for_monitoring(
     model_version: str = None,
     features: Dict[str, float] = None,
 ):
-    """
-    Log prediction details to a dedicated file for long-term monitoring.
+    """Log prediction details to a dedicated file for long-term monitoring.
 
     This enables:
     - Data drift detection (comparing feature distributions over time)
@@ -321,14 +298,11 @@ def _log_prediction_for_monitoring(
 # ---------------------------------------------------------------------------
 
 
-def _normalize_training_requests(
-    training_requests: float, max_requests: float = 100.0
-) -> float:
+def _normalize_training_requests(training_requests: float, max_requests: float = 100.0) -> float:
     """Normalize training_requests to [0, 1].
 
     The max_requests is a soft upper bound; values above it are clipped.
     """
-
     if max_requests <= 0:
         return 0.0
     value = training_requests / max_requests
@@ -349,7 +323,6 @@ def calculate_level(
     The logic is intentionally simple and transparent so it can be
     explained in documentation and compared to the ML model later.
     """
-
     # Clamp basic inputs to [0, 1] just in case
     trend_score = max(0.0, min(1.0, trend_score))
     internal_usage = max(0.0, min(1.0, internal_usage))
@@ -376,7 +349,6 @@ def _find_relevant_trend(job_role: JobRole, skill: Skill) -> float:
     Attempts to prioritize sector/category matches before falling back to
     the most recent global trend.
     """
-
     sector_hints = [
         (getattr(job_role, "department", "") or "").strip(),
         (getattr(skill, "category", "") or "").strip(),
@@ -384,11 +356,7 @@ def _find_relevant_trend(job_role: JobRole, skill: Skill) -> float:
 
     for hint in sector_hints:
         if hint:
-            trend = (
-                MarketTrend.objects.filter(sector__iexact=hint)
-                .order_by("-year")
-                .first()
-            )
+            trend = MarketTrend.objects.filter(sector__iexact=hint).order_by("-year").first()
             if trend:
                 return max(0.0, min(1.0, float(trend.trend_score)))
 
@@ -404,7 +372,6 @@ def _estimate_internal_usage(job_role: JobRole, skill: Skill) -> float:
     For now, this is a placeholder heuristic.
     It can later be replaced by real usage metrics.
     """
-
     role_name = (job_role.name or "").lower()
     base = 0.6 if "manager" in role_name else 0.4
 
@@ -422,13 +389,8 @@ def _estimate_training_requests(job_role: JobRole, skill: Skill) -> float:
 
     Placeholder for now; later it can be replaced by real stats.
     """
-
     skill_name = (skill.name or "").lower()
-    base_requests = (
-        40.0
-        if any(keyword in skill_name for keyword in ("data", "ia", "ai", "cloud"))
-        else 10.0
-    )
+    base_requests = 40.0 if any(keyword in skill_name for keyword in ("data", "ia", "ai", "cloud")) else 10.0
 
     dept = (getattr(job_role, "department", "") or "").lower()
     if dept.startswith("hr"):
@@ -445,9 +407,7 @@ def _estimate_training_requests(job_role: JobRole, skill: Skill) -> float:
     return max(5.0, min(60.0, base_requests))
 
 
-def _estimate_scarcity_index(
-    job_role: JobRole, skill: Skill, internal_usage: float
-) -> float:
+def _estimate_scarcity_index(job_role: JobRole, skill: Skill, internal_usage: float) -> float:
     """Very simple scarcity index based on internal usage.
 
     - Low internal usage → skill considered more rare (scarce).
@@ -503,12 +463,9 @@ def recalculate_predictions(
 
     Returns the total number of predictions created/updated.
     """
-
     logger.info("========================================")
     logger.info("🚀 Starting prediction recalculation...")
-    logger.info(
-        "Horizon: %s years | Triggered by: %s", horizon_years, run_by or "system"
-    )
+    logger.info("Horizon: %s years | Triggered by: %s", horizon_years, run_by or "system")
 
     # Initialize PredictionEngine (auto-detects ML vs rules-based)
     engine = PredictionEngine(enable_explanations=generate_explanations)
@@ -558,10 +515,7 @@ def recalculate_predictions(
     )
 
     PredictionRun.objects.create(
-        description=(
-            f"Recalcul des prédictions à horizon {horizon_years} ans "
-            f"({engine_label})."
-        ),
+        description=(f"Recalcul des prédictions à horizon {horizon_years} ans " f"({engine_label})."),
         total_predictions=total_predictions,
         run_by=run_by,
         parameters=params,
@@ -581,7 +535,6 @@ def _build_batch_prediction_payload(
     horizon_years: int,
 ) -> list[Dict[str, int]]:
     """Create the payload consumed by PredictionEngine.batch_predict."""
-
     return [
         {
             "job_role_id": job_role.id,
@@ -603,13 +556,8 @@ def _persist_prediction_results(
     skill_map: Dict[int, Skill],
 ) -> int:
     """Store prediction results and emit monitoring logs."""
-
     total_predictions = 0
-    model_version = (
-        getattr(settings, "FUTURE_SKILLS_MODEL_VERSION", "unknown")
-        if use_ml_engine
-        else None
-    )
+    model_version = getattr(settings, "FUTURE_SKILLS_MODEL_VERSION", "unknown") if use_ml_engine else None
 
     for result in results:
         job_role = job_role_map.get(result["job_role_id"])
@@ -666,7 +614,6 @@ def _build_prediction_run_params(
     use_ml_engine: bool,
 ) -> Dict[str, Any]:
     """Prepare the payload stored in PredictionRun.parameters."""
-
     params: Dict[str, Any] = parameters.copy() if isinstance(parameters, dict) else {}
     params["engine"] = engine_label
     params.setdefault("horizon_years", horizon_years)

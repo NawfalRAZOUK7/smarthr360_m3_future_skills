@@ -1,5 +1,4 @@
-"""
-Django base settings for config project.
+"""Django base settings for config project.
 
 This module contains common settings shared across all environments.
 Environment-specific settings are in development.py, production.py, and test.py
@@ -217,17 +216,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Centralized artifacts directories for ML assets
 DEFAULT_ARTIFACTS_ROOT = BASE_DIR / "artifacts"
-ARTIFACTS_ROOT = Path(
-    config("ARTIFACTS_ROOT", default=str(DEFAULT_ARTIFACTS_ROOT))
-).resolve()
+ARTIFACTS_ROOT = Path(config("ARTIFACTS_ROOT", default=str(DEFAULT_ARTIFACTS_ROOT))).resolve()
 ML_MODELS_DIR = Path(config("ML_MODELS_DIR", default=str(ARTIFACTS_ROOT / "models")))
 ML_RESULTS_DIR = Path(config("ML_RESULTS_DIR", default=str(ARTIFACTS_ROOT / "results")))
-ML_DATASETS_DIR = Path(
-    config("ML_DATASETS_DIR", default=str(ARTIFACTS_ROOT / "datasets"))
-)
-ML_JOBLIB_CACHE_DIR = Path(
-    config("ML_JOBLIB_CACHE_DIR", default=str(ARTIFACTS_ROOT / "cache" / "joblib"))
-)
+ML_DATASETS_DIR = Path(config("ML_DATASETS_DIR", default=str(ARTIFACTS_ROOT / "datasets")))
+ML_JOBLIB_CACHE_DIR = Path(config("ML_JOBLIB_CACHE_DIR", default=str(ARTIFACTS_ROOT / "cache" / "joblib")))
 
 for directory in (
     ARTIFACTS_ROOT,
@@ -376,18 +369,14 @@ FUTURE_SKILLS_DATASET_PATH = Path(
 FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_v1"
 
 # MLOps: Monitoring et drift detection
-FUTURE_SKILLS_ENABLE_MONITORING = (
-    True  # Active le logging des prédictions pour drift detection
-)
+FUTURE_SKILLS_ENABLE_MONITORING = True  # Active le logging des prédictions pour drift detection
 FUTURE_SKILLS_MONITORING_LOG = BASE_DIR / "logs" / "predictions_monitoring.jsonl"
 
 # --- Celery Configuration (Section 2.5 - Enhanced with Monitoring) ---
 
 # Celery broker and backend (Redis)
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = config(
-    "CELERY_RESULT_BACKEND", default="redis://localhost:6379/0"
-)
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
 
 # Celery task settings
 CELERY_ACCEPT_CONTENT = ["json"]

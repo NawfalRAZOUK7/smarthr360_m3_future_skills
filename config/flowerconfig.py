@@ -1,5 +1,4 @@
-"""
-Flower configuration for Celery monitoring.
+"""Flower configuration for Celery monitoring.
 
 Flower provides a real-time web-based monitoring interface for Celery.
 Access the UI at: http://localhost:5555

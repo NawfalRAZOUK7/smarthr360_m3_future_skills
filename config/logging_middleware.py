@@ -1,5 +1,5 @@
-"""
-Logging and Monitoring Middleware
+"""Logging and Monitoring Middleware.
+
 SmartHR360 Future Skills Platform
 
 Provides middleware for request/response logging, performance tracking,
@@ -22,8 +22,8 @@ from config.logging_config import get_logger
 
 
 class RequestLoggingMiddleware(MiddlewareMixin):
-    """
-    Middleware to log all HTTP requests and responses.
+    """Middleware to log all HTTP requests and responses.
+
     Captures request details, response status, and timing information.
     """
 
@@ -51,9 +51,7 @@ class RequestLoggingMiddleware(MiddlewareMixin):
             correlation_id=getattr(request, "correlation_id", None),
         )
 
-    def process_response(
-        self, request: HttpRequest, response: HttpResponse
-    ) -> HttpResponse:
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
         """Process outgoing response."""
         # Calculate duration (tolerant to patched time returning StopIteration)
         try:
@@ -111,8 +109,8 @@ class RequestLoggingMiddleware(MiddlewareMixin):
 
 
 class CorrelationIdMiddleware:
-    """
-    Middleware to add correlation ID to requests for distributed tracing.
+    """Middleware to add correlation ID to requests for distributed tracing.
+
     Generates a unique ID for each request or uses existing from header.
 
     Uses modern Django middleware pattern with sync_capable/async_capable.
@@ -164,8 +162,8 @@ class CorrelationIdMiddleware:
 
 
 class PerformanceMonitoringMiddleware(MiddlewareMixin):
-    """
-    Middleware to monitor and log performance metrics.
+    """Middleware to monitor and log performance metrics.
+
     Tracks slow requests and database query counts.
     """
 
@@ -187,9 +185,7 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
         request._perf_start_time = time.time()
         request._perf_query_count = len(connection.queries)
 
-    def process_response(
-        self, request: HttpRequest, response: HttpResponse
-    ) -> HttpResponse:
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
         """Process outgoing response."""
         from django.db import connection
 
@@ -242,8 +238,8 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
 
 
 class APMContextMiddleware(MiddlewareMixin):
-    """
-    Middleware to add user and custom context to APM tools.
+    """Middleware to add user and custom context to APM tools.
+
     Sets user information and request context for better monitoring.
     """
 
@@ -283,8 +279,8 @@ class APMContextMiddleware(MiddlewareMixin):
 
 
 class ErrorTrackingMiddleware(MiddlewareMixin):
-    """
-    Middleware to capture and track errors.
+    """Middleware to capture and track errors.
+
     Sends errors to APM tools with full context.
     """
 
@@ -339,8 +335,8 @@ class ErrorTrackingMiddleware(MiddlewareMixin):
 
 
 class SQLQueryLoggingMiddleware(MiddlewareMixin):
-    """
-    Middleware to log SQL queries (for development/debugging).
+    """Middleware to log SQL queries (for development/debugging).
+
     WARNING: Only enable in development, not production!
     """
 
@@ -352,9 +348,7 @@ class SQLQueryLoggingMiddleware(MiddlewareMixin):
         super().__init__(get_response)
         self.logger = get_logger("django.db.backends")
 
-    def process_response(
-        self, request: HttpRequest, response: HttpResponse
-    ) -> HttpResponse:
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
         """Process outgoing response."""
         from django.conf import settings
         from django.db import connection
@@ -387,8 +381,8 @@ class SQLQueryLoggingMiddleware(MiddlewareMixin):
 
 
 class CustomLogContextMiddleware(MiddlewareMixin):
-    """
-    Middleware to add custom context to all log messages during request.
+    """Middleware to add custom context to all log messages during request.
+
     Uses structlog's contextvars to bind context for the request lifecycle.
     """
 
@@ -408,16 +402,10 @@ class CustomLogContextMiddleware(MiddlewareMixin):
             request_id=getattr(request, "correlation_id", None),
             method=request.method,
             path=request.path,
-            user_id=(
-                request.user.id
-                if hasattr(request, "user") and request.user.is_authenticated
-                else None
-            ),
+            user_id=(request.user.id if hasattr(request, "user") and request.user.is_authenticated else None),
         )
 
-    def process_response(
-        self, request: HttpRequest, response: HttpResponse
-    ) -> HttpResponse:
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
         """Process outgoing response."""
         import structlog
 

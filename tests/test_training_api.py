@@ -13,18 +13,18 @@ sys.path.insert(0, "/Users/nawfalrazouk/smarthr360_m3_future_skills")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
 
 # Setup Django
-import django
+import django  # noqa: E402
 
-django.setup()
+django.setup()  # noqa: E402
 
 pytestmark = pytest.mark.django_db
 
 # Now import Django models
-from django.conf import settings
-from django.contrib.auth.models import Group, User
-from rest_framework.test import APIClient
+from django.conf import settings  # noqa: E402
+from django.contrib.auth.models import Group, User  # noqa: E402
+from rest_framework.test import APIClient  # noqa: E402
 
-from future_skills.models import TrainingRun
+from future_skills.models import TrainingRun  # noqa: E402
 
 
 def create_test_user():
@@ -71,9 +71,7 @@ def test_training_run_list(client):
 
     if data["results"]:
         first_run = data["results"][0]
-        print(
-            f"   First run: {first_run['model_version']} (status: {first_run['status']})"
-        )
+        print(f"   First run: {first_run['model_version']} (status: {first_run['status']})")
 
     print("   ✅ List endpoint works!")
 
@@ -142,17 +140,13 @@ def test_train_model(client):
 
         # Verify in database
         training_run = TrainingRun.objects.get(id=data["training_run_id"])
-        assert (
-            training_run.status == "COMPLETED"
-        ), f"Expected COMPLETED, got {training_run.status}"
+        assert training_run.status == "COMPLETED", f"Expected COMPLETED, got {training_run.status}"
         print("   ✅ TrainingRun record verified in database")
 
     else:
         print("   ❌ Training failed!")
         print(f"   Response: {response.json()}")
-        raise AssertionError(
-            f"Training endpoint failed with status {response.status_code}"
-        )
+        raise AssertionError(f"Training endpoint failed with status {response.status_code}")
 
 
 def test_train_model_with_invalid_data(client):
@@ -191,9 +185,7 @@ def test_filtering(client):
     # Verify all results have COMPLETED status
     if data["results"]:
         statuses = [r["status"] for r in data["results"]]
-        assert all(
-            s == "COMPLETED" for s in statuses
-        ), "Not all results have COMPLETED status"
+        assert all(s == "COMPLETED" for s in statuses), "Not all results have COMPLETED status"
         print("   ✅ Status filter works!")
     else:
         print("   ⚠️  No completed runs to verify filter")

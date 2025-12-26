@@ -1,7 +1,6 @@
 # future_skills/services/training_service.py
 
-"""
-Training Service for Future Skills ML Model.
+"""Training service for the Future Skills ML model.
 
 Provides a clean OOP interface for training ML models with proper error handling,
 logging, and integration with Django's TrainingRun model for MLOps tracking.
@@ -20,24 +19,14 @@ import pandas as pd
 from django.conf import settings
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    precision_recall_fscore_support,
-)
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from future_skills.models import TrainingRun
 from ml.mlflow_config import get_mlflow_config
-from ml.model_versioning import (
-    ModelFramework,
-    ModelStage,
-    ModelVersionManager,
-    create_model_version,
-)
+from ml.model_versioning import ModelFramework, ModelStage, ModelVersionManager, create_model_version
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +44,7 @@ class TrainingError(ModelTrainerError):
 
 
 class ModelTrainer:
-    """
-    ML Model Trainer for Future Skills prediction.
+    """ML Model Trainer for Future Skills prediction.
 
     Handles the complete training lifecycle:
     - Data loading and validation
@@ -93,11 +81,8 @@ class ModelTrainer:
         "economic_indicator",
     ]
 
-    def __init__(
-        self, dataset_path: str, test_split: float = 0.2, random_state: int = 42
-    ):
-        """
-        Initialize ModelTrainer.
+    def __init__(self, dataset_path: str, test_split: float = 0.2, random_state: int = 42):
+        """Initialize ModelTrainer.
 
         Args:
             dataset_path: Path to the training dataset CSV
@@ -132,30 +117,31 @@ class ModelTrainer:
         self.hyperparameters: Dict[str, Any] = {}
         self.mlflow_run_id: Optional[str] = None  # MLflow run tracking
 
-        logger.info(
-            f"ModelTrainer initialized: dataset={dataset_path}, test_split={test_split}"
-        )
+        logger.info(f"ModelTrainer initialized: dataset={dataset_path}, test_split={test_split}")
 
     # Backwards-compatible accessors for legacy code/tests expecting uppercase attrs
     @property
     def X_train(self):
+        """Return the training feature set."""
         return self.x_train
 
     @property
     def X_test(self):
+        """Return the test feature set."""
         return self.x_test
 
     @property
     def Y_train(self):
+        """Return the training labels."""
         return self.y_train
 
     @property
     def Y_test(self):
+        """Return the test labels."""
         return self.y_test
 
     def load_data(self) -> None:
-        """
-        Load and preprocess dataset from CSV.
+        """Load and preprocess dataset from CSV.
 
         Validates data, filters invalid target values, identifies feature types,
         and splits into train/test sets.
@@ -182,35 +168,25 @@ class ModelTrainer:
 
             # Filter valid target levels
             before_count = len(self.df)
-            self.df = self.df[
-                self.df[self.TARGET_COLUMN].isin(self.ALLOWED_LEVELS)
-            ].copy()
+            self.df = self.df[self.df[self.TARGET_COLUMN].isin(self.ALLOWED_LEVELS)].copy()
             after_count = len(self.df)
 
             if after_count == 0:
-                raise DataLoadError(
-                    f"No valid rows with {self.TARGET_COLUMN} in {self.ALLOWED_LEVELS}"
-                )
+                raise DataLoadError(f"No valid rows with {self.TARGET_COLUMN} in {self.ALLOWED_LEVELS}")
 
             if after_count < before_count:
                 filtered = before_count - after_count
                 logger.warning(f"Filtered {filtered} rows with invalid target values")
 
             # Identify available features
-            self.available_features = [
-                col for col in self.FEATURE_COLUMNS if col in self.df.columns
-            ]
-            self.missing_features = [
-                col for col in self.FEATURE_COLUMNS if col not in self.df.columns
-            ]
+            self.available_features = [col for col in self.FEATURE_COLUMNS if col in self.df.columns]
+            self.missing_features = [col for col in self.FEATURE_COLUMNS if col not in self.df.columns]
 
             if not self.available_features:
                 raise DataLoadError("No features available in dataset")
 
             if self.missing_features:
-                logger.warning(
-                    f"Missing features (will be ignored): {self.missing_features}"
-                )
+                logger.warning(f"Missing features (will be ignored): {self.missing_features}")
 
             logger.info(f"Using {len(self.available_features)} features")
 
@@ -230,8 +206,7 @@ class ModelTrainer:
             logger.info(f"Class imbalance ratio: {imbalance_ratio:.2f}")
             if imbalance_ratio > 3:
                 logger.warning(
-                    f"Class imbalance detected (ratio={imbalance_ratio:.2f}). "
-                    "Using balanced class weights."
+                    f"Class imbalance detected (ratio={imbalance_ratio:.2f}). " "Using balanced class weights."
                 )
 
             # Train/test split
@@ -243,9 +218,7 @@ class ModelTrainer:
                 stratify=y,
             )
 
-            logger.info(
-                f"Split complete: train={len(self.x_train)}, test={len(self.x_test)}"
-            )
+            logger.info(f"Split complete: train={len(self.x_train)}, test={len(self.x_test)}")
 
         except pd.errors.EmptyDataError:
             raise DataLoadError("Dataset is empty")
@@ -269,8 +242,8 @@ class ModelTrainer:
         logger.info(f"Numeric features: {self.numeric_features}")
 
     def train(self, **hyperparameters) -> Dict[str, Any]:
-        """
-        Train the Random Forest model with specified hyperparameters.
+        """Train the Random Forest model with specified hyperparameters.
+
         Integrates with MLflow for experiment tracking.
 
         Args:
@@ -321,9 +294,7 @@ class ModelTrainer:
                 mlflow.log_param("test_split", self.test_split)
                 mlflow.log_param("random_state", self.random_state)
                 mlflow.log_param("dataset_path", str(self.dataset_path))
-                mlflow.log_param(
-                    "total_samples", len(self.df) if self.df is not None else 0
-                )
+                mlflow.log_param("total_samples", len(self.df) if self.df is not None else 0)
                 mlflow.log_param("train_samples", len(self.x_train))
                 mlflow.log_param("test_samples", len(self.x_test))
 
@@ -335,18 +306,12 @@ class ModelTrainer:
                 self.model.fit(self.x_train, self.y_train)
 
                 self.training_end_time = datetime.now()
-                self.training_duration_seconds = (
-                    self.training_end_time - self.training_start_time
-                ).total_seconds()
+                self.training_duration_seconds = (self.training_end_time - self.training_start_time).total_seconds()
 
-                logger.info(
-                    f"Training completed in {self.training_duration_seconds:.2f}s"
-                )
+                logger.info(f"Training completed in {self.training_duration_seconds:.2f}s")
 
                 # Log training time
-                mlflow.log_metric(
-                    "training_duration_seconds", self.training_duration_seconds
-                )
+                mlflow.log_metric("training_duration_seconds", self.training_duration_seconds)
 
                 # Evaluate
                 self.metrics = self.evaluate(self.x_test, self.y_test)
@@ -371,15 +336,11 @@ class ModelTrainer:
 
                 # Log top 10 features
                 if self.feature_importance:
-                    for i, (feat, imp) in enumerate(
-                        list(self.feature_importance.items())[:10]
-                    ):
+                    for i, (feat, imp) in enumerate(list(self.feature_importance.items())[:10]):
                         mlflow.log_metric(f"feature_importance_{i + 1}_{feat}", imp)
 
                 # Log model to MLflow
-                mlflow.sklearn.log_model(
-                    self.model, "model", registered_model_name="future-skills-model"
-                )
+                mlflow.sklearn.log_model(self.model, "model", registered_model_name="future-skills-model")
 
                 # Store run_id for later use
                 self.mlflow_run_id = run.info.run_id
@@ -389,12 +350,8 @@ class ModelTrainer:
 
         except Exception as e:
             self.training_end_time = datetime.now()
-            self.training_duration_seconds = (
-                self.training_end_time - self.training_start_time
-            ).total_seconds()
-            logger.error(
-                f"Training failed after {self.training_duration_seconds:.2f}s: {str(e)}"
-            )
+            self.training_duration_seconds = (self.training_end_time - self.training_start_time).total_seconds()
+            logger.error(f"Training failed after {self.training_duration_seconds:.2f}s: {str(e)}")
             raise TrainingError(f"Model training failed: {str(e)}")
 
     def _build_pipeline(self) -> Pipeline:
@@ -422,16 +379,13 @@ class ModelTrainer:
                 ("preprocess", preprocessor),
                 ("clf", clf),
             ],
-            memory=str(
-                settings.ML_JOBLIB_CACHE_DIR
-            ),  # Cache transformers  # noqa: S106
+            memory=str(settings.ML_JOBLIB_CACHE_DIR),  # Cache transformers  # noqa: S106
         )
 
         return pipeline
 
     def evaluate(self, x_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, Any]:
-        """
-        Evaluate model performance on test set.
+        """Evaluate model performance on test set.
 
         Args:
             x_test: Test features
@@ -510,8 +464,7 @@ class ModelTrainer:
         return per_class
 
     def save_model(self, path: str) -> None:
-        """
-        Save trained model to disk using joblib.
+        """Save the trained model to disk using joblib.
 
         Args:
             path: File path where model will be saved (.pkl extension)
@@ -535,8 +488,7 @@ class ModelTrainer:
             raise TrainingError(f"Model save failed: {str(e)}")
 
     def get_feature_importance(self) -> Dict[str, float]:
-        """
-        Extract feature importance from trained Random Forest.
+        """Extract feature importance from trained Random Forest.
 
         Returns:
             Dictionary mapping feature names to importance scores
@@ -561,29 +513,19 @@ class ModelTrainer:
             if self.categorical_features:
                 cat_transformer = preprocessor.named_transformers_["cat"]  # noqa: PD011
                 if hasattr(cat_transformer, "get_feature_names_out"):
-                    cat_features = cat_transformer.get_feature_names_out(
-                        self.categorical_features
-                    ).tolist()
+                    cat_features = cat_transformer.get_feature_names_out(self.categorical_features).tolist()
 
             all_features = cat_features + self.numeric_features
 
             if len(all_features) != len(clf.feature_importances_):
-                logger.warning(
-                    f"Feature count mismatch: {len(all_features)} vs "
-                    f"{len(clf.feature_importances_)}"
-                )
+                logger.warning(f"Feature count mismatch: {len(all_features)} vs " f"{len(clf.feature_importances_)}")
                 return {}
 
             # Create importance dict
-            importance = {
-                feat: float(imp)
-                for feat, imp in zip(all_features, clf.feature_importances_)
-            }
+            importance = {feat: float(imp) for feat, imp in zip(all_features, clf.feature_importances_)}
 
             # Sort by importance
-            sorted_importance = dict(
-                sorted(importance.items(), key=lambda x: x[1], reverse=True)
-            )
+            sorted_importance = dict(sorted(importance.items(), key=lambda x: x[1], reverse=True))
 
             # Log top 10
             logger.info("Top 10 important features:")
@@ -604,8 +546,8 @@ class ModelTrainer:
         notes: str = "",
         auto_promote: bool = True,
     ) -> TrainingRun:
-        """
-        Save training run to database for MLOps tracking.
+        """Save training run to database for MLOps tracking.
+
         Integrates with model versioning and promotion logic.
 
         Args:
@@ -628,9 +570,7 @@ class ModelTrainer:
             logger.info(f"Saving training run: version={model_version}")
 
             version_manager = ModelVersionManager()
-            version_obj = self._build_version_metadata(
-                model_version=model_version, model_path=model_path, notes=notes
-            )
+            version_obj = self._build_version_metadata(model_version=model_version, model_path=model_path, notes=notes)
             version_manager.register_version(version_obj)
             logger.info(f"Registered model version: {model_version}")
 
@@ -655,9 +595,7 @@ class ModelTrainer:
             logger.error(f"Failed to save training run: {str(e)}")
             raise TrainingError(f"Failed to save training run: {str(e)}")
 
-    def _build_version_metadata(
-        self, *, model_version: str, model_path: str, notes: str
-    ):
+    def _build_version_metadata(self, *, model_version: str, model_path: str, notes: str):
         """Create the ModelVersion instance with consistent metadata."""
 
         def _semver_fallback(version: str) -> str:
@@ -679,15 +617,12 @@ class ModelTrainer:
                 framework=ModelFramework.SCIKIT_LEARN,
                 algorithm="RandomForestClassifier",
                 hyperparameters=self.hyperparameters,
-                training_dataset_size=(
-                    len(self.x_train) if self.x_train is not None else 0
-                ),
+                training_dataset_size=(len(self.x_train) if self.x_train is not None else 0),
                 training_features=self.available_features,
                 target_classes=["LOW", "MEDIUM", "HIGH"],
                 mlflow_run_id=getattr(self, "mlflow_run_id", None),
                 stage=ModelStage.STAGING,
-                description=notes
-                or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
+                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
                 original_version=model_version,
             )
         except ValueError:
@@ -710,15 +645,12 @@ class ModelTrainer:
                 framework=ModelFramework.SCIKIT_LEARN,
                 algorithm="RandomForestClassifier",
                 hyperparameters=self.hyperparameters,
-                training_dataset_size=(
-                    len(self.x_train) if self.x_train is not None else 0
-                ),
+                training_dataset_size=(len(self.x_train) if self.x_train is not None else 0),
                 training_features=self.available_features,
                 target_classes=["LOW", "MEDIUM", "HIGH"],
                 mlflow_run_id=getattr(self, "mlflow_run_id", None),
                 stage=ModelStage.STAGING,
-                description=notes
-                or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
+                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
                 original_version=model_version,
             )
 
@@ -730,7 +662,6 @@ class ModelTrainer:
         auto_promote: bool,
     ) -> Optional[str]:
         """Determine whether the new model should be promoted to production."""
-
         if not auto_promote:
             return None
 
@@ -760,12 +691,9 @@ class ModelTrainer:
 
     def _transition_mlflow_model(self) -> None:
         """Ensure MLflow registry mirrors the promotion decision."""
-
         mlflow_config = get_mlflow_config()
         try:
-            latest_version = mlflow_config.get_latest_model_version(
-                model_name="future-skills-model"
-            )
+            latest_version = mlflow_config.get_latest_model_version(model_name="future-skills-model")
             if latest_version:
                 mlflow_config.transition_model_stage(
                     model_name="future-skills-model",
@@ -787,7 +715,6 @@ class ModelTrainer:
         promotion_info: Optional[str],
     ) -> TrainingRun:
         """Persist the TrainingRun entry with consistent metadata."""
-
         training_run = TrainingRun.objects.create(
             run_date=self.training_start_time or datetime.now(),
             model_version=model_version,
@@ -808,8 +735,7 @@ class ModelTrainer:
             features_used=self.available_features,
             trained_by=user,
             notes=(
-                f"{notes}\n\nMLflow Run ID: {getattr(self, 'mlflow_run_id', 'N/A')}\n"
-                f"{promotion_info or ''}"
+                f"{notes}\n\nMLflow Run ID: {getattr(self, 'mlflow_run_id', 'N/A')}\n" f"{promotion_info or ''}"
             ).strip(),
             status="COMPLETED",
             hyperparameters=self.hyperparameters,
@@ -821,15 +747,13 @@ class ModelTrainer:
     @staticmethod
     def _log_promotion(promotion_info: Optional[str]) -> None:
         """Log promotion details when available."""
-
         if promotion_info:
             logger.info(f"Promotion: {promotion_info}")
 
     def save_failed_training_run(
         self, model_version: str, error_message: str, user=None, notes: str = ""
     ) -> TrainingRun:
-        """
-        Save failed training run to database for tracking.
+        """Save failed training run to database for tracking.
 
         Args:
             model_version: Version identifier

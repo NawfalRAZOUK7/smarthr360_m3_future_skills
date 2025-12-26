@@ -316,9 +316,7 @@ class RequestLoggingMiddlewareTestCase(TestCase):
     @patch("future_skills.api.middleware.logger")
     def test_sanitizes_sensitive_params(self, mock_logger):
         """Test that sensitive parameters are sanitized."""
-        request = self.factory.get(
-            "/api/v2/predictions/?password=secret123&api_key=key123"
-        )
+        request = self.factory.get("/api/v2/predictions/?password=secret123&api_key=key123")
         request.user = User.objects.create_user(username="testuser")
 
         self.middleware(request)

@@ -20,13 +20,7 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
-from future_skills.models import (
-    FutureSkillPrediction,
-    JobRole,
-    MarketTrend,
-    PredictionRun,
-    Skill,
-)
+from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
 from future_skills.services.prediction_engine import (
     PredictionEngine,
     _estimate_internal_usage,
@@ -218,9 +212,7 @@ class TestEstimateTrainingRequests(TestCase):
     def test_ia_skill_gets_high_requests(self):
         """Test that IA/AI skills get higher training requests."""
         job_role = JobRole.objects.create(name="Engineer", department="IT")
-        skill = Skill.objects.create(
-            name="Intelligence Artificielle", category="Technique"
-        )
+        skill = Skill.objects.create(name="Intelligence Artificielle", category="Technique")
 
         result = _estimate_training_requests(job_role, skill)
         self.assertEqual(result, 40.0)
@@ -304,9 +296,7 @@ class TestPredictionEnginePredict(TestCase):
         """Test that predict uses rules engine when ML is disabled."""
         engine = PredictionEngine()
 
-        score, level, rationale, explanation = engine.predict(
-            self.job_role.id, self.skill.id, horizon_years=5
-        )
+        score, level, rationale, explanation = engine.predict(self.job_role.id, self.skill.id, horizon_years=5)
 
         self.assertIsInstance(score, float)
         self.assertIn(level, ["LOW", "MEDIUM", "HIGH"])
@@ -326,9 +316,7 @@ class TestPredictionEnginePredict(TestCase):
 
         engine = PredictionEngine()
 
-        score, level, rationale, explanation = engine.predict(
-            self.job_role.id, self.skill.id, horizon_years=5
-        )
+        score, level, rationale, explanation = engine.predict(self.job_role.id, self.skill.id, horizon_years=5)
 
         self.assertEqual(score, 85.0)
         self.assertEqual(level, "HIGH")
@@ -337,13 +325,9 @@ class TestPredictionEnginePredict(TestCase):
 
     @override_settings(FUTURE_SKILLS_USE_ML=True)
     @patch("future_skills.services.prediction_engine.FutureSkillsModel")
-    @patch(
-        "future_skills.services.prediction_engine.EXPLANATION_ENGINE_AVAILABLE", True
-    )
+    @patch("future_skills.services.prediction_engine.EXPLANATION_ENGINE_AVAILABLE", True)
     @patch("future_skills.services.prediction_engine.ExplanationEngine")
-    def test_predict_with_explanation_engine(
-        self, mock_explanation_class, mock_model_class
-    ):
+    def test_predict_with_explanation_engine(self, mock_explanation_class, mock_model_class):
         """Test prediction with explanation engine integration."""
         # Mock ML model
         mock_model = MagicMock()
@@ -361,22 +345,16 @@ class TestPredictionEnginePredict(TestCase):
 
         engine = PredictionEngine()
 
-        score, level, rationale, explanation = engine.predict(
-            self.job_role.id, self.skill.id, horizon_years=5
-        )
+        score, level, rationale, explanation = engine.predict(self.job_role.id, self.skill.id, horizon_years=5)
 
         self.assertIn("shap_values", explanation)
         self.assertIn("feature_importance", explanation)
 
     @override_settings(FUTURE_SKILLS_USE_ML=True)
     @patch("future_skills.services.prediction_engine.FutureSkillsModel")
-    @patch(
-        "future_skills.services.prediction_engine.EXPLANATION_ENGINE_AVAILABLE", True
-    )
+    @patch("future_skills.services.prediction_engine.EXPLANATION_ENGINE_AVAILABLE", True)
     @patch("future_skills.services.prediction_engine.ExplanationEngine")
-    def test_predict_handles_explanation_error(
-        self, mock_explanation_class, mock_model_class
-    ):
+    def test_predict_handles_explanation_error(self, mock_explanation_class, mock_model_class):
         """Test that prediction continues even if explanation fails."""
         # Mock ML model
         mock_model = MagicMock()
@@ -392,9 +370,7 @@ class TestPredictionEnginePredict(TestCase):
         engine = PredictionEngine()
 
         # Should not raise exception
-        score, level, rationale, explanation = engine.predict(
-            self.job_role.id, self.skill.id, horizon_years=5
-        )
+        score, level, rationale, explanation = engine.predict(self.job_role.id, self.skill.id, horizon_years=5)
 
         self.assertEqual(score, 85.0)
         self.assertEqual(level, "HIGH")
@@ -407,9 +383,7 @@ class TestPredictionEngineBatchPredict(TestCase):
 
     def setUp(self):
         self.job_role1 = JobRole.objects.create(name="Data Scientist", department="IT")
-        self.job_role2 = JobRole.objects.create(
-            name="Software Engineer", department="IT"
-        )
+        self.job_role2 = JobRole.objects.create(name="Software Engineer", department="IT")
         self.skill1 = Skill.objects.create(name="Python", category="Technique")
         self.skill2 = Skill.objects.create(name="Java", category="Technique")
         MarketTrend.objects.create(
@@ -643,9 +617,7 @@ class TestRecalculatePredictionsExtended(TestCase):
             sector="Tech",
             trend_score=0.9,
         )
-        self.user = User.objects.create_user(
-            username="testuser", email="test@example.com", password="testpass123"
-        )
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
 
     @override_settings(FUTURE_SKILLS_USE_ML=False)
     def test_recalculate_with_run_by_user(self):
@@ -716,9 +688,7 @@ class TestRecalculatePredictionsExtended(TestCase):
         self.assertEqual(predictions_5.count(), total_5)
         self.assertEqual(predictions_10.count(), total_10)
 
-    @override_settings(
-        FUTURE_SKILLS_USE_ML=True, FUTURE_SKILLS_MODEL_VERSION="ml_random_forest_v2"
-    )
+    @override_settings(FUTURE_SKILLS_USE_ML=True, FUTURE_SKILLS_MODEL_VERSION="ml_random_forest_v2")
     @patch("future_skills.services.prediction_engine.FutureSkillsModel")
     def test_recalculate_with_ml_includes_model_version(self, mock_model_class):
         """Test that ML mode includes model_version in parameters."""
@@ -769,9 +739,7 @@ class TestCalculateLevelEdgeCases(TestCase):
 
     def test_calculate_level_with_values_out_of_range_high(self):
         """Test that values > 1.0 are clamped correctly."""
-        level, score = calculate_level(
-            trend_score=1.5, internal_usage=1.2, training_requests=200.0
-        )
+        level, score = calculate_level(trend_score=1.5, internal_usage=1.2, training_requests=200.0)
 
         # Should clamp to valid range
         self.assertIn(level, ["LOW", "MEDIUM", "HIGH"])
@@ -779,27 +747,21 @@ class TestCalculateLevelEdgeCases(TestCase):
 
     def test_calculate_level_with_values_out_of_range_low(self):
         """Test that negative values are clamped to 0."""
-        level, score = calculate_level(
-            trend_score=-0.5, internal_usage=-0.2, training_requests=-10.0
-        )
+        level, score = calculate_level(trend_score=-0.5, internal_usage=-0.2, training_requests=-10.0)
 
         self.assertEqual(level, "LOW")
         self.assertGreaterEqual(score, 0.0)
 
     def test_calculate_level_boundary_high_threshold(self):
         """Test boundary at HIGH threshold (0.7)."""
-        level, score = calculate_level(
-            trend_score=0.7, internal_usage=0.7, training_requests=70.0
-        )
+        level, score = calculate_level(trend_score=0.7, internal_usage=0.7, training_requests=70.0)
 
         self.assertEqual(level, "HIGH")
         self.assertGreaterEqual(score, 70.0)
 
     def test_calculate_level_boundary_medium_threshold(self):
         """Test boundary at MEDIUM threshold (0.4)."""
-        level, score = calculate_level(
-            trend_score=0.4, internal_usage=0.4, training_requests=40.0
-        )
+        level, score = calculate_level(trend_score=0.4, internal_usage=0.4, training_requests=40.0)
 
         self.assertEqual(level, "MEDIUM")
         self.assertGreaterEqual(score, 40.0)
@@ -807,18 +769,14 @@ class TestCalculateLevelEdgeCases(TestCase):
 
     def test_calculate_level_all_zeros(self):
         """Test with all zero inputs."""
-        level, score = calculate_level(
-            trend_score=0.0, internal_usage=0.0, training_requests=0.0
-        )
+        level, score = calculate_level(trend_score=0.0, internal_usage=0.0, training_requests=0.0)
 
         self.assertEqual(level, "LOW")
         self.assertEqual(score, 0.0)
 
     def test_calculate_level_all_max(self):
         """Test with all maximum inputs."""
-        level, score = calculate_level(
-            trend_score=1.0, internal_usage=1.0, training_requests=100.0
-        )
+        level, score = calculate_level(trend_score=1.0, internal_usage=1.0, training_requests=100.0)
 
         self.assertEqual(level, "HIGH")
         self.assertEqual(score, 100.0)

@@ -1,8 +1,6 @@
-"""
-Security Event Monitor
-======================
+"""Security event monitor management command.
 
-Django management command to monitor and analyze security events.
+Provides tools to parse logs and analyze recent security events.
 """
 
 import json
@@ -16,9 +14,12 @@ from django.utils import timezone
 
 
 class Command(BaseCommand):
+    """Monitor and analyze security events from log files."""
+
     help = "Monitor and analyze security events from logs"
 
     def add_arguments(self, parser):
+        """Add CLI options for time window and output format."""
         parser.add_argument(
             "--hours",
             type=int,
@@ -34,15 +35,12 @@ class Command(BaseCommand):
         parser.add_argument("--json", action="store_true", help="Output in JSON format")
 
     def handle(self, *args, **options):
+        """Execute the security event analysis workflow."""
         hours = options["hours"]
         tail = options["tail"]
         json_output = options["json"]
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"\n=== Security Event Analysis (Last {hours} hours) ===\n"
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"\n=== Security Event Analysis (Last {hours} hours) ===\n"))
 
         # Find security log file
         log_file = "logs/security.log"
@@ -105,9 +103,7 @@ class Command(BaseCommand):
         cutoff_time = timezone.now() - timedelta(hours=hours)
 
         # Filter by time
-        recent_events = [
-            e for e in events if self._is_recent(e.get("asctime", ""), cutoff_time)
-        ]
+        recent_events = [e for e in events if self._is_recent(e.get("asctime", ""), cutoff_time)]
 
         # Count by event type
         event_types = Counter(e.get("event", "unknown") for e in recent_events)
@@ -116,16 +112,10 @@ class Command(BaseCommand):
         severities = Counter(e.get("levelname", "INFO") for e in recent_events)
 
         # Failed authentication attempts
-        auth_failures = [
-            e
-            for e in recent_events
-            if e.get("event") in ["auth_failure", "jwt_login_failed"]
-        ]
+        auth_failures = [e for e in recent_events if e.get("event") in ["auth_failure", "jwt_login_failed"]]
 
         # Suspicious activities
-        suspicious = [
-            e for e in recent_events if e.get("event") == "suspicious_request"
-        ]
+        suspicious = [e for e in recent_events if e.get("event") == "suspicious_request"]
 
         # Top IPs
         ips = [e.get("ip_address") for e in recent_events if e.get("ip_address")]
@@ -136,9 +126,7 @@ class Command(BaseCommand):
         top_users = Counter(users).most_common(10)
 
         # Rate limit exceeded
-        rate_limited = [
-            e for e in recent_events if e.get("event") == "rate_limit_exceeded"
-        ]
+        rate_limited = [e for e in recent_events if e.get("event") == "rate_limit_exceeded"]
 
         # Blocked IPs
         blocked_ips = [e for e in recent_events if e.get("event") == "ip_blocked"]
@@ -190,9 +178,7 @@ class Command(BaseCommand):
 
     def _print_event_types(self, event_types):
         self.stdout.write(self.style.SUCCESS("\nEvent Types:"))
-        for event_type, count in sorted(
-            event_types.items(), key=lambda x: x[1], reverse=True
-        ):
+        for event_type, count in sorted(event_types.items(), key=lambda x: x[1], reverse=True):
             self.stdout.write(f"  {event_type}: {count}")
 
     def _print_severities(self, severities):
