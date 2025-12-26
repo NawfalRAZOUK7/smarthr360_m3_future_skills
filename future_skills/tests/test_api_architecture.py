@@ -203,7 +203,7 @@ class PerformanceMonitoringTestCase(APITestCase):
     def test_slow_request_logging(self, mock_logger):
         """Test that slow requests are logged."""
         # Mock a slow response
-        with patch("time.time", side_effect=[0, 2.0]):  # 2 second response
+        with patch("time.time", side_effect=[0, 2.0, 2.0, 2.0, 2.0]):  # 2 second response
             self.client.get("/api/v2/predictions/")
 
         # Verify warning was logged
