@@ -9,6 +9,44 @@ from .base import *  # noqa: F403,S2208 - Standard Django settings pattern
 # Debug mode for tests
 DEBUG = True
 
+# Use lightweight, permissive auth for tests to avoid 401s while still honoring view permissions
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # noqa: F405
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ],
+    # Keep throttling enabled for throttle tests; use slightly lower rates for faster coverage
+    "DEFAULT_THROTTLE_CLASSES": [
+        "future_skills.api.throttling.AnonRateThrottle",
+        "future_skills.api.throttling.UserRateThrottle",
+        "future_skills.api.throttling.BurstRateThrottle",
+        "future_skills.api.throttling.SustainedRateThrottle",
+        "future_skills.api.throttling.PremiumUserThrottle",
+        "future_skills.api.throttling.MLOperationsThrottle",
+        "future_skills.api.throttling.BulkOperationsThrottle",
+        "future_skills.api.throttling.HealthCheckThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10/minute",
+        "user": "20/minute",
+        "burst": "5/minute",
+        "sustained": "100/hour",
+        "premium": "50/minute",
+        "ml_operations": "5/minute",
+        "bulk_operations": "3/minute",
+        "health_check": "5/minute",
+    },
+}
+
+# Locmem cache so caching/throttling tests have a working cache backend
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "future-skills-test-cache",
+    }
+}
+
 # Test database (in-memory SQLite for speed)
 DATABASES = {
     "default": {
@@ -42,6 +80,10 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 STATIC_ROOT = BASE_DIR / "test_staticfiles"
 MEDIA_ROOT = BASE_DIR / "test_media"
 
+# Point ML datasets to a small, checked-in fixture so training API/tests can find it
+ML_DATASETS_DIR = BASE_DIR / "tests/fixtures"
+FUTURE_SKILLS_DATASET_PATH = ML_DATASETS_DIR / "future_skills_dataset.csv"
+
 # Logging - minimal for tests
 LOGGING["handlers"]["console"]["level"] = "ERROR"
 LOGGING["loggers"]["future_skills"]["level"] = "ERROR"
@@ -61,21 +103,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # REST Framework settings for tests
 REST_FRAMEWORK = {
-    **REST_FRAMEWORK,  # inherit from base
+    **REST_FRAMEWORK,  # inherit from base + overrides above
     "PAGE_SIZE": 10,
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    # Disable throttling during tests to avoid 429s
-    "DEFAULT_THROTTLE_CLASSES": [],
-    "DEFAULT_THROTTLE_RATES": {
-        "anon": "100000/hour",
-        "user": "100000/hour",
-        "burst": "100000/hour",
-        "sustained": "100000/day",
-    },
 }
-
-# Disable middleware-level rate limiting in tests
-DISABLE_RATE_LIMITING = True
 
 # Bypass IP-based throttling for local test client
 THROTTLE_BYPASS_IPS = ["127.0.0.1", "::1"]
