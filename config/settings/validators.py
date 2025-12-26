@@ -31,11 +31,8 @@ class EnvironmentValidator:
         self.errors: List[str] = []
         self.warnings: List[str] = []
 
-    def validate_required(
-        self, var_name: str, var_value: Any, var_type: type = str
-    ) -> bool:
-        """
-        Validate that a required variable exists and has the correct type.
+    def validate_required(self, var_name: str, var_value: Any, var_type: type = str) -> bool:
+        """Validate that a required variable exists and has the correct type.
 
         Args:
             var_name: Name of the environment variable
@@ -57,11 +54,8 @@ class EnvironmentValidator:
 
         return True
 
-    def validate_optional(
-        self, var_name: str, var_value: Any, var_type: type = str
-    ) -> bool:
-        """
-        Validate an optional variable if it exists.
+    def validate_optional(self, var_name: str, var_value: Any, var_type: type = str) -> bool:
+        """Validate an optional variable if it exists.
 
         Args:
             var_name: Name of the environment variable
@@ -82,11 +76,8 @@ class EnvironmentValidator:
 
         return True
 
-    def validate_path(
-        self, var_name: str, path: Path, must_exist: bool = False
-    ) -> bool:
-        """
-        Validate that a path is valid and optionally exists.
+    def validate_path(self, var_name: str, path: Path, must_exist: bool = False) -> bool:
+        """Validate that a path is valid and optionally exists.
 
         Args:
             var_name: Name of the environment variable
@@ -117,11 +108,8 @@ class EnvironmentValidator:
 
         return True
 
-    def validate_url(
-        self, var_name: str, url: str, schemes: Optional[List[str]] = None
-    ) -> bool:
-        """
-        Validate that a URL is properly formatted.
+    def validate_url(self, var_name: str, url: str, schemes: Optional[List[str]] = None) -> bool:
+        """Validate that a URL is properly formatted.
 
         Args:
             var_name: Name of the environment variable
@@ -136,16 +124,13 @@ class EnvironmentValidator:
 
         if schemes:
             if not any(url.startswith(f"{scheme}://") for scheme in schemes):
-                self.errors.append(
-                    f"❌ {var_name} must use one of these schemes: {', '.join(schemes)}"
-                )
+                self.errors.append(f"❌ {var_name} must use one of these schemes: {', '.join(schemes)}")
                 return False
 
         return True
 
     def validate_choice(self, var_name: str, value: str, choices: List[str]) -> bool:
-        """
-        Validate that a value is one of the allowed choices.
+        """Validate that a value is one of the allowed choices.
 
         Args:
             var_name: Name of the environment variable
@@ -156,16 +141,13 @@ class EnvironmentValidator:
             True if valid, False otherwise
         """
         if value not in choices:
-            self.errors.append(
-                f"❌ {var_name} must be one of: {', '.join(choices)}. Got: {value}"
-            )
+            self.errors.append(f"❌ {var_name} must be one of: {', '.join(choices)}. Got: {value}")
             return False
 
         return True
 
     def validate_all(self) -> Dict[str, Any]:
-        """
-        Run all validation checks for the current environment.
+        """Run all validation checks for the current environment.
 
         Returns:
             Dictionary with validation results
@@ -209,18 +191,14 @@ class EnvironmentValidator:
         self.validate_optional("DEBUG", debug, bool)
 
         # ALLOWED_HOSTS
-        allowed_hosts = config(
-            "ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=csv_cast()
-        )
+        allowed_hosts = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=csv_cast())
         if not allowed_hosts:
             self.warnings.append("⚠️  ALLOWED_HOSTS is empty")
 
         # Database
         database_url = config("DATABASE_URL", default=None)
         if database_url:
-            self.validate_url(
-                "DATABASE_URL", database_url, ["postgresql", "sqlite", "mysql"]
-            )
+            self.validate_url("DATABASE_URL", database_url, ["postgresql", "sqlite", "mysql"])
 
         # Celery
         celery_broker = config("CELERY_BROKER_URL", default=DEFAULT_REDIS_URL)
@@ -230,12 +208,8 @@ class EnvironmentValidator:
         self.validate_url("CELERY_RESULT_BACKEND", celery_backend, ["redis", "amqp"])
 
         # ML Settings
-        artifacts_root = Path(
-            config("ARTIFACTS_ROOT", default=str(base_dir / "artifacts"))
-        )
-        ml_models_dir = Path(
-            config("ML_MODELS_DIR", default=str(artifacts_root / "models"))
-        )
+        artifacts_root = Path(config("ARTIFACTS_ROOT", default=str(base_dir / "artifacts")))
+        ml_models_dir = Path(config("ML_MODELS_DIR", default=str(artifacts_root / "models")))
         ml_model_path = Path(
             config(
                 "FUTURE_SKILLS_MODEL_PATH",
@@ -245,9 +219,7 @@ class EnvironmentValidator:
         use_ml = config("FUTURE_SKILLS_USE_ML", default=True, cast=bool)
 
         if use_ml and not ml_model_path.exists():
-            self.warnings.append(
-                f"⚠️  FUTURE_SKILLS_USE_ML is True but model file does not exist: {ml_model_path}"
-            )
+            self.warnings.append(f"⚠️  FUTURE_SKILLS_USE_ML is True but model file does not exist: {ml_model_path}")
 
     def _validate_production(self, config, csv_cast):
         """Validate production-specific settings."""
@@ -275,29 +247,21 @@ class EnvironmentValidator:
 
         session_cookie_secure = config("SESSION_COOKIE_SECURE", default=True, cast=bool)
         if not session_cookie_secure:
-            self.warnings.append(
-                "⚠️  SESSION_COOKIE_SECURE should be True in production"
-            )
+            self.warnings.append("⚠️  SESSION_COOKIE_SECURE should be True in production")
 
         csrf_cookie_secure = config("CSRF_COOKIE_SECURE", default=True, cast=bool)
         if not csrf_cookie_secure:
             self.warnings.append("⚠️  CSRF_COOKIE_SECURE should be True in production")
 
         # Email settings
-        email_backend = config(
-            "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
-        )
+        email_backend = config("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
         if email_backend == "django.core.mail.backends.console.EmailBackend":
-            self.warnings.append(
-                "⚠️  Console email backend is not suitable for production"
-            )
+            self.warnings.append("⚠️  Console email backend is not suitable for production")
 
         # CORS settings
         cors_origins = config("CORS_ALLOWED_ORIGINS", default="", cast=csv_cast())
         if not cors_origins:
-            self.warnings.append(
-                "⚠️  CORS_ALLOWED_ORIGINS should be explicitly set in production"
-            )
+            self.warnings.append("⚠️  CORS_ALLOWED_ORIGINS should be explicitly set in production")
 
     def _validate_development(self, config):
         """Validate development-specific settings."""
@@ -331,11 +295,8 @@ class EnvironmentValidator:
         return len(self.errors) == 0
 
 
-def validate_environment(
-    environment: str = "development", exit_on_error: bool = False
-) -> bool:
-    """
-    Validate environment configuration and optionally exit on errors.
+def validate_environment(environment: str = "development", exit_on_error: bool = False) -> bool:
+    """Validate environment configuration and optionally exit on errors.
 
     Args:
         environment: Environment name (development, production, test)
@@ -356,8 +317,7 @@ def validate_environment(
 
 
 def get_env_info() -> Dict[str, Any]:
-    """
-    Get current environment configuration information.
+    """Get current environment configuration information.
 
     Returns:
         Dictionary with current configuration
@@ -373,15 +333,11 @@ def get_env_info() -> Dict[str, Any]:
         "debug": config("DEBUG", default=False, cast=bool),
         "secret_key_set": bool(config("SECRET_KEY", default="")),
         "secret_key_length": len(config("SECRET_KEY", default="")),
-        "allowed_hosts": config(
-            "ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv()
-        ),
+        "allowed_hosts": config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv()),
         "database_url_set": bool(config("DATABASE_URL", default=None)),
         "celery_broker": config("CELERY_BROKER_URL", default=DEFAULT_REDIS_URL),
         "use_ml": config("FUTURE_SKILLS_USE_ML", default=True, cast=bool),
-        "ml_model_exists": (
-            BASE_DIR / "ml" / "models" / "future_skills_model.pkl"
-        ).exists(),
+        "ml_model_exists": (BASE_DIR / "ml" / "models" / "future_skills_model.pkl").exists(),
     }
 
 
@@ -394,13 +350,9 @@ def print_env_info():
     print("=" * 70)
     print(f"Environment: {info['environment']}")
     print(f"Debug Mode: {info['debug']}")
-    print(
-        f"Secret Key: {'✅ Set' if info['secret_key_set'] else '❌ Not Set'} ({info['secret_key_length']} chars)"
-    )
+    print(f"Secret Key: {'✅ Set' if info['secret_key_set'] else '❌ Not Set'} ({info['secret_key_length']} chars)")
     print(f"Allowed Hosts: {', '.join(info['allowed_hosts'])}")
-    print(
-        f"Database URL: {'✅ Set' if info['database_url_set'] else '❌ Not Set (using default)'}"
-    )
+    print(f"Database URL: {'✅ Set' if info['database_url_set'] else '❌ Not Set (using default)'}")
     print(f"Celery Broker: {info['celery_broker']}")
     print(f"Use ML: {info['use_ml']}")
     print(f"ML Model: {'✅ Exists' if info['ml_model_exists'] else '❌ Not Found'}")
@@ -423,9 +375,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Exit with error code if validation fails",
     )
-    parser.add_argument(
-        "--info", action="store_true", help="Print current environment information"
-    )
+    parser.add_argument("--info", action="store_true", help="Print current environment information")
 
     args = parser.parse_args()
 

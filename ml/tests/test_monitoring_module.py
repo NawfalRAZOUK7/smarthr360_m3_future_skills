@@ -284,12 +284,8 @@ class TestPredictionLogger:
         """Test filtering recent predictions by model name."""
         logger = PredictionLogger(storage_path=tmp_path)
 
-        logger.log_prediction(
-            model_name="model-A", model_version="1.0.0", features={}, prediction="HIGH"
-        )
-        logger.log_prediction(
-            model_name="model-B", model_version="1.0.0", features={}, prediction="LOW"
-        )
+        logger.log_prediction(model_name="model-A", model_version="1.0.0", features={}, prediction="HIGH")
+        logger.log_prediction(model_name="model-B", model_version="1.0.0", features={}, prediction="LOW")
         logger.log_prediction(
             model_name="model-A",
             model_version="1.0.0",
@@ -371,9 +367,7 @@ class TestPredictionLogger:
                 prediction="LOW",
             )
 
-        predictions = logger.load_predictions_from_date(
-            datetime.now(), model_name="model-A"
-        )
+        predictions = logger.load_predictions_from_date(datetime.now(), model_name="model-A")
 
         assert len(predictions) == 5
         assert all(p.model_name == "model-A" for p in predictions)
@@ -433,9 +427,7 @@ class TestPredictionLogger:
         # Flush buffer to ensure predictions are written
         logger.flush()
 
-        stats = logger.get_prediction_statistics(
-            model_name="test-model", start_date=datetime.now()
-        )
+        stats = logger.get_prediction_statistics(model_name="test-model", start_date=datetime.now())
 
         assert "p50_prediction_time_ms" in stats
         assert "p95_prediction_time_ms" in stats
@@ -448,9 +440,7 @@ class TestModelMonitor:
 
     def test_initialization(self):
         """Test ModelMonitor initialization."""
-        monitor = ModelMonitor(
-            model_name="test-model", model_version="1.0.0", cache_ttl=600
-        )
+        monitor = ModelMonitor(model_name="test-model", model_version="1.0.0", cache_ttl=600)
 
         assert monitor.model_name == "test-model"
         assert monitor.model_version == "1.0.0"
@@ -461,9 +451,7 @@ class TestModelMonitor:
         """Test setting reference data for drift detection."""
         monitor = ModelMonitor(model_name="test-model")
 
-        reference_data = pd.DataFrame(
-            {"feature1": [1, 2, 3, 4, 5], "feature2": [5, 4, 3, 2, 1]}
-        )
+        reference_data = pd.DataFrame({"feature1": [1, 2, 3, 4, 5], "feature2": [5, 4, 3, 2, 1]})
 
         monitor.set_reference_data(reference_data)
 
@@ -501,9 +489,7 @@ class TestModelMonitor:
         reference_data = pd.DataFrame({"feature1": np.random.normal(0, 1, 100)})
 
         # Create data with different distribution
-        current_data = pd.DataFrame(
-            {"feature1": np.random.normal(10, 1, 100)}  # Shifted mean
-        )
+        current_data = pd.DataFrame({"feature1": np.random.normal(10, 1, 100)})  # Shifted mean
 
         monitor.set_reference_data(reference_data)
         drift_detected, report = monitor._basic_drift_detection(current_data)
@@ -664,9 +650,7 @@ class TestModelMonitor:
     def test_generate_monitoring_report(self, tmp_path):
         """Test generating comprehensive monitoring report."""
         monitor = ModelMonitor(model_name="test-model", model_version="1.0.0")
-        monitor.prediction_logger = PredictionLogger(
-            storage_path=tmp_path, buffer_size=10
-        )
+        monitor.prediction_logger = PredictionLogger(storage_path=tmp_path, buffer_size=10)
 
         # Add some performance data
         y_true = np.array([1, 0, 1, 0])
@@ -770,9 +754,7 @@ class TestPrometheusMetrics:
         )
 
         # Verify histogram was updated by checking it exists
-        histogram = PREDICTION_LATENCY.labels(
-            model_name="test-model", model_version="1.0.0"
-        )
+        histogram = PREDICTION_LATENCY.labels(model_name="test-model", model_version="1.0.0")
 
         # Just verify the histogram exists and is callable
         assert histogram is not None

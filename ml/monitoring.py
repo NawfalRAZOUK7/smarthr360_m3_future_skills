@@ -70,9 +70,7 @@ PREDICTION_LATENCY = Histogram(
     ["model_name", "model_version"],
 )
 
-MODEL_ACCURACY_GAUGE = Gauge(
-    "ml_model_accuracy", "Current model accuracy", ["model_name", "model_version"]
-)
+MODEL_ACCURACY_GAUGE = Gauge("ml_model_accuracy", "Current model accuracy", ["model_name", "model_version"])
 
 DRIFT_DETECTED = Counter(
     "ml_drift_detections_total",
@@ -195,9 +193,9 @@ class PredictionLogger:
         ).inc()
 
         if prediction_time_ms:
-            PREDICTION_LATENCY.labels(
-                model_name=model_name, model_version=model_version
-            ).observe(prediction_time_ms / 1000.0)
+            PREDICTION_LATENCY.labels(model_name=model_name, model_version=model_version).observe(
+                prediction_time_ms / 1000.0
+            )
 
         # Flush buffer if full
         if len(self.buffer) >= self.buffer_size:
@@ -215,9 +213,7 @@ class PredictionLogger:
                 for log_entry in self.buffer:
                     f.write(json.dumps(log_entry.to_dict()) + "\n")
 
-            logger.debug(
-                f"Flushed {len(self.buffer)} predictions to {self._daily_file}"
-            )
+            logger.debug(f"Flushed {len(self.buffer)} predictions to {self._daily_file}")
             self.buffer.clear()
 
         except Exception as e:
@@ -250,9 +246,7 @@ class PredictionLogger:
 
         return predictions[-limit:]
 
-    def load_predictions_from_date(
-        self, date: datetime, model_name: Optional[str] = None
-    ) -> List[PredictionLog]:
+    def load_predictions_from_date(self, date: datetime, model_name: Optional[str] = None) -> List[PredictionLog]:
         """
         Load predictions from a specific date.
 
@@ -319,15 +313,9 @@ class PredictionLogger:
             }
 
         # Calculate statistics
-        prediction_times = [
-            p.prediction_time_ms
-            for p in all_predictions
-            if p.prediction_time_ms is not None
-        ]
+        prediction_times = [p.prediction_time_ms for p in all_predictions if p.prediction_time_ms is not None]
 
-        probabilities = [
-            p.probability for p in all_predictions if p.probability is not None
-        ]
+        probabilities = [p.probability for p in all_predictions if p.probability is not None]
 
         # Count predictions by class
         prediction_counts = defaultdict(int)
@@ -338,18 +326,10 @@ class PredictionLogger:
             "total_predictions": len(all_predictions),
             "date_range": f"{start_date.date()} to {end_date.date()}",
             "prediction_counts": dict(prediction_counts),
-            "avg_prediction_time_ms": (
-                np.mean(prediction_times) if prediction_times else None
-            ),
-            "p50_prediction_time_ms": (
-                np.percentile(prediction_times, 50) if prediction_times else None
-            ),
-            "p95_prediction_time_ms": (
-                np.percentile(prediction_times, 95) if prediction_times else None
-            ),
-            "p99_prediction_time_ms": (
-                np.percentile(prediction_times, 99) if prediction_times else None
-            ),
+            "avg_prediction_time_ms": (np.mean(prediction_times) if prediction_times else None),
+            "p50_prediction_time_ms": (np.percentile(prediction_times, 50) if prediction_times else None),
+            "p95_prediction_time_ms": (np.percentile(prediction_times, 95) if prediction_times else None),
+            "p99_prediction_time_ms": (np.percentile(prediction_times, 99) if prediction_times else None),
             "avg_probability": np.mean(probabilities) if probabilities else None,
             "min_probability": np.min(probabilities) if probabilities else None,
         }
@@ -364,9 +344,7 @@ class ModelMonitor:
     Tracks model performance, drift, and health metrics.
     """
 
-    def __init__(
-        self, model_name: str, model_version: Optional[str] = None, cache_ttl: int = 300
-    ):
+    def __init__(self, model_name: str, model_version: Optional[str] = None, cache_ttl: int = 300):
         """
         Initialize model monitor.
 
@@ -444,16 +422,12 @@ class ModelMonitor:
             drift_report = {
                 "drift_detected": drift_detected,
                 "drift_score": dataset_drift.get("result", {}).get("drift_share", 0.0),
-                "drifted_features": dataset_drift.get("result", {}).get(
-                    "number_of_drifted_columns", 0
-                ),
+                "drifted_features": dataset_drift.get("result", {}).get("number_of_drifted_columns", 0),
                 "timestamp": datetime.now().isoformat(),
             }
 
             if drift_detected:
-                DRIFT_DETECTED.labels(
-                    model_name=self.model_name, drift_type="data_drift"
-                ).inc()
+                DRIFT_DETECTED.labels(model_name=self.model_name, drift_type="data_drift").inc()
 
                 logger.warning(
                     f"Data drift detected for {self.model_name}: "
@@ -545,9 +519,9 @@ class ModelMonitor:
         self.performance_history.append(metrics)
 
         # Update Prometheus gauge
-        MODEL_ACCURACY_GAUGE.labels(
-            model_name=self.model_name, model_version=self.model_version or "unknown"
-        ).set(metrics["accuracy"])
+        MODEL_ACCURACY_GAUGE.labels(model_name=self.model_name, model_version=self.model_version or "unknown").set(
+            metrics["accuracy"]
+        )
 
         # Cache recent metrics
         cache_key = f"model_metrics:{self.model_name}"
@@ -615,38 +589,26 @@ class ModelMonitor:
 
             if latest_accuracy < 0.7:
                 health["status"] = "degraded"
-                health["issues"].append(
-                    f"Low accuracy: {latest_accuracy:.3f} (threshold: 0.7)"
-                )
+                health["issues"].append(f"Low accuracy: {latest_accuracy:.3f} (threshold: 0.7)")
 
         # Check for declining trend
         if metrics.get("trend", {}).get("accuracy"):
             trend = metrics["trend"]["accuracy"]
             if trend["direction"] == "declining" and abs(trend["change"]) > 0.05:
                 health["status"] = "warning"
-                health["issues"].append(
-                    f"Declining accuracy trend: {trend['change']:.3f}"
-                )
+                health["issues"].append(f"Declining accuracy trend: {trend['change']:.3f}")
 
         # Check prediction latency
-        recent_predictions = self.prediction_logger.get_recent_predictions(
-            model_name=self.model_name, limit=100
-        )
+        recent_predictions = self.prediction_logger.get_recent_predictions(model_name=self.model_name, limit=100)
 
         if recent_predictions:
-            latencies = [
-                p.prediction_time_ms
-                for p in recent_predictions
-                if p.prediction_time_ms is not None
-            ]
+            latencies = [p.prediction_time_ms for p in recent_predictions if p.prediction_time_ms is not None]
 
             if latencies:
                 p95_latency = np.percentile(latencies, 95)
                 if p95_latency > 1000:  # > 1 second
                     health["status"] = "warning"
-                    health["issues"].append(
-                        f"High prediction latency: P95={p95_latency:.0f}ms"
-                    )
+                    health["issues"].append(f"High prediction latency: P95={p95_latency:.0f}ms")
 
         return health
 
@@ -674,9 +636,7 @@ class ModelMonitor:
         return report
 
 
-def get_model_monitor(
-    model_name: str, model_version: Optional[str] = None
-) -> ModelMonitor:
+def get_model_monitor(model_name: str, model_version: Optional[str] = None) -> ModelMonitor:
     """
     Get or create a model monitor instance.
 

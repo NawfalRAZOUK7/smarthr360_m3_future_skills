@@ -35,9 +35,7 @@ class TrainingAPITest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("count", response.data)
         self.assertIn("results", response.data)
-        print(
-            f"✅ List endpoint: {response.status_code}, Count: {response.data['count']}"
-        )
+        print(f"✅ List endpoint: {response.status_code}, Count: {response.data['count']}")
 
     def test_filter_by_status(self):
         """Test filtering by status."""
@@ -54,9 +52,7 @@ class TrainingAPITest(TestCase):
             response = self.client.get(f"/api/training/runs/{training_run.id}/")
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.data["id"], training_run.id)
-            print(
-                f"✅ Detail endpoint: {response.status_code}, Model: {response.data['model_version']}"
-            )
+            print(f"✅ Detail endpoint: {response.status_code}, Model: {response.data['model_version']}")
         else:
             print("⚠️  No training runs to test detail endpoint")
 

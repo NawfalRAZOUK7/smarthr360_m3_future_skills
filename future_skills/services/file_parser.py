@@ -2,6 +2,7 @@
 
 """
 CSV/Excel parser utilities for bulk employee import.
+
 Handles file parsing, validation, and error handling for employee data.
 """
 
@@ -25,30 +26,23 @@ ENCODING_FALLBACK_ERROR = "File encoding issue detected, used latin-1 fallback"
 
 def _normalize_value(value: Any) -> str:
     """Return a stripped string representation, handling pandas NaN values."""
-
     if value is None:
         return ""
     text = str(value).strip()
     return "" if text.lower() == "nan" else text
 
 
-def _collect_required_field_errors(
-    values: Dict[str, str], row_num: int
-) -> List[Dict[str, str]]:
+def _collect_required_field_errors(values: Dict[str, str], row_num: int) -> List[Dict[str, str]]:
     """Build error payloads for missing required fields."""
-
     errors: List[Dict[str, str]] = []
     for field in REQUIRED_HEADERS:
         if not values.get(field):
-            errors.append(
-                {"row": row_num, "field": field, "error": REQUIRED_FIELD_ERRORS[field]}
-            )
+            errors.append({"row": row_num, "field": field, "error": REQUIRED_FIELD_ERRORS[field]})
     return errors
 
 
 def _validate_email_format(email: str, row_num: int) -> List[Dict[str, str]]:
     """Validate email address structure."""
-
     if "@" not in email or "." not in email.split("@")[-1]:
         return [
             {
@@ -62,7 +56,6 @@ def _validate_email_format(email: str, row_num: int) -> List[Dict[str, str]]:
 
 def _extract_current_skills(raw_value: str) -> List[str]:
     """Normalize textual representation of skill lists."""
-
     text = raw_value.strip()
     if not text:
         return []
@@ -86,7 +79,6 @@ def _extract_current_skills(raw_value: str) -> List[str]:
 
 def _coerce_int_value(value: Any) -> Optional[int]:
     """Attempt to parse an integer from raw spreadsheet/CSV values."""
-
     if isinstance(value, bool):
         return None
     if isinstance(value, Number):
@@ -106,11 +98,8 @@ def _coerce_int_value(value: Any) -> Optional[int]:
             return None
 
 
-def parse_employee_csv(
-    file, encoding: str = "utf-8"
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
-    """
-    Parse CSV file containing employee data.
+def parse_employee_csv(file, encoding: str = "utf-8") -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
+    """Parse CSV file containing employee data.
 
     Args:
         file: File object (Django UploadedFile or file-like object)
@@ -187,16 +176,13 @@ def parse_employee_csv(
                 validated_employees.append(employee_data)
 
     except Exception as e:
-        errors.append(
-            {"row": 0, "field": "file", "error": f"Failed to parse CSV file: {str(e)}"}
-        )
+        errors.append({"row": 0, "field": "file", "error": f"Failed to parse CSV file: {str(e)}"})
 
     return validated_employees, errors
 
 
 def parse_employee_excel(file) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
-    """
-    Parse Excel file containing employee data (.xlsx or .xls).
+    """Parse Excel file containing employee data (.xlsx or .xls).
 
     Args:
         file: File object (Django UploadedFile or file-like object)
@@ -296,11 +282,8 @@ def parse_employee_excel(file) -> Tuple[List[Dict[str, Any]], List[Dict[str, str
     return validated_employees, errors
 
 
-def _validate_csv_row(
-    row: Dict[str, str], row_num: int
-) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
-    """
-    Validate a single CSV row and extract employee data.
+def _validate_csv_row(row: Dict[str, str], row_num: int) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
+    """Validate a single CSV row and extract employee data.
 
     Args:
         row: Dictionary of row data from CSV
@@ -341,20 +324,15 @@ def _validate_csv_row(
         employee_data["job_role_name"] = job_role_name
 
     current_skills_raw = row.get("current_skills", "")
-    skills_list = (
-        _extract_current_skills(current_skills_raw) if current_skills_raw else []
-    )
+    skills_list = _extract_current_skills(current_skills_raw) if current_skills_raw else []
     if skills_list:
         employee_data["current_skills"] = skills_list
 
     return employee_data, errors
 
 
-def _validate_excel_row(
-    row: Dict[str, Any], row_num: int
-) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
-    """
-    Validate a single Excel row and extract employee data.
+def _validate_excel_row(row: Dict[str, Any], row_num: int) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
+    """Validate a single Excel row and extract employee data.
 
     Args:
         row: Dictionary of row data from Excel (pandas Series converted to dict)
@@ -363,8 +341,6 @@ def _validate_excel_row(
     Returns:
         Tuple of (employee_data, errors)
     """
-    import pandas as pd
-
     errors: List[Dict[str, str]] = []
     employee_data: Dict[str, Any] = {}
 
@@ -397,20 +373,15 @@ def _validate_excel_row(
         employee_data["job_role_name"] = job_role_name
 
     current_skills_raw = _normalize_value(row.get("current_skills"))
-    skills_list = (
-        _extract_current_skills(current_skills_raw) if current_skills_raw else []
-    )
+    skills_list = _extract_current_skills(current_skills_raw) if current_skills_raw else []
     if skills_list:
         employee_data["current_skills"] = skills_list
 
     return employee_data, errors
 
 
-def parse_employee_file(
-    file, file_extension: str
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
-    """
-    Universal parser that detects file type and calls appropriate parser.
+def parse_employee_file(file, file_extension: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
+    """Universal parser that detects file type and calls appropriate parser.
 
     Args:
         file: File object (Django UploadedFile or file-like object)

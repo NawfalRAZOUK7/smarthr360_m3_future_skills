@@ -180,15 +180,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("=" * 70))
             self.stdout.write(f"🏷️  Version:      {model_version}")
             self.stdout.write(f"🎯 Accuracy:     {metadata['metrics']['accuracy']:.2%}")
-            self.stdout.write(
-                f"📊 Precision:    {metadata['metrics']['precision_weighted']:.2%}"
-            )
-            self.stdout.write(
-                f"🎪 Recall:       {metadata['metrics']['recall_weighted']:.2%}"
-            )
-            self.stdout.write(
-                f"🎭 F1-Score:     {metadata['metrics']['f1_weighted']:.2%}"
-            )
+            self.stdout.write(f"📊 Precision:    {metadata['metrics']['precision_weighted']:.2%}")
+            self.stdout.write(f"🎪 Recall:       {metadata['metrics']['recall_weighted']:.2%}")
+            self.stdout.write(f"🎭 F1-Score:     {metadata['metrics']['f1_weighted']:.2%}")
             self.stdout.write(f"⏱️  Duration:     {training_duration:.1f} seconds")
             self.stdout.write(f"💾 Model saved:  {save_path}")
             self.stdout.write(f"🗄️  Database ID:  {training_run.id}")
@@ -239,7 +233,5 @@ class Command(BaseCommand):
             )
 
             self.stdout.write(self.style.ERROR(f"❌ Training failed: {str(e)}"))
-            self.stdout.write(
-                self.style.ERROR(f"⏱️  Failed after: {training_duration:.1f} seconds")
-            )
+            self.stdout.write(self.style.ERROR(f"⏱️  Failed after: {training_duration:.1f} seconds"))
             raise CommandError(f"Training failed: {str(e)}")

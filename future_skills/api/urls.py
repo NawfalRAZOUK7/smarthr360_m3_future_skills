@@ -1,5 +1,11 @@
 # future_skills/api/urls.py
 
+"""URL configuration for the future_skills API.
+
+Defines all REST API endpoints for future skills predictions, employee management,
+market trends, economic reports, HR recommendations, and ML model training.
+"""
+
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 

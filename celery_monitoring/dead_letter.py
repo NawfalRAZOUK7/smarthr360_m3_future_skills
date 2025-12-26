@@ -7,7 +7,6 @@ Tasks that exceed max retries are sent here instead of being lost.
 
 import json
 import logging
-from datetime import datetime
 from typing import Any, Dict, Optional
 
 from django.db import models
@@ -153,17 +152,12 @@ def send_to_dead_letter_queue(
         queue_name=queue_name,
     )
 
-    logger.info(
-        f"Sent task to dead letter queue: {task_name} ({task_id}), "
-        f"exception: {exception_type}"
-    )
+    logger.info(f"Sent task to dead letter queue: {task_name} ({task_id}), " f"exception: {exception_type}")
 
     return dead_letter_task
 
 
-def reprocess_dead_letter_tasks(
-    task_name: Optional[str] = None, limit: int = 10
-) -> Dict[str, Any]:
+def reprocess_dead_letter_tasks(task_name: Optional[str] = None, limit: int = 10) -> Dict[str, Any]:
     """
     Bulk reprocess dead letter tasks.
 
@@ -189,9 +183,7 @@ def reprocess_dead_letter_tasks(
             results["success"] += 1
         else:
             results["failed"] += 1
-            results["errors"].append(
-                {"task_id": task.task_id, "error": result.get("error")}
-            )
+            results["errors"].append({"task_id": task.task_id, "error": result.get("error")})
 
     return results
 
@@ -210,9 +202,7 @@ def cleanup_old_dead_letter_tasks(days: int = 30) -> int:
 
     cutoff_date = timezone.now() - timedelta(days=days)
 
-    deleted_count, _ = DeadLetterTask.objects.filter(
-        reprocessed=True, reprocessed_at__lt=cutoff_date
-    ).delete()
+    deleted_count, _ = DeadLetterTask.objects.filter(reprocessed=True, reprocessed_at__lt=cutoff_date).delete()
 
     logger.info(f"Cleaned up {deleted_count} old dead letter tasks")
 

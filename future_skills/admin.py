@@ -75,11 +75,7 @@ class PredictionRunAdmin(admin.ModelAdmin):
     def short_description(self, obj):
         if not obj.description:
             return "-"
-        return (
-            (obj.description[:60] + "...")
-            if len(obj.description) > 60
-            else obj.description
-        )
+        return (obj.description[:60] + "...") if len(obj.description) > 60 else obj.description
 
     short_description.short_description = "Description"
 

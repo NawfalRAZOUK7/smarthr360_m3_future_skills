@@ -1,7 +1,8 @@
 # future_skills/management/commands/export_future_skills_dataset.py
 
+"""Export a synthetic Future Skills dataset for ML training."""
+
 import csv
-import os
 import random
 from pathlib import Path
 
@@ -41,8 +42,7 @@ IT_DEPARTMENTS = ["IT", "Tech", "Data", "Engineering", "R&D"]
 
 
 def _estimate_scarcity_index(job_role, skill, internal_usage: float) -> float:
-    """
-    Indice de rareté (0-1) basé sur plusieurs facteurs.
+    """Indice de rareté (0-1) basé sur plusieurs facteurs.
 
     1.0  → très rare
     0.0  → pas rare
@@ -73,8 +73,7 @@ def _estimate_scarcity_index(job_role, skill, internal_usage: float) -> float:
 
 
 def _estimate_hiring_difficulty(job_role, skill, scarcity_index: float) -> float:
-    """
-    Estime la difficulté de recrutement (0-1) pour un couple (job_role, skill).
+    """Estime la difficulté de recrutement (0-1) pour un couple (job_role, skill).
 
     Basé sur:
     - Indice de rareté de la compétence
@@ -98,14 +97,13 @@ def _estimate_hiring_difficulty(job_role, skill, scarcity_index: float) -> float
         difficulty = min(1.0, difficulty + 0.15)
 
     # Add some realistic randomness (±10%)
-    difficulty = difficulty * random.uniform(0.90, 1.10)
+    difficulty = difficulty * random.uniform(0.90, 1.10)  # nosec B311
 
     return max(0.0, min(1.0, difficulty))
 
 
 def _estimate_avg_salary(job_role, skill, hiring_difficulty: float) -> float:
-    """
-    Estime le salaire moyen en K€/an pour un profil (job_role, skill).
+    """Estime le salaire moyen en K€/an pour un profil (job_role, skill).
 
     Basé sur:
     - Difficulté de recrutement
@@ -144,14 +142,13 @@ def _estimate_avg_salary(job_role, skill, hiring_difficulty: float) -> float:
     base_salary = base_salary * (1.0 + hiring_difficulty * 0.4)
 
     # Add realistic randomness (±15%)
-    salary = base_salary * random.uniform(0.85, 1.15)
+    salary = base_salary * random.uniform(0.85, 1.15)  # nosec B311
 
     return round(salary, 2)
 
 
 def _get_market_trend_for_context(job_role, skill) -> float:
-    """
-    Récupère le trend_score le plus pertinent pour le contexte (job_role, skill).
+    """Récupère le trend_score le plus pertinent pour le contexte (job_role, skill).
 
     Priorise:
     1. Trends matching skill category or job department
@@ -161,28 +158,20 @@ def _get_market_trend_for_context(job_role, skill) -> float:
     # Try to match by job department first
     if job_role.department:
         trend = (
-            MarketTrend.objects.filter(sector__icontains=job_role.department)
-            .order_by("-year", "-trend_score")
-            .first()
+            MarketTrend.objects.filter(sector__icontains=job_role.department).order_by("-year", "-trend_score").first()
         )
         if trend:
             return max(0.0, min(1.0, float(trend.trend_score)))
 
     # Try to match by skill category
     if skill.category:
-        trend = (
-            MarketTrend.objects.filter(sector__icontains=skill.category)
-            .order_by("-year", "-trend_score")
-            .first()
-        )
+        trend = MarketTrend.objects.filter(sector__icontains=skill.category).order_by("-year", "-trend_score").first()
         if trend:
             return max(0.0, min(1.0, float(trend.trend_score)))
 
     # Default to Tech sector or most recent trend
     trend = (
-        MarketTrend.objects.filter(sector__iexact="Tech")
-        .order_by("-year", "-trend_score")
-        .first()
+        MarketTrend.objects.filter(sector__iexact="Tech").order_by("-year", "-trend_score").first()
     ) or MarketTrend.objects.order_by("-year", "-trend_score").first()
 
     if trend:
@@ -192,17 +181,14 @@ def _get_market_trend_for_context(job_role, skill) -> float:
 
 
 def _get_economic_indicator(job_role) -> float:
-    """
-    Récupère un indicateur économique pertinent pour le contexte.
+    """Récupère un indicateur économique pertinent pour le contexte.
 
     Retourne une valeur normalisée (0-1) basée sur les rapports économiques.
     """
     # Try to find relevant economic report
     dept = job_role.department or "Tech"
 
-    report = (
-        EconomicReport.objects.filter(sector__icontains=dept).order_by("-year").first()
-    )
+    report = EconomicReport.objects.filter(sector__icontains=dept).order_by("-year").first()
 
     if report:
         # Normalize value (assuming values are in reasonable ranges)
@@ -214,12 +200,15 @@ def _get_economic_indicator(job_role) -> float:
 
 
 class Command(BaseCommand):
+    """Generate and export the enriched Future Skills CSV dataset."""
+
     help = (
         "Exporte un dataset CSV pour le futur modèle de ML du Module 3 "
         "à partir des données (JobRole, Skill) et du moteur de règles actuel."
     )
 
     def add_arguments(self, parser):
+        """Add CLI options for dataset export."""
         parser.add_argument(
             "--output",
             type=str,
@@ -228,6 +217,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Build the dataset rows and write them to CSV."""
         # Set random seed for reproducibility
         random.seed(42)
 
@@ -249,8 +239,7 @@ class Command(BaseCommand):
         if not job_roles.exists() or not skills.exists():
             self.stdout.write(
                 self.style.ERROR(
-                    "Aucun JobRole ou Skill trouvé en base. "
-                    "Peuple d'abord la base avec des données de démo."
+                    "Aucun JobRole ou Skill trouvé en base. " "Peuple d'abord la base avec des données de démo."
                 )
             )
             return
@@ -291,9 +280,7 @@ class Command(BaseCommand):
                     )
 
                     # New features
-                    hiring_difficulty = _estimate_hiring_difficulty(
-                        job, skill, scarcity_index
-                    )
+                    hiring_difficulty = _estimate_hiring_difficulty(job, skill, scarcity_index)
                     avg_salary = _estimate_avg_salary(job, skill, hiring_difficulty)
                     economic_indicator = _get_economic_indicator(job)
 
@@ -306,11 +293,7 @@ class Command(BaseCommand):
                     )
 
                     # Optionally upgrade level if scarcity + hiring difficulty is very high
-                    if (
-                        level == "MEDIUM"
-                        and scarcity_index > 0.7
-                        and hiring_difficulty > 0.7
-                    ):
+                    if level == "MEDIUM" and scarcity_index > 0.7 and hiring_difficulty > 0.7:
                         level = "HIGH"
                     elif level == "LOW" and scarcity_index > 0.6 and trend_score > 0.6:
                         level = "MEDIUM"
@@ -333,8 +316,4 @@ class Command(BaseCommand):
                     )
                     row_count += 1
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Export terminé. {row_count} lignes écrites dans {output_path}."
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"Export terminé. {row_count} lignes écrites dans {output_path}."))

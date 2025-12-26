@@ -48,9 +48,7 @@ class URLPathVersioning(NamespaceVersioning):
         """Add deprecation warning to response headers"""
         if not hasattr(request, "_deprecation_warning"):
             request._deprecation_warning = (
-                f"API version {version} is deprecated. "
-                f"Please migrate to v2. "
-                f"v1 will be sunset on 2026-06-01."
+                f"API version {version} is deprecated. " f"Please migrate to v2. " f"v1 will be sunset on 2026-06-01."
             )
 
 
@@ -84,9 +82,7 @@ class CustomAcceptHeaderVersioning(AcceptHeaderVersioning):
 
         if version not in self.allowed_versions:
             raise NotAcceptable(
-                _("Invalid version in Accept header. Allowed versions: {}").format(
-                    ", ".join(self.allowed_versions)
-                )
+                _("Invalid version in Accept header. Allowed versions: {}").format(", ".join(self.allowed_versions))
             )
 
         # Normalize Accept so content negotiation succeeds with vendor headers
@@ -102,9 +98,7 @@ class CustomAcceptHeaderVersioning(AcceptHeaderVersioning):
         """Add deprecation warning to response headers"""
         if not hasattr(request, "_deprecation_warning"):
             request._deprecation_warning = (
-                f"API version {version} is deprecated. "
-                f"Please migrate to v2. "
-                f"v1 will be sunset on 2026-06-01."
+                f"API version {version} is deprecated. " f"Please migrate to v2. " f"v1 will be sunset on 2026-06-01."
             )
 
 
@@ -131,15 +125,12 @@ class QueryParameterVersioning:
 
         if version not in self.allowed_versions:
             raise NotAcceptable(
-                _("Invalid version parameter. Allowed versions: {}").format(
-                    ", ".join(self.allowed_versions)
-                )
+                _("Invalid version parameter. Allowed versions: {}").format(", ".join(self.allowed_versions))
             )
 
         # Warn about query parameter versioning
         warnings.warn(
-            "Query parameter versioning is not recommended. "
-            "Consider using URL path versioning instead.",
+            "Query parameter versioning is not recommended. " "Consider using URL path versioning instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -159,14 +150,12 @@ class HybridVersioning(URLPathVersioning):
     """Attempt URL path versioning first, then fall back to Accept header."""
 
     def determine_version(self, request, *args, **kwargs):
-        resolver_namespace = getattr(
-            getattr(request, "resolver_match", None), "namespace", None
-        )
+        resolver_namespace = getattr(getattr(request, "resolver_match", None), "namespace", None)
 
         if resolver_namespace:
             try:
                 return super().determine_version(request, *args, **kwargs)
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
         # Fallback to Accept header parsing (no exceptions) for non-namespaced routes

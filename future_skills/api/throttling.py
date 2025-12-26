@@ -1,5 +1,4 @@
-"""
-API Rate Limiting and Throttling
+"""API rate limiting and throttling utilities.
 
 Implements multiple throttling strategies for different user types and endpoints.
 Provides granular control over API usage with proper rate limit headers.
@@ -9,7 +8,7 @@ import time
 
 from django.conf import settings
 from django.core.cache import cache
-from rest_framework.throttling import AnonRateThrottle as DRFAnonRateThrottle  # noqa: TID252 - reusing DRF helpers
+from rest_framework.throttling import AnonRateThrottle as DRFAnonRateThrottle
 from rest_framework.throttling import ScopedRateThrottle as DRFScopedRateThrottle
 from rest_framework.throttling import UserRateThrottle as DRFUserRateThrottle
 
@@ -58,6 +57,7 @@ class BaseSimpleThrottle:
     rate = None  # e.g. "5/minute"
 
     def __init__(self):
+        """Initialize the throttle configuration."""
         self.history = []
         self.num_requests = None
         self.duration = None
@@ -67,19 +67,21 @@ class BaseSimpleThrottle:
         self.request = None
 
     def get_rate(self):
-        rates = getattr(settings, "REST_FRAMEWORK", {}).get(
-            "DEFAULT_THROTTLE_RATES", {}
-        )
+        """Return the rate string for this throttle."""
+        rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
         return self.rate or rates.get(self.scope)
 
     def get_cache_key(self, request, view):
+        """Return the cache key used to identify the request source."""
         ident = self.get_ident(request)
         return f"throttle_{self.scope}_{ident}"
 
     def get_ident(self, request):
+        """Return a unique identifier for the client making the request."""
         return request.META.get("REMOTE_ADDR", "anon")
 
     def allow_request(self, request, view):
+        """Return True if the request is allowed, otherwise False."""
         self.view = view
         self.request = request
 
@@ -117,25 +119,21 @@ class BaseSimpleThrottle:
         return True
 
     def wait(self):
+        """Return the number of seconds to wait before the next allowed request."""
         if self.history and self.duration:
             remaining = self.duration - (self.timer() - self.history[0])
             return max(remaining, 0)
         return None
 
     def get_rate_limit_headers(self, request, view):
+        """Build X-RateLimit-* headers for the current client and scope."""
         # Ensure we have current history
         if not self.history or self.num_requests is None or self.duration is None:
             self.allow_request(request, view)
 
         now = self.timer()
-        remaining = (
-            max(self.num_requests - len(self.history), 0) if self.num_requests else 0
-        )
-        reset = (
-            int(self.history[0] + self.duration)
-            if self.history
-            else int(now + (self.duration or 0))
-        )
+        remaining = max(self.num_requests - len(self.history), 0) if self.num_requests else 0
+        reset = int(self.history[0] + self.duration) if self.history else int(now + (self.duration or 0))
 
         return {
             "X-RateLimit-Limit": str(self.num_requests or 0),
@@ -145,30 +143,42 @@ class BaseSimpleThrottle:
 
 
 class AnonRateThrottle(BaseSimpleThrottle, DRFAnonRateThrottle):
+    """Throttle anonymous requests using project-wide rate limits."""
+
     scope = "anon"
 
 
 class UserRateThrottle(BaseSimpleThrottle, DRFUserRateThrottle):
+    """Throttle authenticated users based on their user IDs."""
+
     scope = "user"
 
     def get_cache_key(self, request, view):
+        """Return the cache key used to track this user's requests."""
         if not getattr(request, "user", None) or not request.user.is_authenticated:
             return None
         return f"throttle_{self.scope}_{request.user.pk}"
 
 
 class BurstRateThrottle(UserRateThrottle):
+    """Short-window burst throttle for authenticated users."""
+
     scope = "burst"
 
 
 class SustainedRateThrottle(UserRateThrottle):
+    """Long-window sustained throttle for authenticated users."""
+
     scope = "sustained"
 
 
 class PremiumUserThrottle(UserRateThrottle):
+    """Throttle that relaxes limits for premium or high-value users."""
+
     scope = "premium"
 
     def allow_request(self, request, view):
+        """Allow more requests for premium users while still enforcing safety limits."""
         if request.user and request.user.is_authenticated:
             if request.user.is_superuser:
                 return True
@@ -178,35 +188,43 @@ class PremiumUserThrottle(UserRateThrottle):
 
 
 class MLOperationsThrottle(UserRateThrottle, DRFScopedRateThrottle):
+    """Protect ML/analytics endpoints from abusive usage."""
+
     scope = "ml_operations"
 
     def allow_request(self, request, view):
+        """Enforce stricter limits for expensive ML operations."""
         if not request.path.startswith("/api/v2/ml"):
             return True
         return super().allow_request(request, view)
 
 
 class BulkOperationsThrottle(UserRateThrottle, DRFScopedRateThrottle):
+    """Throttle bulk operations that are resource intensive."""
+
     scope = "bulk_operations"
 
     def allow_request(self, request, view):
+        """Limit the frequency of bulk operations per user."""
         if "/bulk/" not in request.path:
             return True
         return super().allow_request(request, view)
 
 
 class HealthCheckThrottle(AnonRateThrottle):
+    """Throttle health-check endpoints, typically with a generous limit."""
+
     scope = "health_check"
 
     def allow_request(self, request, view):
+        """Allow frequent health checks while preventing abuse."""
         if not request.path.startswith("/api/health"):
             return True
         return super().allow_request(request, view)
 
 
 def get_throttle_rates():
-    """
-    Get all configured throttle rates.
+    """Get all configured throttle rates.
 
     Returns:
         dict: Throttle scopes and their rates
@@ -224,8 +242,7 @@ def get_throttle_rates():
 
 
 def get_rate_limit_headers(throttle_instance, request, view):
-    """
-    Generate rate limit headers for response.
+    """Generate rate limit headers for response.
 
     Args:
         throttle_instance: Throttle instance that processed the request
@@ -261,8 +278,7 @@ def get_rate_limit_headers(throttle_instance, request, view):
 
 
 class RateLimitHeadersMixin:
-    """
-    Mixin to add rate limit headers to API responses.
+    """Mixin to add rate limit headers to API responses.
 
     Usage:
         class MyView(RateLimitHeadersMixin, APIView):
@@ -271,7 +287,7 @@ class RateLimitHeadersMixin:
     """
 
     def finalize_response(self, request, response, *args, **kwargs):
-        """Add rate limit headers to response"""
+        """Add rate limit headers to response."""
         response = super().finalize_response(request, response, *args, **kwargs)
 
         # Get throttle instances
@@ -296,8 +312,7 @@ THROTTLE_CLASSES_BY_ENDPOINT = {
 
 
 def get_throttle_classes_for_view(view_name):
-    """
-    Get appropriate throttle classes for a specific view.
+    """Get appropriate throttle classes for a specific view.
 
     Args:
         view_name: Name or type of the view

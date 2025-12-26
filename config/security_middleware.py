@@ -1,6 +1,4 @@
-"""
-Security Middleware
-===================
+"""Security Middleware.
 
 Custom middleware for security headers, monitoring, and protection.
 """
@@ -18,8 +16,7 @@ logger = logging.getLogger("security")
 
 
 class SecurityHeadersMiddleware(MiddlewareMixin):
-    """
-    Add comprehensive security headers to all responses.
+    """Add comprehensive security headers to all responses.
 
     Headers added:
     - X-Content-Type-Options: nosniff
@@ -30,6 +27,7 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
     """
 
     def process_response(self, request, response):
+        """Add security headers to the HTTP response."""
         # Prevent MIME type sniffing
         response["X-Content-Type-Options"] = "nosniff"
 
@@ -57,17 +55,13 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
 
         # HSTS (Strict-Transport-Security) - only in production
         if not settings.DEBUG:
-            response["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains; preload"
-            )
+            response["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
         return response
 
 
 class SecurityEventLoggingMiddleware(MiddlewareMixin):
-    """
-    Log security-relevant events and suspicious activities.
-    """
+    """Log security-relevant events and suspicious activities."""
 
     # Suspicious patterns
     SUSPICIOUS_PATTERNS = [
@@ -84,6 +78,7 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
     ]
 
     def process_request(self, request):
+        """Process incoming requests and check for suspicious patterns."""
         # Store request start time
         request._security_start_time = self._safe_time()
 
@@ -108,15 +103,14 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
                     "method": request.method,
                     "user_agent": user_agent_string,
                     "suspicious_patterns": suspicious,
-                    "user": (
-                        str(request.user) if hasattr(request, "user") else "anonymous"
-                    ),
+                    "user": (str(request.user) if hasattr(request, "user") else "anonymous"),
                 },
             )
 
         return None
 
     def process_response(self, request, response):
+        """Process responses and log security events like slow requests and auth failures."""
         # Calculate request duration
         if hasattr(request, "_security_start_time"):
             duration = self._safe_time() - request._security_start_time
@@ -144,9 +138,7 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
                     "path": request.path,
                     "method": request.method,
                     "ip_address": getattr(request, "_client_ip", "unknown"),
-                    "user": (
-                        str(request.user) if hasattr(request, "user") else "anonymous"
-                    ),
+                    "user": (str(request.user) if hasattr(request, "user") else "anonymous"),
                 },
             )
 
@@ -157,7 +149,7 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
         """Return a monotonic-ish timestamp without exhausting patched time.time."""
         try:
             return time.monotonic()
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
         try:
@@ -204,14 +196,18 @@ class SecurityEventLoggingMiddleware(MiddlewareMixin):
 
 
 class RateLimitMiddleware(MiddlewareMixin):
-    """
-    Simple rate limiting middleware using Django cache.
+    """Simple rate limiting middleware using Django cache.
 
     For more advanced rate limiting, use django-ratelimit decorators
     or django-axes for login protection.
     """
 
     def __init__(self, get_response):
+        """Initialize the rate limiting middleware.
+
+        Attempts to get Django's cache backend for rate limiting.
+        Falls back to no caching if cache is unavailable.
+        """
         super().__init__(get_response)
         try:
             from django.core.cache import cache
@@ -221,11 +217,15 @@ class RateLimitMiddleware(MiddlewareMixin):
             self.cache = None
 
     def process_request(self, request):
+        """Apply rate limiting to incoming requests.
+
+        Checks request count per IP and endpoint against a limit of 100 requests per minute.
+        Returns 429 response if limit exceeded, otherwise allows the request and increments counter.
+        Skips rate limiting for admin, static, and media paths, or when disabled in settings.
+        """
         try:
             # Skip rate limiting in test/debug or when explicitly disabled
-            if getattr(settings, "DISABLE_RATE_LIMITING", False) or getattr(
-                settings, "DEBUG", False
-            ):
+            if getattr(settings, "DISABLE_RATE_LIMITING", False) or getattr(settings, "DEBUG", False):
                 return None
 
             if not self.cache:
@@ -287,13 +287,18 @@ class RateLimitMiddleware(MiddlewareMixin):
 
 
 class IPWhitelistMiddleware(MiddlewareMixin):
-    """
-    Optional: Restrict access to specific IP addresses.
+    """Optional: Restrict access to specific IP addresses.
 
     Configure ALLOWED_IPS in settings to enable.
     """
 
     def process_request(self, request):
+        """Check if client IP is in the allowed IPs list.
+
+        Only active in production when ALLOWED_IPS is configured in settings.
+        Returns 403 response for blocked IPs, allows request otherwise.
+        Skips checking for configured paths like health checks.
+        """
         # Only enforce in production and if configured
         if settings.DEBUG:
             return None
@@ -305,9 +310,7 @@ class IPWhitelistMiddleware(MiddlewareMixin):
         client_ip, _ = get_client_ip(request)
 
         # Skip for certain paths (e.g., health checks)
-        skip_paths = getattr(
-            settings, "IP_WHITELIST_SKIP_PATHS", ["/health/", "/api/health/"]
-        )
+        skip_paths = getattr(settings, "IP_WHITELIST_SKIP_PATHS", ["/health/", "/api/health/"])
         if any(request.path.startswith(path) for path in skip_paths):
             return None
 
@@ -326,13 +329,17 @@ class IPWhitelistMiddleware(MiddlewareMixin):
 
 
 class SecurityAuditMiddleware(MiddlewareMixin):
-    """
-    Audit all requests for security compliance and monitoring.
+    """Audit all requests for security compliance and monitoring.
 
     Logs detailed information about authenticated requests.
     """
 
     def process_request(self, request):
+        """Log detailed information about authenticated requests.
+
+        Only processes authenticated users, skipping static/media files.
+        Logs user ID, username, method, path, IP, and user agent for security auditing.
+        """
         # Only audit authenticated requests
         if not hasattr(request, "user") or not request.user.is_authenticated:
             return None

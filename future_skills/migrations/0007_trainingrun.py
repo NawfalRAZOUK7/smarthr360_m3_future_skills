@@ -65,21 +65,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "random_state",
-                    models.IntegerField(
-                        default=42, help_text="Random seed for reproducibility."
-                    ),
+                    models.IntegerField(default=42, help_text="Random seed for reproducibility."),
                 ),
                 (
                     "accuracy",
-                    models.FloatField(
-                        help_text="Overall accuracy on test set (0.0 to 1.0)."
-                    ),
+                    models.FloatField(help_text="Overall accuracy on test set (0.0 to 1.0)."),
                 ),
                 (
                     "precision",
-                    models.FloatField(
-                        help_text="Weighted average precision on test set."
-                    ),
+                    models.FloatField(help_text="Weighted average precision on test set."),
                 ),
                 (
                     "recall",
@@ -87,15 +81,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "f1_score",
-                    models.FloatField(
-                        help_text="Weighted average F1-score on test set."
-                    ),
+                    models.FloatField(help_text="Weighted average F1-score on test set."),
                 ),
                 (
                     "total_samples",
-                    models.IntegerField(
-                        help_text="Total number of samples in the dataset."
-                    ),
+                    models.IntegerField(help_text="Total number of samples in the dataset."),
                 ),
                 (
                     "train_samples",
@@ -150,12 +140,8 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "Training Runs",
                 "ordering": ["-run_date"],
                 "indexes": [
-                    models.Index(
-                        fields=["-run_date"], name="future_skil_run_dat_205663_idx"
-                    ),
-                    models.Index(
-                        fields=["model_version"], name="future_skil_model_v_7f9524_idx"
-                    ),
+                    models.Index(fields=["-run_date"], name="future_skil_run_dat_205663_idx"),
+                    models.Index(fields=["model_version"], name="future_skil_model_v_7f9524_idx"),
                 ],
             },
         ),

@@ -1,5 +1,4 @@
-"""
-API Health Check and Monitoring Endpoints
+"""API health check and monitoring endpoints.
 
 Provides endpoints for system health checks, version info, and metrics.
 """
@@ -18,8 +17,7 @@ from rest_framework.views import APIView
 
 
 class HealthCheckView(APIView):
-    """
-    Health check endpoint for monitoring and load balancers.
+    """Health check endpoint for monitoring and load balancers.
 
     GET /api/health/
 
@@ -38,7 +36,7 @@ class HealthCheckView(APIView):
     throttle_classes = []  # No throttling for health checks
 
     def get(self, request):
-        """Check system health"""
+        """Check system health."""
         health_data = {
             "status": "healthy",
             "timestamp": timezone.now().isoformat(),
@@ -63,14 +61,12 @@ class HealthCheckView(APIView):
         health_data["status"] = "healthy" if all_healthy else "degraded"
 
         # Return appropriate status code
-        response_status = (
-            status.HTTP_200_OK if all_healthy else status.HTTP_503_SERVICE_UNAVAILABLE
-        )
+        response_status = status.HTTP_200_OK if all_healthy else status.HTTP_503_SERVICE_UNAVAILABLE
 
         return Response(health_data, status=response_status)
 
     def _check_database(self):
-        """Check database connectivity"""
+        """Check database connectivity."""
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
@@ -79,7 +75,7 @@ class HealthCheckView(APIView):
             return False
 
     def _check_cache(self):
-        """Check cache availability"""
+        """Check cache availability."""
         try:
             cache.set("health_check", "ok", 10)
             value = cache.get("health_check")
@@ -89,8 +85,7 @@ class HealthCheckView(APIView):
 
 
 class VersionInfoView(APIView):
-    """
-    API version information endpoint.
+    """API version information endpoint.
 
     GET /api/version/
 
@@ -104,16 +99,14 @@ class VersionInfoView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        """Get version information"""
+        """Get version information."""
         from .versioning import get_version_info
 
         version_data = get_version_info()
         # Provide explicit keys expected by tests
         version_data["current_version"] = version_data.get("current", "v2")
         version_data.setdefault("available_versions", version_data.get("supported", []))
-        version_data.setdefault(
-            "deprecated_versions", version_data.get("deprecated", [])
-        )
+        version_data.setdefault("deprecated_versions", version_data.get("deprecated", []))
         version_data.update(
             {
                 "server_time": timezone.now().isoformat(),
@@ -125,15 +118,14 @@ class VersionInfoView(APIView):
         return Response(version_data)
 
     def _get_django_version(self):
-        """Get Django version"""
+        """Get Django version."""
         import django
 
         return django.get_version()
 
 
 class MetricsView(APIView):
-    """
-    API metrics endpoint for monitoring.
+    """API metrics endpoint for monitoring.
 
     GET /api/metrics/
 
@@ -150,12 +142,10 @@ class MetricsView(APIView):
     permission_classes = []  # Requires staff
 
     def get(self, request):
-        """Get API metrics"""
+        """Get API metrics."""
         # Only allow staff users
         if not request.user.is_authenticated or not request.user.is_staff:
-            return Response(
-                {"error": "Staff access required"}, status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Staff access required"}, status=status.HTTP_403_FORBIDDEN)
 
         metrics = {
             "timestamp": timezone.now().isoformat(),
@@ -168,7 +158,7 @@ class MetricsView(APIView):
         return Response(metrics)
 
     def _get_system_metrics(self):
-        """Get system-level metrics"""
+        """Get system-level metrics."""
         return {
             "platform": platform.platform(),
             "python_version": sys.version,
@@ -176,7 +166,7 @@ class MetricsView(APIView):
         }
 
     def _get_database_metrics(self):
-        """Get database metrics"""
+        """Get database metrics."""
         try:
             with connection.cursor() as cursor:
                 # Get table count
@@ -200,7 +190,7 @@ class MetricsView(APIView):
             }
 
     def _get_cache_metrics(self):
-        """Get cache metrics"""
+        """Get cache metrics."""
         try:
             # Test cache
             test_key = "metrics_test"
@@ -219,7 +209,7 @@ class MetricsView(APIView):
             }
 
     def _get_api_metrics(self):
-        """Get API-specific metrics"""
+        """Get API-specific metrics."""
         from future_skills.models import Employee, FutureSkillPrediction, JobRole, Skill
 
         return {
@@ -233,15 +223,14 @@ class MetricsView(APIView):
         }
 
     def _get_rate_limit_info(self):
-        """Get rate limit configuration"""
+        """Get rate limit configuration."""
         from .throttling import get_throttle_rates
 
         return get_throttle_rates()
 
 
 class ReadyCheckView(APIView):
-    """
-    Readiness check endpoint for Kubernetes/container orchestration.
+    """Readiness check endpoint for Kubernetes/container orchestration.
 
     GET /api/ready/
 
@@ -253,7 +242,7 @@ class ReadyCheckView(APIView):
     throttle_classes = []
 
     def get(self, request):
-        """Check if service is ready"""
+        """Check if service is ready."""
         checks = {
             "database": self._check_database(),
             "cache": self._check_cache(),
@@ -262,10 +251,7 @@ class ReadyCheckView(APIView):
         # Only check migrations in production
         from django.conf import settings
 
-        if (
-            settings.DEBUG
-            or getattr(settings, "ENVIRONMENT", "development") != "production"
-        ):
+        if settings.DEBUG or getattr(settings, "ENVIRONMENT", "development") != "production":
             checks["migrations"] = True  # Skip migration check in development
         else:
             checks["migrations"] = self._check_migrations()
@@ -275,18 +261,14 @@ class ReadyCheckView(APIView):
         ready_data = {
             "ready": all_ready,
             "timestamp": timezone.now().isoformat(),
-            "checks": {
-                key: "passed" if value else "failed" for key, value in checks.items()
-            },
+            "checks": {key: "passed" if value else "failed" for key, value in checks.items()},
         }
 
-        response_status = (
-            status.HTTP_200_OK if all_ready else status.HTTP_503_SERVICE_UNAVAILABLE
-        )
+        response_status = status.HTTP_200_OK if all_ready else status.HTTP_503_SERVICE_UNAVAILABLE
         return Response(ready_data, status=response_status)
 
     def _check_database(self):
-        """Check database connectivity"""
+        """Check database connectivity."""
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
@@ -295,7 +277,7 @@ class ReadyCheckView(APIView):
             return False
 
     def _check_migrations(self):
-        """Check if all migrations are applied"""
+        """Check if all migrations are applied."""
         from django.db.migrations.executor import MigrationExecutor
 
         try:
@@ -306,7 +288,7 @@ class ReadyCheckView(APIView):
             return False
 
     def _check_cache(self):
-        """Check cache availability"""
+        """Check cache availability."""
         try:
             cache.set("ready_check", "ok", 10)
             value = cache.get("ready_check")
@@ -317,8 +299,7 @@ class ReadyCheckView(APIView):
 
 
 class LivenessCheckView(APIView):
-    """
-    Liveness check endpoint for Kubernetes/container orchestration.
+    """Liveness check endpoint for Kubernetes/container orchestration.
 
     GET /api/alive/
 
@@ -330,7 +311,7 @@ class LivenessCheckView(APIView):
     throttle_classes = []
 
     def get(self, request):
-        """Check if service is alive"""
+        """Check if service is alive."""
         return Response(
             {
                 "alive": True,

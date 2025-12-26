@@ -69,9 +69,7 @@ class Command(BaseCommand):
 
         # Calculate overall health
         results["overall"] = {
-            "healthy": all(
-                r.get("healthy", False) for r in results.values() if isinstance(r, dict)
-            ),
+            "healthy": all(r.get("healthy", False) for r in results.values() if isinstance(r, dict)),
             "timestamp": time.time(),
         }
 
@@ -105,9 +103,7 @@ class Command(BaseCommand):
             return result
 
         except Exception as e:
-            self.logger.error(
-                "database_health_check_failed", error=str(e), exc_info=True
-            )
+            self.logger.error("database_health_check_failed", error=str(e), exc_info=True)
 
             self.stdout.write(self.style.ERROR(f"✗ Database: FAILED - {str(e)}"))
 
@@ -173,9 +169,7 @@ class Command(BaseCommand):
                     "message": f"{worker_count} worker(s) active",
                 }
 
-                self.stdout.write(
-                    self.style.SUCCESS(f"✓ Celery: {worker_count} worker(s) active")
-                )
+                self.stdout.write(self.style.SUCCESS(f"✓ Celery: {worker_count} worker(s) active"))
 
                 return result
             else:
@@ -220,9 +214,7 @@ class Command(BaseCommand):
             if healthy:
                 self.stdout.write(self.style.SUCCESS(f"✓ Disk: {percent_used}% used"))
             else:
-                self.stdout.write(
-                    self.style.WARNING(f"⚠ Disk: {percent_used}% used (HIGH)")
-                )
+                self.stdout.write(self.style.WARNING(f"⚠ Disk: {percent_used}% used (HIGH)"))
 
             return result
 
@@ -259,9 +251,7 @@ class Command(BaseCommand):
             if healthy:
                 self.stdout.write(self.style.SUCCESS(f"✓ Memory: {percent_used}% used"))
             else:
-                self.stdout.write(
-                    self.style.WARNING(f"⚠ Memory: {percent_used}% used (HIGH)")
-                )
+                self.stdout.write(self.style.WARNING(f"⚠ Memory: {percent_used}% used (HIGH)"))
 
             return result
 

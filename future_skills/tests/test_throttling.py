@@ -105,9 +105,7 @@ class AnonRateThrottleTestCase(BaseThrottleTestCase):
         request = self.create_request()
 
         # Exhaust the limit
-        with override_settings(
-            REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "1/minute"}}
-        ):
+        with override_settings(REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "1/minute"}}):
             throttle.allow_request(request, None)
             throttle.allow_request(request, None)
 
@@ -232,9 +230,7 @@ class PremiumUserThrottleTestCase(BaseThrottleTestCase):
     def test_staff_user_gets_premium_rate(self):
         """Test that staff users get premium rate."""
         throttle = PremiumUserThrottle()
-        staff_user = User.objects.create_user(
-            username="staff", password="pass", is_staff=True
-        )
+        staff_user = User.objects.create_user(username="staff", password="pass", is_staff=True)
         request = self.create_request(user=staff_user)
 
         # Staff should have premium rate
@@ -265,9 +261,7 @@ class PremiumUserThrottleTestCase(BaseThrottleTestCase):
     def test_superuser_bypass(self):
         """Test that superusers bypass throttle."""
         throttle = PremiumUserThrottle()
-        superuser = User.objects.create_superuser(
-            username="admin", password="admin123", email="admin@test.com"
-        )
+        superuser = User.objects.create_superuser(username="admin", password="admin123", email="admin@test.com")
         request = self.create_request(user=superuser)
 
         # Make many requests - should never throttle
@@ -341,9 +335,7 @@ class BulkOperationsThrottleTestCase(BaseThrottleTestCase):
         user = User.objects.create_user(username="testuser", password="pass")
 
         # Bulk endpoint should be throttled
-        bulk_request = self.create_request(
-            path="/api/v2/bulk/employees/upload/", user=user
-        )
+        bulk_request = self.create_request(path="/api/v2/bulk/employees/upload/", user=user)
         self.assertTrue(throttle.allow_request(bulk_request, None))
 
 
@@ -403,9 +395,7 @@ class ThrottleHeadersTestCase(BaseThrottleTestCase):
 
     def test_headers_show_correct_values(self):
         """Test that headers show correct rate limit values."""
-        with override_settings(
-            REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "5/minute"}}
-        ):
+        with override_settings(REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "5/minute"}}):
             throttle = AnonRateThrottle()
             request = self.create_request()
             view = Mock()
@@ -422,9 +412,7 @@ class ThrottleHeadersTestCase(BaseThrottleTestCase):
 
     def test_headers_countdown(self):
         """Test that remaining count goes down with requests."""
-        with override_settings(
-            REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "10/minute"}}
-        ):
+        with override_settings(REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"anon": "10/minute"}}):
             throttle = AnonRateThrottle()
             request = self.create_request()
             view = Mock()
@@ -542,9 +530,7 @@ class ThrottleIntegrationTestCase(BaseThrottleTestCase):
         user = User.objects.create_user(username="testuser", password="pass")
 
         ml_request = self.create_request(path="/api/v2/ml/train/", user=user)
-        bulk_request = self.create_request(
-            path="/api/v2/bulk/employees/import/", user=user
-        )
+        bulk_request = self.create_request(path="/api/v2/bulk/employees/import/", user=user)
 
         # Each endpoint should have its own throttle
         self.assertTrue(ml_throttle.allow_request(ml_request, None))

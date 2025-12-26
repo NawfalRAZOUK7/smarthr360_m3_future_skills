@@ -107,9 +107,7 @@ def admin_user(db):
             assert admin_user.is_superuser
             assert admin_user.is_staff
     """
-    return User.objects.create_superuser(
-        username="admin", email="admin@example.com", password="adminpass123"
-    )
+    return User.objects.create_superuser(username="admin", email="admin@example.com", password="adminpass123")
 
 
 @pytest.fixture
@@ -161,9 +159,7 @@ def hr_viewer(db):
     )
 
     # Add view-only permissions (but no group membership)
-    view_permissions = Permission.objects.filter(
-        content_type__app_label="future_skills", codename__startswith="view_"
-    )
+    view_permissions = Permission.objects.filter(content_type__app_label="future_skills", codename__startswith="view_")
     user.user_permissions.set(view_permissions)
 
     return user
@@ -393,9 +389,7 @@ def future_skill_prediction_data(sample_job_role, sample_skill):
 
 def pytest_configure(config):
     """Configure pytest with custom markers."""
-    config.addinivalue_line(
-        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-    )
+    config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')")
     config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line("markers", "e2e: marks tests as end-to-end tests")
     config.addinivalue_line("markers", "ml: marks tests that require ML model")

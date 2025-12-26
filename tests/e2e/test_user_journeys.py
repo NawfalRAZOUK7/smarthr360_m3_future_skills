@@ -15,9 +15,7 @@ from rest_framework import status
 class TestCompleteUserJourney:
     """Test complete user journey from login to prediction."""
 
-    def test_complete_hr_manager_workflow(
-        self, api_client, hr_manager, sample_job_role, sample_skill
-    ):
+    def test_complete_hr_manager_workflow(self, api_client, hr_manager, sample_job_role, sample_skill):
         """
         Test complete HR manager workflow:
         1. Login
@@ -57,9 +55,7 @@ class TestCompleteUserJourney:
         response = api_client.get(recommendations_url)
         assert response.status_code == status.HTTP_200_OK
 
-    def test_viewer_limited_workflow(
-        self, api_client, hr_viewer, sample_future_skill_prediction
-    ):
+    def test_viewer_limited_workflow(self, api_client, hr_viewer, sample_future_skill_prediction):
         """Test that viewer can only read data, not modify."""
         api_client.force_authenticate(user=hr_viewer)
 
@@ -201,7 +197,7 @@ class TestMLPipelineJourney:
 
         # Create sample data with required columns for ModelTrainer
         # Required: future_need_level (target) + feature columns
-        sample_data = """job_role_name,skill_name,skill_category,job_department,trend_score,internal_usage,training_requests,scarcity_index,hiring_difficulty,avg_salary_k,economic_indicator,future_need_level
+        sample_data = """job_role_name,skill_name,skill_category,job_department,trend_score,internal_usage,training_requests,scarcity_index,hiring_difficulty,avg_salary_k,economic_indicator,future_need_level  # noqa: E501
 Software Engineer,Python,Technical,Engineering,0.85,0.80,45,0.65,0.70,95.5,0.75,HIGH
 Software Engineer,Machine Learning,Technical,Engineering,0.90,0.75,60,0.80,0.85,110.0,0.78,HIGH
 Manager,Leadership,Soft Skills,Management,0.75,0.85,30,0.40,0.50,85.0,0.72,MEDIUM

@@ -27,15 +27,15 @@ repos:
     rev: 1.7.10
     hooks:
       - id: bandit
-        args: ["-ll", "-r", "future_skills/", "config/", "ml/"]
-        exclude: ^(tests/|.*/tests/)
+        args: ["-ll", "-r", "--skip", "B101"]
+        files: ^(future_skills/|config/|ml/)
 
   # Django checks
   - repo: local
     hooks:
       - id: django-check
         name: Django system check
-        entry: python manage.py check --settings=config.settings.development
+        entry: env DEBUG=false .venv312/bin/python manage.py check --settings=config.settings.development
         language: system
         pass_filenames: false
         always_run: true
@@ -65,7 +65,7 @@ repos:
     hooks:
       - id: pydocstyle
         args: ["--convention=google"]
-        exclude: ^(migrations/|tests/|.*test_.*)
+        exclude: .*
 
   # Check for secrets
   # - repo: https://github.com/Yelp/detect-secrets

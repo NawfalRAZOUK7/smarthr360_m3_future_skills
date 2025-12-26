@@ -1,7 +1,4 @@
-"""
-Management command to seed extended realistic data for Future Skills module.
-Creates a comprehensive set of job roles, skills, market trends, and economic reports.
-"""
+"""Seed extended realistic data for the Future Skills module."""
 
 from django.core.management.base import BaseCommand
 
@@ -9,9 +6,19 @@ from future_skills.models import EconomicReport, JobRole, MarketTrend, Skill
 
 
 class Command(BaseCommand):
+    """Management command to seed extended realistic data for Future Skills module.
+
+    This class defines the command logic for creating job roles, skills, market trends, and economic reports.
+    """
+
     help = "Seeds extended realistic data for Future Skills module"
 
     def handle(self, *args, **options):
+        """Seed extended realistic data for the Future Skills module.
+
+        This method creates job roles, skills, market trends, and economic reports,
+        and writes progress messages to the console.
+        """
         self.stdout.write(self.style.WARNING("🌱 Seeding extended data..."))
 
         # Create Skills
@@ -133,9 +140,7 @@ class Command(BaseCommand):
             if created:
                 skills_created += 1
 
-        self.stdout.write(
-            f"  ✅ Skills: {skills_created} created, {len(skills_data) - skills_created} already existed"
-        )
+        self.stdout.write(f"  ✅ Skills: {skills_created} created, {len(skills_data) - skills_created} already existed")
 
         # Create Job Roles
         job_roles_data = [
@@ -406,6 +411,4 @@ class Command(BaseCommand):
         self.stdout.write(f"  📊 Economic Reports: {total_reports}")
         self.stdout.write(f"  📊 Expected dataset size: {expected_rows} rows")
         self.stdout.write("=" * 60)
-        self.stdout.write(
-            "\n💡 Next step: python manage.py export_future_skills_dataset"
-        )
+        self.stdout.write("\n💡 Next step: python manage.py export_future_skills_dataset")

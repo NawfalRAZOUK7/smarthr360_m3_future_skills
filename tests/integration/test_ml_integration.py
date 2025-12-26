@@ -9,7 +9,6 @@ These tests verify that:
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 from django.urls import reverse
@@ -118,9 +117,7 @@ class TestMLIntegration:
 class TestMLPredictionQuality:
     """Test quality of ML predictions through API."""
 
-    def test_ml_predictions_have_valid_scores(
-        self, authenticated_client, sample_employee, settings
-    ):
+    def test_ml_predictions_have_valid_scores(self, authenticated_client, sample_employee, settings):
         """Test that ML predictions return valid scores."""
         settings.FUTURE_SKILLS_USE_ML = True
 
@@ -138,9 +135,7 @@ class TestMLPredictionQuality:
                     score = prediction["score"]
                     assert 0 <= score <= 100, f"Score {score} out of valid range"
 
-    def test_ml_predictions_have_levels(
-        self, authenticated_client, sample_employee, settings
-    ):
+    def test_ml_predictions_have_levels(self, authenticated_client, sample_employee, settings):
         """Test that ML predictions return valid priority levels."""
         settings.FUTURE_SKILLS_USE_ML = True
 
@@ -157,9 +152,7 @@ class TestMLPredictionQuality:
                 if "priority_level" in prediction:
                     assert prediction["priority_level"] in valid_levels
 
-    def test_ml_predictions_consistency(
-        self, authenticated_client, sample_employee, settings
-    ):
+    def test_ml_predictions_consistency(self, authenticated_client, sample_employee, settings):
         """Test that ML predictions are consistent for same input."""
         settings.FUTURE_SKILLS_USE_ML = True
 
@@ -183,9 +176,7 @@ class TestMLPredictionQuality:
 class TestMLRecalculationIntegration:
     """Test ML model integration with recalculation endpoints."""
 
-    def test_recalculation_creates_predictions(
-        self, admin_client, sample_job_role, sample_skill, settings
-    ):
+    def test_recalculation_creates_predictions(self, admin_client, sample_job_role, sample_skill, settings):
         """Test that recalculation creates FutureSkillPrediction records."""
         from future_skills.models import FutureSkillPrediction
 
@@ -222,19 +213,14 @@ class TestMLRecalculationIntegration:
             assert response.status_code == status.HTTP_200_OK
             assert "total_predictions" in response.data
 
-    def test_recalculation_updates_existing_predictions(
-        self, admin_client, sample_future_skill_prediction, settings
-    ):
+    def test_recalculation_updates_existing_predictions(self, admin_client, sample_future_skill_prediction, settings):
         """Test that recalculation updates existing predictions."""
         from future_skills.models import FutureSkillPrediction
 
         settings.FUTURE_SKILLS_USE_ML = False
 
         # Get initial prediction
-        initial_prediction = FutureSkillPrediction.objects.get(
-            id=sample_future_skill_prediction.id
-        )
-        initial_score = initial_prediction.score
+        initial_prediction = FutureSkillPrediction.objects.get(id=sample_future_skill_prediction.id)
 
         url = reverse("future-skills-recalculate")
         data = {"horizon_years": sample_future_skill_prediction.horizon_years}
@@ -250,6 +236,7 @@ class TestMLRecalculationIntegration:
             horizon_years=sample_future_skill_prediction.horizon_years,
         )
         assert updated_prediction is not None
+        assert updated_prediction.id == initial_prediction.id
 
 
 @pytest.mark.django_db
@@ -258,9 +245,7 @@ class TestMLRecalculationIntegration:
 class TestMLErrorHandling:
     """Test error handling in ML integration."""
 
-    def test_ml_handles_missing_model_gracefully(
-        self, authenticated_client, sample_employee, settings
-    ):
+    def test_ml_handles_missing_model_gracefully(self, authenticated_client, sample_employee, settings):
         """Test that system handles missing ML model gracefully."""
         settings.FUTURE_SKILLS_USE_ML = True
         settings.FUTURE_SKILLS_MODEL_PATH = Path("/nonexistent/model.pkl")
@@ -377,9 +362,7 @@ class TestMLPerformanceIntegration:
 class TestMLMonitoringIntegration:
     """Test ML monitoring integration with API."""
 
-    def test_predictions_are_logged(
-        self, authenticated_client, sample_employee, settings, tmp_path
-    ):
+    def test_predictions_are_logged(self, authenticated_client, sample_employee, settings, tmp_path):
         """Test that predictions are logged for monitoring."""
         settings.FUTURE_SKILLS_USE_ML = False
         settings.FUTURE_SKILLS_ENABLE_MONITORING = True
@@ -396,9 +379,7 @@ class TestMLMonitoringIntegration:
         # Note: Logging happens at prediction engine level, not directly in view
         # This test verifies the integration doesn't break with monitoring enabled
 
-    def test_monitoring_can_be_disabled(
-        self, authenticated_client, sample_employee, settings
-    ):
+    def test_monitoring_can_be_disabled(self, authenticated_client, sample_employee, settings):
         """Test that monitoring can be disabled without breaking predictions."""
         settings.FUTURE_SKILLS_USE_ML = False
         settings.FUTURE_SKILLS_ENABLE_MONITORING = False

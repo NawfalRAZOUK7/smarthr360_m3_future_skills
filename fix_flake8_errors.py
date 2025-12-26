@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-Script to automatically fix common Flake8 errors:
+"""Script to automatically fix common Flake8 errors.
+
+This script performs the following fixes:
 - Remove unused imports (F401)
 - Remove unused variables (F841)
 - Add missing constants (F821)
-- Fix bare except clauses (E722)
+- Fix bare except clauses (E722).
 """
 
-import re
 from pathlib import Path
 
 # Define the fixes

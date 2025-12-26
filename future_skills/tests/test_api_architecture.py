@@ -29,18 +29,12 @@ class APIVersioningTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.client.force_authenticate(user=self.user)
 
         # Create test data
-        self.skill = Skill.objects.create(
-            name="Python", category="Technical", description="Python programming"
-        )
-        self.job_role = JobRole.objects.create(
-            name="Data Scientist", description="Data science role"
-        )
+        self.skill = Skill.objects.create(name="Python", category="Technical", description="Python programming")
+        self.job_role = JobRole.objects.create(name="Data Scientist", description="Data science role")
 
     def test_v2_url_path_versioning(self):
         """Test v2 API using URL path versioning."""
@@ -60,16 +54,12 @@ class APIVersioningTestCase(APITestCase):
 
     def test_accept_header_versioning_v2(self):
         """Test Accept header versioning for v2."""
-        response = self.client.get(
-            "/api/predictions/", HTTP_ACCEPT="application/vnd.smarthr360.v2+json"
-        )
+        response = self.client.get("/api/predictions/", HTTP_ACCEPT="application/vnd.smarthr360.v2+json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_accept_header_versioning_v1(self):
         """Test Accept header versioning for v1."""
-        response = self.client.get(
-            "/api/future-skills/", HTTP_ACCEPT="application/vnd.smarthr360.v1+json"
-        )
+        response = self.client.get("/api/future-skills/", HTTP_ACCEPT="application/vnd.smarthr360.v1+json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("X-API-Deprecation", response)
 
@@ -163,9 +153,7 @@ class RateLimitingTestCase(APITestCase):
 
     def test_superuser_bypass_throttle(self):
         """Test that superusers bypass throttling."""
-        superuser = User.objects.create_superuser(
-            username="admin", password="admin123", email="admin@test.com"
-        )
+        superuser = User.objects.create_superuser(username="admin", password="admin123", email="admin@test.com")
         self.client.force_authenticate(user=superuser)
 
         # Make many requests - should not be throttled
@@ -180,9 +168,7 @@ class PerformanceMonitoringTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.client.force_authenticate(user=self.user)
 
     def test_response_time_header(self):
@@ -230,9 +216,7 @@ class CachingTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.client.force_authenticate(user=self.user)
         cache.clear()
 
@@ -346,9 +330,7 @@ class MonitoringEndpointsTestCase(APITestCase):
 
     def test_metrics_endpoint_for_staff(self):
         """Test /api/metrics/ endpoint for staff users."""
-        staff_user = User.objects.create_user(
-            username="staff", password="staff123", is_staff=True
-        )
+        staff_user = User.objects.create_user(username="staff", password="staff123", is_staff=True)
         self.client.force_authenticate(user=staff_user)
 
         response = self.client.get("/api/metrics/")
@@ -366,9 +348,7 @@ class DeprecationWarningsTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.client.force_authenticate(user=self.user)
 
     def test_v1_endpoints_have_deprecation_headers(self):
@@ -408,9 +388,7 @@ class RequestLoggingTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.client.force_authenticate(user=self.user)
 
     @patch("future_skills.api.middleware.logger")
@@ -434,11 +412,7 @@ class RequestLoggingTestCase(APITestCase):
         self.client.get("/api/v2/nonexistent/")
 
         # Some logging should occur
-        self.assertTrue(
-            mock_logger.info.called
-            or mock_logger.warning.called
-            or mock_logger.error.called
-        )
+        self.assertTrue(mock_logger.info.called or mock_logger.warning.called or mock_logger.error.called)
 
 
 class CORSHeadersTestCase(APITestCase):
@@ -472,18 +446,12 @@ class EndToEndAPITestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.client.force_authenticate(user=self.user)
 
         # Create test data
-        self.skill = Skill.objects.create(
-            name="Python", category="Technical", description="Python programming"
-        )
-        self.job_role = JobRole.objects.create(
-            name="Data Scientist", description="Data science role"
-        )
+        self.skill = Skill.objects.create(name="Python", category="Technical", description="Python programming")
+        self.job_role = JobRole.objects.create(name="Data Scientist", description="Data science role")
 
     def test_complete_api_workflow(self):
         """Test complete API workflow with all architecture features."""
@@ -530,6 +498,4 @@ class EndToEndAPITestCase(APITestCase):
 
         # Database queries should be reasonable
         db_queries = int(response["X-DB-Queries"])
-        self.assertLess(
-            db_queries, 50, f"Database queries {db_queries} exceeds 50 query threshold"
-        )
+        self.assertLess(db_queries, 50, f"Database queries {db_queries} exceeds 50 query threshold")

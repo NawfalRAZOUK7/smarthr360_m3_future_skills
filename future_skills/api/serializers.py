@@ -162,9 +162,7 @@ class PredictSkillsRequestSerializer(serializers.Serializer):
         try:
             Employee.objects.get(pk=value)
         except Employee.DoesNotExist:
-            raise serializers.ValidationError(
-                f"Employee with id {value} does not exist."
-            )
+            raise serializers.ValidationError(f"Employee with id {value} does not exist.")
         return value
 
 
@@ -195,9 +193,7 @@ class RecommendSkillsRequestSerializer(serializers.Serializer):
         try:
             Employee.objects.get(pk=value)
         except Employee.DoesNotExist:
-            raise serializers.ValidationError(
-                f"Employee with id {value} does not exist."
-            )
+            raise serializers.ValidationError(f"Employee with id {value} does not exist.")
         return value
 
 
@@ -216,14 +212,10 @@ class BulkPredictRequestSerializer(serializers.Serializer):
         """Validate that all employees exist."""
         from ..models import Employee
 
-        existing_ids = set(
-            Employee.objects.filter(pk__in=value).values_list("pk", flat=True)
-        )
+        existing_ids = set(Employee.objects.filter(pk__in=value).values_list("pk", flat=True))
         missing_ids = set(value) - existing_ids
         if missing_ids:
-            raise serializers.ValidationError(
-                f"Employees with ids {list(missing_ids)} do not exist."
-            )
+            raise serializers.ValidationError(f"Employees with ids {list(missing_ids)} do not exist.")
         return value
 
 
@@ -238,9 +230,7 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
         allow_empty=False,
         help_text="List of employees to import",
     )
-    auto_predict = serializers.BooleanField(
-        default=True, help_text="Automatically generate predictions after import"
-    )
+    auto_predict = serializers.BooleanField(default=True, help_text="Automatically generate predictions after import")
     horizon_years = serializers.IntegerField(
         default=5, min_value=1, max_value=10, help_text="Prediction horizon in years"
     )
@@ -287,18 +277,12 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
         return errors
 
     def _collect_missing_job_role_errors(self, employees):
-        job_role_ids = {
-            employee.get("job_role_id")
-            for employee in employees
-            if employee.get("job_role_id")
-        }
+        job_role_ids = {employee.get("job_role_id") for employee in employees if employee.get("job_role_id")}
 
         if not job_role_ids:
             return []
 
-        existing_ids = set(
-            JobRole.objects.filter(pk__in=job_role_ids).values_list("id", flat=True)
-        )
+        existing_ids = set(JobRole.objects.filter(pk__in=job_role_ids).values_list("id", flat=True))
         missing_ids = job_role_ids - existing_ids
 
         if not missing_ids:
@@ -329,11 +313,7 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
 
         created, updated, failed = self._upsert_employees(employees_data)
 
-        predictions_generated = (
-            self._trigger_prediction_recalculation(horizon_years)
-            if auto_predict
-            else None
-        )
+        predictions_generated = self._trigger_prediction_recalculation(horizon_years) if auto_predict else None
 
         return {
             "summary": {
@@ -369,9 +349,7 @@ class BulkEmployeeImportSerializer(serializers.Serializer):
                     else:
                         updated.append(summary)
                 except Exception as exc:  # noqa: BLE001
-                    failed.append(
-                        {"email": employee_data.get("email"), "error": str(exc)}
-                    )
+                    failed.append({"email": employee_data.get("email"), "error": str(exc)})
 
         return created, updated, failed
 
@@ -416,9 +394,7 @@ class TrainingRunSerializer(serializers.ModelSerializer):
     Serializer for TrainingRun model - read-only for listing.
     """
 
-    trained_by_username = serializers.CharField(
-        source="trained_by.username", read_only=True, allow_null=True
-    )
+    trained_by_username = serializers.CharField(source="trained_by.username", read_only=True, allow_null=True)
 
     class Meta:
         model = TrainingRun
@@ -442,9 +418,7 @@ class TrainingRunDetailSerializer(serializers.ModelSerializer):
     Detailed serializer for TrainingRun - includes all fields.
     """
 
-    trained_by_username = serializers.CharField(
-        source="trained_by.username", read_only=True, allow_null=True
-    )
+    trained_by_username = serializers.CharField(source="trained_by.username", read_only=True, allow_null=True)
 
     class Meta:
         model = TrainingRun
@@ -531,17 +505,13 @@ class TrainModelRequestSerializer(serializers.Serializer):
         if "n_estimators" in value:
             n_est = value["n_estimators"]
             if not isinstance(n_est, int) or n_est < 1 or n_est > 1000:
-                raise serializers.ValidationError(
-                    "n_estimators must be an integer between 1 and 1000"
-                )
+                raise serializers.ValidationError("n_estimators must be an integer between 1 and 1000")
 
         # Validate max_depth if provided
         if "max_depth" in value and value["max_depth"] is not None:
             max_d = value["max_depth"]
             if not isinstance(max_d, int) or max_d < 1 or max_d > 100:
-                raise serializers.ValidationError(
-                    "max_depth must be an integer between 1 and 100 or null"
-                )
+                raise serializers.ValidationError("max_depth must be an integer between 1 and 100 or null")
 
         return value
 
@@ -553,22 +523,12 @@ class TrainModelResponseSerializer(serializers.Serializer):
     Section 2.5: Added task_id for async Celery tasks.
     """
 
-    training_run_id = serializers.IntegerField(
-        help_text="ID of the created TrainingRun record"
-    )
-    status = serializers.CharField(
-        help_text="Training status (RUNNING, COMPLETED, FAILED)"
-    )
+    training_run_id = serializers.IntegerField(help_text="ID of the created TrainingRun record")
+    status = serializers.CharField(help_text="Training status (RUNNING, COMPLETED, FAILED)")
     message = serializers.CharField(help_text="Human-readable status message")
-    model_version = serializers.CharField(
-        help_text="Version identifier of the trained model"
-    )
-    metrics = serializers.JSONField(
-        required=False, help_text="Training metrics (if completed synchronously)"
-    )
-    task_id = serializers.CharField(
-        required=False, help_text="Celery task ID (if async_training=true)"
-    )
+    model_version = serializers.CharField(help_text="Version identifier of the trained model")
+    metrics = serializers.JSONField(required=False, help_text="Training metrics (if completed synchronously)")
+    task_id = serializers.CharField(required=False, help_text="Celery task ID (if async_training=true)")
 
 
 # ============================================================================
@@ -610,6 +570,4 @@ class UpdateEmployeeSkillsSerializer(serializers.Serializer):
     Replaces the entire current_skills list with the provided skills.
     """
 
-    current_skills = serializers.ListField(
-        child=serializers.CharField(), allow_empty=True
-    )
+    current_skills = serializers.ListField(child=serializers.CharField(), allow_empty=True)

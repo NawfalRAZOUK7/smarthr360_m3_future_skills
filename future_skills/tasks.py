@@ -23,11 +23,7 @@ from celery_monitoring import (
     with_timeout,
 )
 from future_skills.models import TrainingRun
-from future_skills.services.training_service import (
-    DataLoadError,
-    ModelTrainer,
-    TrainingError,
-)
+from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -92,9 +88,7 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         - monitoring: Memory, CPU, Prometheus metrics
         - resilience: Dead letter queue, circuit breaker ready
     """
-    logger.info(
-        f"[CELERY] Starting async training task for TrainingRun ID={training_run_id}"
-    )
+    logger.info(f"[CELERY] Starting async training task for TrainingRun ID={training_run_id}")
 
     # Retrieve the TrainingRun object
     try:
@@ -112,12 +106,8 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
 
     try:
         # === STEP 1: Initialize ModelTrainer ===
-        logger.info(
-            f"[CELERY] Initializing ModelTrainer for {training_run.model_version}"
-        )
-        trainer = ModelTrainer(
-            dataset_path=dataset_path, test_split=test_split, random_state=42
-        )
+        logger.info(f"[CELERY] Initializing ModelTrainer for {training_run.model_version}")
+        trainer = ModelTrainer(dataset_path=dataset_path, test_split=test_split, random_state=42)
 
         # === STEP 2: Load and validate data ===
         self.update_state(
@@ -127,8 +117,7 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         logger.info("[CELERY] Loading dataset...")
         trainer.load_data()
         logger.info(
-            f"[CELERY] Data loaded: {len(trainer.X_train)} train samples, "
-            f"{len(trainer.X_test)} test samples"
+            f"[CELERY] Data loaded: {len(trainer.X_train)} train samples, " f"{len(trainer.X_test)} test samples"
         )
 
         # === STEP 3: Train model ===
@@ -293,9 +282,7 @@ def cleanup_old_models_task(days_to_keep=30):
     cutoff_date = timezone.now() - timedelta(days=days_to_keep)
 
     # Find old training runs
-    old_runs = TrainingRun.objects.filter(
-        run_date__lt=cutoff_date, status__in=["COMPLETED", "FAILED"]
-    )
+    old_runs = TrainingRun.objects.filter(run_date__lt=cutoff_date, status__in=["COMPLETED", "FAILED"])
 
     deleted_files = 0
     total_size_freed = 0
@@ -316,8 +303,7 @@ def cleanup_old_models_task(days_to_keep=30):
     # old_runs.delete()  # Uncomment to delete records
 
     logger.info(
-        f"[CELERY] Cleanup complete: {deleted_files} files deleted, "
-        f"{total_size_freed / 1024 / 1024:.2f} MB freed"
+        f"[CELERY] Cleanup complete: {deleted_files} files deleted, " f"{total_size_freed / 1024 / 1024:.2f} MB freed"
     )
 
     return {

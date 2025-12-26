@@ -38,15 +38,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="economicreport",
-            index=models.Index(
-                fields=["indicator"], name="future_skil_indicat_0232ce_idx"
-            ),
+            index=models.Index(fields=["indicator"], name="future_skil_indicat_0232ce_idx"),
         ),
         migrations.AddIndex(
             model_name="economicreport",
-            index=models.Index(
-                fields=["sector", "-year"], name="future_skil_sector_eb4733_idx"
-            ),
+            index=models.Index(fields=["sector", "-year"], name="future_skil_sector_eb4733_idx"),
         ),
         migrations.AddIndex(
             model_name="employee",
@@ -54,15 +50,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="employee",
-            index=models.Index(
-                fields=["department"], name="future_skil_departm_b0704d_idx"
-            ),
+            index=models.Index(fields=["department"], name="future_skil_departm_b0704d_idx"),
         ),
         migrations.AddIndex(
             model_name="employee",
-            index=models.Index(
-                fields=["job_role"], name="future_skil_job_rol_7cd04a_idx"
-            ),
+            index=models.Index(fields=["job_role"], name="future_skil_job_rol_7cd04a_idx"),
         ),
         migrations.AddIndex(
             model_name="employee",
@@ -70,15 +62,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="employee",
-            index=models.Index(
-                fields=["job_role", "department"], name="future_skil_job_rol_2c8f4d_idx"
-            ),
+            index=models.Index(fields=["job_role", "department"], name="future_skil_job_rol_2c8f4d_idx"),
         ),
         migrations.AddIndex(
             model_name="futureskillprediction",
-            index=models.Index(
-                fields=["job_role"], name="future_skil_job_rol_b2822c_idx"
-            ),
+            index=models.Index(fields=["job_role"], name="future_skil_job_rol_b2822c_idx"),
         ),
         migrations.AddIndex(
             model_name="futureskillprediction",
@@ -86,9 +74,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="futureskillprediction",
-            index=models.Index(
-                fields=["horizon_years"], name="future_skil_horizon_10f7da_idx"
-            ),
+            index=models.Index(fields=["horizon_years"], name="future_skil_horizon_10f7da_idx"),
         ),
         migrations.AddIndex(
             model_name="futureskillprediction",
@@ -100,9 +86,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="futureskillprediction",
-            index=models.Index(
-                fields=["-created_at"], name="future_skil_created_73130b_idx"
-            ),
+            index=models.Index(fields=["-created_at"], name="future_skil_created_73130b_idx"),
         ),
         migrations.AddIndex(
             model_name="futureskillprediction",
@@ -113,9 +97,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="futureskillprediction",
-            index=models.Index(
-                fields=["skill", "level"], name="future_skil_skill_i_9a5ffd_idx"
-            ),
+            index=models.Index(fields=["skill", "level"], name="future_skil_skill_i_9a5ffd_idx"),
         ),
         migrations.AddIndex(
             model_name="futureskillprediction",
@@ -130,33 +112,23 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="hrinvestmentrecommendation",
-            index=models.Index(
-                fields=["job_role"], name="future_skil_job_rol_9c1b2c_idx"
-            ),
+            index=models.Index(fields=["job_role"], name="future_skil_job_rol_9c1b2c_idx"),
         ),
         migrations.AddIndex(
             model_name="hrinvestmentrecommendation",
-            index=models.Index(
-                fields=["horizon_years"], name="future_skil_horizon_810407_idx"
-            ),
+            index=models.Index(fields=["horizon_years"], name="future_skil_horizon_810407_idx"),
         ),
         migrations.AddIndex(
             model_name="hrinvestmentrecommendation",
-            index=models.Index(
-                fields=["priority_level"], name="future_skil_priorit_3cda16_idx"
-            ),
+            index=models.Index(fields=["priority_level"], name="future_skil_priorit_3cda16_idx"),
         ),
         migrations.AddIndex(
             model_name="hrinvestmentrecommendation",
-            index=models.Index(
-                fields=["recommended_action"], name="future_skil_recomme_45d56f_idx"
-            ),
+            index=models.Index(fields=["recommended_action"], name="future_skil_recomme_45d56f_idx"),
         ),
         migrations.AddIndex(
             model_name="hrinvestmentrecommendation",
-            index=models.Index(
-                fields=["-created_at"], name="future_skil_created_e22b49_idx"
-            ),
+            index=models.Index(fields=["-created_at"], name="future_skil_created_e22b49_idx"),
         ),
         migrations.AddIndex(
             model_name="hrinvestmentrecommendation",
@@ -185,9 +157,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="jobrole",
-            index=models.Index(
-                fields=["department"], name="future_skil_departm_2895f6_idx"
-            ),
+            index=models.Index(fields=["department"], name="future_skil_departm_2895f6_idx"),
         ),
         migrations.AddIndex(
             model_name="markettrend",
@@ -199,27 +169,19 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="markettrend",
-            index=models.Index(
-                fields=["-trend_score"], name="future_skil_trend_s_efc554_idx"
-            ),
+            index=models.Index(fields=["-trend_score"], name="future_skil_trend_s_efc554_idx"),
         ),
         migrations.AddIndex(
             model_name="markettrend",
-            index=models.Index(
-                fields=["sector", "-year"], name="future_skil_sector_aaac35_idx"
-            ),
+            index=models.Index(fields=["sector", "-year"], name="future_skil_sector_aaac35_idx"),
         ),
         migrations.AddIndex(
             model_name="predictionrun",
-            index=models.Index(
-                fields=["-run_date"], name="future_skil_run_dat_a36d0f_idx"
-            ),
+            index=models.Index(fields=["-run_date"], name="future_skil_run_dat_a36d0f_idx"),
         ),
         migrations.AddIndex(
             model_name="predictionrun",
-            index=models.Index(
-                fields=["run_by"], name="future_skil_run_by__bb7da6_idx"
-            ),
+            index=models.Index(fields=["run_by"], name="future_skil_run_by__bb7da6_idx"),
         ),
         migrations.AddIndex(
             model_name="skill",
@@ -227,8 +189,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="skill",
-            index=models.Index(
-                fields=["category"], name="future_skil_categor_f3214f_idx"
-            ),
+            index=models.Index(fields=["category"], name="future_skil_categor_f3214f_idx"),
         ),
     ]

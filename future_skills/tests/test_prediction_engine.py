@@ -2,17 +2,8 @@
 
 from django.test import TestCase
 
-from future_skills.models import (
-    FutureSkillPrediction,
-    JobRole,
-    MarketTrend,
-    PredictionRun,
-    Skill,
-)
-from future_skills.services.prediction_engine import (
-    calculate_level,
-    recalculate_predictions,
-)
+from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
+from future_skills.services.prediction_engine import calculate_level, recalculate_predictions
 
 
 class CalculateLevelTests(TestCase):
@@ -166,9 +157,7 @@ class MLFallbackTests(TestCase):
 
         with override_settings(FUTURE_SKILLS_USE_ML=True):
             # Mock du modèle pour simuler qu'il n'est pas disponible
-            with patch(
-                "future_skills.services.prediction_engine.FutureSkillsModel.instance"
-            ) as mock_ml:
+            with patch("future_skills.services.prediction_engine.FutureSkillsModel.instance") as mock_ml:
                 mock_ml.return_value.is_available.return_value = False
 
                 # Appel du recalcul
@@ -204,13 +193,9 @@ class MLFallbackTests(TestCase):
 
         from django.test import override_settings
 
-        with override_settings(
-            FUTURE_SKILLS_USE_ML=True, FUTURE_SKILLS_MODEL_VERSION="ml_random_forest_v1"
-        ):
+        with override_settings(FUTURE_SKILLS_USE_ML=True, FUTURE_SKILLS_MODEL_VERSION="ml_random_forest_v1"):
             # Mock du modèle pour simuler qu'il est disponible et fonctionnel
-            with patch(
-                "future_skills.services.prediction_engine.FutureSkillsModel.instance"
-            ) as mock_ml:
+            with patch("future_skills.services.prediction_engine.FutureSkillsModel.instance") as mock_ml:
                 mock_instance = MagicMock()
                 mock_instance.is_available.return_value = True
                 mock_instance.predict_level.return_value = ("HIGH", 85.0)
@@ -228,14 +213,10 @@ class MLFallbackTests(TestCase):
                 self.assertIsNotNone(last_run)
 
                 # ✅ Point clé : le moteur utilisé doit être "ml_random_forest_v1"
-                self.assertEqual(
-                    last_run.parameters.get("engine"), "ml_random_forest_v1"
-                )
+                self.assertEqual(last_run.parameters.get("engine"), "ml_random_forest_v1")
 
                 # ✅ Le champ model_version doit être présent
-                self.assertEqual(
-                    last_run.parameters.get("model_version"), "ml_random_forest_v1"
-                )
+                self.assertEqual(last_run.parameters.get("model_version"), "ml_random_forest_v1")
 
                 # Vérifier que predict_level a bien été appelé
                 self.assertTrue(mock_instance.predict_level.called)

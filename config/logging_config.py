@@ -9,6 +9,7 @@ formatters, and processors for comprehensive application logging.
 import logging
 import os
 import sys
+import tempfile
 import time
 from functools import wraps
 from pathlib import Path
@@ -34,18 +35,14 @@ LOG_LEVELS = {
 # ============================================================================
 
 
-def add_app_context(
-    logger: Any, method_name: str, event_dict: Dict[str, Any]
-) -> Dict[str, Any]:
+def add_app_context(logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Add application context to log events."""
     event_dict["app"] = "smarthr360"
     event_dict["environment"] = os.getenv("ENVIRONMENT", "development")
     return event_dict
 
 
-def add_log_level(
-    logger: Any, method_name: str, event_dict: Dict[str, Any]
-) -> Dict[str, Any]:
+def add_log_level(logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Add log level to event dict."""
     if method_name == "warn":
         method_name = "warning"
@@ -53,9 +50,7 @@ def add_log_level(
     return event_dict
 
 
-def censor_sensitive_data(
-    logger: Any, method_name: str, event_dict: Dict[str, Any]
-) -> Dict[str, Any]:
+def censor_sensitive_data(logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Remove sensitive data from logs."""
     sensitive_keys = [
         "password",
@@ -81,9 +76,7 @@ def censor_sensitive_data(
 # ============================================================================
 
 
-def get_structlog_config(
-    use_json: bool = True, base_dir: Path = None
-) -> Dict[str, Any]:
+def get_structlog_config(use_json: bool = True, base_dir: Path = None) -> Dict[str, Any]:
     """
     Get structlog configuration.
 
@@ -96,7 +89,7 @@ def get_structlog_config(
     """
     # Use /tmp for logs in container environments if base_dir not provided
     if base_dir is None:
-        log_dir = Path("/tmp/logs")
+        log_dir = Path(tempfile.gettempdir()) / "smarthr360_logs"
     else:
         log_dir = base_dir / "logs"
 
@@ -280,7 +273,7 @@ def get_logstash_handler_config(base_dir: Path = None) -> Dict[str, Any]:
 
     # Use /tmp for logs in container environments if base_dir not provided
     if base_dir is None:
-        log_dir = Path("/tmp/logs")
+        log_dir = Path(tempfile.gettempdir()) / "smarthr360_logs"
     else:
         log_dir = base_dir / "logs"
 
@@ -325,7 +318,7 @@ def setup_logging(base_dir: Path = None) -> None:
     """
     # Create logs directory if it doesn't exist
     if base_dir is None:
-        logs_dir = Path("/tmp/logs")
+        logs_dir = Path(tempfile.gettempdir()) / "smarthr360_logs"
     else:
         logs_dir = base_dir / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)

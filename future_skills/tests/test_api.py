@@ -8,9 +8,7 @@ from rest_framework.test import APITestCase
 
 from future_skills.models import JobRole, MarketTrend, PredictionRun, Skill
 from future_skills.services.prediction_engine import recalculate_predictions
-from future_skills.services.recommendation_engine import (
-    generate_recommendations_from_predictions,
-)
+from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
 
 User = get_user_model()
 
@@ -23,18 +21,12 @@ class BaseAPITestCase(APITestCase):
         self.group_manager = Group.objects.create(name="MANAGER")
 
         # Create test users
-        self.user_no_role = User.objects.create_user(
-            username="user_no_role", password="pass1234"
-        )
+        self.user_no_role = User.objects.create_user(username="user_no_role", password="pass1234")
 
-        self.user_manager = User.objects.create_user(
-            username="manager_user", password="pass1234"
-        )
+        self.user_manager = User.objects.create_user(username="manager_user", password="pass1234")
         self.user_manager.groups.add(self.group_manager)
 
-        self.user_drh = User.objects.create_user(
-            username="drh_user", password="pass1234"
-        )
+        self.user_drh = User.objects.create_user(username="drh_user", password="pass1234")
         self.user_drh.groups.add(self.group_drh)
 
         # Create test data for predictions
@@ -175,9 +167,7 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
 
         with override_settings(FUTURE_SKILLS_USE_ML=True):
             # Mock du modèle pour simuler qu'il n'est pas disponible
-            with patch(
-                "future_skills.services.prediction_engine.FutureSkillsModel.instance"
-            ) as mock_ml:
+            with patch("future_skills.services.prediction_engine.FutureSkillsModel.instance") as mock_ml:
                 mock_ml.return_value.is_available.return_value = False
 
                 # Appel de l'API

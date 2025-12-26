@@ -14,19 +14,14 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from future_skills.services.training_service import (
-    DataLoadError,
-    ModelTrainer,
-    TrainingError,
-)
+from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
 
 
 @pytest.fixture
 def sample_dataset(tmp_path):
     """Create a sample dataset for testing."""
     data = {
-        "job_role_name": ["Software Engineer", "Data Scientist", "DevOps Engineer"]
-        * 20,
+        "job_role_name": ["Software Engineer", "Data Scientist", "DevOps Engineer"] * 20,
         "skill_name": ["Python", "Machine Learning", "Docker"] * 20,
         "skill_category": ["Programming", "AI/ML", "Infrastructure"] * 20,
         "job_department": ["Engineering", "Data", "Operations"] * 20,
@@ -192,9 +187,7 @@ class TestDataLoading:
 
         # Should have filtered out INVALID rows (4 out of 16)
         assert len(trainer.df) == 12
-        assert all(
-            y in ["LOW", "MEDIUM", "HIGH"] for y in trainer.df["future_need_level"]
-        )
+        assert all(y in ["LOW", "MEDIUM", "HIGH"] for y in trainer.df["future_need_level"])
 
     def test_load_data_file_not_found(self, tmp_path):
         """Test error handling when dataset file doesn't exist."""
@@ -479,9 +472,7 @@ class TestTrainingRunTracking:
     """Test MLOps tracking via TrainingRun model."""
 
     @patch("future_skills.services.training_service.TrainingRun")
-    def test_save_training_run_creates_record(
-        self, mock_training_run, sample_dataset, tmp_path
-    ):
+    def test_save_training_run_creates_record(self, mock_training_run, sample_dataset, tmp_path):
         """Test that training run is saved to database."""
         trainer = ModelTrainer(str(sample_dataset))
         trainer.load_data()

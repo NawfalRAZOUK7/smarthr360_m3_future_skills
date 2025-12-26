@@ -1,4 +1,5 @@
 """Extended tests for ModelTrainer to improve coverage from 46% to 50%+.
+# nosec B101
 
 This test module focuses on:
 - Error handling and exception paths
@@ -19,12 +20,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 import pandas as pd
 import pytest
 
-from future_skills.services.training_service import (
-    DataLoadError,
-    ModelTrainer,
-    ModelTrainerError,
-    TrainingError,
-)
+from future_skills.services.training_service import DataLoadError, ModelTrainer, ModelTrainerError, TrainingError
 
 # ============================================================================
 # Test Exception Classes
@@ -86,9 +82,7 @@ class TestDataLoadingEdgeCases:
         """Test handling of malformed CSV files."""
         dataset_path = tmp_path / "malformed.csv"
         # Write malformed CSV (unmatched quotes, inconsistent columns)
-        dataset_path.write_text(
-            'trend_score,"internal_usage\n0.8,"0.9\n0.6,0.7"extra"\n'
-        )
+        dataset_path.write_text('trend_score,"internal_usage\n0.8,"0.9\n0.6,0.7"extra"\n')
 
         trainer = ModelTrainer(str(dataset_path))
 
@@ -195,9 +189,7 @@ class TestDataLoadingEdgeCases:
         trainer.load_data()
 
         # Check that features exist and types are identified
-        assert hasattr(trainer, "categorical_features") or hasattr(
-            trainer, "numeric_features"
-        )
+        assert hasattr(trainer, "categorical_features") or hasattr(trainer, "numeric_features")
         # At least one feature type should be identified
         total_features = len(getattr(trainer, "categorical_features", [])) + len(
             getattr(trainer, "numeric_features", [])
@@ -229,12 +221,8 @@ class TestTrainingErrorScenarios:
         trainer.load_data()
 
         # Mock MLflow to raise error during setup
-        with patch(
-            "future_skills.services.training_service.get_mlflow_config"
-        ) as mock_config:
-            mock_config.return_value.setup.side_effect = Exception(
-                "MLflow connection failed"
-            )
+        with patch("future_skills.services.training_service.get_mlflow_config") as mock_config:
+            mock_config.return_value.setup.side_effect = Exception("MLflow connection failed")
 
             with pytest.raises(TrainingError, match="Model training failed"):
                 trainer.train()
@@ -284,9 +272,7 @@ class TestTrainingErrorScenarios:
 
         # Check that training completed and MLflow was used (run_id may be in logs or attribute)
         # The auto_mock_mlflow fixture provides test-run-id-12345
-        has_run_id_in_logs = any(
-            "run" in record.message.lower() for record in caplog.records
-        )
+        has_run_id_in_logs = any("run" in record.message.lower() for record in caplog.records)
         has_mlflow_run_id_attr = hasattr(trainer, "mlflow_run_id")
         assert has_run_id_in_logs or has_mlflow_run_id_attr
 
@@ -315,9 +301,7 @@ class TestEvaluationEdgeCases:
         trainer.train(n_estimators=10)
 
         # Mock predict to raise error
-        with patch.object(
-            trainer.model, "predict", side_effect=RuntimeError("Prediction failed")
-        ):
+        with patch.object(trainer.model, "predict", side_effect=RuntimeError("Prediction failed")):
             with pytest.raises(TrainingError, match="Model evaluation failed"):
                 trainer.evaluate(trainer.X_test, trainer.y_test)
 
@@ -496,9 +480,7 @@ class TestFeatureImportanceEdgeCases:
                 importance = trainer.get_feature_importance()
 
             # Should log warning and return empty dict
-            has_warning = any(
-                "mismatch" in record.message.lower() for record in caplog.records
-            )
+            has_warning = any("mismatch" in record.message.lower() for record in caplog.records)
             assert has_warning or importance == {}
 
 
@@ -547,9 +529,7 @@ class TestTrainingRunSaving:
         # Mock create method
         mock_training_run.objects.create.return_value = MagicMock(id=123)
 
-        trainer.save_training_run(
-            model_version="v2.0.0", model_path=str(model_path), auto_promote=True
-        )
+        trainer.save_training_run(model_version="v2.0.0", model_path=str(model_path), auto_promote=True)
 
         # Verify promotion was attempted
         assert mock_manager.should_promote.called
@@ -589,9 +569,7 @@ class TestTrainingRunSaving:
 
         mock_training_run.objects.create.return_value = MagicMock(id=123)
 
-        trainer.save_training_run(
-            model_version="v2.0.0", model_path=str(model_path), auto_promote=True
-        )
+        trainer.save_training_run(model_version="v2.0.0", model_path=str(model_path), auto_promote=True)
 
         # Should call register_version only once (no promotion)
         assert mock_manager.register_version.call_count == 1
@@ -626,9 +604,7 @@ class TestTrainingRunSaving:
 
         mock_training_run.objects.create.return_value = MagicMock(id=123)
 
-        trainer.save_training_run(
-            model_version="v1.0.0", model_path=str(model_path), auto_promote=True
-        )
+        trainer.save_training_run(model_version="v1.0.0", model_path=str(model_path), auto_promote=True)
 
         # Should register twice (initial + auto-promotion)
         assert mock_manager.register_version.call_count >= 2
@@ -672,18 +648,14 @@ class TestTrainingRunSaving:
 
         # Mock MLflow to raise error during transition
         mock_mlflow_config = MagicMock()
-        mock_mlflow_config.transition_model_stage.side_effect = Exception(
-            "MLflow error"
-        )
+        mock_mlflow_config.transition_model_stage.side_effect = Exception("MLflow error")
         mock_mlflow.return_value = mock_mlflow_config
 
         mock_training_run.objects.create.return_value = MagicMock(id=123)
 
         with caplog.at_level("WARNING"):
             # Should not raise exception, just log warning
-            trainer.save_training_run(
-                model_version="v2.0.0", model_path=str(model_path), auto_promote=True
-            )
+            trainer.save_training_run(model_version="v2.0.0", model_path=str(model_path), auto_promote=True)
 
         # Should complete without exception even if MLflow transition fails
         # Training run should be created despite MLflow error
@@ -713,9 +685,7 @@ class TestTrainingRunSaving:
             side_effect=Exception("Database connection error"),
         ):
             with pytest.raises(TrainingError, match="Failed to save training run"):
-                trainer.save_training_run(
-                    model_version="v1.0.0", model_path=str(model_path)
-                )
+                trainer.save_training_run(model_version="v1.0.0", model_path=str(model_path))
 
 
 # ============================================================================
@@ -756,9 +726,7 @@ class TestFailedTrainingRunTracking:
 
         # Check status is FAILED
         assert call_kwargs["status"] == "FAILED"
-        assert (
-            call_kwargs["error_message"] == "Training failed due to insufficient data"
-        )
+        assert call_kwargs["error_message"] == "Training failed due to insufficient data"
         assert call_kwargs["model_version"] == "v1.0.0"
 
         # Check metrics are zero
@@ -766,9 +734,7 @@ class TestFailedTrainingRunTracking:
         assert call_kwargs["f1_score"] == pytest.approx(0.0)
 
     @patch("future_skills.services.training_service.TrainingRun")
-    def test_save_failed_training_run_handles_save_error(
-        self, mock_training_run, tmp_path
-    ):
+    def test_save_failed_training_run_handles_save_error(self, mock_training_run, tmp_path):
         """Test handling when saving failed run itself fails."""
         data = {"trend_score": [0.8], "future_need_level": ["HIGH"]}
         df = pd.DataFrame(data)
@@ -782,9 +748,7 @@ class TestFailedTrainingRunTracking:
 
         # Should re-raise the exception
         with pytest.raises(Exception, match="DB error"):
-            trainer.save_failed_training_run(
-                model_version="v1.0.0", error_message="Original training error"
-            )
+            trainer.save_failed_training_run(model_version="v1.0.0", error_message="Original training error")
 
 
 # ============================================================================
@@ -848,9 +812,7 @@ class TestMLflowIntegration:
 
     @patch("future_skills.services.training_service.get_mlflow_config")
     @patch("future_skills.services.training_service.mlflow")
-    def test_train_logs_all_parameters_to_mlflow(
-        self, mock_mlflow, mock_config, tmp_path
-    ):
+    def test_train_logs_all_parameters_to_mlflow(self, mock_mlflow, mock_config, tmp_path):
         """Test that all training parameters are logged to MLflow."""
         data = {
             "trend_score": [0.8, 0.6, 0.3] * 20,
@@ -867,9 +829,7 @@ class TestMLflowIntegration:
         # Mock MLflow
         mock_run = MagicMock()
         mock_run.info.run_id = "test-run-123"
-        mock_config.return_value.start_run.return_value.__enter__.return_value = (
-            mock_run
-        )
+        mock_config.return_value.start_run.return_value.__enter__.return_value = mock_run
 
         trainer.train(n_estimators=100, max_depth=15)
 
@@ -902,19 +862,14 @@ class TestMLflowIntegration:
         with patch("future_skills.services.training_service.mlflow") as mock_mlflow:
             mock_run = MagicMock()
             mock_run.info.run_id = "test-run-123"
-            mock_config.return_value.start_run.return_value.__enter__.return_value = (
-                mock_run
-            )
+            mock_config.return_value.start_run.return_value.__enter__.return_value = mock_run
 
             trainer.train(n_estimators=10)
 
             # Check that per-class metrics were logged
-            log_metric_calls = [
-                call[0][0] for call in mock_mlflow.log_metric.call_args_list
-            ]
+            log_metric_calls = [call[0][0] for call in mock_mlflow.log_metric.call_args_list]
 
             # Should have LOW_, MEDIUM_, HIGH_ prefixed metrics
             assert any(
-                "LOW_" in str(call) or "MEDIUM_" in str(call) or "HIGH_" in str(call)
-                for call in log_metric_calls
+                "LOW_" in str(call) or "MEDIUM_" in str(call) or "HIGH_" in str(call) for call in log_metric_calls
             )

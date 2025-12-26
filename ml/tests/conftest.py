@@ -10,6 +10,7 @@ for ML-specific tests.
 import os
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -18,23 +19,18 @@ import pytest
 # Add parent directory to path to import from tests.conftest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from tests.conftest import (
-    admin_user,
-    regular_user,
-    sample_future_skill_prediction,
-    sample_job_role,
-    sample_skill,
-)
+from tests.conftest import admin_user, regular_user, sample_future_skill_prediction, sample_job_role, sample_skill
 
 
 @pytest.fixture(scope="session", autouse=True)
 def mlflow_test_environment():
     """
     Set up MLflow test environment for all ML tests.
+
     Creates necessary directories and sets environment variables.
     """
     # Create temporary MLflow directory and its parent
-    test_base_dir = Path("/tmp/test")
+    test_base_dir = Path(tempfile.gettempdir()) / "smarthr360_test"
     test_base_dir.mkdir(parents=True, exist_ok=True)
 
     mlflow_dir = test_base_dir / "mlruns"
@@ -55,6 +51,7 @@ def mlflow_test_environment():
 def mock_mlflow_run():
     """
     Create a properly configured Mock for MLflow run context manager.
+
     Supports 'with' statements and has proper attributes.
     """
     mock_run = MagicMock()
@@ -66,13 +63,12 @@ def mock_mlflow_run():
 
 @pytest.fixture
 def mock_mlflow_config():
-    """
-    Create a properly configured Mock for MLflowConfig.
-    """
+    """Create a properly configured Mock for MLflowConfig."""
     mock_config = MagicMock()
-    mock_config.tracking_uri = "file:///tmp/test/mlruns"
+    test_base_dir = Path(tempfile.gettempdir()) / "smarthr360_test"
+    mock_config.tracking_uri = f"file://{test_base_dir / 'mlruns'}"
     mock_config.experiment_name = "test-experiment"
-    mock_config.artifact_location = "/tmp/test/mlruns/artifacts"
+    mock_config.artifact_location = str(test_base_dir / "mlruns" / "artifacts")
 
     # Set up start_run to return a context manager
     mock_run = MagicMock()
@@ -90,11 +86,12 @@ def mock_mlflow_config():
 def auto_mock_mlflow(monkeypatch, settings):
     """
     Automatically mock MLflow for all ML tests to avoid FileNotFoundError.
+
     This ensures tests don't fail due to missing MLflow infrastructure.
     Also ensures Django settings return proper values instead of MagicMocks.
     """
     # Ensure Django settings have proper values for MLflow
-    test_base_dir = Path("/tmp/test")
+    test_base_dir = Path(tempfile.gettempdir()) / "smarthr360_test"
     test_mlflow_dir = test_base_dir / "mlruns"
 
     # Set Django settings to actual values (not MagicMocks)
