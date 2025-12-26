@@ -106,7 +106,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest future_skills/tests/ -v --cov=future_skills --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+          bash scripts/run_tests.sh ci
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
