@@ -102,10 +102,9 @@ install:
 	@echo "$(GREEN)✓ Production dependencies installed$(NC)"
 
 install-dev:
-	@echo "$(GREEN)📦 Installing development dependencies...$(NC)"
-	pip install -r requirements.txt
-	pip install -r requirements-dev.txt
-	@echo "$(GREEN)✓ Development dependencies installed$(NC)"
+	@echo "$(GREEN)📦 Installing full development stack (app + dev + ML + celery + logging + security)...$(NC)"
+	pip install -r requirements-all.txt
+	@echo "$(GREEN)✓ Full development dependencies installed$(NC)"
 
 install-ml:
 	@echo "$(GREEN)📦 Installing ML dependencies...$(NC)"

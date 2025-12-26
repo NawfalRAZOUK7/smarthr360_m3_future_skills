@@ -1,0 +1,6 @@
+-r requirements.txt
+-r requirements-dev.txt
+-r requirements_ml.txt
+-r requirements_celery.txt
+-r requirements_logging.txt
+-r requirements_security.txt
