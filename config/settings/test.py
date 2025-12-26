@@ -8,6 +8,7 @@ from .base import *  # noqa: F403,S2208 - Standard Django settings pattern
 
 # Debug mode for tests
 DEBUG = True
+TESTING = True
 
 # Use lightweight, permissive auth for tests to avoid 401s while still honoring view permissions
 REST_FRAMEWORK = {

@@ -102,20 +102,22 @@ class BaseSimpleThrottle:
         now = self.timer()
 
         cache_key = self.get_cache_key(request, view)
-        if cache_key is None:
-            return True
+        # Start from local history; cache is optional best-effort
+        if cache_key:
+            self.history = self.cache.get(cache_key, self.history)
 
-        self.history = self.cache.get(cache_key, [])
         # Drop requests outside the window
         self.history = [ts for ts in self.history if ts > now - self.duration]
 
         if len(self.history) >= self.num_requests:
             # Store truncated history for wait()/headers()
-            self.cache.set(cache_key, self.history, self.duration)
+            if cache_key:
+                self.cache.set(cache_key, self.history, self.duration)
             return False
 
         self.history.append(now)
-        self.cache.set(cache_key, self.history, self.duration)
+        if cache_key:
+            self.cache.set(cache_key, self.history, self.duration)
         return True
 
     def wait(self):
