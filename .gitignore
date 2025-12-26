@@ -19,6 +19,14 @@ wheels/
 .installed.cfg
 *.egg
 
+# Local artifacts in var (keep other var files untracked)
+var/newman_deps/
+var/newman/
+var/htmlcov/
+var/logs/predictions_monitoring.jsonl
+var/coverage.json
+var/coverage.xml
+
 # Virtual Environment
 .venv/
 venv/
