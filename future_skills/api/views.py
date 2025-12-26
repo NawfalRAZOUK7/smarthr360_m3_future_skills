@@ -1577,7 +1577,7 @@ class TrainModelAPIView(APIView):
                     if not values:
                         continue
                     if key.startswith("hyperparameters[") and key.endswith("]"):
-                        inner_key = key[len("hyperparameters[") : -1]
+                        inner_key = key.removeprefix("hyperparameters[").removesuffix("]")
                     elif key.startswith("hyperparameters."):
                         inner_key = key.split(".", 1)[1]
                     elif key == "hyperparameters":

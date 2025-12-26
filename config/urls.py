@@ -54,7 +54,7 @@ def discover_future_skills_urls():
         if subpath == "api":
             subpath = ""
         elif subpath.startswith("api/"):
-            subpath = subpath[len("api/") :]
+            subpath = subpath.removeprefix("api/")
 
         subpath = subpath.strip("/")
 
