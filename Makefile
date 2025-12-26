@@ -1,6 +1,6 @@
 # Makefile for SmartHR360 Module 3 - Future Skills
 
-.PHONY: help install install-dev install-ml test test-unit test-integration test-e2e test-fast test-ml test-api coverage lint format check docker-base docker-build docker-up docker-down docker-prod docker-logs docker-shell ml-prepare ml-experiment ml-evaluate ml-train serve shell migrate createsuperuser clean
+.PHONY: help install install-dev install-ml test test-unit test-integration test-e2e test-fast test-ml test-api coverage lint format format-check type-check check docker-base docker-build docker-up docker-down docker-prod docker-logs docker-shell ml-prepare ml-experiment ml-evaluate ml-train serve shell migrate createsuperuser clean
 
 # Default Python interpreter and settings
 PYTHON := python
@@ -49,6 +49,7 @@ help:
 	@echo "$(YELLOW)🎨 Code Quality Commands:$(NC)"
 	@echo "  make lint                 Run all linters (black, flake8, isort)"
 	@echo "  make format               Auto-format code (black, isort)"
+	@echo "  make type-check           Run static type checks with mypy (skips if not installed)"
 	@echo "  make check                Run Django system checks"
 	@echo "  make pre-commit           Run pre-commit hooks on all files"
 	@echo ""
@@ -195,6 +196,14 @@ format-check:
 	@echo "Checking isort formatting..."
 	isort --check-only . || (echo "$(RED)❌ Imports are not properly sorted. Run 'make format' to fix.$(NC)"; exit 1)
 	@echo "$(GREEN)✓ Code formatting is correct$(NC)"
+
+type-check:
+	@echo "$(BLUE)🔍 Running static type checks (mypy)...$(NC)"
+	@if command -v mypy >/dev/null 2>&1; then \
+		mypy future_skills ml config --ignore-missing-imports; \
+	else \
+		echo "$(YELLOW)⚠️  mypy not installed; skipping type checks.$(NC)"; \
+	fi
 
 check:
 	@echo "$(BLUE)🔍 Running Django system checks...$(NC)"
