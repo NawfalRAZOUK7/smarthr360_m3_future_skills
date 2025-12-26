@@ -10,6 +10,7 @@ env:
   PYTHON_VERSION: "3.12"
   NODE_VERSION: "18"
   DOCKER_BUILDKIT: 1
+  SECRET_KEY: dummy-secret-key
 
 jobs:
   # Code Quality Checks
