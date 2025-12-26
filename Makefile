@@ -51,6 +51,7 @@ help:
 	@echo "  make format               Auto-format code (black, isort)"
 	@echo "  make type-check           Run static type checks with mypy (skips if not installed)"
 	@echo "  make check                Run Django system checks"
+	@echo "  make security-scan        Run safety and bandit (non-blocking in CI)"
 	@echo "  make pre-commit           Run pre-commit hooks on all files"
 	@echo ""
 	@echo "$(YELLOW)🐳 Docker Commands:$(NC)"
@@ -212,6 +213,14 @@ check:
 pre-commit:
 	@echo "$(BLUE)🔍 Running pre-commit hooks...$(NC)"
 	pre-commit run --all-files
+
+security-scan:
+	@echo "$(BLUE)🔒 Running security scans (safety + bandit)...$(NC)"
+	@echo "Running safety (allows failure)..."
+	@safety check --output text || true
+	@echo "Running bandit (allows failure)..."
+	@bandit -r future_skills/ -f json -o security-report.json || true
+	@echo "$(GREEN)✓ Security scan complete (see security-report.json for bandit results)$(NC)"
 
 # ============================================
 docker-build:
