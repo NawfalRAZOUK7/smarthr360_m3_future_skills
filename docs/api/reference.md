@@ -17,6 +17,7 @@ Headers/behavior
 - Caching: `X-Cache-Hit` plus cache-control headers on cached GETs.
 - Throttling: standard DRF rate-limit headers; rates configured per view in `future_skills/api/throttling.py`.
 - Deprecation: v1 responses include deprecation headers.
+- Response envelope (optional): `X-Response-Envelope: 1` or `?envelope=1` for `{"data": ..., "meta": {"success": true}}`.
 
 Curl examples (v2)
 - Predictions: `curl -H "Accept: application/json; version=2" http://localhost:8000/api/v2/predictions/`

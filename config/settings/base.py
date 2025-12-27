@@ -258,7 +258,7 @@ REST_FRAMEWORK = {
         # BasicAuthentication removed for security (use JWT or Session)
     ],
     "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
+        "future_skills.api.renderers.EnvelopeJSONRenderer",
         "future_skills.api.renderers.VendorV1JSONRenderer",
         "future_skills.api.renderers.VendorV2JSONRenderer",
     ],

@@ -40,8 +40,8 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 
 ## 6) Structure des reponses API
 - Auth: enveloppe standard `{"data": ..., "meta": {"success": true}}` via `ApiResponseMixin`.
-- Prediction_skills: reponses DRF brutes.
-- Decision: adopter l'enveloppe commune ou documenter l'exception.
+- Prediction_skills: reponses DRF brutes par defaut; enveloppe optionnelle via `X-Response-Envelope: 1` ou `?envelope=1`.
+- Decision: compat backward; activer l'enveloppe progressivement (clients v2) avant bascule globale.
 
 ## 7) Etapes techniques proposees (prediction_skills)
 1) Aligner le modele user: preparer la transition vers `accounts.User` (email unique, username compat).
@@ -58,7 +58,7 @@ Statut (prediction_skills):
 - [x] 3) Permissions DRF alignees (AUDITOR/SECURITY_ADMIN/SUPPORT appliques).
 - [x] 4) Flux auth (login email/username + register).
 - [x] 5) Securite/lockout alignee.
-- [ ] 6) Reponses API standardisees.
+- [x] 6) Reponses API standardisees (opt-in envelope).
 - [ ] 7) Tests adaptes.
 
 Statut (auth):
