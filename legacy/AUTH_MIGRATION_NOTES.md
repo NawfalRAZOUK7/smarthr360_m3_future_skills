@@ -3,28 +3,32 @@
 Objectif: documenter les changements a mener pour aligner l'authentification entre `prediction_skills` (source actuelle) et `auth` (base avancee), et preparer une implementation commune (email-first, roles unifies, securite renforcee, conventions de reponse).
 
 ## 1) Modele utilisateur (source commune)
-- Reference prediction_skills: Django `auth_user` (username requis), roles via groupes DRH/RESPONSABLE_RH/MANAGER.
 - Reference auth: `auth/accounts/models.py` (`accounts.User` email-first, roles enum EMPLOYEE/MANAGER/HR/ADMIN, is_email_verified, LoginAttempt, LoginActivity).
-- Decision cible: email = identifiant unique. Converger vers `accounts.User` (ou alias `username=email` en transition).
-- A prevoir: migration data (username -> email si vide, unicite email, recreation comptes service/test).
+- Reference prediction_skills: Django `auth_user` (username requis), roles via groupes DRH/RESPONSABLE_RH/MANAGER.
+- Decision cible: email = identifiant unique. Converger vers `accounts.User` (ou alias `username=email` en transition). Garder `role` enum comme source d'autorite.
+- Statut (auth): compat `username` ajoute, normalisation email + contrainte unique case-insensitive, `email_verified_at`, index sur `role`.
 - Statut (prediction_skills): username login, email optionnel, pas de role enum, groupes DRH/RESPONSABLE_RH/MANAGER.
 
 ## 2) Roles / groupes / permissions
-- Groupes prediction_skills: DRH, RESPONSABLE_RH, MANAGER.
-- Permissions DRF: `IsHRStaff`, `IsHRStaffOrManager` basees sur groupes.
-- Cible: role = source de verite, groupes synchronises pour compat.
-- Mapping attendu: DRH/RESPONSABLE_RH -> role HR, MANAGER -> role MANAGER, aucun groupe -> EMPLOYEE.
+- Roles auth: EMPLOYEE, MANAGER, HR, ADMIN (ADMIN = admin general/technique).
+- Groupes auth: HR, HR_ADMIN, MANAGER, MANAGER_ADMIN, EMPLOYEE, EMPLOYEE_ADMIN, AUDITOR, SECURITY_ADMIN, SUPPORT.
+- Strategie auth: role = source de verite, groupes synchronises (base) pour compat. Les groupes "*_ADMIN" sont geres manuellement. ADMIN bypass toutes permissions.
+- Permissions auth: `IsAuditorReadOnly`, `IsSecurityAdmin`, `IsSupport` + helpers d'acces (roles + groupes).
+- Statut auth: HR a acces aux endpoints manager via `IsManagerOrAbove`. AUDITOR en lecture seule sur HR/Reviews/Wellbeing; SUPPORT autorise sur `/api/auth/users/`.
+- Prediction_skills: groupes DRH/RESPONSABLE_RH/MANAGER uniquement, permissions `IsHRStaff`, `IsHRStaffOrManager`.
+- Cible prediction_skills: mapper DRH/RESPONSABLE_RH -> role HR, MANAGER -> role MANAGER, aucun groupe -> EMPLOYEE, superuser -> ADMIN.
 
 ## 3) Flux d'authentification
+- Auth: register, login (email ou username), refresh, logout (blacklist), me, reset mot de passe, verification email, suivi login, lockout.
 - Prediction_skills: JWT obtain/refresh/logout via `config/jwt_auth.py`, login par username.
-- Auth: register/login/refresh/logout/me/reset/verif email + enveloppe reponse.
-- Actions prevues: accepter email + username, ajouter register/reset/verif si besoin cote prediction_skills, harmoniser logs/monitoring.
-- Statut (prediction_skills): endpoints JWT actifs, pas de register/reset/verif email cote API.
+- Actions prevues: accepter email + username, ajouter register/reset/verify si besoin cote prediction_skills, harmoniser logs/monitoring.
+- Statut (auth): login accepte email ou username; username requis a l'inscription.
+- Statut (prediction_skills): endpoints JWT actifs, pas de register/reset/verify cote API.
 
 ## 4) Securite / verrouillage
+- Auth: django-axes + LoginAttempt/Activity. Seuils aligns sur `LOGIN_MAX_ATTEMPTS` / `LOGIN_LOCKOUT_MINUTES` (par defaut 5 / 30 min).
 - Prediction_skills: middleware logging/monitoring, pas de lockout explicite.
-- Auth: django-axes + LoginAttempt/Activity.
-- Reco: aligner sur django-axes + regles lockout communes.
+- Reco: aligner prediction_skills sur django-axes si l'auth locale reste active.
 
 ## 5) JWT / sessions
 - Prediction_skills: SimpleJWT settings en `config/jwt_auth.py` (access 30m, refresh 7j, rotation, issuer smarthr360).
@@ -32,16 +36,16 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 - Cible: memes durees/issuer/claims, login email-first, rotation/blacklist alignee.
 
 ## 6) Structure des reponses API
+- Auth: enveloppe standard `{"data": ..., "meta": {"success": true}}` via `ApiResponseMixin`.
 - Prediction_skills: reponses DRF brutes.
-- Auth: enveloppe standard `{"data": ..., "meta": {"success": true}}`.
 - Decision: adopter l'enveloppe commune ou documenter l'exception.
 
 ## 7) Etapes techniques proposees (prediction_skills)
 1) Aligner le modele user: preparer la transition vers `accounts.User` (email unique, username compat).
-2) Harmoniser roles/groupes: mapper DRH/RESPONSABLE_RH/MANAGER vers roles communs.
-3) Aligner permissions DRF: utiliser roles ou groupes synchronises.
-4) Unifier flux JWT (login email + username) et ajouter register/reset/verif si requis.
-5) Securite: activer lockout (django-axes) si on garde l'auth local.
+2) Harmoniser roles/groupes: mapper DRH/RESPONSABLE_RH/MANAGER vers roles communs + sync groupes de base.
+3) Aligner permissions DRF: utiliser roles ou groupes synchronises (incl. AUDITOR/SECURITY_ADMIN/SUPPORT si necessaire).
+4) Unifier flux JWT (login email + username) et ajouter register/reset/verify si requis.
+5) Securite: activer lockout (django-axes) si on garde l'auth locale.
 6) Standardiser les reponses API ou documenter les exceptions.
 7) Tests: adapter tests auth/permissions + verifs de non-regression.
 
@@ -49,10 +53,19 @@ Statut (prediction_skills):
 - [ ] 1) Modele user aligne (email-first + compat username).
 - [ ] 2) Mapping roles/groupes + sync.
 - [ ] 3) Permissions DRF alignees.
-- [ ] 4) Flux auth (login/register/reset/verif) aligne.
+- [ ] 4) Flux auth (login/register/reset/verify) aligne.
 - [ ] 5) Securite/lockout alignee.
 - [ ] 6) Reponses API standardisees.
 - [ ] 7) Tests adaptes.
+
+Statut (auth):
+- [x] 1) django-axes active + lockout aligne.
+- [x] 2) `accounts.User` en place; commande `migrate_prediction_users` disponible.
+- [x] 3) Sync role <-> groupes + permissions DRF alignees.
+- [x] 4) Endpoints auth + enveloppe standard + docs/Postman a jour.
+- [x] 5) Securite/lockout/headers alignes.
+- [x] 6) Tests auth couvrant login/lockout/reset/verify/permissions.
+- [x] 7) Warnings pagination corriges + `auth/staticfiles/`.
 
 ## 8) Points de migration / data
 - Verifier unicite email (case-insensitive).
@@ -60,6 +73,11 @@ Statut (prediction_skills):
 - Conserver hash passwords si memes algo Django.
 - Verifier mapping role/groupe avant migration finale.
 - Nettoyer tokens de test et forcer un logout global si besoin.
+
+### Script de migration (depuis auth)
+- Commande: `python manage.py migrate_prediction_users --source-url <DB_URL>`
+- Par defaut: dry-run. Utiliser `--apply` pour ecrire.
+- Options utiles: `--update-existing`, `--match-username`, `--mark-verified`, `--default-email-domain`, `--limit`.
 
 ### Checklist data (prediction_skills -> auth)
 1) **Inventaire source**
@@ -74,12 +92,15 @@ Statut (prediction_skills):
    - Normaliser email (lowercase/trim).
    - Si email manquant -> placeholder + liste a corriger.
    - Username requis cote auth: conserver si unique, sinon email + suffix.
-4) **Validation post-migration**
+4) **Dedoublonnage**
+   - Detecter doublons email (case-insensitive).
+   - Garder is_active True / last_login le plus recent.
+5) **Validation post-migration**
    - Comparer counts, tester login email + username, verifier groups sync.
 
 ## 9) Rollout conseille
 - Phase 1 (dev): documenter l'alignement et stabiliser permissions.
-- Phase 2 (integration): basculer prediction_skills vers auth unifie.
+- Phase 2 (integration): basculer prediction_skills vers auth unifie (login email, permissions mappees).
 - Phase 3 (prod): migration data + surveillance lockouts/logs.
 
 ## 10) Questions en suspens
