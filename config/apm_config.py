@@ -278,7 +278,9 @@ def capture_exception(exception: Exception, **context: Any) -> None:
         client = elasticapm.get_client()
         if client:
             client.capture_exception(exc_info=True, context=context)
-    except (ImportError, Exception):
+    # Broad catch so misbehaving APM client (e.g., SystemExit during import)
+    # never takes down the worker.
+    except BaseException:  # noqa: BLE001
         pass
 
     # Sentry
@@ -289,7 +291,9 @@ def capture_exception(exception: Exception, **context: Any) -> None:
             for key, value in context.items():
                 scope.set_context(key, value)
             sentry_sdk.capture_exception(exception)
-    except (ImportError, Exception):
+    # Broad catch so misbehaving APM client (e.g., SystemExit during import)
+    # never takes down the worker.
+    except BaseException:  # noqa: BLE001
         pass
 
 
@@ -308,7 +312,8 @@ def capture_message(message: str, level: str = "info", **context: Any) -> None:
         client = elasticapm.get_client()
         if client:
             client.capture_message(message, level=level, custom=context)
-    except (ImportError, Exception):
+    # Broad catch so a misbehaving APM client never crashes the app.
+    except BaseException:  # noqa: BLE001
         pass
 
     # Sentry
@@ -319,7 +324,8 @@ def capture_message(message: str, level: str = "info", **context: Any) -> None:
             for key, value in context.items():
                 scope.set_context(key, value)
             sentry_sdk.capture_message(message, level=level)
-    except (ImportError, Exception):
+    # Broad catch so a misbehaving APM client never crashes the app.
+    except BaseException:  # noqa: BLE001
         pass
 
 
@@ -346,7 +352,8 @@ def set_user_context(user_id: Any, username: str = None, email: str = None, **ex
         client = elasticapm.get_client()
         if client:
             client.set_user_context(user_data)
-    except (ImportError, Exception):
+    # Broad catch so a misbehaving APM client never crashes the app.
+    except BaseException:  # noqa: BLE001
         pass
 
     # Sentry

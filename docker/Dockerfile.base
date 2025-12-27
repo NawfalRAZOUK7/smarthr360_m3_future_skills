@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy all requirements files
-COPY requirements/requirements.txt requirements/requirements_ml.txt requirements/requirements_logging.txt requirements/requirements_security.txt requirements/requirements_celery.txt requirements/requirements-all.txt ./requirements/
+COPY requirements/ ./requirements/
 
 # Install Python dependencies (with retry loop for robustness)
 RUN set -eux; \

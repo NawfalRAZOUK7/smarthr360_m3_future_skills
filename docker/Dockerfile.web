@@ -2,7 +2,7 @@
 # syntax=docker/dockerfile:1.4
 
 # --- Builder stage: build assets and collect static files ---
-FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as builder
+FROM smarthr360-base-local as builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN mkdir -p /app/staticfiles
 
 
 # --- Final stage: minimal runtime image ---
-FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as final
+FROM smarthr360-base-local as final
 
 WORKDIR /app
 
