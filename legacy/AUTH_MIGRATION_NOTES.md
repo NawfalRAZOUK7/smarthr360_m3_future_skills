@@ -116,9 +116,10 @@ Statut (auth):
    - Snapshot DB avant migration.
 
 ## 9) Rollout conseille
-- Phase 1 (dev): documenter l'alignement et stabiliser permissions.
-- Phase 2 (integration): basculer prediction_skills vers auth unifie (login email, permissions mappees).
-- Phase 3 (prod): migration data + surveillance lockouts/logs.
+- Phase 1 (dev): figer le mapping roles/groupes + harmoniser auth/permissions (termine).
+- Phase 2 (integration): activer enveloppe API optionnelle + verifier clients v2.
+- Phase 3 (pre-prod): dry-run migration users depuis prediction_skills (audit doublons/placeholders).
+- Phase 4 (prod): migration data + surveillance lockouts/logs + rollout JWT.
 
 ## 10) Questions en suspens
 - Role ADMIN reserve au staff technique ou aussi DRH ?
