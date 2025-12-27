@@ -173,7 +173,7 @@ class APICacheMiddlewareTestCase(TestCase):
 
     def test_cache_key_includes_user(self):
         """Test that cache key includes authenticated user."""
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
 
         request = self.factory.get("/api/v2/predictions/")
         request.user = user
@@ -264,7 +264,7 @@ class RequestLoggingMiddlewareTestCase(TestCase):
     def test_logs_api_requests(self, mock_logger):
         """Test that API requests are logged."""
         request = self.factory.get("/api/v2/predictions/")
-        request.user = User.objects.create_user(username="testuser")
+        request.user = User.objects.create_user(username="testuser", email="testuser@example.com")
 
         self.middleware(request)
 
@@ -295,7 +295,7 @@ class RequestLoggingMiddlewareTestCase(TestCase):
     def test_logs_response_status(self, mock_logger):
         """Test that response status is logged."""
         request = self.factory.get("/api/v2/predictions/")
-        request.user = User.objects.create_user(username="testuser")
+        request.user = User.objects.create_user(username="testuser", email="testuser@example.com")
 
         self.middleware(request)
 
@@ -306,7 +306,7 @@ class RequestLoggingMiddlewareTestCase(TestCase):
     def test_logs_request_duration(self, mock_logger):
         """Test that request duration is logged."""
         request = self.factory.get("/api/v2/predictions/")
-        request.user = User.objects.create_user(username="testuser")
+        request.user = User.objects.create_user(username="testuser", email="testuser@example.com")
 
         self.middleware(request)
 
@@ -317,7 +317,7 @@ class RequestLoggingMiddlewareTestCase(TestCase):
     def test_sanitizes_sensitive_params(self, mock_logger):
         """Test that sensitive parameters are sanitized."""
         request = self.factory.get("/api/v2/predictions/?password=secret123&api_key=key123")
-        request.user = User.objects.create_user(username="testuser")
+        request.user = User.objects.create_user(username="testuser", email="testuser@example.com")
 
         self.middleware(request)
 
@@ -330,7 +330,7 @@ class RequestLoggingMiddlewareTestCase(TestCase):
     def test_only_logs_api_paths(self, mock_logger):
         """Test that only /api/ paths are logged."""
         request = self.factory.get("/admin/")
-        request.user = User.objects.create_user(username="testuser")
+        request.user = User.objects.create_user(username="testuser", email="testuser@example.com")
 
         self.middleware(request)
 
@@ -432,7 +432,7 @@ class MiddlewareIntegrationTestCase(TestCase):
         response_handler = APIPerformanceMiddleware(response_handler)
 
         request = self.factory.get("/api/v2/predictions/")
-        request.user = User.objects.create_user(username="testuser")
+        request.user = User.objects.create_user(username="testuser", email="testuser@example.com")
 
         response = response_handler(request)
 

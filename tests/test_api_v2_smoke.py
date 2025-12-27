@@ -11,7 +11,7 @@ import pytest
 @pytest.mark.django_db
 class TestAuthAndHealth:
     def test_auth_token_obtain(self, api_client, hr_manager):
-        payload = {"username": "hr_manager", "password": "hrpass123"}
+        payload = {"email": "hr_manager@example.com", "password": "hrpass123"}
         response = api_client.post("/api/auth/token/", payload, format="json")
         assert response.status_code == 200
         body = response.json()

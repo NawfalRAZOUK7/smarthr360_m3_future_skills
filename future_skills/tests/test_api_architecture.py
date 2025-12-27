@@ -29,7 +29,11 @@ class APIVersioningTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="testpass123",
+        )
         self.client.force_authenticate(user=self.user)
 
         # Create test data
@@ -137,7 +141,11 @@ class RateLimitingTestCase(APITestCase):
 
     def test_authenticated_user_higher_limits(self):
         """Test that authenticated users have higher rate limits."""
-        user = User.objects.create_user(username="testuser", password="testpass123")
+        user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="testpass123",
+        )
 
         # Anonymous request
         anon_response = self.client.get("/api/v2/predictions/")
@@ -168,7 +176,11 @@ class PerformanceMonitoringTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="testpass123",
+        )
         self.client.force_authenticate(user=self.user)
 
     def test_response_time_header(self):
@@ -216,7 +228,11 @@ class CachingTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="testpass123",
+        )
         self.client.force_authenticate(user=self.user)
         cache.clear()
 
@@ -330,7 +346,12 @@ class MonitoringEndpointsTestCase(APITestCase):
 
     def test_metrics_endpoint_for_staff(self):
         """Test /api/metrics/ endpoint for staff users."""
-        staff_user = User.objects.create_user(username="staff", password="staff123", is_staff=True)
+        staff_user = User.objects.create_user(
+            username="staff",
+            email="staff@example.com",
+            password="staff123",
+            is_staff=True,
+        )
         self.client.force_authenticate(user=staff_user)
 
         response = self.client.get("/api/metrics/")
@@ -348,7 +369,11 @@ class DeprecationWarningsTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="testpass123",
+        )
         self.client.force_authenticate(user=self.user)
 
     def test_v1_endpoints_have_deprecation_headers(self):
@@ -388,7 +413,11 @@ class RequestLoggingTestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="testpass123",
+        )
         self.client.force_authenticate(user=self.user)
 
     @patch("future_skills.api.middleware.logger")
@@ -446,7 +475,11 @@ class EndToEndAPITestCase(APITestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="testpass123",
+        )
         self.client.force_authenticate(user=self.user)
 
         # Create test data

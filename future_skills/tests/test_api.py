@@ -21,12 +21,24 @@ class BaseAPITestCase(APITestCase):
         self.group_manager = Group.objects.create(name="MANAGER")
 
         # Create test users
-        self.user_no_role = User.objects.create_user(username="user_no_role", password="pass1234")
+        self.user_no_role = User.objects.create_user(
+            username="user_no_role",
+            email="user_no_role@example.com",
+            password="pass1234",
+        )
 
-        self.user_manager = User.objects.create_user(username="manager_user", password="pass1234")
+        self.user_manager = User.objects.create_user(
+            username="manager_user",
+            email="manager_user@example.com",
+            password="pass1234",
+        )
         self.user_manager.groups.add(self.group_manager)
 
-        self.user_drh = User.objects.create_user(username="drh_user", password="pass1234")
+        self.user_drh = User.objects.create_user(
+            username="drh_user",
+            email="drh_user@example.com",
+            password="pass1234",
+        )
         self.user_drh.groups.add(self.group_drh)
 
         # Create test data for predictions

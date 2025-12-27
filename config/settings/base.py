@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "health_check.storage",
     "django_celery_results",  # Celery results backend
     # Project apps
+    "accounts",
     "future_skills",
     "celery_monitoring",
 ]
@@ -114,6 +115,8 @@ AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
+
+AUTH_USER_MODEL = "accounts.User"
 
 
 # Database

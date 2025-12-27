@@ -21,10 +21,13 @@ pytestmark = pytest.mark.django_db
 
 # Now import Django models
 from django.conf import settings  # noqa: E402
-from django.contrib.auth.models import Group, User  # noqa: E402
+from django.contrib.auth import get_user_model  # noqa: E402
+from django.contrib.auth.models import Group  # noqa: E402
 from rest_framework.test import APIClient  # noqa: E402
 
 from future_skills.models import TrainingRun  # noqa: E402
+
+User = get_user_model()
 
 
 def create_test_user():
@@ -203,7 +206,7 @@ def main():
     # Create API client and authenticate
     client = APIClient()
     # Use both session login and DRF force_authenticate to ensure auth is applied
-    client.login(username=user.username, password="testpass123")
+    client.login(username=user.email, password="testpass123")
     client.force_authenticate(user=user)
 
     try:

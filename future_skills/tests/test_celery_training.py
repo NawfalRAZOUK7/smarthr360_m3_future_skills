@@ -11,12 +11,15 @@ to execute tasks synchronously during testing without requiring Redis.
 from unittest.mock import MagicMock, patch
 
 from django.conf import settings
-from django.contrib.auth.models import Group, User
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.test import TestCase
 from rest_framework.test import APIClient
 
 from future_skills.models import TrainingRun
 from future_skills.tasks import train_model_task
+
+User = get_user_model()
 
 
 class CeleryTrainingTest(TestCase):

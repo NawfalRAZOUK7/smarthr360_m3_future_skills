@@ -78,7 +78,7 @@ class AnonRateThrottleTestCase(BaseThrottleTestCase):
     def test_authenticated_user_not_throttled_by_anon(self):
         """Test that authenticated users bypass anon throttle."""
         throttle = AnonRateThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
         request = self.create_request(user=user)
 
         # Authenticated user should not be throttled by anon throttle
@@ -127,7 +127,7 @@ class UserRateThrottleTestCase(BaseThrottleTestCase):
     def test_authenticated_user_throttled(self):
         """Test that authenticated users are throttled."""
         throttle = UserRateThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
         request = self.create_request(user=user)
 
         # Make requests up to limit
@@ -141,8 +141,8 @@ class UserRateThrottleTestCase(BaseThrottleTestCase):
         """Test that different users have separate limits."""
         throttle = UserRateThrottle()
 
-        user1 = User.objects.create_user(username="user1", password="pass")
-        user2 = User.objects.create_user(username="user2", password="pass")
+        user1 = User.objects.create_user(username="user1", email="user1@example.com", password="pass")
+        user2 = User.objects.create_user(username="user2", email="user2@example.com", password="pass")
 
         request1 = self.create_request(user=user1)
         request2 = self.create_request(user=user2)
@@ -173,7 +173,7 @@ class BurstRateThrottleTestCase(BaseThrottleTestCase):
     def test_burst_rate_limiting(self):
         """Test burst rate limiting."""
         throttle = BurstRateThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
         request = self.create_request(user=user)
 
         # Make burst requests
@@ -186,7 +186,7 @@ class BurstRateThrottleTestCase(BaseThrottleTestCase):
     def test_burst_applies_to_all_users(self):
         """Test that burst throttle applies to all users."""
         throttle = BurstRateThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
         request = self.create_request(user=user)
 
         # Should throttle authenticated users
@@ -206,7 +206,7 @@ class SustainedRateThrottleTestCase(BaseThrottleTestCase):
     def test_sustained_rate_limiting(self):
         """Test sustained rate limiting."""
         throttle = SustainedRateThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
         request = self.create_request(user=user)
 
         # Make sustained requests
@@ -230,7 +230,7 @@ class PremiumUserThrottleTestCase(BaseThrottleTestCase):
     def test_staff_user_gets_premium_rate(self):
         """Test that staff users get premium rate."""
         throttle = PremiumUserThrottle()
-        staff_user = User.objects.create_user(username="staff", password="pass", is_staff=True)
+        staff_user = User.objects.create_user(username="staff", email="staff@example.com", password="pass", is_staff=True)
         request = self.create_request(user=staff_user)
 
         # Staff should have premium rate
@@ -239,7 +239,7 @@ class PremiumUserThrottleTestCase(BaseThrottleTestCase):
     def test_premium_user_attribute(self):
         """Test users with is_premium attribute get premium rate."""
         throttle = PremiumUserThrottle()
-        user = User.objects.create_user(username="premium", password="pass")
+        user = User.objects.create_user(username="premium", email="premium@example.com", password="pass")
 
         # Add is_premium attribute (if model supports it)
         if hasattr(user, "is_premium"):
@@ -252,7 +252,7 @@ class PremiumUserThrottleTestCase(BaseThrottleTestCase):
     def test_regular_user_bypassed(self):
         """Test that regular users bypass premium throttle."""
         throttle = PremiumUserThrottle()
-        user = User.objects.create_user(username="regular", password="pass")
+        user = User.objects.create_user(username="regular", email="regular@example.com", password="pass")
         request = self.create_request(user=user)
 
         # Regular user should bypass (returns True)
@@ -261,7 +261,11 @@ class PremiumUserThrottleTestCase(BaseThrottleTestCase):
     def test_superuser_bypass(self):
         """Test that superusers bypass throttle."""
         throttle = PremiumUserThrottle()
-        superuser = User.objects.create_superuser(username="admin", password="admin123", email="admin@test.com")
+        superuser = User.objects.create_superuser(
+            username="admin",
+            email="admin@test.com",
+            password="admin123",
+        )
         request = self.create_request(user=superuser)
 
         # Make many requests - should never throttle
@@ -282,7 +286,7 @@ class MLOperationsThrottleTestCase(BaseThrottleTestCase):
     def test_ml_operations_throttling(self):
         """Test ML operations throttling."""
         throttle = MLOperationsThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
         request = self.create_request(path="/api/v2/ml/train/", user=user)
 
         # Make requests up to limit
@@ -295,7 +299,7 @@ class MLOperationsThrottleTestCase(BaseThrottleTestCase):
     def test_only_applies_to_ml_endpoints(self):
         """Test that throttle only applies to ML endpoints."""
         throttle = MLOperationsThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
 
         # ML endpoint should be throttled
         ml_request = self.create_request(path="/api/v2/ml/predict/", user=user)
@@ -319,7 +323,7 @@ class BulkOperationsThrottleTestCase(BaseThrottleTestCase):
     def test_bulk_operations_throttling(self):
         """Test bulk operations throttling."""
         throttle = BulkOperationsThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
         request = self.create_request(path="/api/v2/bulk/employees/import/", user=user)
 
         # Make requests up to limit
@@ -332,7 +336,7 @@ class BulkOperationsThrottleTestCase(BaseThrottleTestCase):
     def test_only_applies_to_bulk_endpoints(self):
         """Test that throttle only applies to bulk endpoints."""
         throttle = BulkOperationsThrottle()
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
 
         # Bulk endpoint should be throttled
         bulk_request = self.create_request(path="/api/v2/bulk/employees/upload/", user=user)
@@ -485,7 +489,7 @@ class ThrottleIntegrationTestCase(BaseThrottleTestCase):
         burst_throttle = BurstRateThrottle()
         sustained_throttle = SustainedRateThrottle()
 
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
         request = self.create_request(user=user)
 
         # Both should allow the first request
@@ -506,7 +510,7 @@ class ThrottleIntegrationTestCase(BaseThrottleTestCase):
             burst_throttle = BurstRateThrottle()
             sustained_throttle = SustainedRateThrottle()
 
-            user = User.objects.create_user(username="testuser", password="pass")
+            user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
             request = self.create_request(user=user)
 
             # Make 2 requests
@@ -527,7 +531,7 @@ class ThrottleIntegrationTestCase(BaseThrottleTestCase):
         ml_throttle = MLOperationsThrottle()
         bulk_throttle = BulkOperationsThrottle()
 
-        user = User.objects.create_user(username="testuser", password="pass")
+        user = User.objects.create_user(username="testuser", email="testuser@example.com", password="pass")
 
         ml_request = self.create_request(path="/api/v2/ml/train/", user=user)
         bulk_request = self.create_request(path="/api/v2/bulk/employees/import/", user=user)
