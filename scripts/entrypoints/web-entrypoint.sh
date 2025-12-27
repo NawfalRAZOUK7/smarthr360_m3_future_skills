@@ -16,4 +16,9 @@ if [ "$AUTO_MIGRATE" = "true" ]; then
 fi
 
 echo "Starting Gunicorn..."
-exec gunicorn config.wsgi:application --bind 0.0.0.0:8000
+# Bind to both IPv4 and IPv6 by default; allow override via BIND address env.
+GUNICORN_BINDS="${BIND:-0.0.0.0:8000}"
+if [ -z "$BIND" ]; then
+  GUNICORN_BINDS="0.0.0.0:8000 [::]:8000"
+fi
+exec gunicorn config.wsgi:application --bind $GUNICORN_BINDS
