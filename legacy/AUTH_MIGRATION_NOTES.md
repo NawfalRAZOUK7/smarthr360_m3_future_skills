@@ -30,8 +30,8 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 
 ## 4) Securite / verrouillage
 - Auth: django-axes + LoginAttempt/Activity. Seuils aligns sur `LOGIN_MAX_ATTEMPTS` / `LOGIN_LOCKOUT_MINUTES` (par defaut 5 / 30 min).
-- Prediction_skills: middleware logging/monitoring, pas de lockout explicite.
-- Reco: aligner prediction_skills sur django-axes si l'auth locale reste active.
+- Prediction_skills: django-axes actif (LOGIN_MAX_ATTEMPTS / LOGIN_LOCKOUT_MINUTES), `AXES_USERNAME_FORM_FIELD = "email"`, lockout gere dans le serializer JWT.
+- Reco: conserver axes tant que l'auth locale reste active, sinon deleguer au service auth.
 
 ## 5) JWT / sessions
 - Prediction_skills: SimpleJWT settings en `config/jwt_auth.py` (access 30m, refresh 7j, rotation, issuer smarthr360).
@@ -57,7 +57,7 @@ Statut (prediction_skills):
 - [x] 2) Mapping roles/groupes + sync.
 - [x] 3) Permissions DRF alignees (AUDITOR/SECURITY_ADMIN/SUPPORT appliques).
 - [x] 4) Flux auth (login email/username + register).
-- [ ] 5) Securite/lockout alignee.
+- [x] 5) Securite/lockout alignee.
 - [ ] 6) Reponses API standardisees.
 - [ ] 7) Tests adaptes.
 
