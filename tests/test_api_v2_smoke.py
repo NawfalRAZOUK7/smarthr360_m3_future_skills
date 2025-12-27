@@ -27,8 +27,8 @@ class TestAuthAndHealth:
             resp = api_client.get(path)
             assert resp.status_code == 200, f"{path} returned {resp.status_code}"
 
-    def test_health_metrics_staff_only(self, api_client, hr_manager):
-        api_client.force_authenticate(user=hr_manager)
+    def test_health_metrics_security_admin_only(self, api_client, security_admin):
+        api_client.force_authenticate(user=security_admin)
         resp = api_client.get("/api/metrics/")
         assert resp.status_code == 200
 
