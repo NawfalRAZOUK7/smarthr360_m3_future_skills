@@ -7,7 +7,7 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 - Reference prediction_skills: Django `auth_user` (username requis), roles via groupes DRH/RESPONSABLE_RH/MANAGER.
 - Decision cible: email = identifiant unique. Converger vers `accounts.User` (ou alias `username=email` en transition). Garder `role` enum comme source d'autorite.
 - Statut (auth): compat `username` ajoute, normalisation email + contrainte unique case-insensitive, `email_verified_at`, index sur `role`.
-- Statut (prediction_skills): username login, email optionnel, pas de role enum, groupes DRH/RESPONSABLE_RH/MANAGER.
+- Statut (prediction_skills): `accounts.User` ajoute (email-first, role enum, username compat, email_verified_at, contrainte email CI).
 
 ## 2) Roles / groupes / permissions
 - Roles auth: EMPLOYEE, MANAGER, HR, ADMIN (ADMIN = admin general/technique).
@@ -50,7 +50,7 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 7) Tests: adapter tests auth/permissions + verifs de non-regression.
 
 Statut (prediction_skills):
-- [ ] 1) Modele user aligne (email-first + compat username).
+- [x] 1) Modele user aligne (email-first + compat username).
 - [ ] 2) Mapping roles/groupes + sync.
 - [ ] 3) Permissions DRF alignees.
 - [ ] 4) Flux auth (login/register/reset/verify) aligne.

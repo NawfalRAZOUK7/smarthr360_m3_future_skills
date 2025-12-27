@@ -116,7 +116,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         """Handle POST request for token obtain with logging."""
         # Log login attempt
-        username = request.data.get("username", "unknown")
+        username = request.data.get("email") or request.data.get("username") or "unknown"
         logger.info(
             f"JWT login attempt for username: {username}",
             extra={
