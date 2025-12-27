@@ -122,9 +122,9 @@ Statut (auth):
 - Phase 4 (prod): migration data + surveillance lockouts/logs + rollout JWT.
 
 ## 10) Questions en suspens
-- Role ADMIN reserve au staff technique ou aussi DRH ?
-- Enveloppe reponse: generalisation a toutes les APIs ou exception ?
-- Duree de retro-compat (accepter username + email).
+- Role ADMIN (proposition): reserve au staff technique; DRH reste role HR + groupe HR_ADMIN (SECURITY_ADMIN pour infra).
+- Enveloppe reponse (proposition): garder opt-in pour v2, mesurer l'adoption, puis bascule globale (date a confirmer).
+- Retro-compat username/email (proposition): conserver login username jusqu'a migration clients, puis deprecier sur une fenetre (ex: 3-6 mois).
 
 ## Rappel post-migration
 - Ajouter les vraies adresses email des comptes placeholder et mettre a jour `auth/db.sqlite3` apres finalisation de prediction_skills.
