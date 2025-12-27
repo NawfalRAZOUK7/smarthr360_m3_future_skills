@@ -2,6 +2,7 @@ import json
 from unittest import mock
 
 import jwt
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.test import TestCase, override_settings
 from rest_framework.test import APIRequestFactory
@@ -13,8 +14,13 @@ from accounts.models import User
 class HybridJWTAuthenticationTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        public_key = cls.private_key.public_key()
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        public_key = private_key.public_key()
+        cls.private_key_pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
         jwk = json.loads(jwt.algorithms.RSAAlgorithm.to_jwk(public_key))
         jwk["kid"] = "test-key"
         cls.jwks = [jwk]
@@ -24,7 +30,8 @@ class HybridJWTAuthenticationTests(TestCase):
         self.auth = HybridJWTAuthentication()
 
     def _make_token(self, payload):
-        return jwt.encode(payload, self.private_key, algorithm="RS256", headers={"kid": "test-key"})
+        private_key = serialization.load_pem_private_key(self.private_key_pem, password=None)
+        return jwt.encode(payload, private_key, algorithm="RS256", headers={"kid": "test-key"})
 
     @override_settings(
         AUTH_JWKS_URL="https://auth.local/.well-known/jwks.json",
