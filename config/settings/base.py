@@ -553,11 +553,16 @@ CSP_FONT_SRC = (CSP_SELF, "data:")
 CSP_CONNECT_SRC = (CSP_SELF,)
 CSP_FRAME_ANCESTORS = ("'none'",)
 
+# Login lockout configuration (aligned with django-axes)
+LOGIN_MAX_ATTEMPTS = config("LOGIN_MAX_ATTEMPTS", default=5, cast=int)
+LOGIN_LOCKOUT_MINUTES = config("LOGIN_LOCKOUT_MINUTES", default=30, cast=int)
+
 # Django Axes Configuration (Login Protection)
-AXES_ENABLED = True
-AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
-AXES_COOLOFF_TIME = timedelta(minutes=30)  # Lock duration
+AXES_ENABLED = config("AXES_ENABLED", default=True, cast=bool)
+AXES_FAILURE_LIMIT = LOGIN_MAX_ATTEMPTS
+AXES_COOLOFF_TIME = timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
 AXES_LOCK_OUT_PARAMETERS = ["username", "ip_address"]
+AXES_USERNAME_FORM_FIELD = "email"
 AXES_RESET_ON_SUCCESS = True
 
 # ============================================================================

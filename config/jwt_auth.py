@@ -7,6 +7,7 @@ Uses djangorestframework-simplejwt with enhanced security features.
 import logging
 from datetime import timedelta
 
+from axes.exceptions import AxesBackendPermissionDenied
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers, status
@@ -104,7 +105,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user:
             raise serializers.ValidationError("Identifiants invalides.")
 
-        data = super().validate({"email": user.email, "password": password})
+        try:
+            data = super().validate({"email": user.email, "password": password})
+        except AxesBackendPermissionDenied:
+            logger.warning(
+                "JWT login locked by Axes for user: %s",
+                user.username,
+                extra={
+                    "user_id": user.id,
+                    "username": user.username,
+                    "event": "jwt_login_locked",
+                },
+            )
+            raise serializers.ValidationError("Compte verrouille. Reessayez plus tard.") from None
 
         # Add extra responses data
         data["user"] = {
