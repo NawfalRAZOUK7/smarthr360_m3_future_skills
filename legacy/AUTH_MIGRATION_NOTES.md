@@ -59,7 +59,7 @@ Statut (prediction_skills):
 - [x] 4) Flux auth (login email/username + register).
 - [x] 5) Securite/lockout alignee.
 - [x] 6) Reponses API standardisees (opt-in envelope).
-- [ ] 7) Tests adaptes.
+- [x] 7) Tests adaptes (manage.py test future_skills OK, skipped=2).
 
 Statut (auth):
 - [x] 1) django-axes active + lockout aligne.
