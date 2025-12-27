@@ -27,7 +27,12 @@ from ..models import (
     Skill,
     TrainingRun,
 )
-from ..permissions import IsHRStaff, IsHRStaffOrManager
+from ..permissions import (
+    IsHRStaff,
+    IsHRStaffOrManager,
+    IsManagerOrAuditorReadOnly,
+    IsManagerOrSupportAuditorReadOnly,
+)
 from ..services.file_parser import parse_employee_file
 from ..services.prediction_engine import recalculate_predictions
 from ..services.recommendation_engine import generate_recommendations_from_predictions
@@ -162,7 +167,7 @@ class EmployeePagination(PageNumberPagination):
     summary="List future skill predictions",
     description="""Retrieve a paginated list of future skill predictions with optional filters.
 
-    **Permissions**: HR Staff or Manager
+    **Permissions**: HR/Manager (lecture) + Auditor (lecture)
 
     **Filters**:
     - `job_role_id`: Filter by specific job role
@@ -220,7 +225,7 @@ class FutureSkillPredictionListAPIView(ListAPIView):
     """
 
     # Require authenticated HR staff/manager access in normal mode
-    permission_classes = [IsHRStaffOrManager]
+    permission_classes = [IsManagerOrAuditorReadOnly]
     throttle_classes = [AnonRateThrottle]
     serializer_class = FutureSkillPredictionSerializer
     pagination_class = FutureSkillPredictionPagination
@@ -390,8 +395,8 @@ class MarketTrendListAPIView(APIView):
     GET /api/market-trends/?year=2025&sector=Tech
     """
 
-    # HR + Manager (lecture)
-    permission_classes = [IsHRStaffOrManager]
+    # HR/Manager/Auditor (lecture)
+    permission_classes = [IsManagerOrAuditorReadOnly]
 
     def get(self, request, *args, **kwargs):
         """
@@ -428,7 +433,7 @@ class EconomicReportListAPIView(APIView):
         - indicator (contient)
     """
 
-    permission_classes = [IsHRStaffOrManager]
+    permission_classes = [IsManagerOrAuditorReadOnly]
 
     def get(self, request, *args, **kwargs):
         """
@@ -470,7 +475,7 @@ class HRInvestmentRecommendationListAPIView(APIView):
         - priority_level
     """
 
-    permission_classes = [IsHRStaffOrManager]
+    permission_classes = [IsManagerOrAuditorReadOnly]
 
     def get(self, request, *args, **kwargs):
         """
@@ -522,7 +527,7 @@ class EmployeeViewSet(ModelViewSet):
 
     queryset = Employee.objects.select_related("job_role").all()
     serializer_class = EmployeeSerializer
-    permission_classes = [IsHRStaffOrManager]
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]  # Support/Auditor read-only
     pagination_class = EmployeePagination
 
     @action(detail=True, methods=["post"], url_path="add-skill")
@@ -1549,17 +1554,14 @@ class TrainModelAPIView(APIView):
     }
     """
 
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    permission_classes = [IsHRStaff]
 
     def get_permissions(self):
         """Return the list of permissions that this view requires."""
         return [permission() for permission in self.permission_classes]
 
     def get_authenticators(self):
-        """Return authenticators, skipping them in DEBUG mode."""
-        if getattr(settings, "DEBUG", False):
-            return []
+        """Return authenticators, using defaults in all environments."""
         return super().get_authenticators()
 
     def post(self, request, *args, **kwargs):
@@ -2095,7 +2097,7 @@ class TrainModelAPIView(APIView):
     summary="List all training runs",
     description="""Retrieve a paginated list of all model training runs with metrics and status.
 
-    **Permissions**: HR Staff or Manager
+    **Permissions**: HR/Manager (lecture) + Auditor (lecture)
 
     **Filters**:
     - `status`: Filter by training status (RUNNING, COMPLETED, FAILED)
@@ -2162,16 +2164,15 @@ class TrainingRunListAPIView(ListAPIView):
     Returns paginated list of training runs with basic metrics.
     """
 
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    permission_classes = [IsManagerOrAuditorReadOnly]
 
     def get_permissions(self):
         """Return the list of permissions that this view requires."""
         return [permission() for permission in self.permission_classes]
 
     def get_authenticators(self):
-        """Return the list of authenticators that this view uses (empty by default)."""
-        return []
+        """Return the list of authenticators that this view uses."""
+        return super().get_authenticators()
 
     serializer_class = TrainingRunSerializer
     pagination_class = TrainingRunPagination
@@ -2198,7 +2199,7 @@ class TrainingRunListAPIView(ListAPIView):
     summary="Get training run details",
     description="""Retrieve detailed information about a specific training run.
 
-    **Permissions**: HR Staff or Manager
+    **Permissions**: HR/Manager (lecture) + Auditor (lecture)
 
     **Returns**:
     - **Basic Info**: ID, version, status, timestamps
@@ -2238,14 +2239,13 @@ class TrainingRunDetailAPIView(RetrieveAPIView):
     - Error messages (if failed)
     """
 
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    permission_classes = [IsManagerOrAuditorReadOnly]
 
     def get_permissions(self):
         return [permission() for permission in self.permission_classes]
 
     def get_authenticators(self):
-        return []
+        return super().get_authenticators()
 
     serializer_class = TrainingRunDetailSerializer
     queryset = TrainingRun.objects.select_related("trained_by").all()

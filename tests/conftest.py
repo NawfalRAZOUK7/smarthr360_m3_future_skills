@@ -106,6 +106,24 @@ def admin_user(db):
 
 
 @pytest.fixture
+def security_admin(db):
+    """
+    Creates a security admin user with SECURITY_ADMIN group.
+    """
+    from django.contrib.auth.models import Group
+
+    user = User.objects.create_user(
+        username="security_admin",
+        email="security_admin@example.com",
+        password="securitypass123",
+        is_staff=True,
+    )
+    security_group, _ = Group.objects.get_or_create(name="SECURITY_ADMIN")
+    user.groups.add(security_group)
+    return user
+
+
+@pytest.fixture
 def hr_manager(db):
     """
     Creates an HR user with staff privileges and legacy RESPONSABLE_RH group.

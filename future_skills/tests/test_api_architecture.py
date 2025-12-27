@@ -335,8 +335,8 @@ class MonitoringEndpointsTestCase(APITestCase):
 
         self.assertEqual(data["current_version"], "v2")
 
-    def test_metrics_endpoint_requires_staff(self):
-        """Test that /api/metrics/ requires staff permissions."""
+    def test_metrics_endpoint_requires_security_admin(self):
+        """Test that /api/metrics/ requires security admin permissions."""
         # Anonymous request should fail
         response = self.client.get("/api/metrics/")
         self.assertIn(
@@ -344,15 +344,19 @@ class MonitoringEndpointsTestCase(APITestCase):
             [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
         )
 
-    def test_metrics_endpoint_for_staff(self):
-        """Test /api/metrics/ endpoint for staff users."""
-        staff_user = User.objects.create_user(
-            username="staff",
-            email="staff@example.com",
-            password="staff123",
+    def test_metrics_endpoint_for_security_admin(self):
+        """Test /api/metrics/ endpoint for security admins."""
+        from django.contrib.auth.models import Group
+
+        security_admin = User.objects.create_user(
+            username="security_admin",
+            email="security_admin@example.com",
+            password="security123",
             is_staff=True,
         )
-        self.client.force_authenticate(user=staff_user)
+        security_group, _ = Group.objects.get_or_create(name="SECURITY_ADMIN")
+        security_admin.groups.add(security_group)
+        self.client.force_authenticate(user=security_admin)
 
         response = self.client.get("/api/metrics/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

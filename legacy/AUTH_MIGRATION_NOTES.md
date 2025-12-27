@@ -15,7 +15,9 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 - Strategie auth: role = source de verite, groupes synchronises (base) pour compat. Les groupes "*_ADMIN" sont geres manuellement. ADMIN bypass toutes permissions.
 - Permissions auth: `IsAuditorReadOnly`, `IsSecurityAdmin`, `IsSupport` + helpers d'acces (roles + groupes).
 - Statut auth: HR a acces aux endpoints manager via `IsManagerOrAbove`. AUDITOR en lecture seule sur HR/Reviews/Wellbeing; SUPPORT autorise sur `/api/auth/users/`.
-- Prediction_skills: roles HR/MANAGER/EMPLOYEE/ADMIN + groupes par defaut (HR, HR_ADMIN, MANAGER, MANAGER_ADMIN, EMPLOYEE, EMPLOYEE_ADMIN, AUDITOR, SECURITY_ADMIN, SUPPORT) + legacy (DRH/RESPONSABLE_RH). Permissions `IsHRStaff`, `IsHRStaffOrManager` basees sur roles/groupes.
+- Prediction_skills: roles HR/MANAGER/EMPLOYEE/ADMIN + groupes par defaut (HR, HR_ADMIN, MANAGER, MANAGER_ADMIN, EMPLOYEE, EMPLOYEE_ADMIN, AUDITOR, SECURITY_ADMIN, SUPPORT) + legacy (DRH/RESPONSABLE_RH).
+- Permissions prediction_skills: `IsHRStaff`, `IsHRStaffOrManager`, `IsManagerOrAuditorReadOnly`, `IsManagerOrSupportAuditorReadOnly`, `IsSecurityAdmin`.
+- Mapping endpoints: AUDITOR en lecture seule sur predictions/market/economic/recommendations/training-runs; SUPPORT en lecture seule sur employees; SECURITY_ADMIN sur `/api/metrics/`.
 - Cible prediction_skills: mapper DRH/RESPONSABLE_RH -> role HR, MANAGER -> role MANAGER, aucun groupe -> EMPLOYEE, superuser -> ADMIN (sync role -> groupe de base).
 - Implementation prediction_skills: `accounts/grouping.py` + `accounts/access.py`, signal `post_save` pour sync du groupe de base, migration `accounts/0002_create_default_groups.py`.
 
@@ -53,7 +55,7 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 Statut (prediction_skills):
 - [x] 1) Modele user aligne (email-first + compat username).
 - [x] 2) Mapping roles/groupes + sync.
-- [ ] 3) Permissions DRF alignees (HR/Manager ok; AUDITOR/SECURITY_ADMIN/SUPPORT a cabler).
+- [x] 3) Permissions DRF alignees (AUDITOR/SECURITY_ADMIN/SUPPORT appliques).
 - [ ] 4) Flux auth (login/register/reset/verify) aligne.
 - [ ] 5) Securite/lockout alignee.
 - [ ] 6) Reponses API standardisees.

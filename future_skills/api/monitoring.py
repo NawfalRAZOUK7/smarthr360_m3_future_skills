@@ -15,6 +15,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..permissions import IsSecurityAdmin
 
 class HealthCheckView(APIView):
     """Health check endpoint for monitoring and load balancers.
@@ -130,7 +131,7 @@ class MetricsView(APIView):
     GET /api/metrics/
 
     Requires authentication.
-    Only accessible to staff users.
+    Only accessible to security admins.
 
     Returns:
     - Request counts
@@ -139,14 +140,10 @@ class MetricsView(APIView):
     - Database stats
     """
 
-    permission_classes = []  # Requires staff
+    permission_classes = [IsSecurityAdmin]
 
     def get(self, request):
         """Get API metrics."""
-        # Only allow staff users
-        if not request.user.is_authenticated or not request.user.is_staff:
-            return Response({"error": "Staff access required"}, status=status.HTTP_403_FORBIDDEN)
-
         metrics = {
             "timestamp": timezone.now().isoformat(),
             "system": self._get_system_metrics(),
