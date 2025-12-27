@@ -71,16 +71,19 @@ Statut (auth):
 - [x] 7) Warnings pagination corriges + `auth/staticfiles/`.
 
 ## 8) Points de migration / data
-- Verifier unicite email (case-insensitive).
-- Completer les emails manquants avant bascule.
-- Conserver hash passwords si memes algo Django.
-- Verifier mapping role/groupe avant migration finale.
-- Nettoyer tokens de test et forcer un logout global si besoin.
+- Verifier unicite email (case-insensitive) et normaliser (lowercase/trim).
+- Username requis cote auth: remplir `username=email` si vide + garantir unicite.
+- Re-creer les superusers/admin techniques avec le nouveau modele si besoin.
+- Conserver hash password si meme algo Django; sinon planifier reset.
+- Nettoyer tokens/axes de test et forcer un logout global si changement des cles JWT.
 
 ### Script de migration (depuis auth)
-- Commande: `python manage.py migrate_prediction_users --source-url <DB_URL>`
-- Par defaut: dry-run. Utiliser `--apply` pour ecrire.
-- Options utiles: `--update-existing`, `--match-username`, `--mark-verified`, `--default-email-domain`, `--limit`.
+- Commande (dry-run): `python manage.py migrate_prediction_users --source-url <DB_URL>`
+- Apply: ajouter `--apply` pour ecrire.
+- Update existing: ajouter `--update-existing` (+ `--match-username` si besoin).
+- Placeholder emails: `--default-email-domain placeholder.local` + liste a corriger.
+- Options utiles: `--mark-verified`, `--limit`.
+- Exemple sqlite: `sqlite:////abs/path/to/prediction_skills/db.sqlite3`
 
 ### Checklist data (prediction_skills -> auth)
 1) **Inventaire source**
@@ -98,8 +101,19 @@ Statut (auth):
 4) **Dedoublonnage**
    - Detecter doublons email (case-insensitive).
    - Garder is_active True / last_login le plus recent.
-5) **Validation post-migration**
-   - Comparer counts, tester login email + username, verifier groups sync.
+5) **Mots de passe / tokens**
+   - Conserver le hash `password` si meme algo Django (relogin non requis).
+   - Reinitialiser `token_blacklist`, `axes_accessattempt` si besoin.
+   - Forcer un logout global si changement de cles JWT.
+6) **Email verifie**
+   - Mapper vers `is_email_verified` + `email_verified_at` si signal disponible.
+   - Sinon: laisser `is_email_verified=False` (verif ulterieure).
+7) **Validation post-migration**
+   - Comparer counts (actifs/inactifs).
+   - Tester login email + username (echantillon).
+   - Verifier sync groupes/roles (signal).
+8) **Rollback**
+   - Snapshot DB avant migration.
 
 ## 9) Rollout conseille
 - Phase 1 (dev): documenter l'alignement et stabiliser permissions.
