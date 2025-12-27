@@ -253,7 +253,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",  # JWT first
+        "accounts.authentication.HybridJWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         # BasicAuthentication removed for security (use JWT or Session)
     ],
@@ -488,6 +488,17 @@ SIMPLE_JWT = {
     # Additional Claims
     "JTI_CLAIM": "jti",  # JWT ID for token tracking
 }
+
+# --- External Auth Configuration ---
+
+AUTH_LOCAL_ENABLED = config("AUTH_LOCAL_ENABLED", default=True, cast=bool)
+AUTH_JWKS_URL = config("AUTH_JWKS_URL", default="")
+AUTH_ISSUER = config("AUTH_ISSUER", default="")
+AUTH_AUDIENCE = config("AUTH_AUDIENCE", default="")
+AUTH_JWT_ALGORITHMS = config("AUTH_JWT_ALGORITHMS", default="RS256", cast=Csv())
+AUTH_JWKS_CACHE_SECONDS = config("AUTH_JWKS_CACHE_SECONDS", default=3600, cast=int)
+AUTH_USERINFO_URL = config("AUTH_USERINFO_URL", default="")
+AUTH_USERINFO_CACHE_SECONDS = config("AUTH_USERINFO_CACHE_SECONDS", default=300, cast=int)
 
 # --- CORS Configuration ---
 
