@@ -24,7 +24,7 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 ## 3) Flux d'authentification
 - Auth: register, login (email ou username), refresh, logout (blacklist), me, reset mot de passe, verification email, suivi login, lockout.
 - Prediction_skills: JWT obtain/refresh/logout via `config/jwt_auth.py`, login email ou username.
-- Prediction_skills: support JWT externes via JWKS (`AUTH_JWKS_URL`) + shadow user; endpoints locaux desactivables (`AUTH_LOCAL_ENABLED`).
+- Prediction_skills: support JWT externes via JWKS (`AUTH_JWKS_URL`) ou secret partage (`AUTH_JWT_SHARED_SECRET`) + shadow user; endpoints locaux desactivables (`AUTH_LOCAL_ENABLED`).
 - Actions prevues: accepter email + username, ajouter register/reset/verify si besoin cote prediction_skills, harmoniser logs/monitoring.
 - Statut (auth): login accepte email ou username; username requis a l'inscription.
 - Statut (prediction_skills): login email/username OK, endpoint `/api/auth/register/` ajoute (reset/verify pas encore), JWT externe pret.

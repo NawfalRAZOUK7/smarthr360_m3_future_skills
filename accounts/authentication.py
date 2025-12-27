@@ -7,6 +7,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.cache import cache
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -72,7 +74,8 @@ class HybridJWTAuthentication(BaseAuthentication):
 
     def _is_external_token(self, raw_token):
         jwks_url = getattr(settings, "AUTH_JWKS_URL", "")
-        if not jwks_url:
+        shared_secret = getattr(settings, "AUTH_JWT_SHARED_SECRET", "")
+        if not jwks_url and not shared_secret:
             return False
 
         try:
@@ -83,7 +86,14 @@ class HybridJWTAuthentication(BaseAuthentication):
         alg = headers.get("alg")
         allowed_algs = [alg.strip() for alg in getattr(settings, "AUTH_JWT_ALGORITHMS", ["RS256"])]
         if alg not in allowed_algs:
-            return False
+            if getattr(settings, "AUTH_LOCAL_ENABLED", True):
+                return False
+            raise AuthenticationFailed("Unsupported token algorithm.")
+
+        if str(alg).upper().startswith("RS") and not jwks_url:
+            if getattr(settings, "AUTH_LOCAL_ENABLED", True):
+                return False
+            raise AuthenticationFailed("JWKS URL not configured.")
 
         expected_issuer = getattr(settings, "AUTH_ISSUER", "")
         if expected_issuer:
@@ -92,6 +102,8 @@ class HybridJWTAuthentication(BaseAuthentication):
             except Exception as exc:  # pragma: no cover - defensive
                 raise AuthenticationFailed("Invalid token claims.") from exc
             if claims.get("iss") != expected_issuer:
+                if getattr(settings, "AUTH_LOCAL_ENABLED", True):
+                    return False
                 raise AuthenticationFailed("Token issuer mismatch.")
 
         return True
@@ -102,7 +114,7 @@ class HybridJWTAuthentication(BaseAuthentication):
         return user
 
     def _decode_external_token(self, raw_token):
-        key = self._get_public_key(raw_token)
+        key = self._get_signing_key(raw_token)
         algorithms = [alg.strip() for alg in getattr(settings, "AUTH_JWT_ALGORITHMS", ["RS256"])]
         issuer = getattr(settings, "AUTH_ISSUER", "")
         audience = getattr(settings, "AUTH_AUDIENCE", "")
@@ -126,8 +138,16 @@ class HybridJWTAuthentication(BaseAuthentication):
         except jwt.InvalidTokenError as exc:
             raise AuthenticationFailed("Invalid token.") from exc
 
-    def _get_public_key(self, raw_token):
+    def _get_signing_key(self, raw_token):
         headers = jwt.get_unverified_header(raw_token)
+        alg = str(headers.get("alg", "")).upper()
+
+        if alg.startswith("HS"):
+            shared_secret = getattr(settings, "AUTH_JWT_SHARED_SECRET", "")
+            if not shared_secret:
+                raise AuthenticationFailed("Shared signing key not configured.")
+            return shared_secret
+
         kid = headers.get("kid")
 
         keys = self._get_jwks(force_refresh=False)
@@ -226,7 +246,7 @@ class HybridJWTAuthentication(BaseAuthentication):
         if external_id:
             user.external_auth_id = external_id
 
-        email_verified_at = payload.get("email_verified_at")
+        email_verified_at = self._coerce_datetime(payload.get("email_verified_at"))
         if email_verified_at and not user.email_verified_at:
             user.is_email_verified = True
             user.email_verified_at = email_verified_at
@@ -235,6 +255,17 @@ class HybridJWTAuthentication(BaseAuthentication):
         if groups is not None:
             self._sync_groups(user, role, groups)
         return user
+
+    @staticmethod
+    def _coerce_datetime(value):
+        if not value:
+            return None
+        if isinstance(value, str):
+            parsed = parse_datetime(value)
+            if not parsed:
+                return None
+            return timezone.make_aware(parsed) if timezone.is_naive(parsed) else parsed
+        return value
 
     def _merge_user_payload(self, claims, raw_token, external_id):
         payload = dict(claims)

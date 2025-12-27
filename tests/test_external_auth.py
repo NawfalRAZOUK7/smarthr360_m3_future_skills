@@ -89,3 +89,28 @@ class HybridJWTAuthenticationTests(TestCase):
 
         self.assertEqual(user.role, User.Role.MANAGER)
         self.assertEqual(user.username, "manager")
+
+    @override_settings(
+        AUTH_JWT_SHARED_SECRET="shared-secret",
+        AUTH_ISSUER="smarthr360",
+        AUTH_JWT_ALGORITHMS=["HS256"],
+        AUTH_LOCAL_ENABLED=False,
+    )
+    def test_external_auth_shared_secret_hs256(self):
+        payload = {
+            "iss": "smarthr360",
+            "user_id": 99,
+            "email": "employee@example.com",
+            "role": "EMPLOYEE",
+        }
+        token = jwt.encode(payload, "shared-secret", algorithm="HS256")
+        request = self.factory.get(
+            "/api/v2/predictions/",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+
+        user, _ = self.auth.authenticate(request)
+
+        self.assertEqual(user.email, "employee@example.com")
+        self.assertEqual(user.external_auth_id, "99")
+        self.assertEqual(user.role, User.Role.EMPLOYEE)
