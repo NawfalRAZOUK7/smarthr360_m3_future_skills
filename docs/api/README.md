@@ -17,6 +17,7 @@ Headers/behavior:
 - Caching: `X-Cache-Hit` plus standard cache-control headers from middleware.
 - Throttling: rate-limit headers present; throttle classes in `future_skills/api/throttling.py`.
 - Deprecation: v1 responses include deprecation headers.
+- Response envelope (optional): add `X-Response-Envelope: 1` or `?envelope=1` to receive `{"data": ..., "meta": {"success": true}}` (auth-compatible).
 
 Usage/examples:
 - Postman collections: `postman/collection_api_v2.json` (preferred current surface) or `postman/collection_full.json` (includes alias groups).
