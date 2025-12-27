@@ -8,6 +8,7 @@ import logging
 from datetime import timedelta
 
 from axes.exceptions import AxesBackendPermissionDenied
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers, status
@@ -21,6 +22,13 @@ logger = logging.getLogger(__name__)
 from accounts.models import normalize_email_address
 
 User = get_user_model()
+
+
+def _local_auth_disabled_response():
+    return Response(
+        {"detail": "Local authentication is disabled."},
+        status=status.HTTP_410_GONE,
+    )
 
 
 # JWT Settings Configuration (add to settings/base.py)
@@ -150,6 +158,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for token obtain with logging."""
+        if not getattr(settings, "AUTH_LOCAL_ENABLED", True):
+            return _local_auth_disabled_response()
+
         # Log login attempt
         username = request.data.get("email") or request.data.get("username") or "unknown"
         logger.info(
@@ -199,6 +210,9 @@ class CustomTokenRefreshView(TokenRefreshView):
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for token refresh with logging."""
+        if not getattr(settings, "AUTH_LOCAL_ENABLED", True):
+            return _local_auth_disabled_response()
+
         logger.debug(
             "JWT token refresh attempt",
             extra={
@@ -218,6 +232,9 @@ def logout_view(request):
 
     Requires the refresh token in the request body.
     """
+    if not getattr(settings, "AUTH_LOCAL_ENABLED", True):
+        return _local_auth_disabled_response()
+
     try:
         from rest_framework_simplejwt.exceptions import TokenError
         from rest_framework_simplejwt.tokens import RefreshToken
@@ -275,6 +292,9 @@ def logout_view(request):
 @permission_classes([IsAuthenticated])
 def verify_token_view(request):
     """Endpoint to verify if the current token is valid."""
+    if not getattr(settings, "AUTH_LOCAL_ENABLED", True):
+        return _local_auth_disabled_response()
+
     return Response(
         {
             "valid": True,
