@@ -193,12 +193,18 @@ class HybridJWTAuthentication(BaseAuthentication):
 
         email = normalize_email_address(email)
         username = payload.get("username") or email
-        groups = _normalize_groups(payload.get("groups"))
+        groups = None
+        if "groups" in payload:
+            groups = _normalize_groups(payload.get("groups"))
+
+        role_value = payload.get("role")
+        if not role_value:
+            raise AuthenticationFailed("Role claim required.")
 
         role = _infer_role(
             user_model,
-            payload.get("role"),
-            groups,
+            role_value,
+            groups or [],
             bool(payload.get("is_superuser")),
         )
 
@@ -226,12 +232,13 @@ class HybridJWTAuthentication(BaseAuthentication):
             user.email_verified_at = email_verified_at
 
         user.save()
-        self._sync_groups(user, role, groups)
+        if groups is not None:
+            self._sync_groups(user, role, groups)
         return user
 
     def _merge_user_payload(self, claims, raw_token, external_id):
         payload = dict(claims)
-        if not payload.get("email") or not payload.get("role") or not payload.get("groups"):
+        if not payload.get("email") or not payload.get("role"):
             userinfo = self._fetch_userinfo(raw_token, external_id)
             for key in ("email", "username", "role", "groups", "is_staff", "is_superuser", "email_verified_at"):
                 if not payload.get(key) and userinfo.get(key) is not None:
