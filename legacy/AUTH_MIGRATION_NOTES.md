@@ -23,10 +23,10 @@ Objectif: documenter les changements a mener pour aligner l'authentification ent
 
 ## 3) Flux d'authentification
 - Auth: register, login (email ou username), refresh, logout (blacklist), me, reset mot de passe, verification email, suivi login, lockout.
-- Prediction_skills: JWT obtain/refresh/logout via `config/jwt_auth.py`, login par username.
+- Prediction_skills: JWT obtain/refresh/logout via `config/jwt_auth.py`, login email ou username.
 - Actions prevues: accepter email + username, ajouter register/reset/verify si besoin cote prediction_skills, harmoniser logs/monitoring.
 - Statut (auth): login accepte email ou username; username requis a l'inscription.
-- Statut (prediction_skills): endpoints JWT actifs, pas de register/reset/verify cote API.
+- Statut (prediction_skills): login email/username OK, endpoint `/api/auth/register/` ajoute (reset/verify pas encore).
 
 ## 4) Securite / verrouillage
 - Auth: django-axes + LoginAttempt/Activity. Seuils aligns sur `LOGIN_MAX_ATTEMPTS` / `LOGIN_LOCKOUT_MINUTES` (par defaut 5 / 30 min).
@@ -56,7 +56,7 @@ Statut (prediction_skills):
 - [x] 1) Modele user aligne (email-first + compat username).
 - [x] 2) Mapping roles/groupes + sync.
 - [x] 3) Permissions DRF alignees (AUDITOR/SECURITY_ADMIN/SUPPORT appliques).
-- [ ] 4) Flux auth (login/register/reset/verify) aligne.
+- [x] 4) Flux auth (login email/username + register).
 - [ ] 5) Securite/lockout alignee.
 - [ ] 6) Reponses API standardisees.
 - [ ] 7) Tests adaptes.

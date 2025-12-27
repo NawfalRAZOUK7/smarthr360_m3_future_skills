@@ -17,6 +17,13 @@ class TestAuthAndHealth:
         body = response.json()
         assert "access" in body and "refresh" in body
 
+    def test_auth_token_obtain_with_username(self, api_client, hr_manager):
+        payload = {"username": "hr_manager", "password": "hrpass123"}
+        response = api_client.post("/api/auth/token/", payload, format="json")
+        assert response.status_code == 200
+        body = response.json()
+        assert "access" in body and "refresh" in body
+
     def test_health_endpoints(self, api_client):
         for path in [
             "/api/health/",

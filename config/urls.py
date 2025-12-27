@@ -23,6 +23,7 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
+from accounts.views import RegisterView
 from config.jwt_auth import CustomTokenObtainPairView, CustomTokenRefreshView, logout_view, verify_token_view
 from future_skills.api.monitoring import (
     HealthCheckView,
@@ -78,6 +79,8 @@ discovered_future_skills_urls = discover_future_skills_urls()
 urlpatterns = [
     path("admin/", admin.site.urls),
     # JWT Authentication
+    path("api/auth/register/", RegisterView.as_view(), name="auth-register"),
+    path("api/auth/login/", CustomTokenObtainPairView.as_view(), name="auth-login"),
     path("api/auth/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path(
         "api/auth/token/refresh/",
