@@ -10,7 +10,7 @@ from .base import *  # noqa: F403,S2208 - Standard Django settings pattern
 DEBUG = True
 
 # Allowed hosts for development
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]  # nosec B104
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "::1", "0.0.0.0"]  # nosec B104
 
 # Development apps (optional - install if needed)
 DEVELOPMENT_APPS = []
