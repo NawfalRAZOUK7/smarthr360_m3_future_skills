@@ -266,7 +266,7 @@ class FutureSkillPredictionListAPIView(ListAPIView):
     summary="Recalculate all predictions",
     description="""Trigger a complete recalculation of all future skill predictions using ML or rules engine.
 
-    **Permissions**: HR Staff only (DRH/Responsable RH)
+    **Permissions**: HR Staff only
 
     **Process**:
     1. Recalculates predictions for all job role × skill combinations
@@ -346,7 +346,7 @@ class RecalculateFutureSkillsAPIView(APIView):
       }
     """
 
-    # Seulement DRH / Responsable RH (staff RH)
+    # HR staff only
     permission_classes = [IsHRStaff]
 
     def post(self, request, *args, **kwargs):
@@ -390,7 +390,7 @@ class MarketTrendListAPIView(APIView):
     GET /api/market-trends/?year=2025&sector=Tech
     """
 
-    # DRH + Responsable RH + Manager (lecture)
+    # HR + Manager (lecture)
     permission_classes = [IsHRStaffOrManager]
 
     def get(self, request, *args, **kwargs):
@@ -825,7 +825,7 @@ class BulkPredictAPIView(APIView):
 class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
     """Bulk import/update employees from JSON data with automatic prediction generation.
 
-    This endpoint allows HR staff (DRH/Responsable RH) to create or update multiple
+    This endpoint allows HR staff to create or update multiple
     employees in a single API call. The operation is performed within a database
     transaction to ensure data consistency.
 
@@ -833,7 +833,7 @@ class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
 
     **Authentication:** Required (Token/Session)
 
-    **Permissions:** IsHRStaff (DRH or Responsable RH groups only)
+    **Permissions:** IsHRStaff (HR role or group)
 
     **Request Body (JSON):**
     ```json
@@ -939,7 +939,7 @@ class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
     - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
     """
 
-    permission_classes = [IsHRStaff]  # Only DRH/Responsable RH
+    permission_classes = [IsHRStaff]  # HR only
 
     def post(self, request, *args, **kwargs):
         """Handle POST request to bulk import or update employees from JSON data.
@@ -987,7 +987,7 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
 
     **Authentication:** Required (Token/Session)
 
-    **Permissions:** IsHRStaff (DRH or Responsable RH groups only)
+    **Permissions:** IsHRStaff (HR role or group)
 
     **Content-Type:** `multipart/form-data`
 
@@ -1118,7 +1118,7 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
     - docs/BULK_IMPORT_COMPLETION_SUMMARY.md for comprehensive guide
     """
 
-    permission_classes = [IsHRStaff]  # Only DRH/Responsable RH
+    permission_classes = [IsHRStaff]  # HR only
 
     # File upload limits
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
@@ -1405,7 +1405,7 @@ class TrainingRunPagination(PageNumberPagination):
     summary="Train new ML model",
     description="""Train a new machine learning model for future skill predictions.
 
-    **Permissions**: HR Staff only (DRH/Responsable RH)
+    **Permissions**: HR Staff only
 
     **Execution Modes**:
 

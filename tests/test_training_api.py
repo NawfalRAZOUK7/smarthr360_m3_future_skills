@@ -22,7 +22,6 @@ pytestmark = pytest.mark.django_db
 # Now import Django models
 from django.conf import settings  # noqa: E402
 from django.contrib.auth import get_user_model  # noqa: E402
-from django.contrib.auth.models import Group  # noqa: E402
 from rest_framework.test import APIClient  # noqa: E402
 
 from future_skills.models import TrainingRun  # noqa: E402
@@ -34,9 +33,6 @@ def create_test_user():
     """Create a test user with HR staff permissions."""
     print("\n1️⃣  Creating test user...")
 
-    # Get or create DRH group
-    drh_group, _ = Group.objects.get_or_create(name="DRH")
-
     # Create or get user
     user, created = User.objects.get_or_create(
         username="test_hr_staff",
@@ -44,16 +40,15 @@ def create_test_user():
             "email": "hr@test.com",
             "is_staff": True,
             "is_active": True,
+            "role": User.Role.HR,
         },
     )
 
     if created:
         user.set_password("testpass123")
         user.save()
-        user.groups.add(drh_group)
         print(f"   ✅ Created user: {user.username}")
     else:
-        user.groups.add(drh_group)
         print(f"   ✅ Using existing user: {user.username}")
 
     return user

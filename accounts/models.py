@@ -1,8 +1,11 @@
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser, BaseUserManager, Group
 from django.db import models
 from django.db.models.functions import Lower
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
+from .grouping import BASE_ROLE_GROUPS, ROLE_TO_BASE_GROUP
 
 def normalize_email_address(email):
     if not email:
@@ -117,3 +120,34 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.email} ({self.role})"
+
+
+def _ensure_group(name: str) -> Group:
+    group, _ = Group.objects.get_or_create(name=name)
+    return group
+
+
+def _sync_role_base_group(user: User) -> None:
+    if not user.pk:
+        return
+
+    if user.role == User.Role.ADMIN:
+        if BASE_ROLE_GROUPS:
+            user.groups.remove(*Group.objects.filter(name__in=BASE_ROLE_GROUPS))
+        return
+
+    base_group_name = ROLE_TO_BASE_GROUP.get(user.role)
+    if not base_group_name:
+        return
+
+    target_group = _ensure_group(base_group_name)
+    user.groups.add(target_group)
+
+    other_base_groups = BASE_ROLE_GROUPS - {base_group_name}
+    if other_base_groups:
+        user.groups.remove(*Group.objects.filter(name__in=other_base_groups))
+
+
+@receiver(post_save, sender=User)
+def sync_user_role_group(sender, instance, **kwargs):
+    _sync_role_base_group(instance)

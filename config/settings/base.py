@@ -321,7 +321,7 @@ SPECTACULAR_SETTINGS = {
 All endpoints require authentication. Use Session or Basic Authentication.
 
 ### Permissions
-- **HR Staff** (DRH/Responsable RH): Full access including recalculation and training
+- **HR Staff** (HR role or group): Full access including recalculation and training
 - **Manager**: Read access to predictions and team data
 - **Authenticated**: Limited read access
 

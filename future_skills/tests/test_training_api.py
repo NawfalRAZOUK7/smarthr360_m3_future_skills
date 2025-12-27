@@ -2,7 +2,6 @@
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -16,17 +15,14 @@ class TrainingAPITest(TestCase):
 
     def setUp(self):
         """Set up test user and client."""
-        # Create DRH group
-        self.drh_group = Group.objects.create(name="DRH")
-
-        # Create test user
+        # Create test user (HR role)
         self.user = User.objects.create_user(
             username="test_hr",
             password="testpass123",
             email="hr@test.com",
             is_staff=True,
+            role=User.Role.HR,
         )
-        self.user.groups.add(self.drh_group)
 
         # Create API client
         self.client = APIClient()

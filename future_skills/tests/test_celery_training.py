@@ -12,7 +12,6 @@ from unittest.mock import MagicMock, patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -29,14 +28,15 @@ class CeleryTrainingTest(TestCase):
 
     def setUp(self):
         """
-        Set up test user with DRH permissions and authenticated API client.
+        Set up test user with HR permissions and authenticated API client.
         """
-        # Create DRH group
-        self.drh_group = Group.objects.create(name="DRH")
-
         # Create test user
-        self.user = User.objects.create_user(username="test_drh", password="testpass123", email="drh@test.com")
-        self.user.groups.add(self.drh_group)
+        self.user = User.objects.create_user(
+            username="test_hr",
+            password="testpass123",
+            email="hr@test.com",
+            role=User.Role.HR,
+        )
 
         # Create authenticated API client
         self.client = APIClient()
