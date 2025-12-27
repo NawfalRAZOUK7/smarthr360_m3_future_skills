@@ -2,7 +2,7 @@
 # syntax=docker/dockerfile:1.4
 
 # --- Builder stage: install ML deps, train models ---
-FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as builder
+FROM smarthr360-base-local as builder
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ COPY ml/ ./ml/
 # Ensure models directory exists in builder
 RUN mkdir -p /app/ml/models
 
-FROM ghcr.io/nawfalrazouk7/smarthr360_m3_future_skills:main-base as final
+FROM smarthr360-base-local as final
 USER root
 
 WORKDIR /app
