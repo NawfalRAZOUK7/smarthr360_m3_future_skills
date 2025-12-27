@@ -1,7 +1,6 @@
 # future_skills/tests/test_api.py
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -15,31 +14,27 @@ User = get_user_model()
 
 class BaseAPITestCase(APITestCase):
     def setUp(self):
-        # Create groups for roles
-        self.group_drh = Group.objects.create(name="DRH")
-        self.group_resp_rh = Group.objects.create(name="RESPONSABLE_RH")
-        self.group_manager = Group.objects.create(name="MANAGER")
-
         # Create test users
         self.user_no_role = User.objects.create_user(
             username="user_no_role",
             email="user_no_role@example.com",
             password="pass1234",
+            role=User.Role.EMPLOYEE,
         )
 
         self.user_manager = User.objects.create_user(
             username="manager_user",
             email="manager_user@example.com",
             password="pass1234",
+            role=User.Role.MANAGER,
         )
-        self.user_manager.groups.add(self.group_manager)
 
-        self.user_drh = User.objects.create_user(
-            username="drh_user",
-            email="drh_user@example.com",
+        self.user_hr = User.objects.create_user(
+            username="hr_user",
+            email="hr_user@example.com",
             password="pass1234",
+            role=User.Role.HR,
         )
-        self.user_drh.groups.add(self.group_drh)
 
         # Create test data for predictions
         self.skill_python = Skill.objects.create(
@@ -121,15 +116,15 @@ class RecalculateFutureSkillsAPITests(BaseAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_recalculate_future_skills_with_drh_role_should_succeed(self):
+    def test_recalculate_future_skills_with_hr_role_should_succeed(self):
         """
-        Test du endpoint recalculate avec utilisateur DRH.
+        Test du endpoint recalculate avec utilisateur RH.
         Force FUTURE_SKILLS_USE_ML = False pour tester exclusivement les règles.
         """
         from django.test import override_settings
 
         url = reverse("future-skills-recalculate")
-        self.client.force_authenticate(user=self.user_drh)
+        self.client.force_authenticate(user=self.user_hr)
 
         # Forcer l'utilisation du moteur de règles
         with override_settings(FUTURE_SKILLS_USE_ML=False):
@@ -148,7 +143,7 @@ class RecalculateFutureSkillsAPITests(BaseAPITestCase):
             # Vérifier le dernier PredictionRun
             last_run = PredictionRun.objects.order_by("-run_date").first()
             self.assertIsNotNone(last_run)
-            self.assertEqual(last_run.run_by, self.user_drh)
+            self.assertEqual(last_run.run_by, self.user_hr)
             self.assertIsInstance(last_run.parameters, dict)
             self.assertEqual(last_run.parameters.get("trigger"), "api")
             self.assertEqual(last_run.parameters.get("horizon_years"), 5)
@@ -168,14 +163,14 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
         - total_predictions > 0
         - PredictionRun.parameters["engine"] == "rules_v1" (fallback)
         - PredictionRun.parameters["trigger"] == "api"
-        - PredictionRun.run_by == utilisateur DRH
+        - PredictionRun.run_by == utilisateur RH
         """
         from unittest.mock import patch
 
         from django.test import override_settings
 
         url = reverse("future-skills-recalculate")
-        self.client.force_authenticate(user=self.user_drh)
+        self.client.force_authenticate(user=self.user_hr)
 
         with override_settings(FUTURE_SKILLS_USE_ML=True):
             # Mock du modèle pour simuler qu'il n'est pas disponible
@@ -201,7 +196,7 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
                 self.assertIsNotNone(last_run)
 
                 # ✅ Vérifier que le bon utilisateur est tracé
-                self.assertEqual(last_run.run_by, self.user_drh)
+                self.assertEqual(last_run.run_by, self.user_hr)
 
                 # ✅ Vérifier que les paramètres reflètent le fallback
                 self.assertIsInstance(last_run.parameters, dict)

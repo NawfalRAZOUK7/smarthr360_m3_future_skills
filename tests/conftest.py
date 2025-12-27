@@ -73,26 +73,21 @@ def admin_client(api_client, admin_user):
 @pytest.fixture
 def regular_user(db):
     """
-    Creates a regular user without special permissions.
+    Creates a manager user for authenticated API access.
 
     Usage:
         def test_user_creation(regular_user):
             assert regular_user.username == 'testuser'
             assert not regular_user.is_staff
     """
-    from django.contrib.auth.models import Group
-
     user = User.objects.create_user(
         username="testuser",
         email="testuser@example.com",
         password="testpass123",
         is_staff=False,
         is_superuser=False,
+        role=User.Role.MANAGER,
     )
-
-    # Add to MANAGER group for API access
-    manager_group, _ = Group.objects.get_or_create(name="MANAGER")
-    user.groups.add(manager_group)
 
     return user
 
@@ -113,23 +108,24 @@ def admin_user(db):
 @pytest.fixture
 def hr_manager(db):
     """
-    Creates an HR manager user with staff privileges and RESPONSABLE_RH group.
+    Creates an HR user with staff privileges and legacy RESPONSABLE_RH group.
 
     Usage:
         def test_hr_manager_permissions(hr_manager):
             assert hr_manager.is_staff
             assert hr_manager.groups.filter(name='RESPONSABLE_RH').exists()
     """
-    from django.contrib.auth.models import Group
-
     user = User.objects.create_user(
         username="hr_manager",
         email="hr_manager@example.com",
         password="hrpass123",
         is_staff=True,
+        role=User.Role.HR,
     )
 
     # Add to RESPONSABLE_RH group for HR staff permissions
+    from django.contrib.auth.models import Group
+
     hr_group, _ = Group.objects.get_or_create(name="RESPONSABLE_RH")
     user.groups.add(hr_group)
 
@@ -156,6 +152,7 @@ def hr_viewer(db):
         email="hr_viewer@example.com",
         password="viewerpass123",
         is_staff=False,
+        role=User.Role.EMPLOYEE,
     )
 
     # Add view-only permissions (but no group membership)

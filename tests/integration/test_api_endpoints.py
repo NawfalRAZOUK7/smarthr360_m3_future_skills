@@ -96,7 +96,7 @@ class TestAPIAuthentication:
         url = reverse("future-skills-list")
         response = authenticated_client.get(url)
 
-        # authenticated_client uses regular_user who has MANAGER group
+        # authenticated_client uses regular_user with MANAGER role (synced to group)
         assert response.status_code == status.HTTP_200_OK
 
     def test_admin_access_allowed(self, admin_client):
