@@ -1,7 +1,9 @@
 # API Reference (Concise)
 
 Auth
-- Prod: JWT (intended) and session; tests use session/basic. Anonymous allowed only on specific list endpoints; otherwise permission-protected.
+- Prod: JWT from `auth` via JWKS (`AUTH_JWKS_URL`); local auth endpoints gated by `AUTH_LOCAL_ENABLED`. Tests use session/basic.
+- Tokens must provide `email` + `role` (or configure `AUTH_USERINFO_URL` to fetch them).
+- Anonymous allowed only on specific list endpoints; otherwise permission-protected.
 - Permissions in `future_skills/permissions.py`; adjust roles/groups per deployment.
 
 Versioning

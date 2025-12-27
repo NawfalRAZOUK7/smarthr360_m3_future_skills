@@ -1,7 +1,9 @@
 # API
 
 AuthN/AuthZ:
-- Supports session/basic in tests; JWT is the intended production auth. Anonymous is allowed only on specific list endpoints validated by tests; everything else is permission-protected.
+- Supports session/basic in tests; production expects JWT from `auth` via JWKS (`AUTH_JWKS_URL`). Local auth endpoints are gated by `AUTH_LOCAL_ENABLED`.
+- Tokens must provide `email` + `role` (or `AUTH_USERINFO_URL` must be configured to fetch them).
+- Anonymous is allowed only on specific list endpoints validated by tests; everything else is permission-protected.
 - Custom DRF permissions live in `future_skills/permissions.py`; align roles/groups before exposing externally.
 
 Versioning:
