@@ -10,6 +10,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = (
         "email",
         "username",
+        "external_auth_id",
         "first_name",
         "last_name",
         "role",
@@ -20,7 +21,7 @@ class UserAdmin(BaseUserAdmin):
     )
     list_filter = ("role", "is_active", "is_email_verified", "is_staff", "is_superuser")
     search_fields = ("email", "username", "first_name", "last_name")
-    readonly_fields = ("email_verified_at",)
+    readonly_fields = ("email_verified_at", "external_auth_id")
 
     fieldsets = (
         (None, {"fields": ("email", "username", "password")}),
@@ -40,6 +41,7 @@ class UserAdmin(BaseUserAdmin):
                 )
             },
         ),
+        ("External auth", {"fields": ("external_auth_id",)}),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
 

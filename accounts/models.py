@@ -64,6 +64,13 @@ class User(AbstractUser):
     )
 
     email = models.EmailField(unique=True)
+    external_auth_id = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="External auth user identifier (source of truth).",
+    )
 
     role = models.CharField(
         max_length=20,
