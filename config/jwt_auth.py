@@ -9,7 +9,7 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -17,6 +17,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 logger = logging.getLogger(__name__)
+from accounts.models import normalize_email_address
+
 User = get_user_model()
 
 
@@ -82,8 +84,27 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
-        """Validate the token and add user information to the response."""
-        data = super().validate(attrs)
+        """Validate credentials (email or username) and add user information to the response."""
+        identifier = (attrs.get("email") or attrs.get("username") or "").strip()
+        password = attrs.get("password")
+
+        if not identifier:
+            raise serializers.ValidationError("Email ou username requis.")
+
+        user = None
+        if "@" in identifier:
+            normalized = normalize_email_address(identifier)
+            user = User.objects.filter(email__iexact=normalized).first()
+        else:
+            user = User.objects.filter(username__iexact=identifier).first()
+            if not user:
+                normalized = normalize_email_address(identifier)
+                user = User.objects.filter(email__iexact=normalized).first()
+
+        if not user:
+            raise serializers.ValidationError("Identifiants invalides.")
+
+        data = super().validate({"email": user.email, "password": password})
 
         # Add extra responses data
         data["user"] = {
@@ -92,6 +113,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "email": self.user.email if hasattr(self.user, "email") else "",
             "is_staff": self.user.is_staff,
             "is_superuser": self.user.is_superuser,
+            "role": getattr(self.user, "role", None),
             "groups": (list(self.user.groups.values_list("name", flat=True)) if hasattr(self.user, "groups") else []),
         }
 
