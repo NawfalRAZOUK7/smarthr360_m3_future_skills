@@ -26,3 +26,7 @@ Headers/behavior:
 Usage/examples:
 - Postman collections: `postman/collection_api_v2.json` (preferred current surface) or `postman/collection_full.json` (includes alias groups).
 - Curl: include Accept version header (`Accept: application/json; version=2`) or use `/api/v2/...` paths.
+
+Env setup (local quickstart):
+- `cp .env.template .env` puis remplacer `SECRET_KEY` et `AUTH_JWT_SHARED_SECRET` (SECRET_KEY de auth) si vous consommez les tokens auth en HS256.
+- Port auth par défaut: `http://127.0.0.1:8000` → `AUTH_USERINFO_URL=http://127.0.0.1:8000/api/auth/me/`.
