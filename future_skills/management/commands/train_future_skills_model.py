@@ -77,6 +77,25 @@ class Command(BaseCommand):
             default="",
             help="Additional notes about this training run",
         )
+        parser.add_argument(
+            "--allowed-provenance",
+            type=str,
+            default="SILVER,GOLD",
+            help="Allowed label provenance values (default: SILVER,GOLD).",
+        )
+        parser.add_argument(
+            "--use-time-split",
+            dest="use_time_split",
+            action="store_true",
+            help="Use time-based split when as_of_date is available.",
+        )
+        parser.add_argument(
+            "--no-time-split",
+            dest="use_time_split",
+            action="store_false",
+            help="Disable time-based split.",
+        )
+        parser.set_defaults(use_time_split=True)
 
     def handle(self, *args, **options):
         # Parse arguments
@@ -87,6 +106,8 @@ class Command(BaseCommand):
         n_estimators = options["n_estimators"]
         random_state = options["random_state"]
         notes = options["notes"]
+        allowed_provenance = options["allowed_provenance"]
+        use_time_split = options["use_time_split"]
 
         # Default paths
         if dataset_path is None:
@@ -118,6 +139,9 @@ class Command(BaseCommand):
         self.stdout.write(f"🔀 Test split:    {test_split * 100:.0f}%")
         self.stdout.write(f"🌲 Estimators:    {n_estimators}")
         self.stdout.write(f"🎲 Random state:  {random_state}")
+        if allowed_provenance:
+            self.stdout.write(f"🏷️  Provenance:   {allowed_provenance}")
+        self.stdout.write(f"⏱️  Time split:   {'ON' if use_time_split else 'OFF'}")
         if notes:
             self.stdout.write(f"📝 Notes:         {notes}")
         self.stdout.write(self.style.SUCCESS("=" * 70))
@@ -125,6 +149,10 @@ class Command(BaseCommand):
 
         # Record start time
         training_start = datetime.now()
+
+        parsed_provenance = None
+        if allowed_provenance:
+            parsed_provenance = [value.strip().upper() for value in allowed_provenance.split(",") if value.strip()]
 
         try:
             # Call the training function from ml/scripts/train_future_skills_model.py
@@ -135,6 +163,8 @@ class Command(BaseCommand):
                 test_size=test_split,
                 random_state=random_state,
                 n_estimators=n_estimators,
+                allowed_provenance=parsed_provenance,
+                use_time_split=use_time_split,
             )
 
             # Extract metrics from metadata
@@ -166,6 +196,20 @@ class Command(BaseCommand):
                 test_samples=metadata["dataset"]["test_samples"],
                 training_duration_seconds=training_duration,
                 per_class_metrics=metadata["metrics"].get("per_class", {}),
+                evaluation_metrics={
+                    "confusion_matrix": metadata["metrics"].get("confusion_matrix"),
+                    "kappa": metadata["metrics"].get("kappa"),
+                    "weighted_kappa": metadata["metrics"].get("weighted_kappa"),
+                    "brier_score": metadata["metrics"].get("brier_score"),
+                    "walk_forward": metadata["metrics"].get("walk_forward"),
+                },
+                dataset_metadata={
+                    "label_provenance_counts": metadata["dataset"].get("label_provenance_counts", {}),
+                    "as_of_date_range": metadata["dataset"].get("as_of_date_range"),
+                    "time_split_used": metadata["dataset"].get("time_split_used", False),
+                    "allowed_label_provenance": parsed_provenance,
+                    "use_time_split": use_time_split,
+                },
                 features_used=metadata["dataset"].get("features_used", []),
                 trained_by=None,  # CLI execution, no user
                 notes=notes,

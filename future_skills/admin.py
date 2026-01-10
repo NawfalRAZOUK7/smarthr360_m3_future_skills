@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     EconomicReport,
     Employee,
+    FutureSkillLabel,
     FutureSkillPrediction,
     HRInvestmentRecommendation,
     JobRole,
@@ -49,6 +50,22 @@ class FutureSkillPredictionAdmin(admin.ModelAdmin):
     list_filter = ("horizon_years", "level", "job_role", "skill")
     autocomplete_fields = ("job_role", "skill")
     date_hierarchy = "created_at"
+
+
+@admin.register(FutureSkillLabel)
+class FutureSkillLabelAdmin(admin.ModelAdmin):
+    list_display = (
+        "job_role",
+        "skill",
+        "as_of_date",
+        "horizon_months",
+        "level",
+        "validated_by",
+    )
+    search_fields = ("job_role__name", "skill__name", "validated_by__username")
+    list_filter = ("level", "horizon_months", "as_of_date")
+    autocomplete_fields = ("job_role", "skill", "validated_by")
+    date_hierarchy = "as_of_date"
 
 
 @admin.register(PredictionRun)
@@ -102,6 +119,8 @@ class TrainingRunAdmin(admin.ModelAdmin):
         "train_samples",
         "test_samples",
         "per_class_metrics",
+        "evaluation_metrics",
+        "dataset_metadata",
         "features_used",
         "hyperparameters",
     )
@@ -119,6 +138,8 @@ class TrainingRunAdmin(admin.ModelAdmin):
                     "hyperparameters",
                     "features_used",
                     "per_class_metrics",
+                    "evaluation_metrics",
+                    "dataset_metadata",
                     "error_message",
                 ),
                 "classes": ("collapse",),

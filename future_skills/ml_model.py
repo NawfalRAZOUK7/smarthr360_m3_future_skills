@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Tuple
+from typing import Dict, Tuple
 
 from django.conf import settings
 
@@ -88,6 +88,36 @@ class FutureSkillsModel:
         internal_usage: float,
         training_requests: float,
         scarcity_index: float,
+        trend_momentum: float = 0.0,
+        trend_acceleration: float = 0.0,
+        trend_volatility: float = 0.0,
+        trend_persistence: float = 0.0,
+        internal_usage_momentum: float = 0.0,
+        training_requests_momentum: float = 0.0,
+        internal_usage_lag_1: float = 0.0,
+        internal_usage_lag_2: float = 0.0,
+        internal_usage_roll_mean_3: float = 0.0,
+        training_requests_lag_1: float = 0.0,
+        training_requests_lag_2: float = 0.0,
+        training_requests_roll_mean_3: float = 0.0,
+        economic_indicator_lag_1: float = 0.0,
+        economic_indicator_lag_2: float = 0.0,
+        economic_indicator_roll_mean_3: float = 0.0,
+        trend_stability_flag: float = 0.0,
+        internal_usage_stability_flag: float = 0.0,
+        training_requests_stability_flag: float = 0.0,
+        data_quality_window_coverage: float = 0.0,
+        data_quality_missing_flag: float = 0.0,
+        data_quality_stale_flag: float = 0.0,
+        data_quality_low_sample_flag: float = 0.0,
+        is_it_department: float = 0.0,
+        is_senior_role: float = 0.0,
+        is_technical_skill: float = 0.0,
+        dept_skill_alignment: float = 0.0,
+        forecast_trend_score: float = 0.0,
+        forecast_internal_usage: float = 0.0,
+        forecast_training_requests: float = 0.0,
+        forecast_need_score: float = 0.0,
     ) -> Tuple[str, float]:
         """Retourne (future_need_level, score_0_100) en utilisant le pipeline ML.
 
@@ -113,6 +143,36 @@ class FutureSkillsModel:
             "internal_usage": [internal_usage],
             "training_requests": [training_requests],
             "scarcity_index": [scarcity_index],
+            "trend_momentum": [trend_momentum],
+            "trend_acceleration": [trend_acceleration],
+            "trend_volatility": [trend_volatility],
+            "trend_persistence": [trend_persistence],
+            "internal_usage_momentum": [internal_usage_momentum],
+            "training_requests_momentum": [training_requests_momentum],
+            "internal_usage_lag_1": [internal_usage_lag_1],
+            "internal_usage_lag_2": [internal_usage_lag_2],
+            "internal_usage_roll_mean_3": [internal_usage_roll_mean_3],
+            "training_requests_lag_1": [training_requests_lag_1],
+            "training_requests_lag_2": [training_requests_lag_2],
+            "training_requests_roll_mean_3": [training_requests_roll_mean_3],
+            "economic_indicator_lag_1": [economic_indicator_lag_1],
+            "economic_indicator_lag_2": [economic_indicator_lag_2],
+            "economic_indicator_roll_mean_3": [economic_indicator_roll_mean_3],
+            "trend_stability_flag": [trend_stability_flag],
+            "internal_usage_stability_flag": [internal_usage_stability_flag],
+            "training_requests_stability_flag": [training_requests_stability_flag],
+            "data_quality_window_coverage": [data_quality_window_coverage],
+            "data_quality_missing_flag": [data_quality_missing_flag],
+            "data_quality_stale_flag": [data_quality_stale_flag],
+            "data_quality_low_sample_flag": [data_quality_low_sample_flag],
+            "is_it_department": [is_it_department],
+            "is_senior_role": [is_senior_role],
+            "is_technical_skill": [is_technical_skill],
+            "dept_skill_alignment": [dept_skill_alignment],
+            "forecast_trend_score": [forecast_trend_score],
+            "forecast_internal_usage": [forecast_internal_usage],
+            "forecast_training_requests": [forecast_training_requests],
+            "forecast_need_score": [forecast_need_score],
         }
         df = pd.DataFrame(data)
 
@@ -133,3 +193,123 @@ class FutureSkillsModel:
             # On garde le score par défaut (100.0)
 
         return level, score_0_100
+
+    def predict_with_metadata(
+        self,
+        job_role_name: str,
+        skill_name: str,
+        trend_score: float,
+        internal_usage: float,
+        training_requests: float,
+        scarcity_index: float,
+        trend_momentum: float = 0.0,
+        trend_acceleration: float = 0.0,
+        trend_volatility: float = 0.0,
+        trend_persistence: float = 0.0,
+        internal_usage_momentum: float = 0.0,
+        training_requests_momentum: float = 0.0,
+        internal_usage_lag_1: float = 0.0,
+        internal_usage_lag_2: float = 0.0,
+        internal_usage_roll_mean_3: float = 0.0,
+        training_requests_lag_1: float = 0.0,
+        training_requests_lag_2: float = 0.0,
+        training_requests_roll_mean_3: float = 0.0,
+        economic_indicator_lag_1: float = 0.0,
+        economic_indicator_lag_2: float = 0.0,
+        economic_indicator_roll_mean_3: float = 0.0,
+        trend_stability_flag: float = 0.0,
+        internal_usage_stability_flag: float = 0.0,
+        training_requests_stability_flag: float = 0.0,
+        data_quality_window_coverage: float = 0.0,
+        data_quality_missing_flag: float = 0.0,
+        data_quality_stale_flag: float = 0.0,
+        data_quality_low_sample_flag: float = 0.0,
+        is_it_department: float = 0.0,
+        is_senior_role: float = 0.0,
+        is_technical_skill: float = 0.0,
+        dept_skill_alignment: float = 0.0,
+        forecast_trend_score: float = 0.0,
+        forecast_internal_usage: float = 0.0,
+        forecast_training_requests: float = 0.0,
+        forecast_need_score: float = 0.0,
+    ) -> Dict[str, object]:
+        """Retourne une prédiction enrichie avec probabilités et confiance."""
+        if pd is None:
+            raise RuntimeError("FutureSkillsModel: pandas n'est pas disponible pour préparer les données d'entrée.")
+        if not self.is_available():
+            raise RuntimeError("FutureSkillsModel: modèle ML non disponible (non chargé ou invalide).")
+
+        data = {
+            "job_role_name": [job_role_name],
+            "skill_name": [skill_name],
+            "skill_category": ["Unspecified"],
+            "job_department": ["General"],
+            "hiring_difficulty": [0.5],
+            "avg_salary_k": [50.0],
+            "economic_indicator": [0.5],
+            "trend_score": [trend_score],
+            "internal_usage": [internal_usage],
+            "training_requests": [training_requests],
+            "scarcity_index": [scarcity_index],
+            "trend_momentum": [trend_momentum],
+            "trend_acceleration": [trend_acceleration],
+            "trend_volatility": [trend_volatility],
+            "trend_persistence": [trend_persistence],
+            "internal_usage_momentum": [internal_usage_momentum],
+            "training_requests_momentum": [training_requests_momentum],
+            "internal_usage_lag_1": [internal_usage_lag_1],
+            "internal_usage_lag_2": [internal_usage_lag_2],
+            "internal_usage_roll_mean_3": [internal_usage_roll_mean_3],
+            "training_requests_lag_1": [training_requests_lag_1],
+            "training_requests_lag_2": [training_requests_lag_2],
+            "training_requests_roll_mean_3": [training_requests_roll_mean_3],
+            "economic_indicator_lag_1": [economic_indicator_lag_1],
+            "economic_indicator_lag_2": [economic_indicator_lag_2],
+            "economic_indicator_roll_mean_3": [economic_indicator_roll_mean_3],
+            "trend_stability_flag": [trend_stability_flag],
+            "internal_usage_stability_flag": [internal_usage_stability_flag],
+            "training_requests_stability_flag": [training_requests_stability_flag],
+            "data_quality_window_coverage": [data_quality_window_coverage],
+            "data_quality_missing_flag": [data_quality_missing_flag],
+            "data_quality_stale_flag": [data_quality_stale_flag],
+            "data_quality_low_sample_flag": [data_quality_low_sample_flag],
+            "is_it_department": [is_it_department],
+            "is_senior_role": [is_senior_role],
+            "is_technical_skill": [is_technical_skill],
+            "dept_skill_alignment": [dept_skill_alignment],
+            "forecast_trend_score": [forecast_trend_score],
+            "forecast_internal_usage": [forecast_internal_usage],
+            "forecast_training_requests": [forecast_training_requests],
+            "forecast_need_score": [forecast_need_score],
+        }
+        df = pd.DataFrame(data)
+
+        pipeline = self.pipeline
+        level = pipeline.predict(df)[0]
+
+        probabilities: Dict[str, float] = {}
+        confidence = None
+        score_0_100 = 100.0
+
+        try:
+            if hasattr(pipeline, "predict_proba"):
+                proba = pipeline.predict_proba(df)[0]
+                classes = list(getattr(pipeline, "classes_", ["LOW", "MEDIUM", "HIGH"]))
+                class_to_proba = {label: float(value) for label, value in zip(classes, proba)}
+                probabilities = {
+                    "p_low": class_to_proba.get("LOW", 0.0),
+                    "p_medium": class_to_proba.get("MEDIUM", 0.0),
+                    "p_high": class_to_proba.get("HIGH", 0.0),
+                }
+                confidence = float(max(class_to_proba.values())) if class_to_proba else None
+                if confidence is not None:
+                    score_0_100 = round(confidence * 100.0, 2)
+        except Exception as exc:  # pragma: no cover (log uniquement)
+            logger.warning("FutureSkillsModel: erreur lors du calcul des probabilités : %s", exc)
+
+        return {
+            "level": level,
+            "score": score_0_100,
+            "probabilities": probabilities,
+            "confidence": confidence,
+        }

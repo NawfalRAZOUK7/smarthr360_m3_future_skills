@@ -89,11 +89,56 @@ class FutureSkillPredictionSerializer(serializers.ModelSerializer):
             "job_role_id",
             "skill_id",
             "horizon_years",
+            "horizon_months",
+            "as_of_date",
             "score",
             "level",
             "rationale",
+            "explanation",
+            "probabilities",
+            "confidence",
+            "top_drivers",
+            "recommended_actions",
+            "label_provenance_used",
+            "model_version",
+            "data_window",
+            "decision_policy",
+            "audit_payload",
             "created_at",
         ]
+
+
+class TopRankedSkillItemSerializer(serializers.Serializer):
+    rank = serializers.IntegerField()
+    score = serializers.FloatField()
+    score_normalized = serializers.FloatField(allow_null=True, required=False)
+    level = serializers.CharField()
+    horizon_years = serializers.IntegerField()
+    as_of_date = serializers.DateField(allow_null=True)
+    job_role = JobRoleSerializer()
+    skill = SkillSerializer()
+    job_department = serializers.CharField()
+    skill_category = serializers.CharField()
+
+
+class TopRankedSkillGroupSerializer(serializers.Serializer):
+    group_key = serializers.CharField()
+    group_label = serializers.CharField()
+    total_predictions = serializers.IntegerField()
+    min_score = serializers.FloatField()
+    max_score = serializers.FloatField()
+    items = TopRankedSkillItemSerializer(many=True)
+
+
+class TopRankedSkillResponseSerializer(serializers.Serializer):
+    group_by = serializers.CharField()
+    horizon_years = serializers.IntegerField()
+    as_of_date = serializers.DateField(allow_null=True)
+    top_n = serializers.IntegerField()
+    normalize = serializers.BooleanField()
+    normalization_method = serializers.CharField()
+    relevance = serializers.JSONField(required=False)
+    groups = TopRankedSkillGroupSerializer(many=True)
 
 
 class HRInvestmentRecommendationSerializer(serializers.ModelSerializer):
@@ -176,6 +221,94 @@ class PredictSkillsResponseSerializer(serializers.Serializer):
     level = serializers.CharField()
     score = serializers.FloatField()
     rationale = serializers.CharField(allow_blank=True)
+
+
+class ScenarioPredictionRequestSerializer(serializers.Serializer):
+    """Input serializer for what-if scenario predictions."""
+
+    job_role_id = serializers.IntegerField(required=True)
+    skill_id = serializers.IntegerField(required=True)
+    horizon_years = serializers.IntegerField(required=False, default=5)
+    as_of_date = serializers.DateField(required=False)
+    overrides = serializers.DictField(child=serializers.FloatField(), required=False)
+
+    SCENARIO_OVERRIDE_FIELDS = {
+        "trend_score",
+        "internal_usage",
+        "training_requests",
+        "scarcity_index",
+        "trend_momentum",
+        "trend_acceleration",
+        "trend_volatility",
+        "trend_persistence",
+        "internal_usage_momentum",
+        "training_requests_momentum",
+        "internal_usage_lag_1",
+        "internal_usage_lag_2",
+        "internal_usage_roll_mean_3",
+        "training_requests_lag_1",
+        "training_requests_lag_2",
+        "training_requests_roll_mean_3",
+        "economic_indicator_lag_1",
+        "economic_indicator_lag_2",
+        "economic_indicator_roll_mean_3",
+        "trend_stability_flag",
+        "internal_usage_stability_flag",
+        "training_requests_stability_flag",
+        "data_quality_window_coverage",
+        "data_quality_missing_flag",
+        "data_quality_stale_flag",
+        "data_quality_low_sample_flag",
+        "is_it_department",
+        "is_senior_role",
+        "is_technical_skill",
+        "dept_skill_alignment",
+        "forecast_trend_score",
+        "forecast_internal_usage",
+        "forecast_training_requests",
+        "forecast_need_score",
+    }
+
+    def validate_job_role_id(self, value):
+        from ..models import JobRole
+
+        if not JobRole.objects.filter(pk=value).exists():
+            raise serializers.ValidationError(f"JobRole with id {value} does not exist.")
+        return value
+
+    def validate_skill_id(self, value):
+        from ..models import Skill
+
+        if not Skill.objects.filter(pk=value).exists():
+            raise serializers.ValidationError(f"Skill with id {value} does not exist.")
+        return value
+
+    def validate_overrides(self, value):
+        if not value:
+            return value
+        unknown = sorted(set(value.keys()) - self.SCENARIO_OVERRIDE_FIELDS)
+        if unknown:
+            raise serializers.ValidationError(f"Unsupported override fields: {', '.join(unknown)}")
+        return value
+
+
+class ScenarioPredictionResponseSerializer(serializers.Serializer):
+    """Output serializer for what-if scenario predictions."""
+
+    job_role_id = serializers.IntegerField()
+    skill_id = serializers.IntegerField()
+    horizon_years = serializers.IntegerField()
+    horizon_months = serializers.IntegerField()
+    as_of_date = serializers.DateField()
+    score = serializers.FloatField()
+    level = serializers.CharField()
+    probabilities = serializers.DictField(child=serializers.FloatField(), required=False)
+    confidence = serializers.FloatField(required=False, allow_null=True)
+    top_drivers = serializers.ListField(child=serializers.DictField(), required=False)
+    recommended_actions = serializers.ListField(child=serializers.DictField(), required=False)
+    decision_policy = serializers.DictField(required=False)
+    audit_payload = serializers.DictField(required=False)
+    feature_overrides = serializers.DictField(child=serializers.FloatField(), required=False)
 
 
 class RecommendSkillsRequestSerializer(serializers.Serializer):
@@ -447,6 +580,8 @@ class TrainingRunDetailSerializer(serializers.ModelSerializer):
             "training_duration_seconds",
             # Additional info
             "per_class_metrics",
+            "evaluation_metrics",
+            "dataset_metadata",
             "features_used",
             "trained_by_username",
             "notes",

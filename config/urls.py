@@ -30,6 +30,7 @@ from future_skills.api.monitoring import (
     LivenessCheckView,
     MetricsView,
     ReadyCheckView,
+    RefreshSliceMetricsView,
     VersionInfoView,
 )
 
@@ -95,6 +96,7 @@ urlpatterns = [
     path("api/alive/", LivenessCheckView.as_view(), name="liveness-check"),
     path("api/version/", VersionInfoView.as_view(), name="version-info"),
     path("api/metrics/", MetricsView.as_view(), name="api-metrics"),
+    path("api/metrics/slice-performance/refresh/", RefreshSliceMetricsView.as_view(), name="metrics-refresh-slices"),
     # API Versioning
     path("api/v1/", include("future_skills.api.v1_urls", namespace="v1")),
     path("api/v2/", include("future_skills.api.v2_urls", namespace="v2")),

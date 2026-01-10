@@ -42,7 +42,6 @@ except ImportError:
     pass
 
 # Relax login protection in dev (avoid Axes lockouts during automated tests)
-MIDDLEWARE = [mw for mw in MIDDLEWARE if mw != "axes.middleware.AxesMiddleware"]
 AXES_ENABLED = False
 
 # Development database (SQLite for simplicity)
@@ -75,6 +74,8 @@ LOGGING["loggers"]["future_skills"]["level"] = "DEBUG"
 # ML settings for development (default to rules-only unless explicitly enabled)
 FUTURE_SKILLS_USE_ML = config("FUTURE_SKILLS_USE_ML", default=False, cast=bool)
 FUTURE_SKILLS_ENABLE_MONITORING = True
+FUTURE_SKILLS_ENABLE_EXPLANATIONS = False
+FUTURE_SKILLS_MIN_SLICE_SIZE = 5
 
 print("🚀 Running in DEVELOPMENT mode")
 

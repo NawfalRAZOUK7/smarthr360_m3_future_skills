@@ -49,9 +49,18 @@ try:
     SHAP_AVAILABLE = True
 except ImportError:
     SHAP_AVAILABLE = False
-    logger.warning(
-        "SHAP non disponible. Les explications détaillées ne seront pas générées. " "Installez avec: pip install shap"
-    )
+    try:
+        from django.conf import settings
+
+        explanations_enabled = getattr(settings, "FUTURE_SKILLS_ENABLE_EXPLANATIONS", True)
+    except Exception:
+        explanations_enabled = True
+
+    if explanations_enabled:
+        logger.warning(
+            "SHAP non disponible. Les explications détaillées ne seront pas générées. "
+            "Installez avec: pip install shap"
+        )
 
 
 class ExplanationEngine:
@@ -65,12 +74,42 @@ class ExplanationEngine:
     # Mapping des features techniques vers des termes métier
     FEATURE_READABLE_NAMES = {
         "trend_score": "tendance marché",
+        "trend_momentum": "momentum tendance",
+        "trend_acceleration": "accélération tendance",
+        "trend_volatility": "volatilité tendance",
+        "trend_persistence": "persistance tendance",
         "scarcity_index": "rareté interne",
         "internal_usage": "usage interne actuel",
+        "internal_usage_momentum": "momentum usage interne",
+        "internal_usage_lag_1": "usage interne (t-1)",
+        "internal_usage_lag_2": "usage interne (t-2)",
+        "internal_usage_roll_mean_3": "usage interne (moyenne 3)",
         "training_requests": "demandes de formation",
+        "training_requests_momentum": "momentum demandes formation",
+        "training_requests_lag_1": "demandes formation (t-1)",
+        "training_requests_lag_2": "demandes formation (t-2)",
+        "training_requests_roll_mean_3": "demandes formation (moyenne 3)",
         "hiring_difficulty": "difficulté de recrutement",
         "avg_salary_k": "niveau de salaire",
         "economic_indicator": "indicateur économique",
+        "economic_indicator_lag_1": "indicateur économique (t-1)",
+        "economic_indicator_lag_2": "indicateur économique (t-2)",
+        "economic_indicator_roll_mean_3": "indicateur économique (moyenne 3)",
+        "trend_stability_flag": "stabilité tendance",
+        "internal_usage_stability_flag": "stabilité usage interne",
+        "training_requests_stability_flag": "stabilité demandes formation",
+        "data_quality_window_coverage": "couverture fenêtre données",
+        "data_quality_missing_flag": "données manquantes",
+        "data_quality_stale_flag": "données obsolètes",
+        "data_quality_low_sample_flag": "faible volume de signaux",
+        "is_it_department": "département IT",
+        "is_senior_role": "rôle senior",
+        "is_technical_skill": "compétence technique",
+        "dept_skill_alignment": "alignement département/compétence",
+        "forecast_trend_score": "tendance marché (prévision)",
+        "forecast_internal_usage": "usage interne (prévision)",
+        "forecast_training_requests": "demandes formation (prévision)",
+        "forecast_need_score": "besoin futur (prévision)",
         "skill_category": "catégorie de compétence",
         "job_department": "département métier",
     }

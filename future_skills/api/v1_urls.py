@@ -17,6 +17,8 @@ from .views import (
     EconomicReportListAPIView,
     EmployeeViewSet,
     FutureSkillPredictionListAPIView,
+    FutureSkillScenarioAPIView,
+    FutureSkillTopRankingsAPIView,
     HRInvestmentRecommendationListAPIView,
     MarketTrendListAPIView,
     PredictSkillsAPIView,
@@ -41,6 +43,16 @@ urlpatterns = [
         "future-skills/",
         FutureSkillPredictionListAPIView.as_view(),
         name="future-skills-list",
+    ),
+    path(
+        "future-skills/top-rankings/",
+        FutureSkillTopRankingsAPIView.as_view(),
+        name="future-skills-top-rankings",
+    ),
+    path(
+        "future-skills/what-if/",
+        FutureSkillScenarioAPIView.as_view(),
+        name="future-skills-what-if",
     ),
     path(
         "future-skills/recalculate/",

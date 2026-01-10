@@ -25,10 +25,19 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from typing import Dict, List, Optional, Tuple
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_fscore_support
+from sklearn.metrics import (
+    accuracy_score,
+    balanced_accuracy_score,
+    brier_score_loss,
+    classification_report,
+    cohen_kappa_score,
+    confusion_matrix,
+    precision_recall_fscore_support,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -53,6 +62,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 
 
 ALLOWED_LEVELS = {"LOW", "MEDIUM", "HIGH"}
+ALLOWED_PROVENANCE = {"BRONZE", "SILVER", "GOLD"}
+DEFAULT_ALLOWED_PROVENANCE = ["SILVER", "GOLD"]
+LABEL_PROVENANCE_COLUMN = "label_provenance"
+AS_OF_DATE_COLUMN = "as_of_date"
 
 
 def load_dataset(csv_path: Path) -> pd.DataFrame:
@@ -96,6 +109,112 @@ def load_dataset(csv_path: Path) -> pd.DataFrame:
     # Attach target_col as attribute for downstream use
     df._target_col = target_col
     return df
+
+
+def _apply_label_provenance_filter(
+    df: pd.DataFrame,
+    allowed_provenance: Optional[List[str]],
+) -> Tuple[pd.DataFrame, Dict[str, int]]:
+    """Filter dataset by allowed label provenance values (if requested)."""
+    if not allowed_provenance:
+        return df, {}
+
+    if LABEL_PROVENANCE_COLUMN not in df.columns:
+        print("[WARN] label_provenance column missing; skipping provenance filter.")
+        return df, {}
+
+    allowed_set = {value.upper() for value in allowed_provenance}
+    invalid = sorted([value for value in allowed_set if value not in ALLOWED_PROVENANCE])
+    if invalid:
+        raise ValueError(f"Invalid label provenance values: {invalid}")
+
+    provenance_series = df[LABEL_PROVENANCE_COLUMN].astype(str).str.upper()
+    before = len(df)
+    df = df[provenance_series.isin(allowed_set)].copy()
+    after = len(df)
+
+    if after == 0:
+        raise ValueError(f"No rows match allowed provenance {sorted(allowed_set)}")
+
+    if after < before:
+        print(f"[INFO] Filtered {before - after} row(s) by label provenance")
+
+    provenance_counts = df[LABEL_PROVENANCE_COLUMN].astype(str).str.upper().value_counts().to_dict()
+    if provenance_counts == {"BRONZE": len(df)}:
+        print("[WARN] Dataset contains only BRONZE labels; use SILVER/GOLD for final training.")
+
+    return df, provenance_counts
+
+
+def _resolve_allowed_provenance(
+    df: pd.DataFrame,
+    allowed_provenance: Optional[List[str]],
+) -> Optional[List[str]]:
+    """Apply default provenance policy when not explicitly provided."""
+    if allowed_provenance:
+        return allowed_provenance
+    if LABEL_PROVENANCE_COLUMN not in df.columns:
+        return None
+    return DEFAULT_ALLOWED_PROVENANCE.copy()
+
+
+def _extract_as_of_date_range(df: pd.DataFrame) -> Optional[Dict[str, str]]:
+    """Return min/max as_of_date range when available."""
+    if AS_OF_DATE_COLUMN not in df.columns:
+        return None
+
+    as_of_series = pd.to_datetime(df[AS_OF_DATE_COLUMN], errors="coerce")
+    if as_of_series.notna().any():
+        return {
+            "min": as_of_series.min().date().isoformat(),
+            "max": as_of_series.max().date().isoformat(),
+        }
+    return None
+
+
+def _time_based_split(
+    df: pd.DataFrame,
+    feature_cols: List[str],
+    target_col: str,
+    test_size: float,
+) -> Tuple[
+    Optional[pd.DataFrame],
+    Optional[pd.DataFrame],
+    Optional[pd.Series],
+    Optional[pd.Series],
+    bool,
+    Optional[Dict[str, str]],
+]:
+    """Perform a time-based split using as_of_date; returns split data and holdout window."""
+    if AS_OF_DATE_COLUMN not in df.columns:
+        return None, None, None, None, False, None
+
+    as_of_series = pd.to_datetime(df[AS_OF_DATE_COLUMN], errors="coerce")
+    if as_of_series.notna().sum() < 2 or as_of_series.nunique() <= 1:
+        return None, None, None, None, False, None
+
+    df_sorted = df.copy()
+    df_sorted["_as_of_date"] = as_of_series
+    df_sorted = df_sorted.sort_values("_as_of_date")
+    split_index = int(len(df_sorted) * (1 - test_size))
+    if split_index <= 0 or split_index >= len(df_sorted):
+        return None, None, None, None, False, None
+
+    X_sorted = df_sorted[feature_cols].copy()
+    y_sorted = df_sorted[target_col].copy()
+    holdout_window = {
+        "train_end": df_sorted["_as_of_date"].iloc[split_index - 1].date().isoformat(),
+        "test_start": df_sorted["_as_of_date"].iloc[split_index].date().isoformat(),
+        "test_end": df_sorted["_as_of_date"].iloc[-1].date().isoformat(),
+    }
+    return (
+        X_sorted.iloc[:split_index],
+        X_sorted.iloc[split_index:],
+        y_sorted.iloc[:split_index],
+        y_sorted.iloc[split_index:],
+        True,
+        holdout_window,
+    )
 
 
 def build_pipeline(
@@ -185,23 +304,185 @@ def _check_class_imbalance(y: pd.Series) -> tuple:
     return imbalance_ratio, class_counts
 
 
-def _compute_per_class_metrics(cm: np.ndarray) -> dict:
-    """Calculate per-class metrics from confusion matrix."""
+def _compute_per_class_metrics(y_true: pd.Series, y_pred: np.ndarray) -> dict:
+    """Calculate per-class precision/recall/F1 and accuracy."""
+    labels = ["LOW", "MEDIUM", "HIGH"]
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    precision, recall, f1, support = precision_recall_fscore_support(
+        y_true,
+        y_pred,
+        labels=labels,
+        average=None,
+        zero_division=0,
+    )
+
     per_class_metrics = {}
-    print("\nPrécision par classe :")
-    for i, level in enumerate(["LOW", "MEDIUM", "HIGH"]):
-        if cm.sum(axis=1)[i] > 0:
-            class_accuracy = cm[i, i] / cm.sum(axis=1)[i]
-            support_count = int(cm.sum(axis=1)[i])
-            per_class_metrics[level] = {
-                "accuracy": round(float(class_accuracy), 4),
-                "support": support_count,
-            }
-            print(f"  {level}: {class_accuracy:.2%} (support: {support_count})")
+    print("\nMétriques par classe :")
+    for i, level in enumerate(labels):
+        support_count = int(support[i])
+        accuracy = float(cm[i, i] / support_count) if support_count > 0 else 0.0
+        per_class_metrics[level] = {
+            "precision": round(float(precision[i]), 4),
+            "recall": round(float(recall[i]), 4),
+            "f1": round(float(f1[i]), 4),
+            "accuracy": round(accuracy, 4),
+            "support": support_count,
+        }
+        if support_count > 0:
+            print(
+                f"  {level}: precision={precision[i]:.2f} recall={recall[i]:.2f} "
+                f"f1={f1[i]:.2f} support={support_count}"
+            )
         else:
-            per_class_metrics[level] = {"accuracy": 0.0, "support": 0}
             print(f"  {level}: N/A (no samples)")
     return per_class_metrics
+
+
+def _run_walk_forward_evaluation(
+    df: pd.DataFrame,
+    target_col: str,
+    available_features: list,
+    categorical_features: list,
+    numeric_features: list,
+    n_estimators: int,
+    random_state: int,
+    min_train_dates: int = 3,
+    max_folds: int = 5,
+):
+    """Run walk-forward evaluation when enough temporal history exists."""
+    if AS_OF_DATE_COLUMN not in df.columns:
+        return None
+
+    as_of_series = pd.to_datetime(df[AS_OF_DATE_COLUMN], errors="coerce")
+    if as_of_series.notna().sum() < 2:
+        return None
+
+    df_sorted = df.copy()
+    df_sorted["_as_of_date"] = as_of_series
+    df_sorted = df_sorted.dropna(subset=["_as_of_date"]).sort_values("_as_of_date")
+    unique_dates = sorted(df_sorted["_as_of_date"].unique())
+
+    if len(unique_dates) < min_train_dates + 1:
+        return None
+
+    fold_indices = list(range(min_train_dates - 1, len(unique_dates) - 1))
+    if len(fold_indices) > max_folds:
+        fold_indices = fold_indices[-max_folds:]
+
+    folds = []
+    metrics_accumulator = {
+        "accuracy": [],
+        "precision": [],
+        "recall": [],
+        "f1_score": [],
+        "macro_f1": [],
+        "balanced_accuracy": [],
+        "kappa": [],
+        "weighted_kappa": [],
+        "brier_score": [],
+    }
+
+    for idx in fold_indices:
+        train_end = unique_dates[idx]
+        test_date = unique_dates[idx + 1]
+
+        train_df = df_sorted[df_sorted["_as_of_date"] <= train_end]
+        test_df = df_sorted[df_sorted["_as_of_date"] == test_date]
+        if train_df.empty or test_df.empty:
+            continue
+
+        x_train = train_df[available_features].copy()
+        y_train = train_df[target_col].copy()
+        x_test = test_df[available_features].copy()
+        y_test = test_df[target_col].copy()
+
+        pipeline = build_pipeline(
+            categorical_features=categorical_features,
+            numeric_features=numeric_features,
+            n_estimators=n_estimators,
+            random_state=random_state,
+        )
+        pipeline.fit(x_train, y_train)
+
+        y_pred = pipeline.predict(x_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            y_test,
+            y_pred,
+            labels=["LOW", "MEDIUM", "HIGH"],
+            average="weighted",
+            zero_division=0,
+        )
+        _macro_precision, _macro_recall, macro_f1, _ = precision_recall_fscore_support(
+            y_test,
+            y_pred,
+            labels=["LOW", "MEDIUM", "HIGH"],
+            average="macro",
+            zero_division=0,
+        )
+        balanced_accuracy = balanced_accuracy_score(y_test, y_pred)
+        kappa = 0.0
+        weighted_kappa = 0.0
+        if pd.Series(y_test).nunique() > 1 and pd.Series(y_pred).nunique() > 1:
+            kappa = cohen_kappa_score(y_test, y_pred)
+            weighted_kappa = cohen_kappa_score(y_test, y_pred, weights="quadratic")
+
+        brier_score = None
+        if hasattr(pipeline, "predict_proba"):
+            try:
+                y_proba = pipeline.predict_proba(x_test)
+                class_labels = list(getattr(pipeline, "classes_", ["LOW", "MEDIUM", "HIGH"]))
+                brier_values = []
+                for label_index, label in enumerate(class_labels):
+                    y_true_binary = (y_test == label).astype(int)
+                    brier_values.append(brier_score_loss(y_true_binary, y_proba[:, label_index]))
+                if brier_values:
+                    brier_score = float(sum(brier_values) / len(brier_values))
+            except Exception:  # noqa: BLE001
+                brier_score = None
+
+        fold_metrics = {
+            "accuracy": float(accuracy),
+            "precision": float(precision),
+            "recall": float(recall),
+            "f1_score": float(f1),
+            "macro_f1": float(macro_f1),
+            "balanced_accuracy": float(balanced_accuracy),
+            "kappa": float(kappa),
+            "weighted_kappa": float(weighted_kappa),
+            "brier_score": brier_score,
+        }
+        folds.append(
+            {
+                "train_end": pd.Timestamp(train_end).date().isoformat(),
+                "test_date": pd.Timestamp(test_date).date().isoformat(),
+                "train_samples": len(x_train),
+                "test_samples": len(x_test),
+                "metrics": fold_metrics,
+            }
+        )
+
+        for key, value in fold_metrics.items():
+            if value is None:
+                continue
+            metrics_accumulator[key].append(float(value))
+
+    if not folds:
+        return None
+
+    mean_metrics = {}
+    for key, values in metrics_accumulator.items():
+        if values:
+            mean_metrics[key] = round(sum(values) / len(values), 4)
+
+    return {
+        "strategy": "expanding_window",
+        "min_train_dates": min_train_dates,
+        "max_folds": max_folds,
+        "fold_count": len(folds),
+        "mean_metrics": mean_metrics,
+        "folds": folds,
+    }
 
 
 def train_model(
@@ -211,6 +492,8 @@ def train_model(
     test_size: float = 0.2,
     random_state: int = 42,
     n_estimators: int = 200,
+    allowed_provenance: Optional[List[str]] = None,
+    use_time_split: bool = True,
 ):
     """Train the Future Skills ML model and save with metadata.
 
@@ -229,6 +512,12 @@ def train_model(
     # Use the detected target column
     target_col = getattr(df, "_target_col", "future_need_level")
 
+    allowed_provenance = _resolve_allowed_provenance(df, allowed_provenance)
+    if allowed_provenance:
+        print(f"[INFO] Provenance autorisée: {allowed_provenance}")
+    df, provenance_counts = _apply_label_provenance_filter(df, allowed_provenance)
+    as_of_date_range = _extract_as_of_date_range(df)
+
     # Définir les features et la cible (UPDATED with new features)
     feature_cols = [
         "job_role_name",
@@ -242,6 +531,36 @@ def train_model(
         "hiring_difficulty",
         "avg_salary_k",
         "economic_indicator",
+        "trend_momentum",
+        "trend_acceleration",
+        "trend_volatility",
+        "trend_persistence",
+        "internal_usage_momentum",
+        "training_requests_momentum",
+        "internal_usage_lag_1",
+        "internal_usage_lag_2",
+        "internal_usage_roll_mean_3",
+        "training_requests_lag_1",
+        "training_requests_lag_2",
+        "training_requests_roll_mean_3",
+        "economic_indicator_lag_1",
+        "economic_indicator_lag_2",
+        "economic_indicator_roll_mean_3",
+        "trend_stability_flag",
+        "internal_usage_stability_flag",
+        "training_requests_stability_flag",
+        "data_quality_window_coverage",
+        "data_quality_missing_flag",
+        "data_quality_stale_flag",
+        "data_quality_low_sample_flag",
+        "is_it_department",
+        "is_senior_role",
+        "is_technical_skill",
+        "dept_skill_alignment",
+        "forecast_trend_score",
+        "forecast_internal_usage",
+        "forecast_training_requests",
+        "forecast_need_score",
     ]
 
     # Prepare features and target
@@ -259,14 +578,28 @@ def train_model(
     # Check for class imbalance
     imbalance_ratio, class_counts = _check_class_imbalance(y)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=test_size,
-        random_state=random_state,
-        stratify=y,
-    )
+    X_train = X_test = y_train = y_test = None
+    time_split_used = False
+    holdout_window = None
+    if use_time_split:
+        X_train, X_test, y_train, y_test, time_split_used, holdout_window = _time_based_split(
+            df,
+            available_features,
+            target_col,
+            test_size,
+        )
 
+    if not time_split_used:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=y,
+        )
+
+    if time_split_used:
+        print("[INFO] Split temporel actif (as_of_date).")
     print(f"[INFO] Taille train : {len(X_train)}, test : {len(X_test)}")
 
     # Build and train pipeline
@@ -292,16 +625,38 @@ def train_model(
     precision, recall, f1, _ = precision_recall_fscore_support(
         y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"], average="weighted"
     )
+    macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+        y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"], average="macro", zero_division=0
+    )
+    balanced_accuracy = balanced_accuracy_score(y_test, y_pred)
+    kappa = cohen_kappa_score(y_test, y_pred)
+    weighted_kappa = cohen_kappa_score(y_test, y_pred, weights="quadratic")
+
+    brier_score = None
+    if hasattr(pipeline, "predict_proba"):
+        try:
+            y_proba = pipeline.predict_proba(X_test)
+            class_labels = list(getattr(pipeline, "classes_", ["LOW", "MEDIUM", "HIGH"]))
+            brier_values = []
+            for idx, label in enumerate(class_labels):
+                y_true_binary = (y_test == label).astype(int)
+                brier_values.append(brier_score_loss(y_true_binary, y_proba[:, idx]))
+            if brier_values:
+                brier_score = float(sum(brier_values) / len(brier_values))
+        except Exception as exc:  # noqa: BLE001
+            print(f"[WARN] Brier score computation failed: {exc}")
 
     print("\nClassification report :")
     print(classification_report(y_test, y_pred, digits=4))
+    print(f"\nMacro F1: {macro_f1:.4f}")
+    print(f"Balanced accuracy: {balanced_accuracy:.4f}")
 
     print("\nMatrice de confusion :")
     cm = confusion_matrix(y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"])
     print(cm)
 
     # Calculate per-class metrics using helper function
-    per_class_metrics = _compute_per_class_metrics(cm)
+    per_class_metrics = _compute_per_class_metrics(y_test, y_pred)
 
     # Feature importance
     clf = pipeline.named_steps["clf"]  # noqa: PD011 - sklearn pipeline access pattern
@@ -337,6 +692,18 @@ def train_model(
     print(f"\n[SUCCESS] Modèle sauvegardé dans : {output_model_path}")
 
     # Generate and save metadata
+    walk_forward = None
+    if use_time_split:
+        walk_forward = _run_walk_forward_evaluation(
+            df=df,
+            target_col=target_col,
+            available_features=available_features,
+            categorical_features=categorical_features,
+            numeric_features=numeric_features,
+            n_estimators=n_estimators,
+            random_state=random_state,
+        )
+
     metadata = {
         "model_version": model_version,
         "training_date": training_start_time.isoformat(),
@@ -352,6 +719,10 @@ def train_model(
             "numeric_features": numeric_features,
             "class_distribution": {k: int(v) for k, v in class_counts.items()},
             "imbalance_ratio": round(float(imbalance_ratio), 2),
+            "label_provenance_counts": provenance_counts,
+            "as_of_date_range": as_of_date_range,
+            "time_split_used": time_split_used,
+            "holdout_window": holdout_window,
         },
         "hyperparameters": {
             "n_estimators": n_estimators,
@@ -364,7 +735,16 @@ def train_model(
             "precision_weighted": round(float(precision), 4),
             "recall_weighted": round(float(recall), 4),
             "f1_weighted": round(float(f1), 4),
+            "macro_precision": round(float(macro_precision), 4),
+            "macro_recall": round(float(macro_recall), 4),
+            "macro_f1": round(float(macro_f1), 4),
+            "balanced_accuracy": round(float(balanced_accuracy), 4),
+            "kappa": round(float(kappa), 4),
+            "weighted_kappa": round(float(weighted_kappa), 4),
+            "brier_score": round(float(brier_score), 4) if brier_score is not None else None,
             "per_class": per_class_metrics,
+            "confusion_matrix": cm.tolist(),
+            "walk_forward": walk_forward,
         },
         "feature_importance_top10": dict(list(feature_importance_dict.items())[:10]),
         "model_classes": clf.classes_.tolist(),
@@ -428,6 +808,25 @@ def main():
         default=200,
         help="Nombre d'arbres dans RandomForest (par défaut: 200).",
     )
+    parser.add_argument(
+        "--allowed-provenance",
+        type=str,
+        default="SILVER,GOLD",
+        help="Liste des provenances autorisees (par defaut: SILVER,GOLD).",
+    )
+    parser.add_argument(
+        "--use-time-split",
+        dest="use_time_split",
+        action="store_true",
+        help="Utiliser un split temporel si as_of_date est disponible.",
+    )
+    parser.add_argument(
+        "--no-time-split",
+        dest="use_time_split",
+        action="store_false",
+        help="Desactiver le split temporel.",
+    )
+    parser.set_defaults(use_time_split=True)
 
     args = parser.parse_args()
 
@@ -439,6 +838,10 @@ def main():
         output_model_path = output_model_path.parent / f"{output_model_path.stem}_{args.version}.pkl"
         print(f"[INFO] Nom du modèle ajusté avec version : {output_model_path}")
 
+    allowed_provenance = None
+    if args.allowed_provenance:
+        allowed_provenance = [value.strip().upper() for value in args.allowed_provenance.split(",") if value.strip()]
+
     metadata = train_model(
         csv_path=csv_path,
         output_model_path=output_model_path,
@@ -446,6 +849,8 @@ def main():
         test_size=args.test_size,
         random_state=args.random_state,
         n_estimators=args.n_estimators,
+        allowed_provenance=allowed_provenance,
+        use_time_split=args.use_time_split,
     )
 
     print("\n" + "=" * 60)

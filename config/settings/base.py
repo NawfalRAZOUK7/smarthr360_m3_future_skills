@@ -380,9 +380,38 @@ FUTURE_SKILLS_DATASET_PATH = Path(
 # Version logique du modèle (utile pour la traçabilité dans PredictionRun.parameters)
 FUTURE_SKILLS_MODEL_VERSION = "ml_random_forest_v1"
 
+# Présentation: dériver LOW/MED/HIGH à partir du score continu (stable dans le temps)
+FUTURE_SKILLS_DERIVE_LEVEL_FROM_SCORE = True
+FUTURE_SKILLS_SCORE_THRESHOLDS = {"low": 40.0, "high": 70.0}
+FUTURE_SKILLS_MIN_SLICE_SIZE = 30
+FUTURE_SKILLS_SLICE_METRICS_MAX_GROUPS = 20
+FUTURE_SKILLS_ENABLE_NESTED_CV = False
+FUTURE_SKILLS_NESTED_CV_GRID = [
+    {"max_depth": None},
+    {"max_depth": 10},
+]
+
 # MLOps: Monitoring et drift detection
 FUTURE_SKILLS_ENABLE_MONITORING = True  # Active le logging des prédictions pour drift detection
 FUTURE_SKILLS_MONITORING_LOG = BASE_DIR / "logs" / "predictions_monitoring.jsonl"
+FUTURE_SKILLS_ENABLE_DRIFT_MONITORING = True
+FUTURE_SKILLS_DRIFT_REPORT_PATH = BASE_DIR / "logs" / "future_skills_drift_report.json"
+FUTURE_SKILLS_DRIFT_BASELINE_DAYS = 90
+FUTURE_SKILLS_DRIFT_RECENT_DAYS = 30
+FUTURE_SKILLS_DRIFT_PSI_THRESHOLD = 0.2
+FUTURE_SKILLS_DRIFT_PSI_HIGH = 0.3
+FUTURE_SKILLS_DRIFT_KS_THRESHOLD = 0.2
+FUTURE_SKILLS_DRIFT_FEATURES = [
+    "trend_score",
+    "internal_usage",
+    "training_requests",
+    "scarcity_index",
+    "economic_indicator",
+]
+FUTURE_SKILLS_DRIFT_RETRAIN_ON_ALERT = False
+FUTURE_SKILLS_RETRAIN_TEST_SPLIT = 0.2
+FUTURE_SKILLS_RETRAIN_HYPERPARAMETERS = {"n_estimators": 200}
+FUTURE_SKILLS_ENABLE_SCHEDULED_RETRAIN = False
 
 # --- Celery Configuration (Section 2.5 - Enhanced with Monitoring) ---
 
@@ -451,6 +480,16 @@ CELERY_BEAT_SCHEDULE = {
         "task": "celery_monitoring.cleanup_task_executions",
         "schedule": crontab(hour=3, minute=0, day_of_week=0),  # Sunday 3 AM
         "kwargs": {"days": 7},
+    },
+    # Drift monitoring (weekly)
+    "future-skills-drift-weekly": {
+        "task": "future_skills.monitor_drift",
+        "schedule": crontab(hour=1, minute=0, day_of_week=1),  # Monday 1 AM
+    },
+    # Scheduled retraining (monthly)
+    "future-skills-retrain-monthly": {
+        "task": "future_skills.auto_retrain",
+        "schedule": crontab(hour=2, minute=0, day_of_month=1),  # 1st of month 2 AM
     },
     # Cleanup old dead letter tasks monthly
     "cleanup-dead-letter-monthly": {

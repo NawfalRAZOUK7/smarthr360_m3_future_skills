@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from future_skills.models import JobRole, MarketTrend, PredictionRun, Skill
+from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
 from future_skills.services.prediction_engine import recalculate_predictions
 from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
 
@@ -206,6 +206,77 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
 
                 # ✅ Le champ model_version ne doit PAS être présent en mode fallback
                 self.assertNotIn("model_version", last_run.parameters)
+
+
+class TopRankingsAPITests(BaseAPITestCase):
+    def test_top_rankings_shape_and_normalization(self):
+        """Validate Top-N response shape and normalization toggles."""
+        self.client.force_authenticate(user=self.user_manager)
+
+        url = "/api/v2/predictions/top-rankings/"
+        response = self.client.get(
+            url,
+            {
+                "group_by": "department",
+                "top_n": 2,
+                "normalize": "true",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        self.assertIn("groups", data)
+        self.assertGreater(len(data["groups"]), 0)
+        first_item = data["groups"][0]["items"][0]
+        self.assertIn("score_normalized", first_item)
+        self.assertGreaterEqual(first_item["score_normalized"], 0.0)
+        self.assertLessEqual(first_item["score_normalized"], 1.0)
+
+        prediction = FutureSkillPrediction.objects.exclude(as_of_date__isnull=True).first()
+        self.assertIsNotNone(prediction)
+        as_of_date = prediction.as_of_date.isoformat()
+
+        response = self.client.get(
+            url,
+            {
+                "group_by": "skill_category",
+                "top_n": 2,
+                "normalize": "false",
+                "as_of_date": as_of_date,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        self.assertEqual(data.get("group_by"), "skill_category")
+        self.assertEqual(data.get("normalize"), False)
+        self.assertGreater(len(data.get("groups", [])), 0)
+        item = data["groups"][0]["items"][0]
+        self.assertIsNone(item.get("score_normalized"))
+
+    def test_top_rankings_include_relevance(self):
+        """Validate Top-N relevance payload when requested."""
+        self.client.force_authenticate(user=self.user_manager)
+
+        url = "/api/v2/predictions/top-rankings/"
+        response = self.client.get(
+            url,
+            {
+                "group_by": "department",
+                "top_n": 1,
+                "include_relevance": "true",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        self.assertIn("relevance", data)
+        relevance = data["relevance"]
+        self.assertEqual(relevance.get("group_by"), "department")
+        self.assertEqual(relevance.get("top_n"), 1)
+        self.assertIn("qualitative_required", relevance)
+        self.assertIsInstance(relevance.get("qualitative_required"), bool)
+
 
 
 class MarketTrendsAPITests(BaseAPITestCase):

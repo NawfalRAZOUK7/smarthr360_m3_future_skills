@@ -16,6 +16,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..permissions import IsSecurityAdmin
+from ..services.slice_performance_metrics import update_slice_performance_metrics
+from ..models import TrainingRun
 
 class HealthCheckView(APIView):
     """Health check endpoint for monitoring and load balancers.
@@ -224,6 +226,58 @@ class MetricsView(APIView):
         from .throttling import get_throttle_rates
 
         return get_throttle_rates()
+
+
+class RefreshSliceMetricsView(APIView):
+    """Refresh Prometheus slice metrics from the latest TrainingRun."""
+
+    permission_classes = [IsSecurityAdmin]
+
+    def post(self, request):
+        """Load latest slice metrics and update Prometheus gauges."""
+        latest_run = TrainingRun.objects.order_by("-run_date", "-id").first()
+        if not latest_run:
+            return Response(
+                {"detail": "No training runs found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        evaluation_metrics = latest_run.evaluation_metrics or {}
+        slice_metrics = evaluation_metrics.get("slice_metrics") if isinstance(evaluation_metrics, dict) else None
+
+        if not slice_metrics:
+            return Response(
+                {
+                    "updated": False,
+                    "detail": "No slice metrics available on latest TrainingRun.",
+                    "training_run_id": latest_run.id,
+                    "model_version": latest_run.model_version,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        if not getattr(settings, "FUTURE_SKILLS_ENABLE_MONITORING", True):
+            return Response(
+                {
+                    "updated": False,
+                    "detail": "FUTURE_SKILLS_ENABLE_MONITORING is disabled.",
+                    "training_run_id": latest_run.id,
+                    "model_version": latest_run.model_version,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        update_slice_performance_metrics(slice_metrics=slice_metrics)
+
+        return Response(
+            {
+                "updated": True,
+                "training_run_id": latest_run.id,
+                "model_version": latest_run.model_version,
+                "updated_at": timezone.now().isoformat(),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ReadyCheckView(APIView):

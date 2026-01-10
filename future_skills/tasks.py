@@ -10,10 +10,13 @@ Enhanced with advanced retry strategies, monitoring, and error handling.
 """
 
 import logging
+from datetime import datetime
+from pathlib import Path
 
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from celery_monitoring import (
     idempotent,
@@ -23,10 +26,54 @@ from celery_monitoring import (
     with_timeout,
 )
 from future_skills.models import TrainingRun
+from future_skills.services.drift_monitoring import (
+    compute_drift_report,
+    update_drift_metrics,
+    write_drift_report,
+)
 from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+def trigger_async_training(
+    *,
+    dataset_path: str,
+    test_split: float,
+    hyperparameters: dict,
+    notes: str,
+    trained_by=None,
+    model_version: str | None = None,
+):
+    """Create a TrainingRun and dispatch async training."""
+    version = model_version or f"drift_v{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    training_run = TrainingRun.objects.create(
+        model_version=version,
+        model_path="",
+        dataset_path=dataset_path,
+        test_split=test_split,
+        status="RUNNING",
+        accuracy=0.0,
+        precision=0.0,
+        recall=0.0,
+        f1_score=0.0,
+        total_samples=0,
+        train_samples=0,
+        test_samples=0,
+        training_duration_seconds=0.0,
+        trained_by=trained_by,
+        notes=notes,
+        hyperparameters=hyperparameters,
+    )
+
+    task = train_model_task.delay(
+        training_run_id=training_run.id,
+        dataset_path=dataset_path,
+        test_split=test_split,
+        hyperparameters=hyperparameters,
+    )
+    return training_run, task.id
 
 
 @shared_task(bind=True, name="future_skills.train_model")
@@ -129,7 +176,7 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         metrics = trainer.train(**hyperparameters)
         logger.info(
             f"[CELERY] Training completed: accuracy={metrics['accuracy']:.4f}, "
-            f"duration={metrics['training_duration_seconds']:.2f}s"
+            f"duration={trainer.training_duration_seconds:.2f}s"
         )
 
         # === STEP 4: Evaluate model ===
@@ -165,10 +212,26 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         training_run.precision = evaluation_metrics["precision"]
         training_run.recall = evaluation_metrics["recall"]
         training_run.f1_score = evaluation_metrics["f1_score"]
-        training_run.training_duration_seconds = metrics["training_duration_seconds"]
-        training_run.total_samples = evaluation_metrics["total_samples"]
-        training_run.per_class_metrics = evaluation_metrics.get("per_class_metrics", {})
-        training_run.features_used = evaluation_metrics.get("features_used", [])
+        training_run.training_duration_seconds = trainer.training_duration_seconds
+        training_run.total_samples = len(trainer.X_train) + len(trainer.X_test)
+        training_run.train_samples = len(trainer.X_train)
+        training_run.test_samples = len(trainer.X_test)
+        training_run.per_class_metrics = evaluation_metrics.get("per_class_metrics", evaluation_metrics.get("per_class", {}))
+        training_run.evaluation_metrics = {
+            "confusion_matrix": evaluation_metrics.get("confusion_matrix"),
+            "kappa": evaluation_metrics.get("kappa"),
+            "weighted_kappa": evaluation_metrics.get("weighted_kappa"),
+            "brier_score": evaluation_metrics.get("brier_score"),
+            "walk_forward": evaluation_metrics.get("walk_forward"),
+        }
+        training_run.dataset_metadata = {
+            "label_provenance_counts": getattr(trainer, "label_provenance_counts", {}),
+            "as_of_date_range": getattr(trainer, "as_of_date_range", None),
+            "time_split_used": getattr(trainer, "time_split_used", False),
+            "allowed_label_provenance": getattr(trainer, "allowed_label_provenance", None),
+            "use_time_split": getattr(trainer, "use_time_split", False),
+        }
+        training_run.features_used = list(trainer.X_train.columns) if hasattr(trainer.X_train, "columns") else []
         training_run.save()
 
         logger.info(
@@ -239,6 +302,76 @@ def train_model_task(self, training_run_id, dataset_path, test_split, hyperparam
         )
 
         raise
+
+
+@shared_task(name="future_skills.monitor_drift")
+@monitor_task(track_memory=False, track_cpu=False)
+@idempotent(timeout=3600)
+def monitor_drift_task():
+    """Compute drift report and optionally trigger retraining."""
+    if not getattr(settings, "FUTURE_SKILLS_ENABLE_DRIFT_MONITORING", True):
+        return {"status": "disabled"}
+
+    report = compute_drift_report()
+    update_drift_metrics(report)
+
+    output_path = Path(
+        getattr(
+            settings,
+            "FUTURE_SKILLS_DRIFT_REPORT_PATH",
+            settings.BASE_DIR / "logs" / "future_skills_drift_report.json",
+        )
+    )
+    write_drift_report(report, output_path)
+
+    retrain_triggered = False
+    task_id = None
+    if report.get("retrain_recommended") and getattr(settings, "FUTURE_SKILLS_DRIFT_RETRAIN_ON_ALERT", False):
+        dataset_path = str(getattr(settings, "FUTURE_SKILLS_DATASET_PATH", settings.ML_DATASETS_DIR))
+        test_split = float(getattr(settings, "FUTURE_SKILLS_RETRAIN_TEST_SPLIT", 0.2))
+        hyperparameters = getattr(settings, "FUTURE_SKILLS_RETRAIN_HYPERPARAMETERS", {"n_estimators": 200})
+        notes = f"Auto-retrain triggered by drift monitoring at {report.get('generated_at')}"
+        _training_run, task_id = trigger_async_training(
+            dataset_path=dataset_path,
+            test_split=test_split,
+            hyperparameters=hyperparameters,
+            notes=notes,
+        )
+        retrain_triggered = True
+
+    return {
+        "status": report.get("overall_status"),
+        "retrain_recommended": report.get("retrain_recommended", False),
+        "retrain_triggered": retrain_triggered,
+        "task_id": task_id,
+        "report_path": str(output_path),
+    }
+
+
+@shared_task(name="future_skills.auto_retrain")
+@monitor_task(track_memory=False, track_cpu=False)
+@idempotent(timeout=3600)
+def auto_retrain_task():
+    """Trigger scheduled retraining regardless of drift status."""
+    if not getattr(settings, "FUTURE_SKILLS_ENABLE_SCHEDULED_RETRAIN", False):
+        return {"status": "disabled"}
+
+    dataset_path = str(getattr(settings, "FUTURE_SKILLS_DATASET_PATH", settings.ML_DATASETS_DIR))
+    test_split = float(getattr(settings, "FUTURE_SKILLS_RETRAIN_TEST_SPLIT", 0.2))
+    hyperparameters = getattr(settings, "FUTURE_SKILLS_RETRAIN_HYPERPARAMETERS", {"n_estimators": 200})
+    notes = f"Scheduled retrain at {timezone.now().isoformat()}"
+    training_run, task_id = trigger_async_training(
+        dataset_path=dataset_path,
+        test_split=test_split,
+        hyperparameters=hyperparameters,
+        notes=notes,
+    )
+
+    return {
+        "status": "scheduled",
+        "training_run_id": training_run.id,
+        "task_id": task_id,
+    }
 
 
 @shared_task(name="future_skills.cleanup_old_models")

@@ -19,12 +19,22 @@ import pandas as pd
 from django.conf import settings
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_fscore_support
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import (
+    accuracy_score,
+    balanced_accuracy_score,
+    brier_score_loss,
+    classification_report,
+    cohen_kappa_score,
+    confusion_matrix,
+    precision_recall_fscore_support,
+)
+from sklearn.model_selection import ParameterGrid, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from future_skills.models import TrainingRun
+from future_skills.services.prediction_engine import calculate_level
+from future_skills.services.slice_performance_metrics import update_slice_performance_metrics
 from ml.mlflow_config import get_mlflow_config
 from ml.model_versioning import ModelFramework, ModelStage, ModelVersionManager, create_model_version
 
@@ -66,6 +76,9 @@ class ModelTrainer:
 
     ALLOWED_LEVELS = {"LOW", "MEDIUM", "HIGH"}
     TARGET_COLUMN = "future_need_level"
+    LABEL_PROVENANCE_COLUMN = "label_provenance"
+    AS_OF_DATE_COLUMN = "as_of_date"
+    DEFAULT_ALLOWED_PROVENANCE = ["SILVER", "GOLD"]
 
     FEATURE_COLUMNS = [
         "job_role_name",
@@ -79,9 +92,47 @@ class ModelTrainer:
         "hiring_difficulty",
         "avg_salary_k",
         "economic_indicator",
+        "trend_momentum",
+        "trend_acceleration",
+        "trend_volatility",
+        "trend_persistence",
+        "internal_usage_momentum",
+        "training_requests_momentum",
+        "internal_usage_lag_1",
+        "internal_usage_lag_2",
+        "internal_usage_roll_mean_3",
+        "training_requests_lag_1",
+        "training_requests_lag_2",
+        "training_requests_roll_mean_3",
+        "economic_indicator_lag_1",
+        "economic_indicator_lag_2",
+        "economic_indicator_roll_mean_3",
+        "trend_stability_flag",
+        "internal_usage_stability_flag",
+        "training_requests_stability_flag",
+        "data_quality_window_coverage",
+        "data_quality_missing_flag",
+        "data_quality_stale_flag",
+        "data_quality_low_sample_flag",
+        "is_it_department",
+        "is_senior_role",
+        "is_technical_skill",
+        "dept_skill_alignment",
+        "forecast_trend_score",
+        "forecast_internal_usage",
+        "forecast_training_requests",
+        "forecast_need_score",
     ]
 
-    def __init__(self, dataset_path: str, test_split: float = 0.2, random_state: int = 42):
+    def __init__(
+        self,
+        dataset_path: str,
+        test_split: float = 0.2,
+        random_state: int = 42,
+        allowed_label_provenance: Optional[List[str]] = None,
+        use_time_split: bool = True,
+        enable_nested_cv: bool | None = None,
+    ):
         """Initialize ModelTrainer.
 
         Args:
@@ -92,17 +143,34 @@ class ModelTrainer:
         self.dataset_path = Path(dataset_path)
         self.test_split = test_split
         self.random_state = random_state
+        self.allowed_label_provenance = (
+            [value.upper() for value in allowed_label_provenance] if allowed_label_provenance else None
+        )
+        self.use_time_split = use_time_split
+        self.enable_nested_cv = (
+            bool(enable_nested_cv)
+            if enable_nested_cv is not None
+            else bool(getattr(settings, "FUTURE_SKILLS_ENABLE_NESTED_CV", False))
+        )
+        self.min_slice_size = int(getattr(settings, "FUTURE_SKILLS_MIN_SLICE_SIZE", 30))
 
         # Data containers
         self.df: Optional[pd.DataFrame] = None
         self.x_train: Optional[pd.DataFrame] = None
         self.x_test: Optional[pd.DataFrame] = None
+        self.x_valid: Optional[pd.DataFrame] = None
         self.y_train: Optional[pd.Series] = None
         self.y_test: Optional[pd.Series] = None
+        self.y_valid: Optional[pd.Series] = None
         self.available_features: List[str] = []
         self.missing_features: List[str] = []
         self.categorical_features: List[str] = []
         self.numeric_features: List[str] = []
+        self.label_provenance_counts: Dict[str, int] = {}
+        self.as_of_date_range: Optional[Dict[str, str]] = None
+        self.time_split_used = False
+        self.holdout_window: Optional[Dict[str, str]] = None
+        self.validation_window: Optional[Dict[str, str]] = None
 
         # Model and metrics
         self.model: Optional[Pipeline] = None
@@ -178,6 +246,47 @@ class ModelTrainer:
                 filtered = before_count - after_count
                 logger.warning(f"Filtered {filtered} rows with invalid target values")
 
+            # Apply default label provenance policy when column exists
+            if self.LABEL_PROVENANCE_COLUMN in self.df.columns and self.allowed_label_provenance is None:
+                self.allowed_label_provenance = self.DEFAULT_ALLOWED_PROVENANCE.copy()
+                logger.info(
+                    "Defaulting allowed label provenance to %s",
+                    self.allowed_label_provenance,
+                )
+
+            # Filter by label provenance if requested and available
+            if self.LABEL_PROVENANCE_COLUMN in self.df.columns:
+                provenance_series = self.df[self.LABEL_PROVENANCE_COLUMN].astype(str).str.upper()
+                if self.allowed_label_provenance:
+                    allowed_set = set(self.allowed_label_provenance)
+                    before_count = len(self.df)
+                    self.df = self.df[provenance_series.isin(allowed_set)].copy()
+                    after_count = len(self.df)
+                    if after_count == 0:
+                        raise DataLoadError(
+                            f"No rows match allowed label provenance {sorted(allowed_set)}"
+                        )
+                    if after_count < before_count:
+                        logger.info(f"Filtered {before_count - after_count} rows by label provenance")
+                    provenance_series = self.df[self.LABEL_PROVENANCE_COLUMN].astype(str).str.upper()
+
+                self.label_provenance_counts = provenance_series.value_counts().to_dict()
+                if self.label_provenance_counts == {"BRONZE": len(self.df)}:
+                    logger.warning("Dataset contains only BRONZE labels; use SILVER/GOLD for final training.")
+            elif self.allowed_label_provenance:
+                logger.warning(
+                    "Label provenance filtering requested but column missing; proceeding without filter."
+                )
+
+            # Capture as_of_date range if available
+            if self.AS_OF_DATE_COLUMN in self.df.columns:
+                as_of_series = pd.to_datetime(self.df[self.AS_OF_DATE_COLUMN], errors="coerce")
+                if as_of_series.notna().any():
+                    self.as_of_date_range = {
+                        "min": as_of_series.min().date().isoformat(),
+                        "max": as_of_series.max().date().isoformat(),
+                    }
+
             # Identify available features
             self.available_features = [col for col in self.FEATURE_COLUMNS if col in self.df.columns]
             self.missing_features = [col for col in self.FEATURE_COLUMNS if col not in self.df.columns]
@@ -209,16 +318,73 @@ class ModelTrainer:
                     f"Class imbalance detected (ratio={imbalance_ratio:.2f}). " "Using balanced class weights."
                 )
 
-            # Train/test split
-            self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
-                X,
-                y,
-                test_size=self.test_split,
-                random_state=self.random_state,
-                stratify=y,
-            )
+            # Train/test split (time-based when possible)
+            if self.use_time_split and self.AS_OF_DATE_COLUMN in self.df.columns:
+                as_of_series = pd.to_datetime(self.df[self.AS_OF_DATE_COLUMN], errors="coerce")
+                if as_of_series.notna().sum() >= 2 and as_of_series.nunique() > 1:
+                    df_sorted = self.df.copy()
+                    df_sorted["_as_of_date"] = as_of_series
+                    df_sorted = df_sorted.sort_values("_as_of_date")
+                    split_index = int(len(df_sorted) * (1 - self.test_split))
+                    if 0 < split_index < len(df_sorted):
+                        X_sorted = df_sorted[self.available_features].copy()
+                        y_sorted = df_sorted[self.TARGET_COLUMN].copy()
+                        self.x_train = X_sorted.iloc[:split_index]
+                        self.x_test = X_sorted.iloc[split_index:]
+                        self.y_train = y_sorted.iloc[:split_index]
+                        self.y_test = y_sorted.iloc[split_index:]
+                        self.time_split_used = True
+                        train_end = df_sorted["_as_of_date"].iloc[split_index - 1].date()
+                        test_start = df_sorted["_as_of_date"].iloc[split_index].date()
+                        test_end = df_sorted["_as_of_date"].iloc[-1].date()
+                        self.holdout_window = {
+                            "train_end": train_end.isoformat(),
+                            "test_start": test_start.isoformat(),
+                            "test_end": test_end.isoformat(),
+                        }
+                        logger.info(
+                            "Time-based split complete: train=%d, test=%d",
+                            len(self.x_train),
+                            len(self.x_test),
+                        )
 
-            logger.info(f"Split complete: train={len(self.x_train)}, test={len(self.x_test)}")
+                        if not self.enable_nested_cv:
+                            train_df = df_sorted.iloc[:split_index].copy()
+                            train_dates = sorted(train_df["_as_of_date"].unique())
+                            if len(train_dates) >= 2:
+                                validation_date = train_dates[-1]
+                                train_mask = train_df["_as_of_date"] < validation_date
+                                validation_mask = train_df["_as_of_date"] == validation_date
+                                if train_mask.any() and validation_mask.any():
+                                    self.x_valid = train_df.loc[validation_mask, self.available_features].copy()
+                                    self.y_valid = train_df.loc[validation_mask, self.TARGET_COLUMN].copy()
+                                    self.x_train = train_df.loc[train_mask, self.available_features].copy()
+                                    self.y_train = train_df.loc[train_mask, self.TARGET_COLUMN].copy()
+                                    self.validation_window = {
+                                        "train_end": pd.Timestamp(train_dates[-2]).date().isoformat(),
+                                        "validation_date": pd.Timestamp(validation_date).date().isoformat(),
+                                    }
+                                    logger.info(
+                                        "Validation window set: date=%s (train=%d, valid=%d)",
+                                        self.validation_window["validation_date"],
+                                        len(self.x_train),
+                                        len(self.x_valid),
+                                    )
+                    else:
+                        logger.warning("Time-based split not possible; falling back to random split.")
+                else:
+                    logger.warning("Insufficient as_of_date values; falling back to random split.")
+
+            if not self.time_split_used:
+                self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+                    X,
+                    y,
+                    test_size=self.test_split,
+                    random_state=self.random_state,
+                    stratify=y,
+                )
+
+                logger.info(f"Split complete: train={len(self.x_train)}, test={len(self.x_test)}")
 
         except pd.errors.EmptyDataError:
             raise DataLoadError("Dataset is empty")
@@ -315,16 +481,24 @@ class ModelTrainer:
 
                 # Evaluate
                 self.metrics = self.evaluate(self.x_test, self.y_test)
+                validation_metrics = self._evaluate_split(self.x_valid, self.y_valid)
+                if validation_metrics:
+                    self.metrics["validation"] = validation_metrics
 
                 # Log metrics to MLflow
-                mlflow.log_metrics(
-                    {
-                        "accuracy": self.metrics["accuracy"],
-                        "precision": self.metrics["precision"],
-                        "recall": self.metrics["recall"],
-                        "f1_score": self.metrics["f1_score"],
-                    }
-                )
+                base_metrics = {
+                    "accuracy": self.metrics["accuracy"],
+                    "precision": self.metrics["precision"],
+                    "recall": self.metrics["recall"],
+                    "f1_score": self.metrics["f1_score"],
+                    "kappa": self.metrics.get("kappa", 0.0),
+                    "weighted_kappa": self.metrics.get("weighted_kappa", 0.0),
+                    "macro_f1": self.metrics.get("macro_f1", 0.0),
+                    "balanced_accuracy": self.metrics.get("balanced_accuracy", 0.0),
+                }
+                if self.metrics.get("brier_score") is not None:
+                    base_metrics["brier_score"] = self.metrics["brier_score"]
+                mlflow.log_metrics(base_metrics)
 
                 # Log per-class metrics
                 for level, level_metrics in self.metrics.get("per_class", {}).items():
@@ -354,7 +528,7 @@ class ModelTrainer:
             logger.error(f"Training failed after {self.training_duration_seconds:.2f}s: {str(e)}")
             raise TrainingError(f"Model training failed: {str(e)}")
 
-    def _build_pipeline(self) -> Pipeline:
+    def _build_pipeline(self, hyperparameters: Optional[Dict[str, Any]] = None) -> Pipeline:
         """Build scikit-learn pipeline with preprocessing and model."""
         # Categorical transformer
         categorical_transformer = OneHotEncoder(handle_unknown="ignore")
@@ -371,7 +545,7 @@ class ModelTrainer:
         )
 
         # Classifier
-        clf = RandomForestClassifier(**self.hyperparameters)
+        clf = RandomForestClassifier(**(hyperparameters or self.hyperparameters))
 
         # Pipeline
         pipeline = Pipeline(
@@ -384,7 +558,11 @@ class ModelTrainer:
 
         return pipeline
 
-    def evaluate(self, x_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, Any]:
+    def evaluate(
+        self,
+        x_test: Optional[pd.DataFrame] = None,
+        y_test: Optional[pd.Series] = None,
+    ) -> Dict[str, Any]:
         """Evaluate model performance on test set.
 
         Args:
@@ -399,6 +577,12 @@ class ModelTrainer:
         """
         if self.model is None:
             raise TrainingError("Model not trained. Call train() first.")
+
+        if x_test is None or y_test is None:
+            if self.x_test is None or self.y_test is None:
+                raise TrainingError("Test data missing. Call load_data() first.")
+            x_test = self.x_test
+            y_test = self.y_test
 
         logger.info("Evaluating model on test set")
 
@@ -415,18 +599,56 @@ class ModelTrainer:
                 average="weighted",
                 zero_division=0,
             )
+            macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+                y_test,
+                y_pred,
+                labels=["LOW", "MEDIUM", "HIGH"],
+                average="macro",
+                zero_division=0,
+            )
+            balanced_accuracy = balanced_accuracy_score(y_test, y_pred)
 
             logger.info(f"Accuracy: {accuracy:.4f}")
             logger.info(f"Precision: {precision:.4f}")
             logger.info(f"Recall: {recall:.4f}")
             logger.info(f"F1-Score: {f1:.4f}")
+            logger.info(f"Macro F1: {macro_f1:.4f}")
+            logger.info(f"Balanced accuracy: {balanced_accuracy:.4f}")
+
+            # Agreement metrics
+            kappa = 0.0
+            weighted_kappa = 0.0
+            try:
+                if pd.Series(y_test).nunique() > 1 and pd.Series(y_pred).nunique() > 1:
+                    kappa = cohen_kappa_score(y_test, y_pred)
+                    weighted_kappa = cohen_kappa_score(y_test, y_pred, weights="quadratic")
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"Kappa computation failed: {exc}")
+            logger.info(f"Cohen's kappa: {kappa:.4f}")
+            logger.info(f"Weighted kappa (quadratic): {weighted_kappa:.4f}")
 
             # Confusion matrix
             cm = confusion_matrix(y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"])
             logger.info(f"Confusion matrix:\n{cm}")
 
             # Per-class metrics
-            self.per_class_metrics = self._compute_per_class_metrics(cm)
+            self.per_class_metrics = self._compute_per_class_metrics(y_test, y_pred, cm)
+
+            # Brier score (multi-class, macro average)
+            brier_score = None
+            if hasattr(self.model, "predict_proba"):
+                try:
+                    y_proba = self.model.predict_proba(x_test)
+                    class_labels = list(getattr(self.model, "classes_", ["LOW", "MEDIUM", "HIGH"]))
+                    brier_values = []
+                    for idx, label in enumerate(class_labels):
+                        y_true_binary = (y_test == label).astype(int)
+                        brier_values.append(brier_score_loss(y_true_binary, y_proba[:, idx]))
+                    if brier_values:
+                        brier_score = float(sum(brier_values) / len(brier_values))
+                        logger.info(f"Brier score (macro): {brier_score:.4f}")
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(f"Brier score computation failed: {exc}")
 
             # Classification report
             report = classification_report(y_test, y_pred, digits=4)
@@ -437,9 +659,34 @@ class ModelTrainer:
                 "precision": float(precision),
                 "recall": float(recall),
                 "f1_score": float(f1),
+                "macro_precision": float(macro_precision),
+                "macro_recall": float(macro_recall),
+                "macro_f1": float(macro_f1),
+                "balanced_accuracy": float(balanced_accuracy),
+                "kappa": float(kappa),
+                "weighted_kappa": float(weighted_kappa),
+                "brier_score": brier_score,
                 "per_class": self.per_class_metrics,
+                "per_class_metrics": self.per_class_metrics,
                 "confusion_matrix": cm.tolist(),
             }
+
+            walk_forward = self._run_walk_forward_evaluation()
+            if walk_forward:
+                metrics["walk_forward"] = walk_forward
+
+            slice_metrics = self._compute_slice_metrics(x_test, y_test, y_pred)
+            if slice_metrics:
+                metrics["slice_metrics"] = slice_metrics
+                update_slice_performance_metrics(slice_metrics=slice_metrics)
+
+            rules_baseline = self._compute_rules_baseline_metrics(x_test, y_test)
+            if rules_baseline:
+                metrics["rules_baseline"] = rules_baseline
+
+            nested_cv = self._run_nested_time_cv()
+            if nested_cv:
+                metrics["nested_cv"] = nested_cv
 
             return metrics
 
@@ -447,21 +694,446 @@ class ModelTrainer:
             logger.error(f"Evaluation failed: {str(e)}")
             raise TrainingError(f"Model evaluation failed: {str(e)}")
 
-    def _compute_per_class_metrics(self, cm) -> Dict[str, Dict[str, float]]:
-        """Calculate per-class accuracy and support from confusion matrix."""
+    def _compute_per_class_metrics(self, y_true, y_pred, cm) -> Dict[str, Dict[str, float]]:
+        """Calculate per-class precision/recall/F1 and accuracy."""
+        labels = ["LOW", "MEDIUM", "HIGH"]
+        precision, recall, f1, support = precision_recall_fscore_support(
+            y_true,
+            y_pred,
+            labels=labels,
+            average=None,
+            zero_division=0,
+        )
+
         per_class = {}
-
-        for i, level in enumerate(["LOW", "MEDIUM", "HIGH"]):
-            support = int(cm.sum(axis=1)[i])
-            if support > 0:
-                accuracy = float(cm[i, i] / support)
-            else:
-                accuracy = 0.0
-
-            per_class[level] = {"accuracy": round(accuracy, 4), "support": support}
-            logger.info(f"  {level}: accuracy={accuracy:.2%}, support={support}")
+        for i, level in enumerate(labels):
+            class_support = int(support[i])
+            accuracy = float(cm[i, i] / class_support) if class_support > 0 else 0.0
+            per_class[level] = {
+                "precision": round(float(precision[i]), 4),
+                "recall": round(float(recall[i]), 4),
+                "f1": round(float(f1[i]), 4),
+                "accuracy": round(accuracy, 4),
+                "support": class_support,
+            }
+            logger.info(
+                "  %s: precision=%.2f, recall=%.2f, f1=%.2f, support=%d",
+                level,
+                precision[i],
+                recall[i],
+                f1[i],
+                class_support,
+            )
 
         return per_class
+
+    def _summarize_metrics(self, y_true, y_pred) -> Dict[str, Any]:
+        """Return a consistent metric bundle for a given slice."""
+        accuracy = accuracy_score(y_true, y_pred)
+        macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+            y_true,
+            y_pred,
+            labels=["LOW", "MEDIUM", "HIGH"],
+            average="macro",
+            zero_division=0,
+        )
+        balanced_accuracy = balanced_accuracy_score(y_true, y_pred)
+        cm = confusion_matrix(y_true, y_pred, labels=["LOW", "MEDIUM", "HIGH"])
+        per_class = self._compute_per_class_metrics(y_true, y_pred, cm)
+
+        return {
+            "accuracy": float(accuracy),
+            "macro_precision": float(macro_precision),
+            "macro_recall": float(macro_recall),
+            "macro_f1": float(macro_f1),
+            "balanced_accuracy": float(balanced_accuracy),
+            "confusion_matrix": cm.tolist(),
+            "per_class": per_class,
+            "support": int(len(y_true)),
+        }
+
+    def _compute_slice_metrics(
+        self,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+        y_pred,
+    ) -> Dict[str, Any]:
+        """Compute metrics by department, job role, and skill category."""
+        if x_test is None or y_test is None:
+            return {}
+
+        y_pred_series = pd.Series(y_pred, index=y_test.index)
+        slice_metrics: Dict[str, Any] = {"min_slice_size": self.min_slice_size}
+
+        slice_specs = {
+            "job_department": "by_department",
+            "job_role_name": "by_job_role",
+            "skill_category": "by_skill_category",
+        }
+
+        for column, bucket in slice_specs.items():
+            if column not in x_test.columns:
+                continue
+            bucket_metrics: Dict[str, Any] = {}
+            groups = x_test[column].fillna("Unknown")
+            for group_value, indices in groups.groupby(groups).groups.items():
+                if len(indices) < self.min_slice_size:
+                    continue
+                y_true_slice = y_test.loc[indices]
+                y_pred_slice = y_pred_series.loc[indices]
+                bucket_metrics[str(group_value)] = self._summarize_metrics(y_true_slice, y_pred_slice)
+            if bucket_metrics:
+                slice_metrics[bucket] = bucket_metrics
+
+        return slice_metrics if len(slice_metrics) > 1 else {}
+
+    def _compute_rules_baseline_metrics(
+        self,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ) -> Dict[str, Any] | None:
+        """Evaluate the rules engine as a baseline on the test split."""
+        if x_test is None or y_test is None:
+            return None
+
+        required_cols = {"trend_score", "internal_usage", "training_requests"}
+        if not required_cols.issubset(x_test.columns):
+            logger.warning("Rules baseline skipped (missing columns: %s)", sorted(required_cols - set(x_test.columns)))
+            return None
+
+        y_pred_rules = []
+        for row in x_test.itertuples(index=False):
+            level, _ = calculate_level(
+                trend_score=float(getattr(row, "trend_score")),
+                internal_usage=float(getattr(row, "internal_usage")),
+                training_requests=float(getattr(row, "training_requests")),
+            )
+            y_pred_rules.append(level)
+
+        y_pred_series = pd.Series(y_pred_rules, index=y_test.index)
+        return self._summarize_metrics(y_test, y_pred_series)
+
+    def _evaluate_split(self, x_split: pd.DataFrame, y_split: pd.Series) -> Optional[Dict[str, Any]]:
+        """Evaluate a specific split without mutating main metrics."""
+        if self.model is None:
+            return None
+        if x_split is None or y_split is None or x_split.empty:
+            return None
+
+        y_pred = self.model.predict(x_split)
+        accuracy = accuracy_score(y_split, y_pred)
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            y_split,
+            y_pred,
+            labels=["LOW", "MEDIUM", "HIGH"],
+            average="weighted",
+            zero_division=0,
+        )
+        macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+            y_split,
+            y_pred,
+            labels=["LOW", "MEDIUM", "HIGH"],
+            average="macro",
+            zero_division=0,
+        )
+        balanced_accuracy = balanced_accuracy_score(y_split, y_pred)
+
+        kappa = 0.0
+        weighted_kappa = 0.0
+        if pd.Series(y_split).nunique() > 1 and pd.Series(y_pred).nunique() > 1:
+            kappa = cohen_kappa_score(y_split, y_pred)
+            weighted_kappa = cohen_kappa_score(y_split, y_pred, weights="quadratic")
+
+        brier_score = None
+        if hasattr(self.model, "predict_proba"):
+            try:
+                y_proba = self.model.predict_proba(x_split)
+                class_labels = list(getattr(self.model, "classes_", ["LOW", "MEDIUM", "HIGH"]))
+                brier_values = []
+                for idx, label in enumerate(class_labels):
+                    y_true_binary = (y_split == label).astype(int)
+                    brier_values.append(brier_score_loss(y_true_binary, y_proba[:, idx]))
+                if brier_values:
+                    brier_score = float(sum(brier_values) / len(brier_values))
+            except Exception:  # noqa: BLE001
+                brier_score = None
+
+        cm = confusion_matrix(y_split, y_pred, labels=["LOW", "MEDIUM", "HIGH"])
+        per_class = self._compute_per_class_metrics(y_split, y_pred, cm)
+
+        return {
+            "accuracy": float(accuracy),
+            "precision": float(precision),
+            "recall": float(recall),
+            "f1_score": float(f1),
+            "macro_precision": float(macro_precision),
+            "macro_recall": float(macro_recall),
+            "macro_f1": float(macro_f1),
+            "balanced_accuracy": float(balanced_accuracy),
+            "kappa": float(kappa),
+            "weighted_kappa": float(weighted_kappa),
+            "brier_score": brier_score,
+            "per_class": per_class,
+            "confusion_matrix": cm.tolist(),
+            "support": int(len(y_split)),
+        }
+
+    def _run_walk_forward_evaluation(
+        self,
+        min_train_dates: int = 3,
+        max_folds: int = 5,
+    ) -> Optional[Dict[str, Any]]:
+        """Run walk-forward evaluation when enough temporal history exists."""
+        if self.df is None or self.AS_OF_DATE_COLUMN not in self.df.columns:
+            return None
+
+        as_of_series = pd.to_datetime(self.df[self.AS_OF_DATE_COLUMN], errors="coerce")
+        if as_of_series.notna().sum() < 2:
+            return None
+
+        df_sorted = self.df.copy()
+        df_sorted["_as_of_date"] = as_of_series
+        df_sorted = df_sorted.dropna(subset=["_as_of_date"]).sort_values("_as_of_date")
+
+        unique_dates = sorted(df_sorted["_as_of_date"].unique())
+        if len(unique_dates) < min_train_dates + 1:
+            return None
+
+        fold_indices = list(range(min_train_dates - 1, len(unique_dates) - 1))
+        if len(fold_indices) > max_folds:
+            fold_indices = fold_indices[-max_folds:]
+
+        folds = []
+        metrics_accumulator: Dict[str, List[float]] = {
+            "accuracy": [],
+            "precision": [],
+            "recall": [],
+            "f1_score": [],
+            "macro_f1": [],
+            "balanced_accuracy": [],
+            "kappa": [],
+            "weighted_kappa": [],
+            "brier_score": [],
+        }
+
+        for idx in fold_indices:
+            train_end = unique_dates[idx]
+            test_date = unique_dates[idx + 1]
+
+            train_df = df_sorted[df_sorted["_as_of_date"] <= train_end]
+            test_df = df_sorted[df_sorted["_as_of_date"] == test_date]
+            if train_df.empty or test_df.empty:
+                continue
+
+            x_train = train_df[self.available_features].copy()
+            y_train = train_df[self.TARGET_COLUMN].copy()
+            x_test = test_df[self.available_features].copy()
+            y_test = test_df[self.TARGET_COLUMN].copy()
+
+            model = self._build_pipeline()
+            model.fit(x_train, y_train)
+            y_pred = model.predict(x_test)
+
+            accuracy = accuracy_score(y_test, y_pred)
+            precision, recall, f1, _ = precision_recall_fscore_support(
+                y_test,
+                y_pred,
+                labels=["LOW", "MEDIUM", "HIGH"],
+                average="weighted",
+                zero_division=0,
+            )
+            _macro_precision, _macro_recall, macro_f1, _ = precision_recall_fscore_support(
+                y_test,
+                y_pred,
+                labels=["LOW", "MEDIUM", "HIGH"],
+                average="macro",
+                zero_division=0,
+            )
+            balanced_accuracy = balanced_accuracy_score(y_test, y_pred)
+
+            kappa = 0.0
+            weighted_kappa = 0.0
+            if pd.Series(y_test).nunique() > 1 and pd.Series(y_pred).nunique() > 1:
+                kappa = cohen_kappa_score(y_test, y_pred)
+                weighted_kappa = cohen_kappa_score(y_test, y_pred, weights="quadratic")
+
+            brier_score = None
+            if hasattr(model, "predict_proba"):
+                try:
+                    y_proba = model.predict_proba(x_test)
+                    class_labels = list(getattr(model, "classes_", ["LOW", "MEDIUM", "HIGH"]))
+                    brier_values = []
+                    for label_index, label in enumerate(class_labels):
+                        y_true_binary = (y_test == label).astype(int)
+                        brier_values.append(brier_score_loss(y_true_binary, y_proba[:, label_index]))
+                    if brier_values:
+                        brier_score = float(sum(brier_values) / len(brier_values))
+                except Exception:  # noqa: BLE001
+                    brier_score = None
+
+            fold_metrics = {
+                "accuracy": float(accuracy),
+                "precision": float(precision),
+                "recall": float(recall),
+                "f1_score": float(f1),
+                "macro_f1": float(macro_f1),
+                "balanced_accuracy": float(balanced_accuracy),
+                "kappa": float(kappa),
+                "weighted_kappa": float(weighted_kappa),
+                "brier_score": brier_score,
+            }
+
+            folds.append(
+                {
+                    "train_end": pd.Timestamp(train_end).date().isoformat(),
+                    "test_date": pd.Timestamp(test_date).date().isoformat(),
+                    "train_samples": len(x_train),
+                    "test_samples": len(x_test),
+                    "metrics": fold_metrics,
+                }
+            )
+
+            for key, value in fold_metrics.items():
+                if value is None:
+                    continue
+                metrics_accumulator[key].append(float(value))
+
+        if not folds:
+            return None
+
+        mean_metrics = {}
+        for key, values in metrics_accumulator.items():
+            if values:
+                mean_metrics[key] = round(sum(values) / len(values), 4)
+
+        return {
+            "strategy": "expanding_window",
+            "min_train_dates": min_train_dates,
+            "max_folds": max_folds,
+            "fold_count": len(folds),
+            "mean_metrics": mean_metrics,
+            "folds": folds,
+        }
+
+    def _run_nested_time_cv(
+        self,
+        min_train_dates: int = 4,
+        max_folds: int = 3,
+    ) -> Optional[Dict[str, Any]]:
+        """Run nested time-based CV with a simple hyperparameter grid."""
+        if not self.enable_nested_cv:
+            return None
+        if self.df is None or self.AS_OF_DATE_COLUMN not in self.df.columns:
+            return None
+
+        as_of_series = pd.to_datetime(self.df[self.AS_OF_DATE_COLUMN], errors="coerce")
+        if as_of_series.notna().sum() < 2:
+            return None
+
+        df_sorted = self.df.copy()
+        df_sorted["_as_of_date"] = as_of_series
+        df_sorted = df_sorted.dropna(subset=["_as_of_date"]).sort_values("_as_of_date")
+
+        unique_dates = sorted(df_sorted["_as_of_date"].unique())
+        if len(unique_dates) < min_train_dates + 1:
+            return None
+
+        outer_indices = list(range(min_train_dates - 1, len(unique_dates) - 1))
+        if len(outer_indices) > max_folds:
+            outer_indices = outer_indices[-max_folds:]
+
+        base_params = self.hyperparameters or {
+            "n_estimators": 200,
+            "max_depth": None,
+            "min_samples_split": 2,
+            "min_samples_leaf": 1,
+            "class_weight": "balanced",
+            "random_state": self.random_state,
+            "n_jobs": -1,
+        }
+        grid = getattr(settings, "FUTURE_SKILLS_NESTED_CV_GRID", None)
+        if not grid:
+            grid = [
+                {"max_depth": base_params.get("max_depth", None)},
+                {"max_depth": 10},
+            ]
+        grid = list(ParameterGrid(grid))
+
+        folds = []
+        for idx in outer_indices:
+            train_end = unique_dates[idx]
+            test_date = unique_dates[idx + 1]
+
+            train_df = df_sorted[df_sorted["_as_of_date"] <= train_end]
+            test_df = df_sorted[df_sorted["_as_of_date"] == test_date]
+            if train_df.empty or test_df.empty:
+                continue
+
+            inner_dates = sorted(train_df["_as_of_date"].unique())
+            best_params = base_params
+            best_score = -1.0
+
+            if len(inner_dates) >= 2:
+                inner_train_end = inner_dates[-2]
+                inner_val_date = inner_dates[-1]
+                inner_train_df = train_df[train_df["_as_of_date"] <= inner_train_end]
+                inner_val_df = train_df[train_df["_as_of_date"] == inner_val_date]
+
+                if not inner_train_df.empty and not inner_val_df.empty:
+                    for params in grid:
+                        candidate = {**base_params, **params}
+                        model = self._build_pipeline(candidate)
+                        model.fit(inner_train_df[self.available_features], inner_train_df[self.TARGET_COLUMN])
+                        val_pred = model.predict(inner_val_df[self.available_features])
+                        _, _, macro_f1, _ = precision_recall_fscore_support(
+                            inner_val_df[self.TARGET_COLUMN],
+                            val_pred,
+                            labels=["LOW", "MEDIUM", "HIGH"],
+                            average="macro",
+                            zero_division=0,
+                        )
+                        if macro_f1 > best_score:
+                            best_score = float(macro_f1)
+                            best_params = candidate
+
+            model = self._build_pipeline(best_params)
+            model.fit(train_df[self.available_features], train_df[self.TARGET_COLUMN])
+            test_pred = model.predict(test_df[self.available_features])
+
+            fold_metrics = self._summarize_metrics(test_df[self.TARGET_COLUMN], test_pred)
+            fold_metrics["best_params"] = {
+                key: best_params.get(key)
+                for key in ("n_estimators", "max_depth", "min_samples_split", "min_samples_leaf", "class_weight")
+                if key in best_params
+            }
+
+            folds.append(
+                {
+                    "train_end": pd.Timestamp(train_end).date().isoformat(),
+                    "test_date": pd.Timestamp(test_date).date().isoformat(),
+                    "train_samples": len(train_df),
+                    "test_samples": len(test_df),
+                    "metrics": fold_metrics,
+                }
+            )
+
+        if not folds:
+            return None
+
+        mean_metrics = {}
+        for key in ("accuracy", "macro_f1", "balanced_accuracy"):
+            values = [fold["metrics"][key] for fold in folds if key in fold["metrics"]]
+            if values:
+                mean_metrics[key] = round(sum(values) / len(values), 4)
+
+        return {
+            "strategy": "nested_time_cv",
+            "min_train_dates": min_train_dates,
+            "max_folds": max_folds,
+            "fold_count": len(folds),
+            "mean_metrics": mean_metrics,
+            "folds": folds,
+        }
 
     def save_model(self, path: str) -> None:
         """Save the trained model to disk using joblib.
@@ -715,6 +1387,33 @@ class ModelTrainer:
         promotion_info: Optional[str],
     ) -> TrainingRun:
         """Persist the TrainingRun entry with consistent metadata."""
+        dataset_metadata = {
+            "label_provenance_counts": self.label_provenance_counts,
+            "as_of_date_range": self.as_of_date_range,
+            "time_split_used": self.time_split_used,
+            "allowed_label_provenance": self.allowed_label_provenance,
+            "use_time_split": self.use_time_split,
+            "holdout_window": self.holdout_window,
+            "validation_window": self.validation_window,
+            "min_slice_size": self.min_slice_size,
+            "nested_cv_enabled": self.enable_nested_cv,
+        }
+        evaluation_metrics = {
+            "confusion_matrix": self.metrics.get("confusion_matrix"),
+            "kappa": self.metrics.get("kappa"),
+            "weighted_kappa": self.metrics.get("weighted_kappa"),
+            "brier_score": self.metrics.get("brier_score"),
+            "macro_precision": self.metrics.get("macro_precision"),
+            "macro_recall": self.metrics.get("macro_recall"),
+            "macro_f1": self.metrics.get("macro_f1"),
+            "balanced_accuracy": self.metrics.get("balanced_accuracy"),
+            "per_class": self.metrics.get("per_class"),
+            "slice_metrics": self.metrics.get("slice_metrics"),
+            "rules_baseline": self.metrics.get("rules_baseline"),
+            "walk_forward": self.metrics.get("walk_forward"),
+            "nested_cv": self.metrics.get("nested_cv"),
+            "validation": self.metrics.get("validation"),
+        }
         training_run = TrainingRun.objects.create(
             run_date=self.training_start_time or datetime.now(),
             model_version=model_version,
@@ -732,6 +1431,8 @@ class ModelTrainer:
             test_samples=len(self.x_test) if self.x_test is not None else 0,
             training_duration_seconds=self.training_duration_seconds,
             per_class_metrics=self.per_class_metrics,
+            evaluation_metrics=evaluation_metrics,
+            dataset_metadata=dataset_metadata,
             features_used=self.available_features,
             trained_by=user,
             notes=(
@@ -767,6 +1468,13 @@ class ModelTrainer:
         try:
             logger.info(f"Saving failed training run: version={model_version}")
 
+            dataset_metadata = {
+                "label_provenance_counts": self.label_provenance_counts,
+                "as_of_date_range": self.as_of_date_range,
+                "time_split_used": self.time_split_used,
+                "allowed_label_provenance": self.allowed_label_provenance,
+                "use_time_split": self.use_time_split,
+            }
             training_run = TrainingRun.objects.create(
                 run_date=self.training_start_time or datetime.now(),
                 model_version=model_version,
@@ -784,6 +1492,8 @@ class ModelTrainer:
                 test_samples=0,
                 training_duration_seconds=self.training_duration_seconds,
                 per_class_metrics={},
+                evaluation_metrics={},
+                dataset_metadata=dataset_metadata,
                 features_used=[],
                 trained_by=user,
                 notes=notes,

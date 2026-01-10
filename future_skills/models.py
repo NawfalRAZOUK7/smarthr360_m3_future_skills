@@ -102,6 +102,119 @@ class MarketTrend(models.Model):
         return f"{self.title} ({self.year})"
 
 
+class FutureSkillSnapshot(models.Model):
+    """Snapshot of skill signals at a specific date for silver label derivation."""
+
+    job_role = models.ForeignKey(
+        JobRole,
+        on_delete=models.CASCADE,
+        related_name="skill_snapshots",
+    )
+    skill = models.ForeignKey(
+        Skill,
+        on_delete=models.CASCADE,
+        related_name="skill_snapshots",
+    )
+    as_of_date = models.DateField(help_text="Snapshot date for the captured signals.")
+
+    trend_score = models.FloatField(help_text="Trend score at snapshot time (0-1).")
+    internal_usage = models.FloatField(help_text="Estimated internal usage at snapshot time (0-1).")
+    training_requests = models.FloatField(help_text="Estimated training requests at snapshot time.")
+    scarcity_index = models.FloatField(help_text="Estimated scarcity index at snapshot time (0-1).")
+    hiring_difficulty = models.FloatField(help_text="Estimated hiring difficulty at snapshot time (0-1).")
+    avg_salary_k = models.FloatField(help_text="Estimated average salary at snapshot time (K/year).")
+    economic_indicator = models.FloatField(help_text="Economic indicator at snapshot time (0-1).")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        """Meta options for FutureSkillSnapshot."""
+
+        verbose_name = "Skill snapshot"
+        verbose_name_plural = "Skill snapshots"
+        unique_together = ("job_role", "skill", "as_of_date")
+        indexes = [
+            models.Index(fields=["as_of_date"]),
+            models.Index(fields=["job_role"]),
+            models.Index(fields=["skill"]),
+            models.Index(fields=["job_role", "skill", "as_of_date"]),
+        ]
+
+    def __str__(self):
+        """Return a string representation of the snapshot."""
+        return f"{self.job_role} - {self.skill} ({self.as_of_date})"
+
+
+class FutureSkillLabel(models.Model):
+    """Human-validated labels for future skill needs (GOLD provenance)."""
+
+    LEVEL_LOW = "LOW"
+    LEVEL_MEDIUM = "MEDIUM"
+    LEVEL_HIGH = "HIGH"
+
+    LEVEL_CHOICES = [
+        (LEVEL_LOW, "Low"),
+        (LEVEL_MEDIUM, "Medium"),
+        (LEVEL_HIGH, "High"),
+    ]
+
+    PROVENANCE_GOLD = "GOLD"
+    PROVENANCE_CHOICES = [
+        (PROVENANCE_GOLD, "Gold"),
+    ]
+
+    job_role = models.ForeignKey(
+        JobRole,
+        on_delete=models.CASCADE,
+        related_name="future_skill_labels",
+    )
+    skill = models.ForeignKey(
+        Skill,
+        on_delete=models.CASCADE,
+        related_name="future_skill_labels",
+    )
+    as_of_date = models.DateField(help_text="Label date for the observed context.")
+    horizon_months = models.PositiveIntegerField(help_text="Prediction horizon in months (ex: 12, 36, 60).")
+    level = models.CharField(max_length=10, choices=LEVEL_CHOICES, help_text="Validated label: LOW / MEDIUM / HIGH.")
+    provenance = models.CharField(
+        max_length=10,
+        choices=PROVENANCE_CHOICES,
+        default=PROVENANCE_GOLD,
+        help_text="Label provenance (GOLD).",
+    )
+    validated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="future_skill_labels_validated",
+        help_text="Human validator (RH/manager).",
+    )
+    source = models.CharField(max_length=50, default="human_review", help_text="Label source (manual review).")
+    notes = models.TextField(blank=True, null=True, help_text="Optional validation notes.")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        """Meta options for FutureSkillLabel."""
+
+        verbose_name = "Future skill label"
+        verbose_name_plural = "Future skill labels"
+        unique_together = ("job_role", "skill", "as_of_date", "horizon_months")
+        indexes = [
+            models.Index(fields=["as_of_date"]),
+            models.Index(fields=["job_role"]),
+            models.Index(fields=["skill"]),
+            models.Index(fields=["horizon_months"]),
+            models.Index(fields=["job_role", "skill", "as_of_date"]),
+        ]
+
+    def __str__(self):
+        """Return a string representation of the label."""
+        return f"{self.job_role} - {self.skill} ({self.as_of_date}) [{self.level}]"
+
+
 class FutureSkillPrediction(models.Model):
     """Predict future skill needs for a job role over N years.
 
@@ -129,6 +242,11 @@ class FutureSkillPrediction(models.Model):
         related_name="future_skill_predictions",
     )
     horizon_years = models.PositiveIntegerField(help_text="Horizon de prédiction en années (ex : 3, 5...).")
+    horizon_months = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="Horizon de prédiction en mois (ex : 12, 36, 60...).",
+    )
 
     # Tu peux choisir : 0–100 ou 0–1. Ici on part sur 0–100 pour être plus lisible.
     score = models.FloatField(help_text="Score de besoin futur (0–100).")
@@ -149,6 +267,60 @@ class FutureSkillPrediction(models.Model):
         blank=True,
         null=True,
         help_text="Explication détaillée générée par SHAP/LIME (text, top_factors, confidence).",
+    )
+
+    probabilities = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Probabilités par classe (p_low, p_medium, p_high) si disponibles.",
+    )
+    confidence = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Confiance associée à la prédiction (0-1).",
+    )
+    top_drivers = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Principaux facteurs qui expliquent la prédiction.",
+    )
+    recommended_actions = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Actions recommandées (hire/train/upskill) avec justification.",
+    )
+    label_provenance_used = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True,
+        help_text="Provenance des labels utilisés pour entraîner le modèle (BRONZE/SILVER/GOLD).",
+    )
+    model_version = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Version du modèle utilisé pour générer la prédiction.",
+    )
+    data_window = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Fenêtre de données utilisée (ex: dates de formation du modèle).",
+    )
+    decision_policy = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Politique de décision (seuils, règles d'abstention, fallback).",
+    )
+    audit_payload = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Trace d'audit (inputs, outputs, versioning).",
+    )
+
+    as_of_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Date d'observation de la prédiction (snapshot).",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -276,6 +448,18 @@ class TrainingRun(models.Model):
         default=dict,
         blank=True,
         help_text="Per-class accuracy and support counts (LOW, MEDIUM, HIGH).",
+    )
+
+    # Additional evaluation metrics and dataset metadata
+    evaluation_metrics = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Additional evaluation metrics (kappa, brier, confusion matrix, etc.).",
+    )
+    dataset_metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Dataset metadata (label provenance, as_of_date range, time split usage).",
     )
 
     # Feature information
