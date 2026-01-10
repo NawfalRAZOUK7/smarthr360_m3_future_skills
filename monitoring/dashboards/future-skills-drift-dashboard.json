@@ -1,0 +1,48 @@
+{
+  "dashboard": {
+    "title": "Future Skills Drift Monitoring",
+    "tags": ["smarthr360", "future-skills", "ml"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "1m",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Drift Status",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "future_skills_drift_status",
+            "legendFormat": "status"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "PSI by Feature",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+        "targets": [
+          {
+            "expr": "future_skills_drift_psi",
+            "legendFormat": "{{feature}}"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "KS by Feature",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+        "targets": [
+          {
+            "expr": "future_skills_drift_ks",
+            "legendFormat": "{{feature}}"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "dashboard": {
+    "title": "Future Skills Slice Performance",
+    "tags": ["smarthr360", "future-skills", "ml"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "5m",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Macro F1 by Department (Top 10)",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "topk(10, future_skills_slice_performance{slice_type=\"by_department\", metric=\"macro_f1\"})",
+            "legendFormat": "{{slice_value}}"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Balanced Accuracy by Department (Top 10)",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "topk(10, future_skills_slice_performance{slice_type=\"by_department\", metric=\"balanced_accuracy\"})",
+            "legendFormat": "{{slice_value}}"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Macro F1 by Job Role (Top 10)",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "topk(10, future_skills_slice_performance{slice_type=\"by_job_role\", metric=\"macro_f1\"})",
+            "legendFormat": "{{slice_value}}"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Macro F1 by Skill Category (Top 10)",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "topk(10, future_skills_slice_performance{slice_type=\"by_skill_category\", metric=\"macro_f1\"})",
+            "legendFormat": "{{slice_value}}"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Slice Support (Top 10 by Department)",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "topk(10, future_skills_slice_support{slice_type=\"by_department\"})",
+            "legendFormat": "{{slice_value}}"
+          }
+        ]
+      }
+    ]
+  }
+}

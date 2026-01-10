@@ -1,0 +1,23 @@
+groups:
+  - name: smarthr360_future_skills_drift
+    interval: 5m
+    rules:
+      - alert: FutureSkillsDriftWarning
+        expr: future_skills_drift_status >= 1
+        for: 10m
+        labels:
+          severity: warning
+          component: ml
+        annotations:
+          summary: "Future Skills drift warning"
+          description: "Drift status is WARN. Review drift report and consider retraining."
+
+      - alert: FutureSkillsDriftAlert
+        expr: future_skills_drift_status >= 2
+        for: 10m
+        labels:
+          severity: critical
+          component: ml
+        annotations:
+          summary: "Future Skills drift alert"
+          description: "Drift status is ALERT. Retraining recommended."

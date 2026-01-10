@@ -44,6 +44,11 @@ kubectl apply -f monitoring/alertmanager/
 kubectl apply -f monitoring/dashboards/
 ```
 
+Dashboards included:
+- `monitoring/dashboards/future-skills-predictions-dashboard.json`
+- `monitoring/dashboards/future-skills-drift-dashboard.json`
+- `monitoring/dashboards/future-skills-slice-performance-dashboard.json`
+
 3. Setup alerts:
 
 ```bash
