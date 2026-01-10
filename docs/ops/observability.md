@@ -5,7 +5,8 @@ Request visibility
 - Rate-limit headers from throttle classes; cache middleware adds `X-Cache-Hit`.
 
 Metrics
-- `/api/metrics/` is staff-only; Prometheus-friendly output.
+- `/api/metrics/` is security-admin only; Prometheus-friendly output.
+- Slice metrics: call `POST /api/metrics/slice-performance/refresh/` to push latest slice gauges (see `future_skills_slice_performance`).
 - Prediction logging/monitoring hooks record features and model version when enabled.
 
 Logs

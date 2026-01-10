@@ -1350,6 +1350,18 @@ components:
           minimum: 0
           format: int64
           description: "Horizon de prédiction en années (ex : 3, 5...)."
+        horizon_months:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: "Horizon de prédiction en mois (ex : 12, 36, 60...)."
+        as_of_date:
+          type: string
+          format: date
+          nullable: true
+          description: "Date d'observation de la prédiction (snapshot)."
         score:
           type: number
           format: double
@@ -1367,6 +1379,59 @@ components:
           type: string
           nullable: true
           description: Explication textuelle de la prédiction (pour le DRH).
+        explanation:
+          type: object
+          nullable: true
+          description: Explication détaillée générée (text, top_factors, confidence).
+        probabilities:
+          type: object
+          description: Probabilités par classe (p_low, p_medium, p_high).
+          properties:
+            p_low:
+              type: number
+              format: double
+            p_medium:
+              type: number
+              format: double
+            p_high:
+              type: number
+              format: double
+          additionalProperties: true
+        confidence:
+          type: number
+          format: double
+          nullable: true
+          description: Confiance associée à la prédiction (0-1).
+        top_drivers:
+          type: array
+          description: Principaux facteurs qui expliquent la prédiction.
+          items:
+            type: object
+        recommended_actions:
+          type: array
+          description: Actions recommandées (hire/train/upskill) avec justification.
+          items:
+            type: object
+        label_provenance_used:
+          type: string
+          nullable: true
+          description: Provenance des labels utilisés pour entraîner le modèle (BRONZE/SILVER/GOLD).
+        model_version:
+          type: string
+          nullable: true
+          description: Version du modèle utilisé pour générer la prédiction.
+        data_window:
+          type: object
+          description: Fenêtre de données utilisée (ex: dates de formation du modèle).
+          additionalProperties: true
+        decision_policy:
+          type: object
+          description: Politique de décision (seuils, règles d'abstention, fallback).
+          additionalProperties: true
+        audit_payload:
+          type: object
+          description: Trace d'audit (inputs, outputs, versioning).
+          additionalProperties: true
         created_at:
           type: string
           format: date-time

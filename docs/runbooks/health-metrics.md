@@ -6,9 +6,10 @@ Goal: verify service health and metrics exposure.
 - `GET /api/health/` -> 200
 - `GET /api/version/` -> 200 with version info
 
-2) Metrics (staff-only)
-- `GET /api/metrics/` with staff credentials/token
+2) Metrics (security-admin only)
+- `GET /api/metrics/` with security-admin credentials/token
 - Verify Prometheus format and expected gauges/counters are present
+- Slice metrics (if enabled): `POST /api/metrics/slice-performance/refresh/` then check for `future_skills_slice_performance` gauges
 
 3) Smoke API checks
 - Predictions/recommendations endpoints return 200 with sample payload

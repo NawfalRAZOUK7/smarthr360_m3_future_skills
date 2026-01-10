@@ -10,12 +10,12 @@ AuthN/AuthZ:
 
 Versioning:
 - v2 is default; v1 is deprecated. Accept-header and path-based versioning are both supported. Deprecation headers are returned on v1 responses.
-- Health/version endpoints: `/api/health`, `/api/version`; metrics endpoint is staff-only.
+- Health/version endpoints: `/api/health`, `/api/version`; metrics endpoints are security-admin only.
 
 Core endpoints (high level):
 - Predictions/Recommendations: list/retrieve via versioned URLs/headers. Caching enabled; warm responses include `X-Cache-Hit`.
 - Training: POST to train model; tests use the fixture dataset. Returns 201 on success; fails with clear errors if data missing/imbalanced.
-- Health/metrics: liveness/readiness/metrics endpoints; metrics require staff permission.
+- Health/metrics: liveness/readiness/metrics endpoints; metrics require security-admin permission.
 
 Headers/behavior:
 - Caching: `X-Cache-Hit` plus standard cache-control headers from middleware.
@@ -26,6 +26,8 @@ Headers/behavior:
 Usage/examples:
 - Postman collections: `postman/collection_api_v2.json` (preferred current surface) or `postman/collection_full.json` (includes alias groups).
 - Curl: include Accept version header (`Accept: application/json; version=2`) or use `/api/v2/...` paths.
+- Top-N rankings: `GET /api/v2/predictions/top-rankings/` supports `group_by`, `top_n`, `as_of_date`, `normalize`, and `include_relevance` (adds `relevance` payload).
+- Slice metrics refresh: `POST /api/metrics/slice-performance/refresh/` (security-admin only) pushes latest slice metrics into Prometheus gauges.
 
 Env setup (local quickstart):
 - `cp .env.template .env` puis remplacer `SECRET_KEY` et `AUTH_JWT_SHARED_SECRET` (SECRET_KEY de auth) si vous consommez les tokens auth en HS256.

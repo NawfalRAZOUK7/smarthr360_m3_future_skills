@@ -12,9 +12,11 @@ Versioning
 
 Key endpoints (happy paths)
 - Predictions (v2): `GET /api/v2/predictions/`
+- Top-N rankings (v2): `GET /api/v2/predictions/top-rankings/` (params: `group_by`, `top_n`, `as_of_date`, `normalize`, `include_relevance`)
 - Recommendations (v2): `GET /api/v2/recommendations/`
 - Training: `POST /api/training/train/` (requires dataset availability)
-- Health: `GET /api/health/`, `GET /api/version/`; Metrics (staff-only): `GET /api/metrics/`
+- Health: `GET /api/health/`, `GET /api/version/`; Metrics (security-admin): `GET /api/metrics/`
+- Slice metrics refresh (security-admin): `POST /api/metrics/slice-performance/refresh/`
 
 Headers/behavior
 - Caching: `X-Cache-Hit` plus cache-control headers on cached GETs.
@@ -33,6 +35,14 @@ curl -X POST http://localhost:8000/api/training/train/ \
 ```
 - Health: `curl http://localhost:8000/api/health/`
 - Metrics (staff token): `curl -H "Authorization: Bearer <token>" http://localhost:8000/api/metrics/`
+- Top-N rankings (with relevance):
+```bash
+curl "http://localhost:8000/api/v2/predictions/top-rankings/?group_by=department&top_n=5&include_relevance=true"
+```
+- Slice metrics refresh:
+```bash
+curl -X POST -H "Authorization: Bearer <token>" http://localhost:8000/api/metrics/slice-performance/refresh/
+```
 
 Status/error model (typical)
 - 200/201 success; 400 invalid payload; 401/403 auth/perm; 404 unknown resource/version; 429 throttled; 5xx unexpected.
