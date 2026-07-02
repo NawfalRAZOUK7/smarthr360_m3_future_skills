@@ -1,0 +1,812 @@
+[
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2018,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.62,
+    "description": "AI Adoption signal for Technology Services in 2018.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2018.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2018."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2018,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.55,
+    "description": "Digital Risk Modernization signal for Banking in 2018.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2018.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2018."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2018,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.5,
+    "description": "Healthcare Digitalization signal for Healthcare in 2018.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2018.",
+      "fr": "Signal Digitalisation sante pour Sante en 2018."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2018,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.52,
+    "description": "Retail Personalization signal for Retail in 2018.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2018.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2018."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2018,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.48,
+    "description": "Automation & Robotics signal for Manufacturing in 2018.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2018.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2018."
+    }
+  },
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2019,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.655,
+    "description": "AI Adoption signal for Technology Services in 2019.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2019.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2019."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2019,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.575,
+    "description": "Digital Risk Modernization signal for Banking in 2019.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2019.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2019."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2019,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.52,
+    "description": "Healthcare Digitalization signal for Healthcare in 2019.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2019.",
+      "fr": "Signal Digitalisation sante pour Sante en 2019."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2019,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.545,
+    "description": "Retail Personalization signal for Retail in 2019.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2019.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2019."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2019,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.5,
+    "description": "Automation & Robotics signal for Manufacturing in 2019.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2019.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2019."
+    }
+  },
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2020,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.69,
+    "description": "AI Adoption signal for Technology Services in 2020.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2020.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2020."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2020,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.6,
+    "description": "Digital Risk Modernization signal for Banking in 2020.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2020.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2020."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2020,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.54,
+    "description": "Healthcare Digitalization signal for Healthcare in 2020.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2020.",
+      "fr": "Signal Digitalisation sante pour Sante en 2020."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2020,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.57,
+    "description": "Retail Personalization signal for Retail in 2020.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2020.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2020."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2020,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.52,
+    "description": "Automation & Robotics signal for Manufacturing in 2020.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2020.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2020."
+    }
+  },
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2021,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.725,
+    "description": "AI Adoption signal for Technology Services in 2021.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2021.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2021."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2021,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.625,
+    "description": "Digital Risk Modernization signal for Banking in 2021.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2021.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2021."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2021,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.56,
+    "description": "Healthcare Digitalization signal for Healthcare in 2021.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2021.",
+      "fr": "Signal Digitalisation sante pour Sante en 2021."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2021,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.595,
+    "description": "Retail Personalization signal for Retail in 2021.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2021.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2021."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2021,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.54,
+    "description": "Automation & Robotics signal for Manufacturing in 2021.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2021.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2021."
+    }
+  },
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2022,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.76,
+    "description": "AI Adoption signal for Technology Services in 2022.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2022.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2022."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2022,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.65,
+    "description": "Digital Risk Modernization signal for Banking in 2022.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2022.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2022."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2022,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.58,
+    "description": "Healthcare Digitalization signal for Healthcare in 2022.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2022.",
+      "fr": "Signal Digitalisation sante pour Sante en 2022."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2022,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.62,
+    "description": "Retail Personalization signal for Retail in 2022.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2022.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2022."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2022,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.56,
+    "description": "Automation & Robotics signal for Manufacturing in 2022.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2022.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2022."
+    }
+  },
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2023,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.795,
+    "description": "AI Adoption signal for Technology Services in 2023.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2023.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2023."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2023,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.675,
+    "description": "Digital Risk Modernization signal for Banking in 2023.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2023.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2023."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2023,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.6,
+    "description": "Healthcare Digitalization signal for Healthcare in 2023.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2023.",
+      "fr": "Signal Digitalisation sante pour Sante en 2023."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2023,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.645,
+    "description": "Retail Personalization signal for Retail in 2023.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2023.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2023."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2023,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.58,
+    "description": "Automation & Robotics signal for Manufacturing in 2023.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2023.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2023."
+    }
+  },
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2024,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.83,
+    "description": "AI Adoption signal for Technology Services in 2024.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2024.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2024."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2024,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.7,
+    "description": "Digital Risk Modernization signal for Banking in 2024.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2024.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2024."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2024,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.62,
+    "description": "Healthcare Digitalization signal for Healthcare in 2024.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2024.",
+      "fr": "Signal Digitalisation sante pour Sante en 2024."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2024,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.67,
+    "description": "Retail Personalization signal for Retail in 2024.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2024.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2024."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2024,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.6,
+    "description": "Automation & Robotics signal for Manufacturing in 2024.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2024.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2024."
+    }
+  },
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2025,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.865,
+    "description": "AI Adoption signal for Technology Services in 2025.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2025.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2025."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2025,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.725,
+    "description": "Digital Risk Modernization signal for Banking in 2025.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2025.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2025."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2025,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.64,
+    "description": "Healthcare Digitalization signal for Healthcare in 2025.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2025.",
+      "fr": "Signal Digitalisation sante pour Sante en 2025."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2025,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.695,
+    "description": "Retail Personalization signal for Retail in 2025.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2025.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2025."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2025,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.62,
+    "description": "Automation & Robotics signal for Manufacturing in 2025.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2025.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2025."
+    }
+  },
+  {
+    "title": "Technology Services AI Adoption",
+    "source_name": "Global Tech Trends",
+    "year": 2026,
+    "industry_id": "tech-services",
+    "function_id": "technology",
+    "domain_id": "data-ai",
+    "trend_score": 0.9,
+    "description": "AI Adoption signal for Technology Services in 2026.",
+    "title_i18n": {
+      "en": "Technology Services AI Adoption",
+      "fr": "Adoption IA - Services technologiques"
+    },
+    "description_i18n": {
+      "en": "AI Adoption signal for Technology Services in 2026.",
+      "fr": "Signal Adoption IA pour Services technologiques en 2026."
+    }
+  },
+  {
+    "title": "Banking Digital Risk Modernization",
+    "source_name": "Financial Services Outlook",
+    "year": 2026,
+    "industry_id": "banking",
+    "function_id": "finance",
+    "domain_id": "risk-compliance",
+    "trend_score": 0.75,
+    "description": "Digital Risk Modernization signal for Banking in 2026.",
+    "title_i18n": {
+      "en": "Banking Digital Risk Modernization",
+      "fr": "Modernisation risque digital - Banque"
+    },
+    "description_i18n": {
+      "en": "Digital Risk Modernization signal for Banking in 2026.",
+      "fr": "Signal Modernisation risque digital pour Banque en 2026."
+    }
+  },
+  {
+    "title": "Healthcare Healthcare Digitalization",
+    "source_name": "Healthcare Innovation Outlook",
+    "year": 2026,
+    "industry_id": "healthcare",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.66,
+    "description": "Healthcare Digitalization signal for Healthcare in 2026.",
+    "title_i18n": {
+      "en": "Healthcare Healthcare Digitalization",
+      "fr": "Digitalisation sante - Sante"
+    },
+    "description_i18n": {
+      "en": "Healthcare Digitalization signal for Healthcare in 2026.",
+      "fr": "Signal Digitalisation sante pour Sante en 2026."
+    }
+  },
+  {
+    "title": "Retail Retail Personalization",
+    "source_name": "Retail Experience Report",
+    "year": 2026,
+    "industry_id": "retail",
+    "function_id": "marketing",
+    "domain_id": "digital-marketing",
+    "trend_score": 0.72,
+    "description": "Retail Personalization signal for Retail in 2026.",
+    "title_i18n": {
+      "en": "Retail Retail Personalization",
+      "fr": "Personnalisation retail - Commerce de detail"
+    },
+    "description_i18n": {
+      "en": "Retail Personalization signal for Retail in 2026.",
+      "fr": "Signal Personnalisation retail pour Commerce de detail en 2026."
+    }
+  },
+  {
+    "title": "Manufacturing Automation & Robotics",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2026,
+    "industry_id": "manufacturing",
+    "function_id": "operations",
+    "domain_id": "project-management",
+    "trend_score": 0.64,
+    "description": "Automation & Robotics signal for Manufacturing in 2026.",
+    "title_i18n": {
+      "en": "Manufacturing Automation & Robotics",
+      "fr": "Automatisation et robotique - Industrie manufacturiere"
+    },
+    "description_i18n": {
+      "en": "Automation & Robotics signal for Manufacturing in 2026.",
+      "fr": "Signal Automatisation et robotique pour Industrie manufacturiere en 2026."
+    }
+  }
+]

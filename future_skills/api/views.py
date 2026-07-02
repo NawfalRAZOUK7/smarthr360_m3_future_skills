@@ -2,8 +2,20 @@
 
 """API views for the future skills application."""
 
+import io
+import json
 import os
-from datetime import date
+import threading
+import uuid
+from collections import defaultdict
+from datetime import date, datetime, timedelta
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import joblib
+from scipy.stats import ks_2samp
+from sklearn.metrics import cohen_kappa_score
 
 from django.conf import settings
 from django.db import transaction
@@ -20,12 +32,17 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from ..models import (
+    Domain,
+    Function,
     EconomicReport,
     Employee,
     FutureSkillPrediction,
     HRInvestmentRecommendation,
+    Industry,
+    JobRole,
     MarketTrend,
     Skill,
+    SkillDomainMap,
     TrainingRun,
 )
 from ..permissions import (
@@ -38,6 +55,7 @@ from ..services.file_parser import parse_employee_file
 from ..services.prediction_engine import PredictionEngine, recalculate_predictions
 from ..services.ranking_service import get_top_skill_rankings
 from ..services.recommendation_engine import generate_recommendations_from_predictions
+from django.core.management import call_command
 from .serializers import (
     AddSkillToEmployeeSerializer,
     BulkEmployeeImportSerializer,
@@ -2434,3 +2452,988 @@ class TrainingRunDetailAPIView(RetrieveAPIView):
 
     serializer_class = TrainingRunDetailSerializer
     queryset = TrainingRun.objects.select_related("trained_by").all()
+
+
+# ---------------------------------------------------------------------------
+# Frontend-friendly, read-only endpoints for dashboards
+# ---------------------------------------------------------------------------
+
+
+def _compute_scoped_drift_report(log_path, industry, domain, dept, baseline_days, recent_days, min_samples):
+    if not log_path.exists():
+        return None
+    jr_map = {jr.id: jr for jr in JobRole.objects.select_related("industry", "domain")}
+    now = datetime.utcnow().date()
+    recent_cutoff = now - timedelta(days=recent_days)
+    baseline_cutoff = recent_cutoff - timedelta(days=baseline_days)
+
+    features = ["trend_score", "internal_usage", "training_requests", "scarcity_index", "economic_indicator"]
+    baseline_vals = {f: [] for f in features}
+    recent_vals = {f: [] for f in features}
+
+    with log_path.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            jr = jr_map.get(rec.get("job_role_id"))
+            if not jr:
+                continue
+            if industry and (jr.industry_id != int(industry)):
+                continue
+            if domain and (jr.domain_id != int(domain)):
+                continue
+            if dept and jr.department and dept.lower() not in jr.department.lower():
+                continue
+            ts = rec.get("timestamp") or rec.get("created_at") or ""
+            if not ts:
+                continue
+            try:
+                d = datetime.fromisoformat(ts[:10]).date()
+            except Exception:
+                continue
+            feats = rec.get("features") or {}
+            for fkey in features:
+                val = feats.get(fkey)
+                if not isinstance(val, (int, float)):
+                    continue
+                if baseline_cutoff <= d < recent_cutoff:
+                    baseline_vals[fkey].append(float(val))
+                elif recent_cutoff <= d <= now:
+                    recent_vals[fkey].append(float(val))
+
+    feature_metrics = {}
+    for fkey in features:
+        b = np.array(baseline_vals[fkey])
+        r = np.array(recent_vals[fkey])
+        psi = None
+        ks = None
+        status_flag = "insufficient_data"
+        if len(b) >= min_samples and len(r) >= min_samples:
+            status_flag = "ok"
+            try:
+                ks = float(ks_2samp(b, r).statistic)
+            except Exception:
+                ks = None
+            try:
+                qs = np.quantile(b, np.linspace(0, 1, 11))
+                bins = np.unique(qs)
+                if len(bins) > 2:
+                    bh, _ = np.histogram(b, bins=bins)
+                    rh, _ = np.histogram(r, bins=bins)
+                    if bh.sum() > 0 and rh.sum() > 0:
+                        bp = bh / bh.sum()
+                        rp = rh / rh.sum()
+                        eps = 1e-6
+                        psi = float(np.sum((bp - rp) * np.log((bp + eps) / (rp + eps))))
+            except Exception:
+                psi = None
+        feature_metrics[fkey] = {
+            "baseline_count": int(len(b)),
+            "recent_count": int(len(r)),
+            "psi": psi,
+            "ks": ks,
+            "status": status_flag,
+        }
+
+    overall_status = "ok"
+    for fm in feature_metrics.values():
+        if fm["status"] == "insufficient_data":
+            overall_status = "insufficient_data"
+            break
+
+    return {
+        "overall_status": overall_status,
+        "baseline_window": f"{baseline_cutoff} → {recent_cutoff}",
+        "recent_window": f"{recent_cutoff} → {now}",
+        "feature_metrics": feature_metrics,
+        "generated_at": datetime.utcnow().isoformat(),
+        "scope": {"industry_id": industry, "domain_id": domain, "department": dept},
+    }
+
+
+class DriftReportAPIView(APIView):
+    """Return the latest drift report JSON for frontend dashboards."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        report_path = Path(settings.BASE_DIR) / "logs" / "future_skills_drift_report_professional.json"
+        industry = request.query_params.get("industry_id")
+        domain = request.query_params.get("domain_id")
+        dept = request.query_params.get("department")
+        baseline_days = int(request.query_params.get("baseline_days") or 365)
+        recent_days = int(request.query_params.get("recent_days") or 365)
+        min_samples = int(request.query_params.get("min_samples") or 100)
+
+        if not any([industry, domain, dept]):
+            if not report_path.exists():
+                return Response({"detail": "Drift report not found."}, status=status.HTTP_404_NOT_FOUND)
+            with report_path.open() as f:
+                data = json.load(f)
+            data.setdefault("generated_at", datetime.fromtimestamp(report_path.stat().st_mtime).isoformat())
+            return Response(data)
+
+        # Scoped recompute using monitoring log filtered by scope
+        log_path = Path(settings.BASE_DIR) / "logs" / "predictions_monitoring_professional.jsonl"
+        report = _compute_scoped_drift_report(
+            log_path=log_path,
+            industry=industry,
+            domain=domain,
+            dept=dept,
+            baseline_days=baseline_days,
+            recent_days=recent_days,
+            min_samples=min_samples,
+        )
+        if report is None:
+            return Response({"detail": "Monitoring log not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(report)
+
+
+class DashboardScopeAPIView(APIView):
+    """Return aggregated metrics/drift/confusion payload for dashboard scope."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        industry = request.query_params.get("industry_id")
+        domain = request.query_params.get("domain_id")
+        dept = request.query_params.get("department")
+        baseline_days = int(request.query_params.get("baseline_days") or 365)
+        recent_days = int(request.query_params.get("recent_days") or 365)
+        min_samples = int(request.query_params.get("min_samples") or 100)
+        scope = {"industry_id": industry, "domain_id": domain, "department": dept}
+
+        payload = {"scope": scope}
+
+        # Confusion + metrics
+        eval_csv = Path(settings.BASE_DIR) / "artifacts" / "datasets" / "future_skills_eval_latest.csv"
+        cm_path = Path(settings.BASE_DIR) / "logs" / "confusion_matrix_silver.json"
+        cm = None
+        if any(scope.values()) and eval_csv.exists():
+            cm = _compute_confusion_from_df(
+                pd.read_csv(eval_csv),
+                scope=scope,
+                model_path=Path(settings.BASE_DIR) / "artifacts" / "models" / "future_skills_model.pkl",
+            )
+            if cm:
+                cm["scope"] = scope
+        if cm is None and cm_path.exists():
+            with cm_path.open() as f:
+                cm = json.load(f)
+
+        payload["confusion"] = cm
+        if cm:
+            metrics = cm.get("metrics", {}) or {}
+            run_date = (
+                datetime.utcnow().date().isoformat()
+                if any(scope.values())
+                else datetime.fromtimestamp(cm_path.stat().st_mtime).date().isoformat()
+                if cm_path.exists()
+                else None
+            )
+            metrics_payload = {**metrics, "run_date": run_date}
+            payload["metrics"] = metrics_payload
+        else:
+            payload["metrics"] = None
+
+        # Drift
+        report_path = Path(settings.BASE_DIR) / "logs" / "future_skills_drift_report_professional.json"
+        if any(scope.values()):
+            drift = _compute_scoped_drift_report(
+                log_path=Path(settings.BASE_DIR) / "logs" / "predictions_monitoring_professional.jsonl",
+                industry=industry,
+                domain=domain,
+                dept=dept,
+                baseline_days=baseline_days,
+                recent_days=recent_days,
+                min_samples=min_samples,
+            )
+        else:
+            if report_path.exists():
+                with report_path.open() as f:
+                    drift = json.load(f)
+                drift.setdefault("generated_at", datetime.fromtimestamp(report_path.stat().st_mtime).isoformat())
+            else:
+                drift = None
+
+        payload["drift"] = drift
+        return Response(payload)
+
+
+class FrontendConfusionMatrixAPIView(APIView):
+    """Return confusion matrix counts for the latest evaluation run."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        cm_path = Path(settings.BASE_DIR) / "logs" / "confusion_matrix_silver.json"
+        industry = request.query_params.get("industry_id")
+        domain = request.query_params.get("domain_id")
+        dept = request.query_params.get("department")
+        scope = {"industry_id": industry, "domain_id": domain, "department": dept}
+
+        # If scope provided, try recompute from latest eval CSV
+        if any(scope.values()):
+            eval_csv = Path(settings.BASE_DIR) / "artifacts" / "datasets" / "future_skills_eval_latest.csv"
+            if eval_csv.exists():
+                cm = _compute_confusion_from_df(pd.read_csv(eval_csv), scope=scope, model_path=Path(settings.BASE_DIR) / "artifacts" / "models" / "future_skills_model.pkl")
+                if cm:
+                    cm["scope"] = scope
+                    return Response(cm)
+            return Response({"detail": "Scoped confusion not available"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not cm_path.exists():
+            return Response({"detail": "Confusion matrix not found."}, status=status.HTTP_404_NOT_FOUND)
+        with cm_path.open() as f:
+            data = json.load(f)
+        return Response(data)
+
+
+class EvaluationMetricsAPIView(APIView):
+    """Serve evaluation metrics for the latest run."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        industry = request.query_params.get("industry_id")
+        domain = request.query_params.get("domain_id")
+        dept = request.query_params.get("department")
+
+        # Scope branch: recompute from latest eval CSV if available
+        scope = {"industry_id": industry, "domain_id": domain, "department": dept}
+        if any(scope.values()):
+            eval_csv = Path(settings.BASE_DIR) / "artifacts" / "datasets" / "future_skills_eval_latest.csv"
+            if eval_csv.exists():
+                cm = _compute_confusion_from_df(
+                    pd.read_csv(eval_csv),
+                    scope=scope,
+                    model_path=Path(settings.BASE_DIR) / "artifacts" / "models" / "future_skills_model.pkl",
+                )
+                if cm:
+                    m = cm.get("metrics", {})
+                    return Response(
+                        {
+                            "run_date": datetime.utcnow().date().isoformat(),
+                            "accuracy": m.get("accuracy"),
+                            "macro_f1": m.get("macro_f1"),
+                            "balanced_accuracy": m.get("balanced_accuracy"),
+                            "cohens_kappa": m.get("cohens_kappa"),
+                            "metrics": m,
+                            "scope": scope,
+                        }
+                    )
+            return Response({"detail": "No data for this scope"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Global branch: load latest metrics from history or confusion matrix
+        hist_path = Path(settings.BASE_DIR) / "logs" / "metrics_history.json"
+        cm_path = Path(settings.BASE_DIR) / "logs" / "confusion_matrix_silver.json"
+
+        if hist_path.exists():
+            with hist_path.open() as f:
+                try:
+                    history = json.load(f)
+                except Exception:
+                    history = []
+            if history:
+                latest = history[-1]
+                return Response(latest)
+
+        if cm_path.exists():
+            with cm_path.open() as f:
+                cm = json.load(f)
+            metrics = cm.get("metrics", {})
+            return Response(
+                {
+                    "run_date": datetime.fromtimestamp(cm_path.stat().st_mtime).date().isoformat(),
+                    "accuracy": metrics.get("accuracy"),
+                    "macro_f1": metrics.get("macro_f1"),
+                    "balanced_accuracy": metrics.get("balanced_accuracy"),
+                    "cohens_kappa": metrics.get("cohens_kappa"),
+                    "metrics": metrics,
+                }
+            )
+
+        return Response({"detail": "No metrics available"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class FrontendTaxonomyAPIView(APIView):
+    """Return a lightweight taxonomy (Industry, Function, Domain, JobRole, Skill)."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        industries = list(
+            Industry.objects.all()
+            .prefetch_related("job_roles")
+            .values("id", "code", "name", "description")
+        )
+        job_roles = list(
+            JobRole.objects.select_related("industry", "domain").values(
+                "id", "name", "industry_id", "domain_id", "department"
+            )
+        )
+        functions = list(Function.objects.all().values("id", "code", "name"))
+        domains = list(Domain.objects.select_related("function").values("id", "code", "name", "function_id"))
+        skills = list(Skill.objects.all().values("id", "name", "category"))
+        skill_domain_map = list(
+            SkillDomainMap.objects.select_related("skill", "domain").values(
+                "skill_id", "domain_id", "weight"
+            )
+        )
+
+        return Response(
+            {
+                "industries": industries,
+                "job_roles": job_roles,
+                "functions": functions,
+                "domains": domains,
+                "skills": skills,
+                "skill_domain_map": skill_domain_map,
+            }
+        )
+
+
+class PredictionFilteredPagination(PageNumberPagination):
+    page_size_query_param = "page_size"
+    max_page_size = 100
+    page_size = 20
+
+
+class FrontendPredictionListAPIView(ListAPIView):
+    """Filtered predictions for frontend tables."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+    serializer_class = FutureSkillPredictionSerializer
+    pagination_class = PredictionFilteredPagination
+
+    def get_queryset(self):
+        qs = FutureSkillPrediction.objects.select_related("job_role", "skill")
+        job_role = self.request.query_params.get("job_role")
+        skill = self.request.query_params.get("skill")
+        level = self.request.query_params.get("level")
+        horizon = self.request.query_params.get("horizon_years")
+        as_of_from = self.request.query_params.get("as_of_from")
+        as_of_to = self.request.query_params.get("as_of_to")
+        domain_id = self.request.query_params.get("domain_id")
+        industry_id = self.request.query_params.get("industry_id")
+        department = self.request.query_params.get("department")
+
+        if job_role:
+            qs = qs.filter(job_role__name__icontains=job_role)
+        if skill:
+            qs = qs.filter(skill__name__icontains=skill)
+        if level:
+            qs = qs.filter(level__iexact=level.upper())
+        if horizon:
+            try:
+                qs = qs.filter(horizon_years=int(horizon))
+            except ValueError:
+                pass
+        if as_of_from:
+            qs = qs.filter(as_of_date__gte=as_of_from)
+        if as_of_to:
+            qs = qs.filter(as_of_date__lte=as_of_to)
+        if domain_id:
+            try:
+                qs = qs.filter(job_role__domain_id=int(domain_id))
+            except ValueError:
+                pass
+        if industry_id:
+            try:
+                qs = qs.filter(job_role__industry_id=int(industry_id))
+            except ValueError:
+                pass
+        if department:
+            qs = qs.filter(job_role__department__icontains=department)
+        return qs.order_by("-created_at")
+
+    def list(self, request, *args, **kwargs):
+        if request.query_params.get("format") == "csv":
+            qs = self.filter_queryset(self.get_queryset())
+            rows = qs[: self.pagination_class.max_page_size] if self.pagination_class else qs
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = 'attachment; filename="predictions.csv"'
+            writer = csv.writer(response)
+            writer.writerow(["job_role", "skill", "industry", "domain", "department", "horizon_years", "level", "score", "as_of_date"])
+            for p in rows:
+                writer.writerow(
+                    [
+                        p.job_role.name,
+                        p.skill.name,
+                        getattr(p.job_role.industry, "name", ""),
+                        getattr(p.job_role.domain, "name", ""),
+                        p.job_role.department or "",
+                        p.horizon_years,
+                        p.level,
+                        p.score,
+                        p.as_of_date,
+                    ]
+                )
+            return response
+        return super().list(request, *args, **kwargs)
+
+
+class SnapshotSummaryAPIView(APIView):
+    """Return snapshot dates and counts."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        from ..models import FutureSkillSnapshot
+
+        dates = (
+            FutureSkillSnapshot.objects.values_list("as_of_date", flat=True)
+            .distinct()
+            .order_by("as_of_date")
+        )
+        total = FutureSkillSnapshot.objects.count()
+        return Response({"dates": list(dates), "total": total})
+
+
+class LabelsPredAlignmentAPIView(APIView):
+    """Return label/pred alignment stats (per-class precision/recall/F1)."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        industry = request.query_params.get("industry_id")
+        domain = request.query_params.get("domain_id")
+        dept = request.query_params.get("department")
+        scope = {"industry_id": industry, "domain_id": domain, "department": dept}
+
+        cm_path = Path(settings.BASE_DIR) / "logs" / "confusion_matrix_silver.json"
+        eval_csv = Path(settings.BASE_DIR) / "artifacts" / "datasets" / "future_skills_eval_latest.csv"
+
+        data = None
+        if any(scope.values()) and eval_csv.exists():
+            cm = _compute_confusion_from_df(pd.read_csv(eval_csv), scope=scope, model_path=Path(settings.BASE_DIR) / "artifacts" / "models" / "future_skills_model.pkl")
+            if cm:
+                data = cm
+                data["scope"] = scope
+
+        if data is None:
+            if not cm_path.exists():
+                return Response({"detail": "Confusion matrix not found."}, status=status.HTTP_404_NOT_FOUND)
+            with cm_path.open() as f:
+                data = json.load(f)
+
+        labels = data.get("labels", ["LOW", "MEDIUM", "HIGH"])
+        matrix = data.get("matrix", [])
+        metrics = data.get("metrics", {})
+        return Response(
+            {
+                "labels": labels,
+                "matrix": matrix,
+                "total": data.get("total"),
+                "true_counts": data.get("true_counts"),
+                "pred_counts": data.get("pred_counts"),
+                "metrics": metrics,
+                "scope": data.get("scope"),
+            }
+        )
+
+
+class MetricsHistoryAPIView(APIView):
+    """Return a simple metrics history (current snapshot list)."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        """
+        Return a list of metric snapshots.
+        - If metrics_history.json exists, return its content.
+        - Otherwise, seed from the latest confusion matrix file as a single entry.
+        """
+        industry = request.query_params.get("industry_id")
+        domain = request.query_params.get("domain_id")
+        dept = request.query_params.get("department")
+        hist_path = Path(settings.BASE_DIR) / "logs" / "metrics_history.json"
+        cm_path = Path(settings.BASE_DIR) / "logs" / "confusion_matrix_silver.json"
+
+        if hist_path.exists():
+            with hist_path.open() as f:
+                history = json.load(f)
+            if any([industry, domain, dept]):
+                def _match_scope(entry):
+                    scope = entry.get("scope") or {}
+                    if industry and str(scope.get("industry_id")) != str(industry):
+                        return False
+                    if domain and str(scope.get("domain_id")) != str(domain):
+                        return False
+                    if dept:
+                        dep_val = (scope.get("department") or "").lower()
+                        if dept.lower() not in dep_val:
+                            return False
+                    return True
+                history = [h for h in history if _match_scope(h)]
+        elif cm_path.exists():
+            with cm_path.open() as f:
+                data = json.load(f)
+            mtime = datetime.fromtimestamp(cm_path.stat().st_mtime).date().isoformat()
+            metrics = data.get("metrics", {})
+            history = [
+                {
+                    "run_date": mtime,
+                    "accuracy": metrics.get("accuracy"),
+                    "macro_f1": metrics.get("macro_f1"),
+                    "kappa": metrics.get("cohens_kappa"),
+                }
+            ]
+            hist_path.parent.mkdir(parents=True, exist_ok=True)
+            with hist_path.open("w") as f:
+                json.dump(history, f, indent=2)
+        else:
+            history = []
+        return Response({"history": history})
+
+
+class DriftSeriesAPIView(APIView):
+    """Return drift timeseries if available; otherwise empty series."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        log_path = Path(settings.BASE_DIR) / "logs" / "predictions_monitoring_professional.jsonl"
+        if not log_path.exists():
+            return Response({"series": {}})
+
+        industry = request.query_params.get("industry_id")
+        domain = request.query_params.get("domain_id")
+        dept = request.query_params.get("department")
+        scope = {"industry_id": industry, "domain_id": domain, "department": dept}
+        jr_map = None
+        if any(scope.values()):
+            jr_map = {jr.id: jr for jr in JobRole.objects.select_related("industry", "domain")}
+
+        features = ["trend_score", "internal_usage", "training_requests", "scarcity_index", "economic_indicator"]
+        agg = {feat: defaultdict(lambda: {"sum": 0.0, "count": 0, "values": []}) for feat in features}
+
+        # Parse monitoring log; store per-date values for PSI/KS.
+        with log_path.open() as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if jr_map is not None:
+                    jr = jr_map.get(record.get("job_role_id"))
+                    if not jr:
+                        continue
+                    if industry and jr.industry_id != int(industry):
+                        continue
+                    if domain and jr.domain_id != int(domain):
+                        continue
+                    if dept and jr.department and dept.lower() not in jr.department.lower():
+                        continue
+                ts = record.get("timestamp") or record.get("created_at") or ""
+                date_part = ts[:10] if ts else None
+                feats = record.get("features") or {}
+                if not date_part:
+                    continue
+                for feat in features:
+                    if feat in feats and isinstance(feats[feat], (int, float)):
+                        val = float(feats[feat])
+                        agg[feat][date_part]["sum"] += val
+                        agg[feat][date_part]["count"] += 1
+                        agg[feat][date_part]["values"].append(val)
+
+        series = {}
+        window_days = int(request.query_params.get("window_days") or 30)
+        baseline_mode = request.query_params.get("baseline_mode", "rolling")  # rolling or first
+        for feat in features:
+            sorted_items = sorted(agg[feat].items())
+            if not sorted_items:
+                series[feat] = []
+                continue
+
+            points = []
+            for idx, (d, stats) in enumerate(sorted_items):
+                if stats["count"] <= 0:
+                    continue
+                vals = stats["values"]
+                mean = stats["sum"] / stats["count"]
+
+                # Rolling baseline: previous N days
+                baseline_vals = []
+                cur_date = datetime.fromisoformat(d).date()
+                if baseline_mode == "first" and sorted_items:
+                    baseline_vals = sorted_items[0][1]["values"] if sorted_items else []
+                else:
+                    for bd, bstats in sorted_items:
+                        bd_date = datetime.fromisoformat(bd).date()
+                        if bd_date >= cur_date:
+                            break
+                        if (cur_date - bd_date).days <= window_days:
+                            baseline_vals.extend(bstats["values"])
+
+                psi = None
+                ks = None
+                if baseline_vals and vals:
+                    try:
+                        ks = float(ks_2samp(baseline_vals, vals).statistic)
+                    except Exception:
+                        ks = None
+                    try:
+                        qs = np.quantile(baseline_vals, np.linspace(0, 1, 11))
+                        bins = np.unique(qs)
+                        if len(bins) > 2:
+                            base_hist, _ = np.histogram(baseline_vals, bins=bins)
+                            cur_hist, _ = np.histogram(vals, bins=bins)
+                            if base_hist.sum() > 0 and cur_hist.sum() > 0:
+                                base_pct = base_hist / base_hist.sum()
+                                cur_pct = cur_hist / cur_hist.sum()
+                                eps = 1e-6
+                                psi = float(np.sum((base_pct - cur_pct) * np.log((base_pct + eps) / (cur_pct + eps))))
+                    except Exception:
+                        psi = None
+
+                points.append({"date": d, "mean": mean, "count": stats["count"], "psi": psi, "ks": ks})
+            series[feat] = points
+
+        return Response({"series": series})
+
+
+# ---------------------------------------------------------------------------
+# Job runner (UI-triggered tasks with predefined actions)
+# ---------------------------------------------------------------------------
+
+
+JOBS_LOG_PATH = Path(settings.BASE_DIR) / "logs" / "job_runs.json"
+
+
+def _load_jobs():
+    if JOBS_LOG_PATH.exists():
+        with JOBS_LOG_PATH.open() as f:
+            return json.load(f)
+    return []
+
+# Simple in-process lock per action
+JOB_LOCKS = {
+    "recalc_predictions": threading.Lock(),
+    "drift_report": threading.Lock(),
+    "export_eval": threading.Lock(),
+    "generate_snapshots": threading.Lock(),
+    "replay_drift": threading.Lock(),
+    "pipeline_run": threading.Lock(),
+}
+GLOBAL_JOB_LOCK = threading.Lock()
+
+def _save_jobs(jobs):
+    JOBS_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with JOBS_LOG_PATH.open("w") as f:
+        json.dump(jobs, f, indent=2)
+
+
+def _append_job(job):
+    jobs = _load_jobs()
+    jobs.append(job)
+    _save_jobs(jobs)
+
+
+def _update_job(job_id, **fields):
+    jobs = _load_jobs()
+    updated = False
+    for j in jobs:
+        if j["id"] == job_id:
+            j.update(fields)
+            updated = True
+            break
+    if updated:
+        _save_jobs(jobs)
+    return updated
+
+
+def _add_metric_history(entry):
+    hist_path = Path(settings.BASE_DIR) / "logs" / "metrics_history.json"
+    history = []
+    if hist_path.exists():
+        with hist_path.open() as f:
+            try:
+                history = json.load(f)
+            except Exception:
+                history = []
+    history.append(entry)
+    hist_path.parent.mkdir(parents=True, exist_ok=True)
+    with hist_path.open("w") as f:
+        json.dump(history, f, indent=2)
+
+
+def _compute_confusion_from_csv(csv_path):
+    model_path = Path(settings.BASE_DIR) / "artifacts" / "models" / "future_skills_model.pkl"
+    df = pd.read_csv(csv_path)
+    return _compute_confusion_from_df(df, model_path=model_path)
+
+
+def _compute_confusion_from_df(df, model_path=None, scope=None):
+    labels = ["LOW", "MEDIUM", "HIGH"]
+    if scope:
+        # Filter by scope using JobRole mapping
+        jr_map = {jr.name: jr for jr in JobRole.objects.select_related("industry", "domain")}
+        if scope.get("industry_id"):
+            df = df[df["job_role_name"].map(lambda x: getattr(jr_map.get(x), "industry_id", None) == int(scope["industry_id"]))]
+        if scope.get("domain_id"):
+            df = df[df["job_role_name"].map(lambda x: getattr(jr_map.get(x), "domain_id", None) == int(scope["domain_id"]))]
+        if scope.get("department"):
+            df = df[df["job_department"].fillna("").str.contains(scope["department"], case=False)]
+    if df.empty:
+        return None
+    y = df["future_need_level"]
+    X = df.drop(columns=["future_need_level"])
+    if model_path:
+        pipeline = joblib.load(model_path)
+        preds = pipeline.predict(X)
+    else:
+        return None
+    cm = np.zeros((3, 3), dtype=int)
+    label_to_idx = {l: i for i, l in enumerate(labels)}
+    for true, pred in zip(y, preds):
+        if true in label_to_idx and pred in label_to_idx:
+            cm[label_to_idx[true], label_to_idx[pred]] += 1
+    true_counts = y.value_counts().to_dict()
+    pred_counts = pd.Series(preds).value_counts().to_dict()
+    from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+
+    acc = float(accuracy_score(y, preds))
+    prec, rec, f1, _ = precision_recall_fscore_support(y, preds, labels=labels, zero_division=0)
+    metrics = {
+        "accuracy": acc,
+        "macro_f1": float(np.mean(f1)) if len(f1) else None,
+        "balanced_accuracy": float(np.mean(rec)) if len(rec) else None,
+        "cohens_kappa": float(cohen_kappa_score(y, preds)),
+        "precision_per_class": dict(zip(labels, map(float, prec))),
+        "recall_per_class": dict(zip(labels, map(float, rec))),
+        "f1_per_class": dict(zip(labels, map(float, f1))),
+    }
+    return {
+        "labels": labels,
+        "matrix": cm.tolist(),
+        "total": int(len(y)),
+        "true_counts": true_counts,
+        "pred_counts": pred_counts,
+        "metrics": metrics,
+    }
+
+
+def _job_run_recalc_predictions(job_id, params):
+    _update_job(job_id, status="running", logs="Recalcul des prédictions...\n")
+    horizon = int(params.get("horizon_years", 1))
+    total = recalculate_predictions(horizon_years=horizon, run_by=None, parameters={"trigger": "frontend"})
+    _update_job(job_id, status="success", message=f"Recalculated {total} predictions", finished_at=datetime.utcnow().isoformat())
+
+
+def _job_run_drift_report(job_id, params):
+    _update_job(job_id, status="running", logs="Calcul du rapport de dérive...\n")
+    baseline_days = int(params.get("baseline_days", 365))
+    recent_days = int(params.get("recent_days", 365))
+    min_samples = int(params.get("min_samples", 100))
+    from future_skills.services.drift_monitoring import compute_drift_report, write_drift_report
+
+    log_path = Path(settings.BASE_DIR) / "logs" / "predictions_monitoring_professional.jsonl"
+    report_path = Path(settings.BASE_DIR) / "logs" / "future_skills_drift_report_professional.json"
+    report = compute_drift_report(
+        log_path=log_path,
+        baseline_days=baseline_days,
+        recent_days=recent_days,
+        min_samples=min_samples,
+    )
+    write_drift_report(report, report_path)
+    _update_job(job_id, status="success", message="Drift report generated", finished_at=datetime.utcnow().isoformat())
+
+
+def _job_run_export_eval(job_id, params):
+    _update_job(job_id, status="running", logs="Export dataset + confusion...\n")
+    start_date = params.get("start_date", "2024-01-01")
+    end_date = params.get("end_date", "2025-01-01")
+    frequency = params.get("frequency", "monthly")
+    horizon_months = int(params.get("horizon_months", 12))
+    label_provenance = params.get("label_provenance", "SILVER")
+
+    out_csv = Path(settings.BASE_DIR) / "artifacts" / "datasets" / "future_skills_eval_latest.csv"
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    buf = io.StringIO()
+    call_command(
+        "export_future_skills_dataset",
+        start_date=start_date,
+        end_date=end_date,
+        frequency=frequency,
+        horizon_months=horizon_months,
+        label_provenance=label_provenance,
+        output=str(out_csv),
+        stdout=buf,
+    )
+    logs = buf.getvalue()
+
+    scope = {"industry_id": params.get("industry_id"), "domain_id": params.get("domain_id"), "department": params.get("department")}
+    if any(scope.values()):
+        df = pd.read_csv(out_csv)
+        cm = _compute_confusion_from_df(df, scope=scope)
+    else:
+        cm = _compute_confusion_from_csv(out_csv)
+    cm_path = Path(settings.BASE_DIR) / "logs" / "confusion_matrix_silver.json"
+    with cm_path.open("w") as f:
+        json.dump(cm, f, indent=2)
+
+    # append to metrics history
+    run_date = datetime.utcnow().date().isoformat()
+    entry = {
+        "run_date": run_date,
+        "accuracy": cm["metrics"].get("accuracy"),
+        "macro_f1": cm["metrics"].get("macro_f1"),
+        "balanced_accuracy": cm["metrics"].get("balanced_accuracy"),
+        "kappa": cm["metrics"].get("cohens_kappa"),
+    }
+    if any(scope.values()):
+        entry["scope"] = scope
+    _add_metric_history(entry)
+
+    _update_job(
+        job_id,
+        status="success",
+        message="Export + confusion completed",
+        logs=logs,
+        finished_at=datetime.utcnow().isoformat(),
+    )
+
+def _job_run_generate_snapshots(job_id, params):
+    _update_job(job_id, status="running", logs="Generation des snapshots...\n")
+    start_date = params.get("start_date", "2024-01-01")
+    end_date = params.get("end_date", "2025-01-01")
+    frequency = params.get("frequency", "monthly")
+    buf = io.StringIO()
+    call_command(
+        "generate_future_skill_snapshots",
+        start_date=start_date,
+        end_date=end_date,
+        frequency=frequency,
+        overwrite=True,
+        stdout=buf,
+    )
+    logs = buf.getvalue()
+    _update_job(job_id, status="success", message="Snapshots generated", logs=logs, finished_at=datetime.utcnow().isoformat())
+
+
+def _job_run_replay_drift(job_id, params):
+    _update_job(job_id, status="running", logs="Replay drift (monitoring log)...\n")
+    from prediction_skills.scripts.replay_future_skills_snapshots import main as replay_main
+    # Map params
+    argv = []
+    if params.get("start_date"):
+        argv += ["--start-date", params["start_date"]]
+    if params.get("end_date"):
+        argv += ["--end-date", params["end_date"]]
+    if params.get("horizon"):
+        argv += ["--horizon", str(params["horizon"])]
+    if params.get("baseline_days"):
+        argv += ["--baseline-days", str(params["baseline_days"])]
+    if params.get("recent_days"):
+        argv += ["--recent-days", str(params["recent_days"])]
+    if params.get("min_samples"):
+        argv += ["--min-samples", str(params["min_samples"])]
+    if params.get("max_dates"):
+        argv += ["--max-dates", str(params["max_dates"])]
+    argv += ["--log-path", str(Path(settings.BASE_DIR) / "logs" / "predictions_monitoring_professional.jsonl")]
+    argv += ["--report-path", str(Path(settings.BASE_DIR) / "logs" / "future_skills_drift_report_professional.json")]
+    try:
+        replay_main(argv)
+        _update_job(job_id, status="success", message="Replay + drift completed", finished_at=datetime.utcnow().isoformat())
+    except SystemExit:
+        _update_job(job_id, status="success", message="Replay + drift completed", finished_at=datetime.utcnow().isoformat())
+    except Exception as exc:
+        _update_job(job_id, status="error", message=str(exc))
+
+
+def _job_run_pipeline(job_id, params):
+    _update_job(job_id, status="running", logs="Pipeline: snapshots -> export -> drift...\n")
+    try:
+        _job_run_generate_snapshots(job_id, params)
+        _job_run_export_eval(job_id, params)
+        _job_run_replay_drift(job_id, params)
+        _update_job(job_id, status="success", message="Pipeline completed", finished_at=datetime.utcnow().isoformat())
+    except Exception as exc:
+        _update_job(job_id, status="error", message=str(exc))
+
+def _run_job(job_id, action, params):
+    lock = JOB_LOCKS.get(action)
+    if lock is None:
+        _update_job(job_id, status="error", message=f"Unknown action: {action}")
+        return
+    # global queue: block here so jobs run FIFO
+    GLOBAL_JOB_LOCK.acquire()
+    lock.acquire()
+    _update_job(job_id, status="running")
+    try:
+        if action == "recalc_predictions":
+            _job_run_recalc_predictions(job_id, params)
+        elif action == "drift_report":
+            _job_run_drift_report(job_id, params)
+        elif action == "export_eval":
+            _job_run_export_eval(job_id, params)
+        elif action == "generate_snapshots":
+            _job_run_generate_snapshots(job_id, params)
+        elif action == "replay_drift":
+            _job_run_replay_drift(job_id, params)
+        elif action == "pipeline_run":
+            _job_run_pipeline(job_id, params)
+        else:
+            _update_job(job_id, status="error", message=f"Unknown action: {action}")
+    except Exception as exc:  # pragma: no cover
+        _update_job(job_id, status="error", message=str(exc))
+    finally:
+        lock.release()
+        GLOBAL_JOB_LOCK.release()
+
+
+class FrontendJobAPIView(APIView):
+    """Create or list jobs."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request):
+        jobs = _load_jobs()
+        # Return latest 10
+        return Response({"jobs": sorted(jobs, key=lambda x: x.get("created_at", ""), reverse=True)[:10]})
+
+    def post(self, request):
+        payload = request.data or {}
+        action = payload.get("action")
+        params = payload.get("params") or {}
+        if action not in {"recalc_predictions", "drift_report", "export_eval"}:
+            return Response({"detail": "Unsupported action"}, status=status.HTTP_400_BAD_REQUEST)
+        job_id = str(uuid.uuid4())
+        job = {
+            "id": job_id,
+            "action": action,
+            "params": params,
+            "status": "pending",
+            "created_at": datetime.utcnow().isoformat(),
+            "logs": "",
+        }
+        _append_job(job)
+        threading.Thread(target=_run_job, args=(job_id, action, params), daemon=True).start()
+        return Response(job, status=status.HTTP_201_CREATED)
+
+
+class FrontendJobDetailAPIView(APIView):
+    """Retrieve job status/logs."""
+
+    permission_classes = [IsManagerOrSupportAuditorReadOnly]
+
+    def get(self, request, job_id):
+        jobs = _load_jobs()
+        for j in jobs:
+            if j["id"] == job_id:
+                return Response(j)
+        return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ---------------------------------------------------------------------------
+# Frontend-friendly, read-only endpoints for dashboards
+# ---------------------------------------------------------------------------

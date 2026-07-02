@@ -32,6 +32,9 @@ except ValueError:
     DEBUG = False
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,::1", cast=Csv())
+# Ensure Django test client host is always allowed for local runs
+if "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
 
 
 # Application definition
@@ -401,6 +404,7 @@ FUTURE_SKILLS_DRIFT_RECENT_DAYS = 30
 FUTURE_SKILLS_DRIFT_PSI_THRESHOLD = 0.2
 FUTURE_SKILLS_DRIFT_PSI_HIGH = 0.3
 FUTURE_SKILLS_DRIFT_KS_THRESHOLD = 0.2
+FUTURE_SKILLS_DRIFT_MIN_WINDOW_COUNT = 100
 FUTURE_SKILLS_DRIFT_FEATURES = [
     "trend_score",
     "internal_usage",

@@ -4,10 +4,10 @@ import calendar
 import math
 import random
 import statistics
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 
-from future_skills.models import EconomicReport, FutureSkillSnapshot, MarketTrend
+from future_skills.models import EconomicReport, FutureSkillSnapshot, MarketTrend, SkillDomainMap
 
 TECHNICAL_KEYWORDS = [
     "python",
@@ -32,6 +32,9 @@ SENIOR_KEYWORDS = ["senior", "lead", "manager", "director", "chief", "head"]
 
 IT_DEPARTMENTS = ["IT", "Tech", "Data", "Engineering", "R&D"]
 BASELINE_DATE = date(2019, 1, 1)
+DEFAULT_MONTHLY_WINDOW_MONTHS = 6
+DEFAULT_WEEKLY_WINDOW_WEEKS = 12
+DEFAULT_DAILY_WINDOW_DAYS = 30
 STABILITY_VOLATILITY_THRESHOLD = 0.05
 PERSISTENCE_THRESHOLD = 0.6
 LOW_SAMPLE_THRESHOLD = 10.0
@@ -78,6 +81,11 @@ def add_months(base_date: date, months: int) -> date:
     return date(year, month, day)
 
 
+def add_days(base_date: date, days: int) -> date:
+    """Return a date offset by the given number of days."""
+    return base_date + timedelta(days=days)
+
+
 def normalize_training_requests(training_requests: float, max_requests: float = 100.0) -> float:
     """Normalize training requests to [0, 1]."""
     if max_requests <= 0:
@@ -91,6 +99,29 @@ def get_market_trend_for_context(job_role, skill, as_of_date: Optional[date] = N
     trends = MarketTrend.objects.all()
     if as_of_date:
         trends = trends.filter(year__lte=as_of_date.year)
+
+    if getattr(job_role, "domain_id", None):
+        trend = trends.filter(domain_id=job_role.domain_id).order_by("-year", "-trend_score").first()
+        if trend:
+            return max(0.0, min(1.0, float(trend.trend_score)))
+
+    skill_domain_ids = list(
+        SkillDomainMap.objects.filter(skill_id=getattr(skill, "id", None)).values_list("domain_id", flat=True)
+    )
+    if skill_domain_ids:
+        trend = trends.filter(domain_id__in=skill_domain_ids).order_by("-year", "-trend_score").first()
+        if trend:
+            return max(0.0, min(1.0, float(trend.trend_score)))
+
+    if getattr(job_role, "domain", None) and getattr(job_role.domain, "function_id", None):
+        trend = trends.filter(function_id=job_role.domain.function_id).order_by("-year", "-trend_score").first()
+        if trend:
+            return max(0.0, min(1.0, float(trend.trend_score)))
+
+    if getattr(job_role, "industry_id", None):
+        trend = trends.filter(industry_id=job_role.industry_id).order_by("-year", "-trend_score").first()
+        if trend:
+            return max(0.0, min(1.0, float(trend.trend_score)))
 
     if job_role.department:
         trend = trends.filter(sector__icontains=job_role.department).order_by("-year", "-trend_score").first()
@@ -118,7 +149,16 @@ def get_economic_indicator(job_role, as_of_date: Optional[date] = None) -> float
     if as_of_date:
         reports = reports.filter(year__lte=as_of_date.year)
 
-    dept = job_role.department or "Tech"
+    if getattr(job_role, "industry_id", None):
+        report = reports.filter(industry_id=job_role.industry_id).order_by("-year").first()
+        if report:
+            normalized = report.value / 100.0
+            return max(0.0, min(1.0, normalized))
+
+    dept = job_role.department
+    if not dept and getattr(job_role, "domain", None) and getattr(job_role.domain, "function_id", None):
+        dept = job_role.domain.function.name
+    dept = dept or "Tech"
     report = reports.filter(sector__icontains=dept).order_by("-year").first()
 
     if report:
@@ -132,13 +172,15 @@ def compute_time_features(
     window_snapshots: list[FutureSkillSnapshot],
     *,
     expected_window_months: int | None = None,
+    expected_window_count: int | None = None,
     as_of_date: date | None = None,
     horizon_months: int | None = None,
+    time_unit: str = "monthly",
 ) -> dict:
     """Compute time-derived features from a snapshot window."""
     if not window_snapshots:
         features = DEFAULT_TIME_FEATURES.copy()
-        if expected_window_months:
+        if expected_window_months or expected_window_count:
             features["data_quality_window_coverage"] = 0.0
             features["data_quality_missing_flag"] = 1.0
         if as_of_date:
@@ -156,7 +198,7 @@ def compute_time_features(
     internal_deltas = [internal_values[i] - internal_values[i - 1] for i in range(1, len(internal_values))]
     training_deltas = [training_values[i] - training_values[i - 1] for i in range(1, len(training_values))]
 
-    trend_momentum = trend_deltas[-1]
+    trend_momentum = trend_deltas[-1] if trend_deltas else 0.0
     trend_acceleration = trend_deltas[-1] - trend_deltas[-2] if len(trend_deltas) > 1 else 0.0
     trend_volatility = statistics.pstdev(trend_values) if len(trend_values) > 1 else 0.0
     trend_persistence = (
@@ -202,7 +244,7 @@ def compute_time_features(
         1.0 if training_volatility <= STABILITY_VOLATILITY_THRESHOLD and training_persistence >= PERSISTENCE_THRESHOLD else 0.0
     )
 
-    expected = expected_window_months or len(window_snapshots)
+    expected = expected_window_count or expected_window_months or len(window_snapshots)
     window_coverage = len(window_snapshots) / expected if expected else 0.0
     missing_flag = 1.0 if expected and len(window_snapshots) < expected else 0.0
     latest_date = window_snapshots[-1].as_of_date
@@ -237,6 +279,7 @@ def compute_time_features(
     forecast_features = compute_forecast_features(
         window_snapshots,
         horizon_months=horizon_months,
+        time_unit=time_unit,
     )
     features.update(forecast_features)
     return features
@@ -247,12 +290,56 @@ def get_time_features(
     job_role_id: int,
     skill_id: int,
     as_of_date: date,
-    window_months: int = 6,
+    window_months: int = DEFAULT_MONTHLY_WINDOW_MONTHS,
+    window_weeks: int = DEFAULT_WEEKLY_WINDOW_WEEKS,
+    window_days: int = DEFAULT_DAILY_WINDOW_DAYS,
     horizon_months: int | None = None,
+    cadence: str | None = None,
 ) -> dict:
     """Fetch snapshot window and compute time-derived features."""
-    aligned_date = as_of_date.replace(day=1)
-    dates = [add_months(aligned_date, -offset) for offset in range(window_months - 1, -1, -1)]
+    def _infer_cadence() -> str:
+        recent_dates = list(
+            FutureSkillSnapshot.objects.filter(
+                job_role_id=job_role_id,
+                skill_id=skill_id,
+                as_of_date__lte=as_of_date,
+            )
+            .order_by("-as_of_date")
+            .values_list("as_of_date", flat=True)[:8]
+        )
+        if len(recent_dates) < 2:
+            return "monthly"
+        deltas = [
+            (recent_dates[i] - recent_dates[i + 1]).days
+            for i in range(len(recent_dates) - 1)
+            if recent_dates[i] and recent_dates[i + 1]
+        ]
+        if not deltas:
+            return "monthly"
+        median_days = statistics.median(deltas)
+        if median_days <= 2:
+            return "daily"
+        if median_days <= 8:
+            return "weekly"
+        return "monthly"
+
+    cadence = cadence or _infer_cadence()
+    if cadence == "daily":
+        aligned_date = as_of_date
+        window_count = window_days
+        dates = [add_days(aligned_date, -offset) for offset in range(window_days - 1, -1, -1)]
+        time_unit = "daily"
+    elif cadence == "weekly":
+        aligned_date = as_of_date - timedelta(days=as_of_date.weekday())
+        window_count = window_weeks
+        dates = [add_days(aligned_date, -(7 * offset)) for offset in range(window_weeks - 1, -1, -1)]
+        time_unit = "weekly"
+    else:
+        aligned_date = as_of_date.replace(day=1)
+        window_count = window_months
+        dates = [add_months(aligned_date, -offset) for offset in range(window_months - 1, -1, -1)]
+        time_unit = "monthly"
+
     snapshots = list(
         FutureSkillSnapshot.objects.filter(
             job_role_id=job_role_id,
@@ -262,9 +349,10 @@ def get_time_features(
     )
     return compute_time_features(
         snapshots,
-        expected_window_months=window_months,
+        expected_window_count=window_count,
         as_of_date=aligned_date,
         horizon_months=horizon_months,
+        time_unit=time_unit,
     )
 
 
@@ -278,12 +366,23 @@ def apply_time_drift(
     rand: random.Random,
     minimum: float = 0.0,
     maximum: float = 1.0,
+    cadence: str = "monthly",
 ) -> float:
     """Apply deterministic drift/seasonality/noise to a base signal."""
-    months_since_start = (snapshot_date.year - BASELINE_DATE.year) * 12 + (snapshot_date.month - BASELINE_DATE.month)
-    seasonal = math.sin(months_since_start / 6.0) * seasonal_amplitude
-    drift = months_since_start * drift_per_month
-    noise = rand.uniform(-noise_amplitude, noise_amplitude)  # nosec B311
+    if cadence in {"daily", "weekly"}:
+        days_since_start = (snapshot_date - BASELINE_DATE).days
+        months_fraction = days_since_start / 30.0
+        drift = months_fraction * drift_per_month
+        seasonal = math.sin(months_fraction / 6.0) * seasonal_amplitude
+        noise_scale = 0.35 if cadence == "daily" else 0.6
+        noise = rand.uniform(-noise_amplitude, noise_amplitude) * noise_scale  # nosec B311
+    else:
+        months_since_start = (snapshot_date.year - BASELINE_DATE.year) * 12 + (
+            snapshot_date.month - BASELINE_DATE.month
+        )
+        seasonal = math.sin(months_since_start / 6.0) * seasonal_amplitude
+        drift = months_since_start * drift_per_month
+        noise = rand.uniform(-noise_amplitude, noise_amplitude)  # nosec B311
     value = base_value + drift + seasonal + noise
     return max(minimum, min(maximum, value))
 
@@ -393,6 +492,7 @@ def compute_forecast_features(
     window_snapshots: list[FutureSkillSnapshot],
     *,
     horizon_months: int | None,
+    time_unit: str = "monthly",
 ) -> dict:
     """Forecast key signals and map into a projected need score."""
     if not window_snapshots or horizon_months is None:
@@ -404,10 +504,14 @@ def compute_forecast_features(
         }
 
     window_snapshots = sorted(window_snapshots, key=lambda snap: snap.as_of_date)
-    base_month = window_snapshots[0].as_of_date.year * 12 + window_snapshots[0].as_of_date.month
-    x_values = [
-        (snap.as_of_date.year * 12 + snap.as_of_date.month) - base_month for snap in window_snapshots
-    ]
+    if time_unit == "monthly":
+        base_month = window_snapshots[0].as_of_date.year * 12 + window_snapshots[0].as_of_date.month
+        x_values = [
+            (snap.as_of_date.year * 12 + snap.as_of_date.month) - base_month for snap in window_snapshots
+        ]
+    else:
+        base_date = window_snapshots[0].as_of_date
+        x_values = [(snap.as_of_date - base_date).days for snap in window_snapshots]
 
     def _forecast(values: list[float]) -> float:
         if len(values) < 2:
@@ -419,7 +523,10 @@ def compute_forecast_features(
             return values[-1]
         slope = sum((x - x_avg) * (y - y_avg) for x, y in zip(x_values, values)) / denom
         intercept = y_avg - slope * x_avg
-        target_x = x_values[-1] + horizon_months
+        if time_unit == "monthly":
+            target_x = x_values[-1] + horizon_months
+        else:
+            target_x = x_values[-1] + horizon_months * 30
         return intercept + slope * target_x
 
     trend_values = [snap.trend_score for snap in window_snapshots]

@@ -1,0 +1,130 @@
+[
+  {
+    "name": "Data Engineer",
+    "description": "Designs and maintains data pipelines.",
+    "domain_id": "data-ai",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Data Engineer", "fr": "Ingenieur data"},
+    "description_i18n": {"en": "Designs and maintains data pipelines.", "fr": "Concoit et maintient les pipelines data."}
+  },
+  {
+    "name": "Data Scientist",
+    "description": "Builds predictive models and insights.",
+    "domain_id": "data-ai",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Data Scientist", "fr": "Data scientist"},
+    "description_i18n": {"en": "Builds predictive models and insights.", "fr": "Construit des modeles predictifs et insights."}
+  },
+  {
+    "name": "Software Engineer",
+    "description": "Develops software applications.",
+    "domain_id": "software-eng",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Software Engineer", "fr": "Ingenieur logiciel"},
+    "description_i18n": {"en": "Develops software applications.", "fr": "Developpe des applications logicielles."}
+  },
+  {
+    "name": "DevOps Engineer",
+    "description": "Automates infrastructure and deployment.",
+    "domain_id": "cloud-devops",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "DevOps Engineer", "fr": "Ingenieur DevOps"},
+    "description_i18n": {"en": "Automates infrastructure and deployment.", "fr": "Automatise l'infrastructure et le deploiement."}
+  },
+  {
+    "name": "Cybersecurity Analyst",
+    "description": "Monitors and protects systems.",
+    "domain_id": "cybersecurity",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Cybersecurity Analyst", "fr": "Analyste cybersecurite"},
+    "description_i18n": {"en": "Monitors and protects systems.", "fr": "Surveille et protege les systemes."}
+  },
+  {
+    "name": "Cloud Architect",
+    "description": "Designs cloud architectures.",
+    "domain_id": "cloud-devops",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Cloud Architect", "fr": "Architecte cloud"},
+    "description_i18n": {"en": "Designs cloud architectures.", "fr": "Concoit les architectures cloud."}
+  },
+  {
+    "name": "Full Stack Developer",
+    "description": "Builds front-end and back-end systems.",
+    "domain_id": "software-eng",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Full Stack Developer", "fr": "Developpeur full stack"},
+    "description_i18n": {"en": "Builds front-end and back-end systems.", "fr": "Developpe le front-end et le back-end."}
+  },
+  {
+    "name": "Machine Learning Engineer",
+    "description": "Deploys ML models to production.",
+    "domain_id": "data-ai",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Machine Learning Engineer", "fr": "Ingenieur machine learning"},
+    "description_i18n": {"en": "Deploys ML models to production.", "fr": "Deploie les modeles ML en production."}
+  },
+  {
+    "name": "Product Manager",
+    "description": "Owns product delivery and roadmap.",
+    "domain_id": "project-management",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Product Manager", "fr": "Chef de produit"},
+    "description_i18n": {"en": "Owns product delivery and roadmap.", "fr": "Pilote la livraison produit et la roadmap."}
+  },
+  {
+    "name": "IT Manager",
+    "description": "Leads IT operations and services.",
+    "domain_id": "it-ops",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "IT Manager", "fr": "Responsable IT"},
+    "description_i18n": {"en": "Leads IT operations and services.", "fr": "Pilote les operations et services IT."}
+  },
+  {
+    "name": "Scrum Master",
+    "description": "Facilitates agile delivery.",
+    "domain_id": "project-management",
+    "industry_id": "tech-services",
+    "name_i18n": {"en": "Scrum Master", "fr": "Scrum master"},
+    "description_i18n": {"en": "Facilitates agile delivery.", "fr": "Facilite la livraison agile."}
+  },
+  {
+    "name": "HR Manager",
+    "description": "Manages people operations.",
+    "domain_id": "hr-operations",
+    "industry_id": "healthcare",
+    "name_i18n": {"en": "HR Manager", "fr": "Responsable RH"},
+    "description_i18n": {"en": "Manages people operations.", "fr": "Pilote les operations RH."}
+  },
+  {
+    "name": "Talent Acquisition Specialist",
+    "description": "Drives recruiting and sourcing.",
+    "domain_id": "talent-acquisition",
+    "industry_id": "manufacturing",
+    "name_i18n": {"en": "Talent Acquisition Specialist", "fr": "Specialiste recrutement"},
+    "description_i18n": {"en": "Drives recruiting and sourcing.", "fr": "Pilote le recrutement et le sourcing."}
+  },
+  {
+    "name": "Business Analyst",
+    "description": "Analyzes processes and requirements.",
+    "domain_id": "business-analysis",
+    "industry_id": "banking",
+    "name_i18n": {"en": "Business Analyst", "fr": "Analyste business"},
+    "description_i18n": {"en": "Analyzes processes and requirements.", "fr": "Analyse les processus et besoins."}
+  },
+  {
+    "name": "Marketing Manager",
+    "description": "Leads marketing strategy.",
+    "domain_id": "digital-marketing",
+    "industry_id": "retail",
+    "name_i18n": {"en": "Marketing Manager", "fr": "Responsable marketing"},
+    "description_i18n": {"en": "Leads marketing strategy.", "fr": "Pilote la strategie marketing."}
+  },
+  {
+    "name": "Financial Analyst",
+    "description": "Builds financial analyses and forecasts.",
+    "domain_id": "fpa",
+    "industry_id": "banking",
+    "name_i18n": {"en": "Financial Analyst", "fr": "Analyste financier"},
+    "description_i18n": {"en": "Builds financial analyses and forecasts.", "fr": "Construit des analyses et previsions financieres."}
+  }
+]

@@ -13,8 +13,20 @@ from .views import (
     BulkEmployeeImportAPIView,
     BulkEmployeeUploadAPIView,
     BulkPredictAPIView,
+    DashboardScopeAPIView,
+    DriftReportAPIView,
+    DriftSeriesAPIView,
     EconomicReportListAPIView,
     EmployeeViewSet,
+    EvaluationMetricsAPIView,
+    FrontendConfusionMatrixAPIView,
+    FrontendPredictionListAPIView,
+    FrontendTaxonomyAPIView,
+    FrontendJobAPIView,
+    FrontendJobDetailAPIView,
+    LabelsPredAlignmentAPIView,
+    SnapshotSummaryAPIView,
+    MetricsHistoryAPIView,
     FutureSkillPredictionListAPIView,
     FutureSkillTopRankingsAPIView,
     HRInvestmentRecommendationListAPIView,
@@ -32,6 +44,19 @@ router = DefaultRouter()
 router.register(r"employees", EmployeeViewSet, basename="employee")
 
 urlpatterns = [
+    # Frontend-friendly read-only endpoints
+    path("frontend/drift-report/", DriftReportAPIView.as_view(), name="frontend-drift-report"),
+    path("frontend/confusion-matrix/", FrontendConfusionMatrixAPIView.as_view(), name="frontend-confusion-matrix"),
+    path("frontend/evaluation-metrics/", EvaluationMetricsAPIView.as_view(), name="frontend-evaluation-metrics"),
+    path("frontend/taxonomy/", FrontendTaxonomyAPIView.as_view(), name="frontend-taxonomy"),
+    path("frontend/predictions/", FrontendPredictionListAPIView.as_view(), name="frontend-predictions"),
+    path("frontend/snapshots/", SnapshotSummaryAPIView.as_view(), name="frontend-snapshots"),
+    path("frontend/labels-vs-preds/", LabelsPredAlignmentAPIView.as_view(), name="frontend-labels-vs-preds"),
+    path("frontend/metrics-history/", MetricsHistoryAPIView.as_view(), name="frontend-metrics-history"),
+    path("frontend/drift-series/", DriftSeriesAPIView.as_view(), name="frontend-drift-series"),
+    path("frontend/dashboard-scope/", DashboardScopeAPIView.as_view(), name="frontend-dashboard-scope"),
+    path("frontend/jobs/", FrontendJobAPIView.as_view(), name="frontend-jobs"),
+    path("frontend/jobs/<str:job_id>/", FrontendJobDetailAPIView.as_view(), name="frontend-jobs-detail"),
     # Include router URLs (employee-list, employee-detail, etc.)
     path("", include(router.urls)),
     # Default predictions endpoint (Accept header/default version = v2)

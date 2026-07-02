@@ -1,0 +1,189 @@
+[
+  {
+    "name": "Python",
+    "category": "Technical",
+    "description": "General-purpose programming language.",
+    "name_i18n": {"en": "Python", "fr": "Python"},
+    "description_i18n": {"en": "General-purpose programming language.", "fr": "Langage de programmation polyvalent."},
+    "domain_weights": [{"domain_id": "data-ai", "weight": 1.0}]
+  },
+  {
+    "name": "Java",
+    "category": "Technical",
+    "description": "Enterprise application development.",
+    "name_i18n": {"en": "Java", "fr": "Java"},
+    "description_i18n": {"en": "Enterprise application development.", "fr": "Developpement applicatif entreprise."},
+    "domain_weights": [{"domain_id": "software-eng", "weight": 1.0}]
+  },
+  {
+    "name": "JavaScript",
+    "category": "Technical",
+    "description": "Front-end and back-end web development.",
+    "name_i18n": {"en": "JavaScript", "fr": "JavaScript"},
+    "description_i18n": {"en": "Front-end and back-end web development.", "fr": "Developpement web front-end et back-end."},
+    "domain_weights": [{"domain_id": "software-eng", "weight": 1.0}]
+  },
+  {
+    "name": "SQL",
+    "category": "Technical",
+    "description": "Database querying and analytics.",
+    "name_i18n": {"en": "SQL", "fr": "SQL"},
+    "description_i18n": {"en": "Database querying and analytics.", "fr": "Requetes base de donnees et analytique."},
+    "domain_weights": [{"domain_id": "data-ai", "weight": 1.0}]
+  },
+  {
+    "name": "Machine Learning",
+    "category": "Technical",
+    "description": "Predictive modeling and automation.",
+    "name_i18n": {"en": "Machine Learning", "fr": "Machine learning"},
+    "description_i18n": {"en": "Predictive modeling and automation.", "fr": "Modeles predictifs et automatisation."},
+    "domain_weights": [{"domain_id": "data-ai", "weight": 1.0}]
+  },
+  {
+    "name": "Cloud Computing",
+    "category": "Technical",
+    "description": "Cloud infrastructure and services.",
+    "name_i18n": {"en": "Cloud Computing", "fr": "Cloud computing"},
+    "description_i18n": {"en": "Cloud infrastructure and services.", "fr": "Infrastructure et services cloud."},
+    "domain_weights": [{"domain_id": "cloud-devops", "weight": 1.0}]
+  },
+  {
+    "name": "DevOps",
+    "category": "Technical",
+    "description": "Automation, CI/CD, and reliability.",
+    "name_i18n": {"en": "DevOps", "fr": "DevOps"},
+    "description_i18n": {"en": "Automation, CI/CD, and reliability.", "fr": "Automatisation, CI/CD et fiabilite."},
+    "domain_weights": [{"domain_id": "cloud-devops", "weight": 1.0}]
+  },
+  {
+    "name": "Cybersecurity",
+    "category": "Technical",
+    "description": "Security engineering and risk mitigation.",
+    "name_i18n": {"en": "Cybersecurity", "fr": "Cybersecurite"},
+    "description_i18n": {"en": "Security engineering and risk mitigation.", "fr": "Ingenierie securite et mitigation des risques."},
+    "domain_weights": [{"domain_id": "cybersecurity", "weight": 1.0}]
+  },
+  {
+    "name": "Data Analysis",
+    "category": "Technical",
+    "description": "Exploratory and descriptive analytics.",
+    "name_i18n": {"en": "Data Analysis", "fr": "Analyse de donnees"},
+    "description_i18n": {"en": "Exploratory and descriptive analytics.", "fr": "Analytique exploratoire et descriptive."},
+    "domain_weights": [{"domain_id": "data-ai", "weight": 1.0}]
+  },
+  {
+    "name": "Docker & Kubernetes",
+    "category": "Technical",
+    "description": "Containerization and orchestration.",
+    "name_i18n": {"en": "Docker & Kubernetes", "fr": "Docker & Kubernetes"},
+    "description_i18n": {"en": "Containerization and orchestration.", "fr": "Conteneurisation et orchestration."},
+    "domain_weights": [{"domain_id": "cloud-devops", "weight": 1.0}]
+  },
+  {
+    "name": "Leadership",
+    "category": "Soft Skill",
+    "description": "Leadership and team direction.",
+    "name_i18n": {"en": "Leadership", "fr": "Leadership"},
+    "description_i18n": {"en": "Leadership and team direction.", "fr": "Leadership et direction d'equipe."},
+    "domain_weights": [
+      {"domain_id": "leadership-management", "weight": 0.6},
+      {"domain_id": "project-management", "weight": 0.2},
+      {"domain_id": "hr-operations", "weight": 0.2}
+    ]
+  },
+  {
+    "name": "Communication",
+    "category": "Soft Skill",
+    "description": "Effective communication and collaboration.",
+    "name_i18n": {"en": "Communication", "fr": "Communication"},
+    "description_i18n": {"en": "Effective communication and collaboration.", "fr": "Communication efficace et collaboration."},
+    "domain_weights": [
+      {"domain_id": "leadership-management", "weight": 0.5},
+      {"domain_id": "hr-operations", "weight": 0.3},
+      {"domain_id": "project-management", "weight": 0.2}
+    ]
+  },
+  {
+    "name": "Project Management",
+    "category": "Soft Skill",
+    "description": "Planning and delivery of projects.",
+    "name_i18n": {"en": "Project Management", "fr": "Gestion de projet"},
+    "description_i18n": {"en": "Planning and delivery of projects.", "fr": "Planification et livraison des projets."},
+    "domain_weights": [
+      {"domain_id": "project-management", "weight": 0.8},
+      {"domain_id": "leadership-management", "weight": 0.2}
+    ]
+  },
+  {
+    "name": "Problem Solving",
+    "category": "Soft Skill",
+    "description": "Critical thinking and structured problem solving.",
+    "name_i18n": {"en": "Problem Solving", "fr": "Resolution de problemes"},
+    "description_i18n": {"en": "Critical thinking and structured problem solving.", "fr": "Pensee critique et resolution structuree."},
+    "domain_weights": [
+      {"domain_id": "business-analysis", "weight": 0.6},
+      {"domain_id": "project-management", "weight": 0.4}
+    ]
+  },
+  {
+    "name": "Adaptability",
+    "category": "Soft Skill",
+    "description": "Flexibility and change management.",
+    "name_i18n": {"en": "Adaptability", "fr": "Adaptabilite"},
+    "description_i18n": {"en": "Flexibility and change management.", "fr": "Flexibilite et gestion du changement."},
+    "domain_weights": [
+      {"domain_id": "leadership-management", "weight": 0.5},
+      {"domain_id": "hr-operations", "weight": 0.5}
+    ]
+  },
+  {
+    "name": "Teamwork",
+    "category": "Soft Skill",
+    "description": "Collaboration and team dynamics.",
+    "name_i18n": {"en": "Teamwork", "fr": "Travail en equipe"},
+    "description_i18n": {"en": "Collaboration and team dynamics.", "fr": "Collaboration et dynamique d'equipe."},
+    "domain_weights": [
+      {"domain_id": "leadership-management", "weight": 0.6},
+      {"domain_id": "hr-operations", "weight": 0.2},
+      {"domain_id": "project-management", "weight": 0.2}
+    ]
+  },
+  {
+    "name": "Time Management",
+    "category": "Soft Skill",
+    "description": "Prioritization and time organization.",
+    "name_i18n": {"en": "Time Management", "fr": "Gestion du temps"},
+    "description_i18n": {"en": "Prioritization and time organization.", "fr": "Priorisation et organisation du temps."},
+    "domain_weights": [
+      {"domain_id": "project-management", "weight": 0.6},
+      {"domain_id": "leadership-management", "weight": 0.4}
+    ]
+  },
+  {
+    "name": "Financial Analysis",
+    "category": "Business",
+    "description": "Financial modeling and reporting.",
+    "name_i18n": {"en": "Financial Analysis", "fr": "Analyse financiere"},
+    "description_i18n": {"en": "Financial modeling and reporting.", "fr": "Modelisation et reporting financier."},
+    "domain_weights": [{"domain_id": "fpa", "weight": 1.0}]
+  },
+  {
+    "name": "Digital Marketing",
+    "category": "Business",
+    "description": "Digital campaigns and performance marketing.",
+    "name_i18n": {"en": "Digital Marketing", "fr": "Marketing digital"},
+    "description_i18n": {"en": "Digital campaigns and performance marketing.", "fr": "Campagnes digitales et performance."},
+    "domain_weights": [{"domain_id": "digital-marketing", "weight": 1.0}]
+  },
+  {
+    "name": "HR Management",
+    "category": "Business",
+    "description": "HR operations and talent management.",
+    "name_i18n": {"en": "HR Management", "fr": "Gestion RH"},
+    "description_i18n": {"en": "HR operations and talent management.", "fr": "Operations RH et gestion des talents."},
+    "domain_weights": [
+      {"domain_id": "hr-operations", "weight": 0.7},
+      {"domain_id": "talent-acquisition", "weight": 0.3}
+    ]
+  }
+]

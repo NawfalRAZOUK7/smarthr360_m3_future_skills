@@ -1,0 +1,722 @@
+[
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2018,
+    "indicator": "Sector Index",
+    "value": 54.0,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2018,
+    "indicator": "Investment Index",
+    "value": 50.0,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2018,
+    "indicator": "Digital Adoption Index",
+    "value": 48.0,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2018,
+    "indicator": "Growth Index",
+    "value": 49.0,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2018,
+    "indicator": "Automation Index",
+    "value": 46.0,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  },
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2019,
+    "indicator": "Sector Index",
+    "value": 55.8,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2019,
+    "indicator": "Investment Index",
+    "value": 51.4,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2019,
+    "indicator": "Digital Adoption Index",
+    "value": 49.2,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2019,
+    "indicator": "Growth Index",
+    "value": 50.5,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2019,
+    "indicator": "Automation Index",
+    "value": 47.6,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  },
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2020,
+    "indicator": "Sector Index",
+    "value": 57.6,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2020,
+    "indicator": "Investment Index",
+    "value": 52.8,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2020,
+    "indicator": "Digital Adoption Index",
+    "value": 50.4,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2020,
+    "indicator": "Growth Index",
+    "value": 52.0,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2020,
+    "indicator": "Automation Index",
+    "value": 49.2,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  },
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2021,
+    "indicator": "Sector Index",
+    "value": 59.4,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2021,
+    "indicator": "Investment Index",
+    "value": 54.2,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2021,
+    "indicator": "Digital Adoption Index",
+    "value": 51.6,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2021,
+    "indicator": "Growth Index",
+    "value": 53.5,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2021,
+    "indicator": "Automation Index",
+    "value": 50.8,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  },
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2022,
+    "indicator": "Sector Index",
+    "value": 61.2,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2022,
+    "indicator": "Investment Index",
+    "value": 55.6,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2022,
+    "indicator": "Digital Adoption Index",
+    "value": 52.8,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2022,
+    "indicator": "Growth Index",
+    "value": 55.0,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2022,
+    "indicator": "Automation Index",
+    "value": 52.4,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  },
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2023,
+    "indicator": "Sector Index",
+    "value": 63.0,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2023,
+    "indicator": "Investment Index",
+    "value": 57.0,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2023,
+    "indicator": "Digital Adoption Index",
+    "value": 54.0,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2023,
+    "indicator": "Growth Index",
+    "value": 56.5,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2023,
+    "indicator": "Automation Index",
+    "value": 54.0,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  },
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2024,
+    "indicator": "Sector Index",
+    "value": 64.8,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2024,
+    "indicator": "Investment Index",
+    "value": 58.4,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2024,
+    "indicator": "Digital Adoption Index",
+    "value": 55.2,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2024,
+    "indicator": "Growth Index",
+    "value": 58.0,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2024,
+    "indicator": "Automation Index",
+    "value": 55.6,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  },
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2025,
+    "indicator": "Sector Index",
+    "value": 66.6,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2025,
+    "indicator": "Investment Index",
+    "value": 59.8,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2025,
+    "indicator": "Digital Adoption Index",
+    "value": 56.4,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2025,
+    "indicator": "Growth Index",
+    "value": 59.5,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2025,
+    "indicator": "Automation Index",
+    "value": 57.2,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  },
+  {
+    "title": "Tech Sector Growth",
+    "source_name": "World Bank",
+    "year": 2026,
+    "indicator": "Sector Index",
+    "value": 68.4,
+    "industry_id": "tech-services",
+    "title_i18n": {
+      "en": "Tech Sector Growth",
+      "fr": "Croissance secteur tech"
+    },
+    "indicator_i18n": {
+      "en": "Sector Index",
+      "fr": "Indice secteur"
+    }
+  },
+  {
+    "title": "Banking Investment in AI",
+    "source_name": "IMF Digital Report",
+    "year": 2026,
+    "indicator": "Investment Index",
+    "value": 61.2,
+    "industry_id": "banking",
+    "title_i18n": {
+      "en": "Banking Investment in AI",
+      "fr": "Investissement bancaire en IA"
+    },
+    "indicator_i18n": {
+      "en": "Investment Index",
+      "fr": "Indice investissement"
+    }
+  },
+  {
+    "title": "Healthcare Digitalization",
+    "source_name": "WHO Innovation Outlook",
+    "year": 2026,
+    "indicator": "Digital Adoption Index",
+    "value": 57.6,
+    "industry_id": "healthcare",
+    "title_i18n": {
+      "en": "Healthcare Digitalization",
+      "fr": "Digitalisation sante"
+    },
+    "indicator_i18n": {
+      "en": "Digital Adoption Index",
+      "fr": "Indice adoption digitale"
+    }
+  },
+  {
+    "title": "Retail E-commerce Growth",
+    "source_name": "OECD Retail Report",
+    "year": 2026,
+    "indicator": "Growth Index",
+    "value": 61.0,
+    "industry_id": "retail",
+    "title_i18n": {
+      "en": "Retail E-commerce Growth",
+      "fr": "Croissance e-commerce retail"
+    },
+    "indicator_i18n": {
+      "en": "Growth Index",
+      "fr": "Indice croissance"
+    }
+  },
+  {
+    "title": "Manufacturing Automation Spend",
+    "source_name": "Industry 4.0 Outlook",
+    "year": 2026,
+    "indicator": "Automation Index",
+    "value": 58.8,
+    "industry_id": "manufacturing",
+    "title_i18n": {
+      "en": "Manufacturing Automation Spend",
+      "fr": "Depenses automatisation industrie"
+    },
+    "indicator_i18n": {
+      "en": "Automation Index",
+      "fr": "Indice automatisation"
+    }
+  }
+]

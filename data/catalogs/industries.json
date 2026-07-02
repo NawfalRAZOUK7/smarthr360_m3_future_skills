@@ -1,0 +1,52 @@
+[
+  {
+    "id": "tech-services",
+    "name": "Technology Services",
+    "description": "Software, cloud, and digital services.",
+    "name_i18n": {"en": "Technology Services", "fr": "Services technologiques"},
+    "description_i18n": {
+      "en": "Software, cloud, and digital services.",
+      "fr": "Services logiciels, cloud et numeriques."
+    }
+  },
+  {
+    "id": "banking",
+    "name": "Banking",
+    "description": "Retail and corporate banking services.",
+    "name_i18n": {"en": "Banking", "fr": "Banque"},
+    "description_i18n": {
+      "en": "Retail and corporate banking services.",
+      "fr": "Services bancaires retail et corporate."
+    }
+  },
+  {
+    "id": "healthcare",
+    "name": "Healthcare",
+    "description": "Healthcare providers, biotech, and pharma.",
+    "name_i18n": {"en": "Healthcare", "fr": "Sante"},
+    "description_i18n": {
+      "en": "Healthcare providers, biotech, and pharma.",
+      "fr": "Fournisseurs de sante, biotech et pharma."
+    }
+  },
+  {
+    "id": "retail",
+    "name": "Retail",
+    "description": "Consumer retail and e-commerce.",
+    "name_i18n": {"en": "Retail", "fr": "Commerce de detail"},
+    "description_i18n": {
+      "en": "Consumer retail and e-commerce.",
+      "fr": "Commerce grand public et e-commerce."
+    }
+  },
+  {
+    "id": "manufacturing",
+    "name": "Manufacturing",
+    "description": "Industrial manufacturing and supply chain.",
+    "name_i18n": {"en": "Manufacturing", "fr": "Industrie manufacturiere"},
+    "description_i18n": {
+      "en": "Industrial manufacturing and supply chain.",
+      "fr": "Industrie et chaine logistique."
+    }
+  }
+]

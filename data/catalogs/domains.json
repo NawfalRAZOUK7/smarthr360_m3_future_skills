@@ -1,0 +1,189 @@
+[
+  {
+    "id": "data-ai",
+    "name": "Data & AI",
+    "function_id": "technology",
+    "description": "Data engineering, analytics, and machine learning.",
+    "name_i18n": {"en": "Data & AI", "fr": "Data & IA"},
+    "description_i18n": {
+      "en": "Data engineering, analytics, and machine learning.",
+      "fr": "Data engineering, analytique et machine learning."
+    }
+  },
+  {
+    "id": "software-eng",
+    "name": "Software Engineering",
+    "function_id": "technology",
+    "description": "Application and platform development.",
+    "name_i18n": {"en": "Software Engineering", "fr": "Ingenierie logicielle"},
+    "description_i18n": {
+      "en": "Application and platform development.",
+      "fr": "Developpement applicatif et plateforme."
+    }
+  },
+  {
+    "id": "cloud-devops",
+    "name": "Cloud & DevOps",
+    "function_id": "technology",
+    "description": "Cloud infrastructure, automation, and reliability.",
+    "name_i18n": {"en": "Cloud & DevOps", "fr": "Cloud & DevOps"},
+    "description_i18n": {
+      "en": "Cloud infrastructure, automation, and reliability.",
+      "fr": "Infrastructure cloud, automatisation et fiabilite."
+    }
+  },
+  {
+    "id": "cybersecurity",
+    "name": "Cybersecurity",
+    "function_id": "technology",
+    "description": "Security engineering, risk, and compliance.",
+    "name_i18n": {"en": "Cybersecurity", "fr": "Cybersecurite"},
+    "description_i18n": {
+      "en": "Security engineering, risk, and compliance.",
+      "fr": "Ingenierie securite, risque et conformite."
+    }
+  },
+  {
+    "id": "it-ops",
+    "name": "IT Operations",
+    "function_id": "technology",
+    "description": "IT service delivery and support.",
+    "name_i18n": {"en": "IT Operations", "fr": "Operations IT"},
+    "description_i18n": {
+      "en": "IT service delivery and support.",
+      "fr": "Services IT et support."
+    }
+  },
+  {
+    "id": "talent-acquisition",
+    "name": "Talent Acquisition",
+    "function_id": "hr",
+    "description": "Hiring strategy, sourcing, and recruitment.",
+    "name_i18n": {"en": "Talent Acquisition", "fr": "Acquisition de talents"},
+    "description_i18n": {
+      "en": "Hiring strategy, sourcing, and recruitment.",
+      "fr": "Strategie recrutement, sourcing et selection."
+    }
+  },
+  {
+    "id": "learning-development",
+    "name": "Learning & Development",
+    "function_id": "hr",
+    "description": "Training strategy and capability building.",
+    "name_i18n": {"en": "Learning & Development", "fr": "Formation et developpement"},
+    "description_i18n": {
+      "en": "Training strategy and capability building.",
+      "fr": "Strategie de formation et developpement des competences."
+    }
+  },
+  {
+    "id": "hr-operations",
+    "name": "HR Operations",
+    "function_id": "hr",
+    "description": "People operations and HR services.",
+    "name_i18n": {"en": "HR Operations", "fr": "Operations RH"},
+    "description_i18n": {
+      "en": "People operations and HR services.",
+      "fr": "Operations RH et services."
+    }
+  },
+  {
+    "id": "accounting",
+    "name": "Accounting",
+    "function_id": "finance",
+    "description": "Financial reporting and control.",
+    "name_i18n": {"en": "Accounting", "fr": "Comptabilite"},
+    "description_i18n": {
+      "en": "Financial reporting and control.",
+      "fr": "Reporting financier et controle."
+    }
+  },
+  {
+    "id": "fpa",
+    "name": "FP&A",
+    "function_id": "finance",
+    "description": "Financial planning and analysis.",
+    "name_i18n": {"en": "FP&A", "fr": "Planification et analyse"},
+    "description_i18n": {
+      "en": "Financial planning and analysis.",
+      "fr": "Planification et analyse financiere."
+    }
+  },
+  {
+    "id": "risk-compliance",
+    "name": "Risk & Compliance",
+    "function_id": "finance",
+    "description": "Risk management and regulatory compliance.",
+    "name_i18n": {"en": "Risk & Compliance", "fr": "Risque et conformite"},
+    "description_i18n": {
+      "en": "Risk management and regulatory compliance.",
+      "fr": "Gestion des risques et conformite reglementaire."
+    }
+  },
+  {
+    "id": "digital-marketing",
+    "name": "Digital Marketing",
+    "function_id": "marketing",
+    "description": "Digital channels, performance, and growth.",
+    "name_i18n": {"en": "Digital Marketing", "fr": "Marketing digital"},
+    "description_i18n": {
+      "en": "Digital channels, performance, and growth.",
+      "fr": "Canaux digitaux, performance et croissance."
+    }
+  },
+  {
+    "id": "brand-marketing",
+    "name": "Brand Marketing",
+    "function_id": "marketing",
+    "description": "Brand positioning and communication.",
+    "name_i18n": {"en": "Brand Marketing", "fr": "Marketing de marque"},
+    "description_i18n": {
+      "en": "Brand positioning and communication.",
+      "fr": "Positionnement de marque et communication."
+    }
+  },
+  {
+    "id": "growth-marketing",
+    "name": "Growth Marketing",
+    "function_id": "marketing",
+    "description": "Acquisition and lifecycle growth.",
+    "name_i18n": {"en": "Growth Marketing", "fr": "Marketing croissance"},
+    "description_i18n": {
+      "en": "Acquisition and lifecycle growth.",
+      "fr": "Acquisition et croissance lifecycle."
+    }
+  },
+  {
+    "id": "project-management",
+    "name": "Project Management",
+    "function_id": "operations",
+    "description": "Project delivery and agile execution.",
+    "name_i18n": {"en": "Project Management", "fr": "Gestion de projet"},
+    "description_i18n": {
+      "en": "Project delivery and agile execution.",
+      "fr": "Livraison projet et execution agile."
+    }
+  },
+  {
+    "id": "business-analysis",
+    "name": "Business Analysis",
+    "function_id": "operations",
+    "description": "Process analysis and business optimization.",
+    "name_i18n": {"en": "Business Analysis", "fr": "Analyse business"},
+    "description_i18n": {
+      "en": "Process analysis and business optimization.",
+      "fr": "Analyse des processus et optimisation."
+    }
+  },
+  {
+    "id": "leadership-management",
+    "name": "Leadership & Management",
+    "function_id": "people-management",
+    "description": "Leadership, collaboration, and people management skills.",
+    "name_i18n": {"en": "Leadership & Management", "fr": "Leadership et management"},
+    "description_i18n": {
+      "en": "Leadership, collaboration, and people management skills.",
+      "fr": "Leadership, collaboration et gestion des personnes."
+    }
+  }
+]

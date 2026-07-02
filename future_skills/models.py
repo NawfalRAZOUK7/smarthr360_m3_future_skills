@@ -4,6 +4,85 @@ from django.conf import settings
 from django.db import models
 
 
+class Industry(models.Model):
+    """Industry dimension for market/economic signals and role context."""
+
+    code = models.SlugField(max_length=50, unique=True)
+    name = models.CharField(max_length=150, unique=True)
+    description = models.TextField(blank=True, null=True)
+    name_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual industry names.")
+    description_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual industry descriptions.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        """Meta options for Industry model."""
+
+        verbose_name = "Industrie"
+        verbose_name_plural = "Industries"
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["code"]),
+            models.Index(fields=["name"]),
+        ]
+
+    def __str__(self):
+        """Return the string representation of the Industry."""
+        return self.name
+
+
+class Function(models.Model):
+    """Functional dimension (e.g., Technology, HR, Finance)."""
+
+    code = models.SlugField(max_length=50, unique=True)
+    name = models.CharField(max_length=150, unique=True)
+    description = models.TextField(blank=True, null=True)
+    name_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual function names.")
+    description_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual function descriptions.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        """Meta options for Function model."""
+
+        verbose_name = "Fonction"
+        verbose_name_plural = "Fonctions"
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["code"]),
+            models.Index(fields=["name"]),
+        ]
+
+    def __str__(self):
+        """Return the string representation of the Function."""
+        return self.name
+
+
+class Domain(models.Model):
+    """Domain under a function (e.g., Data & AI under Technology)."""
+
+    code = models.SlugField(max_length=80, unique=True)
+    name = models.CharField(max_length=150)
+    function = models.ForeignKey(Function, on_delete=models.PROTECT, related_name="domains")
+    description = models.TextField(blank=True, null=True)
+    name_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual domain names.")
+    description_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual domain descriptions.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        """Meta options for Domain model."""
+
+        verbose_name = "Domaine"
+        verbose_name_plural = "Domaines"
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["code"]),
+            models.Index(fields=["function"]),
+        ]
+
+    def __str__(self):
+        """Return the string representation of the Domain."""
+        return self.name
+
+
 class Skill(models.Model):
     """Représente une compétence (technique, soft skill, métier, etc.).
 
@@ -18,6 +97,8 @@ class Skill(models.Model):
         help_text="Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)",
     )
     description = models.TextField(blank=True, null=True, help_text="Description optionnelle de la compétence.")
+    name_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual skill names.")
+    description_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual skill descriptions.")
 
     class Meta:
         """Meta options for Skill model."""
@@ -35,6 +116,31 @@ class Skill(models.Model):
         return self.name
 
 
+class SkillDomainMap(models.Model):
+    """Map skills to domains with optional weighting."""
+
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name="domain_mappings")
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name="skill_mappings")
+    weight = models.FloatField(default=1.0, help_text="Mapping weight between 0 and 1.")
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        """Meta options for SkillDomainMap model."""
+
+        verbose_name = "Mapping compétence/domaine"
+        verbose_name_plural = "Mappings compétences/domaines"
+        unique_together = ("skill", "domain")
+        indexes = [
+            models.Index(fields=["skill"]),
+            models.Index(fields=["domain"]),
+        ]
+
+    def __str__(self):
+        """Return a string representation of the mapping."""
+        return f"{self.skill} -> {self.domain}"
+
+
 class JobRole(models.Model):
     """Représente un poste / métier dans l’entreprise.
 
@@ -49,6 +155,24 @@ class JobRole(models.Model):
         help_text="Département ou direction (ex : IT, RH, Finance...).",
     )
     description = models.TextField(blank=True, null=True, help_text="Description optionnelle du rôle.")
+    name_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual role names.")
+    description_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual role descriptions.")
+    industry = models.ForeignKey(
+        Industry,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="job_roles",
+        help_text="Industrie associée au rôle (optionnel).",
+    )
+    domain = models.ForeignKey(
+        Domain,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="job_roles",
+        help_text="Domaine fonctionnel associé au rôle (optionnel).",
+    )
 
     class Meta:
         """Meta options for JobRole model."""
@@ -59,6 +183,8 @@ class JobRole(models.Model):
         indexes = [
             models.Index(fields=["name"]),  # Already unique, helps with lookups
             models.Index(fields=["department"]),  # Department filtering
+            models.Index(fields=["industry"]),
+            models.Index(fields=["domain"]),
         ]
 
     def __str__(self):
@@ -81,6 +207,32 @@ class MarketTrend(models.Model):
     )
     trend_score = models.FloatField(help_text="Score de tendance entre 0 et 1 (0 = faible, 1 = très forte tendance).")
     description = models.TextField(blank=True, null=True, help_text="Description ou résumé de la tendance.")
+    title_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual trend titles.")
+    description_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual trend descriptions.")
+    industry = models.ForeignKey(
+        Industry,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="market_trends",
+        help_text="Industrie associée à la tendance (optionnel).",
+    )
+    function = models.ForeignKey(
+        Function,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="market_trends",
+        help_text="Fonction associée à la tendance (optionnel).",
+    )
+    domain = models.ForeignKey(
+        Domain,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="market_trends",
+        help_text="Domaine associé à la tendance (optionnel).",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -95,6 +247,9 @@ class MarketTrend(models.Model):
             models.Index(fields=["sector"]),
             models.Index(fields=["-trend_score"]),
             models.Index(fields=["sector", "-year"]),  # Composite for sector+year queries
+            models.Index(fields=["industry"]),
+            models.Index(fields=["function"]),
+            models.Index(fields=["domain"]),
         ]
 
     def __str__(self):
@@ -534,6 +689,16 @@ class EconomicReport(models.Model):
         null=True,
         help_text="Secteur concerné (ex : Tech, Industrie, RH...).",
     )
+    title_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual report titles.")
+    indicator_i18n = models.JSONField(default=dict, blank=True, help_text="Multilingual indicator names.")
+    industry = models.ForeignKey(
+        Industry,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="economic_reports",
+        help_text="Industrie associée au rapport (optionnel).",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -547,6 +712,7 @@ class EconomicReport(models.Model):
             models.Index(fields=["sector"]),
             models.Index(fields=["indicator"]),
             models.Index(fields=["sector", "-year"]),  # Composite for sector+year queries
+            models.Index(fields=["industry"]),
         ]
 
     def __str__(self):

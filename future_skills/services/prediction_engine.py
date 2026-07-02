@@ -34,9 +34,10 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
-import hashlib
+import random
 from datetime import datetime
 from typing import Any, Dict, Tuple
 
@@ -44,7 +45,14 @@ from django.conf import settings
 from django.utils import timezone
 
 from future_skills.ml_model import FutureSkillsModel
-from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
+from future_skills.models import (
+    FutureSkillPrediction,
+    FutureSkillSnapshot,
+    JobRole,
+    MarketTrend,
+    PredictionRun,
+    Skill,
+)
 from future_skills.services.recommendation_engine import (
     _choose_priority_from_level,
     _choose_recommended_action,
@@ -52,6 +60,9 @@ from future_skills.services.recommendation_engine import (
 from future_skills.services.snapshot_service import (
     LOW_SAMPLE_THRESHOLD,
     compute_interaction_features,
+    estimate_avg_salary,
+    estimate_hiring_difficulty,
+    get_economic_indicator,
     get_time_features,
 )
 from future_skills.services.prediction_metrics import update_prediction_metrics
@@ -280,10 +291,15 @@ class PredictionEngine:
         prediction = self.model.predict_with_metadata(
             job_role_name=job_role.name,
             skill_name=skill.name,
+            skill_category=(skill.category or "Unspecified"),
+            job_department=(job_role.department or "General"),
             trend_score=feature_context["trend_score"],
             internal_usage=feature_context["internal_usage"],
             training_requests=feature_context["training_requests"],
             scarcity_index=feature_context["scarcity_index"],
+            hiring_difficulty=feature_context.get("hiring_difficulty", 0.5),
+            avg_salary_k=feature_context.get("avg_salary_k", 50.0),
+            economic_indicator=feature_context.get("economic_indicator", 0.5),
             trend_momentum=feature_context.get("trend_momentum", 0.0),
             trend_acceleration=feature_context.get("trend_acceleration", 0.0),
             trend_volatility=feature_context.get("trend_volatility", 0.0),
@@ -324,6 +340,8 @@ class PredictionEngine:
                     for key, value in feature_context.items()
                     if key not in {"trend_score", "internal_usage", "training_requests", "scarcity_index"}
                 }
+                extra_features.setdefault("skill_category", skill.category or "Unspecified")
+                extra_features.setdefault("job_department", job_role.department or "General")
                 explanation = self.explanation_engine.generate_explanation(
                     job_role_name=job_role.name,
                     skill_name=skill.name,
@@ -420,10 +438,36 @@ def _build_feature_context(
     horizon_months: int | None = None,
 ) -> Dict[str, float]:
     """Build the feature context used for scoring and audit logs."""
-    trend_score = _find_relevant_trend(job_role, skill, as_of_date=as_of_date)
-    internal_usage = _estimate_internal_usage(job_role, skill)
-    training_requests = _estimate_training_requests(job_role, skill)
-    scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
+    snapshot = None
+    if as_of_date:
+        snapshot = (
+            FutureSkillSnapshot.objects.filter(
+                job_role=job_role,
+                skill=skill,
+                as_of_date__lte=as_of_date,
+            )
+            .order_by("-as_of_date")
+            .first()
+        )
+
+    if snapshot:
+        trend_score = float(snapshot.trend_score)
+        internal_usage = float(snapshot.internal_usage)
+        training_requests = float(snapshot.training_requests)
+        scarcity_index = float(snapshot.scarcity_index)
+        economic_indicator = float(snapshot.economic_indicator)
+        hiring_difficulty = float(snapshot.hiring_difficulty)
+        avg_salary_k = float(snapshot.avg_salary_k)
+    else:
+        trend_score = _find_relevant_trend(job_role, skill, as_of_date=as_of_date)
+        internal_usage = _estimate_internal_usage(job_role, skill)
+        training_requests = _estimate_training_requests(job_role, skill)
+        scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
+        economic_indicator = get_economic_indicator(job_role, as_of_date=as_of_date)
+        rand_seed = (job_role.id or 0) * 1_000_003 + (skill.id or 0)
+        rand = random.Random(rand_seed)
+        hiring_difficulty = estimate_hiring_difficulty(job_role, skill, scarcity_index, rand=rand)
+        avg_salary_k = estimate_avg_salary(job_role, skill, hiring_difficulty, rand=rand)
     time_features = {}
     if as_of_date:
         time_features = get_time_features(
@@ -445,6 +489,9 @@ def _build_feature_context(
         "internal_usage": internal_usage,
         "training_requests": training_requests,
         "scarcity_index": scarcity_index,
+        "economic_indicator": economic_indicator,
+        "hiring_difficulty": hiring_difficulty,
+        "avg_salary_k": avg_salary_k,
         **time_features,
         **interaction_features,
     }
@@ -700,6 +747,10 @@ def _log_prediction_for_monitoring(
     probabilities: Dict[str, float] | None = None,
     label_provenance: str | None = None,
     decision_policy: Dict[str, Any] | None = None,
+    timestamp_override: datetime | None = None,
+    industry_id: int | None = None,
+    function_id: int | None = None,
+    domain_id: int | None = None,
 ):
     """Log prediction details to a dedicated file for long-term monitoring.
 
@@ -715,9 +766,12 @@ def _log_prediction_for_monitoring(
         return
 
     log_entry = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": (timestamp_override or datetime.now()).isoformat(),
         "job_role_id": job_role_id,
         "skill_id": skill_id,
+        "industry_id": industry_id,
+        "function_id": function_id,
+        "domain_id": domain_id,
         "predicted_level": predicted_level,
         "score": round(score, 2),
         "engine": engine,
@@ -1011,6 +1065,11 @@ def _build_batch_prediction_payload(
             internal_usage = _estimate_internal_usage(job_role, skill)
             training_requests = _estimate_training_requests(job_role, skill)
             scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
+            economic_indicator = get_economic_indicator(job_role, as_of_date=as_of_date)
+            rand_seed = (job_role.id or 0) * 1_000_003 + (skill.id or 0)
+            rand = random.Random(rand_seed)
+            hiring_difficulty = estimate_hiring_difficulty(job_role, skill, scarcity_index, rand=rand)
+            avg_salary_k = estimate_avg_salary(job_role, skill, hiring_difficulty, rand=rand)
 
             payload.append(
                 {
@@ -1027,9 +1086,9 @@ def _build_batch_prediction_payload(
                     "training_requests": training_requests,
                     "scarcity_index": scarcity_index,
                     # Sensible defaults to satisfy ML feature set even if data is sparse
-                    "hiring_difficulty": 0.5,
-                    "avg_salary_k": 50.0,
-                    "economic_indicator": 0.5,
+                    "hiring_difficulty": hiring_difficulty,
+                    "avg_salary_k": avg_salary_k,
+                    "economic_indicator": economic_indicator,
                 }
             )
 
@@ -1085,19 +1144,26 @@ def _persist_prediction_results(
         total_predictions += 1
 
         audit_inputs = result.get("audit_payload", {}).get("inputs") or {}
+        features_for_logging: Dict[str, float] = {}
         if audit_inputs:
-            features_for_logging = audit_inputs
-        else:
-            trend_score = _find_relevant_trend(job_role, skill, as_of_date=result.get("as_of_date"))
-            internal_usage = _estimate_internal_usage(job_role, skill)
-            training_requests = _estimate_training_requests(job_role, skill)
-            scarcity_index = _estimate_scarcity_index(job_role, skill, internal_usage)
-            features_for_logging = {
-                "trend_score": trend_score,
-                "internal_usage": internal_usage,
-                "training_requests": training_requests,
-                "scarcity_index": scarcity_index,
-            }
+            features_for_logging.update(audit_inputs)
+
+        base_keys = {"trend_score", "internal_usage", "training_requests", "scarcity_index"}
+        if not features_for_logging or set(features_for_logging.keys()).issubset(base_keys):
+            enriched_features = _build_feature_context(
+                job_role,
+                skill,
+                as_of_date=result.get("as_of_date"),
+                horizon_months=result.get("horizon_months"),
+            )
+            for key, value in enriched_features.items():
+                features_for_logging.setdefault(key, value)
+
+        if "economic_indicator" not in features_for_logging:
+            features_for_logging["economic_indicator"] = get_economic_indicator(
+                job_role,
+                as_of_date=result.get("as_of_date"),
+            )
 
         decision_policy = result.get("decision_policy", {})
         engine_for_logging = decision_policy.get("final_engine") or engine_label
@@ -1105,6 +1171,9 @@ def _persist_prediction_results(
         _log_prediction_for_monitoring(
             job_role_id=job_role.id,
             skill_id=skill.id,
+            industry_id=getattr(job_role, "industry_id", None),
+            function_id=job_role.domain.function_id if getattr(job_role, "domain_id", None) else None,
+            domain_id=getattr(job_role, "domain_id", None),
             predicted_level=result["level"],
             score=result["score"],
             engine=engine_for_logging,

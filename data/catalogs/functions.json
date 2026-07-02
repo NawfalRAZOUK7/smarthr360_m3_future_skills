@@ -1,0 +1,62 @@
+[
+  {
+    "id": "technology",
+    "name": "Technology",
+    "description": "Software, data, infrastructure, and security capabilities.",
+    "name_i18n": {"en": "Technology", "fr": "Technologie"},
+    "description_i18n": {
+      "en": "Software, data, infrastructure, and security capabilities.",
+      "fr": "Capacites logiciel, data, infrastructure et securite."
+    }
+  },
+  {
+    "id": "hr",
+    "name": "Human Resources",
+    "description": "Talent acquisition, development, and people operations.",
+    "name_i18n": {"en": "Human Resources", "fr": "Ressources humaines"},
+    "description_i18n": {
+      "en": "Talent acquisition, development, and people operations.",
+      "fr": "Recrutement, developpement et operations RH."
+    }
+  },
+  {
+    "id": "finance",
+    "name": "Finance",
+    "description": "Financial planning, accounting, and risk management.",
+    "name_i18n": {"en": "Finance", "fr": "Finance"},
+    "description_i18n": {
+      "en": "Financial planning, accounting, and risk management.",
+      "fr": "Planification financiere, comptabilite et gestion des risques."
+    }
+  },
+  {
+    "id": "marketing",
+    "name": "Marketing",
+    "description": "Brand, digital, and growth marketing capabilities.",
+    "name_i18n": {"en": "Marketing", "fr": "Marketing"},
+    "description_i18n": {
+      "en": "Brand, digital, and growth marketing capabilities.",
+      "fr": "Capacites marque, digital et croissance."
+    }
+  },
+  {
+    "id": "operations",
+    "name": "Operations",
+    "description": "Business operations and execution.",
+    "name_i18n": {"en": "Operations", "fr": "Operations"},
+    "description_i18n": {
+      "en": "Business operations and execution.",
+      "fr": "Operations et execution metier."
+    }
+  },
+  {
+    "id": "people-management",
+    "name": "People Management",
+    "description": "Leadership, collaboration, and people enablement.",
+    "name_i18n": {"en": "People Management", "fr": "Gestion des personnes"},
+    "description_i18n": {
+      "en": "Leadership, collaboration, and people enablement.",
+      "fr": "Leadership, collaboration et gestion des personnes."
+    }
+  }
+]

@@ -225,6 +225,16 @@ class ExplanationEngine:
 
         try:
             # Faire la prédiction
+            model_kwargs = {}
+            for key in (
+                "skill_category",
+                "job_department",
+                "hiring_difficulty",
+                "avg_salary_k",
+                "economic_indicator",
+            ):
+                if key in extra_features:
+                    model_kwargs[key] = extra_features[key]
             level, confidence = self.ml_model.predict_level(
                 job_role_name=job_role_name,
                 skill_name=skill_name,
@@ -232,6 +242,7 @@ class ExplanationEngine:
                 internal_usage=internal_usage,
                 training_requests=training_requests,
                 scarcity_index=scarcity_index,
+                **model_kwargs,
             )
 
             # Calculer les SHAP values

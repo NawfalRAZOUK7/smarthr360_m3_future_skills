@@ -48,9 +48,12 @@ except Exception:  # pragma: no cover - metrics optional
 
 def _parse_timestamp(value: str) -> datetime | None:
     try:
-        return datetime.fromisoformat(value)
+        parsed = datetime.fromisoformat(value)
     except (TypeError, ValueError):
         return None
+    if timezone.is_naive(parsed):
+        return timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
 
 
 def _compute_psi(expected: list[float], actual: list[float], buckets: int = 10) -> float | None:
@@ -144,12 +147,14 @@ def compute_drift_report(
     log_path: Path | None = None,
     baseline_days: int | None = None,
     recent_days: int | None = None,
+    min_samples: int | None = None,
     features: Iterable[str] | None = None,
 ) -> Dict[str, Any]:
     """Compute a drift report from prediction monitoring logs."""
     now = timezone.now()
     baseline_days = baseline_days or int(getattr(settings, "FUTURE_SKILLS_DRIFT_BASELINE_DAYS", 90))
     recent_days = recent_days or int(getattr(settings, "FUTURE_SKILLS_DRIFT_RECENT_DAYS", 30))
+    min_samples = min_samples or int(getattr(settings, "FUTURE_SKILLS_DRIFT_MIN_WINDOW_COUNT", 50))
 
     recent_end = now
     recent_start = now - timedelta(days=recent_days)
@@ -180,11 +185,24 @@ def compute_drift_report(
     ks_threshold = float(getattr(settings, "FUTURE_SKILLS_DRIFT_KS_THRESHOLD", 0.2))
 
     feature_metrics = {}
-    overall_status = "ok"
+    overall_status = "insufficient_data"
 
     for feature in features:
         baseline_sample = baseline_values.get(feature, [])
         recent_sample = recent_values.get(feature, [])
+        if len(baseline_sample) < min_samples or len(recent_sample) < min_samples:
+            feature_metrics[feature] = {
+                "psi": None,
+                "ks": None,
+                "baseline_count": len(baseline_sample),
+                "recent_count": len(recent_sample),
+                "status": "insufficient_data",
+            }
+            continue
+
+        if overall_status == "insufficient_data":
+            overall_status = "ok"
+
         psi = _compute_psi(baseline_sample, recent_sample)
         ks = _compute_ks(baseline_sample, recent_sample)
 
@@ -226,6 +244,7 @@ def compute_drift_report(
             "psi_warn": psi_warn,
             "psi_alert": psi_alert,
             "ks_threshold": ks_threshold,
+            "min_samples": min_samples,
         },
     }
 
@@ -235,7 +254,7 @@ def update_drift_metrics(report: Dict[str, Any]) -> None:
     if DRIFT_STATUS_GAUGE is None:
         return
 
-    status_map = {"ok": 0, "warn": 1, "alert": 2}
+    status_map = {"ok": 0, "warn": 1, "alert": 2, "insufficient_data": 0}
     status_value = status_map.get(report.get("overall_status", "ok"), 0)
     DRIFT_STATUS_GAUGE.set(status_value)
 

@@ -118,6 +118,11 @@ class FutureSkillsModel:
         forecast_internal_usage: float = 0.0,
         forecast_training_requests: float = 0.0,
         forecast_need_score: float = 0.0,
+        skill_category: str | None = None,
+        job_department: str | None = None,
+        hiring_difficulty: float = 0.5,
+        avg_salary_k: float = 50.0,
+        economic_indicator: float = 0.5,
     ) -> Tuple[str, float]:
         """Retourne (future_need_level, score_0_100) en utilisant le pipeline ML.
 
@@ -133,12 +138,12 @@ class FutureSkillsModel:
             "job_role_name": [job_role_name],
             "skill_name": [skill_name],
             # Catégoriels additionnels attendus par le pipeline
-            "skill_category": ["Unspecified"],
-            "job_department": ["General"],
+            "skill_category": [skill_category or "Unspecified"],
+            "job_department": [job_department or "General"],
             # Numériques additionnels attendus par le pipeline
-            "hiring_difficulty": [0.5],
-            "avg_salary_k": [50.0],
-            "economic_indicator": [0.5],
+            "hiring_difficulty": [hiring_difficulty],
+            "avg_salary_k": [avg_salary_k],
+            "economic_indicator": [economic_indicator],
             "trend_score": [trend_score],
             "internal_usage": [internal_usage],
             "training_requests": [training_requests],
@@ -232,6 +237,11 @@ class FutureSkillsModel:
         forecast_internal_usage: float = 0.0,
         forecast_training_requests: float = 0.0,
         forecast_need_score: float = 0.0,
+        skill_category: str | None = None,
+        job_department: str | None = None,
+        hiring_difficulty: float = 0.5,
+        avg_salary_k: float = 50.0,
+        economic_indicator: float = 0.5,
     ) -> Dict[str, object]:
         """Retourne une prédiction enrichie avec probabilités et confiance."""
         if pd is None:
@@ -242,11 +252,11 @@ class FutureSkillsModel:
         data = {
             "job_role_name": [job_role_name],
             "skill_name": [skill_name],
-            "skill_category": ["Unspecified"],
-            "job_department": ["General"],
-            "hiring_difficulty": [0.5],
-            "avg_salary_k": [50.0],
-            "economic_indicator": [0.5],
+            "skill_category": [skill_category or "Unspecified"],
+            "job_department": [job_department or "General"],
+            "hiring_difficulty": [hiring_difficulty],
+            "avg_salary_k": [avg_salary_k],
+            "economic_indicator": [economic_indicator],
             "trend_score": [trend_score],
             "internal_usage": [internal_usage],
             "training_requests": [training_requests],

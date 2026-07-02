@@ -1,7 +1,7 @@
 """Generate FutureSkillSnapshot records for silver label derivation."""
 
 import random
-from datetime import date
+from datetime import date, timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
@@ -41,6 +41,15 @@ def _iter_snapshot_dates(
     if start_date and end_date:
         if start_date > end_date:
             raise CommandError("--start-date must be before or equal to --end-date.")
+        if frequency in {"daily", "weekly"}:
+            step_days = 1 if frequency == "daily" else 7
+            dates = []
+            current = start_date
+            while current <= end_date:
+                dates.append(current)
+                current = current + timedelta(days=step_days)
+            return dates
+
         step_months = 1 if frequency == "monthly" else 3
         dates = []
         current = start_date
@@ -80,8 +89,8 @@ class Command(BaseCommand):
             "--frequency",
             type=str,
             default="monthly",
-            choices=["monthly", "quarterly"],
-            help="Snapshot frequency for date ranges (monthly or quarterly).",
+            choices=["daily", "weekly", "monthly", "quarterly"],
+            help="Snapshot frequency for date ranges (daily, weekly, monthly, or quarterly).",
         )
         parser.add_argument(
             "--overwrite",
@@ -94,6 +103,24 @@ class Command(BaseCommand):
             default=42,
             help="Base seed used to create deterministic random factors.",
         )
+        parser.add_argument(
+            "--drift-scale",
+            type=float,
+            default=1.0,
+            help="Scale drift_per_month applied to time series signals (default: 1.0).",
+        )
+        parser.add_argument(
+            "--seasonal-scale",
+            type=float,
+            default=1.0,
+            help="Scale seasonal amplitude applied to time series signals (default: 1.0).",
+        )
+        parser.add_argument(
+            "--noise-scale",
+            type=float,
+            default=1.0,
+            help="Scale noise amplitude applied to time series signals (default: 1.0).",
+        )
 
     def handle(self, *args, **options):
         as_of_date = _parse_date(options.get("as_of_date"))
@@ -102,6 +129,9 @@ class Command(BaseCommand):
         frequency = options.get("frequency")
         overwrite = options.get("overwrite")
         seed_base = options.get("seed")
+        drift_scale = max(0.0, float(options.get("drift_scale") or 0.0))
+        seasonal_scale = max(0.0, float(options.get("seasonal_scale") or 0.0))
+        noise_scale = max(0.0, float(options.get("noise_scale") or 0.0))
 
         dates = _iter_snapshot_dates(as_of_date, start_date, end_date, frequency)
 
@@ -151,20 +181,22 @@ class Command(BaseCommand):
                     trend_score = apply_time_drift(
                         trend_base,
                         snapshot_date,
-                        drift_per_month=0.0015 * drift_sign,
-                        seasonal_amplitude=0.04,
-                        noise_amplitude=0.02,
+                        drift_per_month=0.0015 * drift_sign * drift_scale,
+                        seasonal_amplitude=0.04 * seasonal_scale,
+                        noise_amplitude=0.02 * noise_scale,
                         rand=rand,
+                        cadence=frequency,
                     )
 
                     internal_base = _estimate_internal_usage(job_role, skill)
                     internal_usage = apply_time_drift(
                         internal_base,
                         snapshot_date,
-                        drift_per_month=0.001 * drift_sign,
-                        seasonal_amplitude=0.02,
-                        noise_amplitude=0.02,
+                        drift_per_month=0.001 * drift_sign * drift_scale,
+                        seasonal_amplitude=0.02 * seasonal_scale,
+                        noise_amplitude=0.02 * noise_scale,
                         rand=rand,
+                        cadence=frequency,
                     )
 
                     training_base = _estimate_training_requests(job_role, skill)
@@ -172,10 +204,11 @@ class Command(BaseCommand):
                     training_norm = apply_time_drift(
                         training_norm,
                         snapshot_date,
-                        drift_per_month=0.001 * drift_sign,
-                        seasonal_amplitude=0.03,
-                        noise_amplitude=0.01,
+                        drift_per_month=0.001 * drift_sign * drift_scale,
+                        seasonal_amplitude=0.03 * seasonal_scale,
+                        noise_amplitude=0.01 * noise_scale,
                         rand=rand,
+                        cadence=frequency,
                     )
                     training_requests = max(5.0, min(60.0, round(training_norm * 100.0, 1)))
 
