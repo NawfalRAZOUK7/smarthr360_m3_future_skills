@@ -90,3 +90,14 @@ dmypy.json
 .coverage
 coverage.xml
 *.cover
+
+# --- hygiene additions (2026-07-02) ---
+node_modules/
+mlruns/
+mlruns_backup*/
+logs/
+db.sqlite3
+db.sqlite3.*
+production-secrets*.txt
+.env
+!.env.example
