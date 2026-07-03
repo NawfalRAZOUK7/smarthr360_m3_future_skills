@@ -90,6 +90,16 @@ class Skill(models.Model):
     """
 
     name = models.CharField(max_length=150, unique=True)
+    platform_code = models.SlugField(
+        max_length=50,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text=(
+            "Canonical SmartHR360 platform skill code (= core-hr Skill.code, "
+            "ADR-007). Enables code-based matching across services."
+        ),
+    )
     category = models.CharField(
         max_length=100,
         blank=True,
