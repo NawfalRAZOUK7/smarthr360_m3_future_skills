@@ -64,3 +64,83 @@ class DemandAPITests(APITestCase):
             self.client.get("/api/future-skills/demand/").status_code,
             (401, 403),
         )
+
+
+class DemandContractExtrasTests(APITestCase):
+    def setUp(self):
+        user = get_user_model().objects.create_user(
+            email="hr2@corp.com", username="hr2", password="x", role="HR"
+        )
+        self.client.force_authenticate(user)
+        self.skill = Skill.objects.create(name="Python", platform_code="PY")
+        self.dev = JobRole.objects.create(name="Developer")
+
+    def test_confidence_version_and_explanation_in_contract(self):
+        FutureSkillPrediction.objects.create(
+            job_role=self.dev, skill=self.skill, horizon_years=3,
+            score=91, level="HIGH", model_version="v2.3.0",
+            rationale="Strong market growth across sectors.",
+            probabilities={"p_low": 0.05, "p_medium": 0.15, "p_high": 0.80},
+            explanation={"text": "SHAP: trend_score dominates.",
+                         "confidence": 0.87},
+        )
+        row = self.client.get("/api/future-skills/demand/").json()["results"][0]
+        self.assertEqual(row["confidence"], 0.87)
+        self.assertEqual(row["model_version"], "v2.3.0")
+        self.assertIn("SHAP", row["explanation"])
+
+    def test_confidence_falls_back_to_class_probability(self):
+        FutureSkillPrediction.objects.create(
+            job_role=self.dev, skill=self.skill, horizon_years=3,
+            score=88, level="HIGH",
+            probabilities={"p_low": 0.1, "p_medium": 0.2, "p_high": 0.7},
+        )
+        row = self.client.get("/api/future-skills/demand/").json()["results"][0]
+        self.assertEqual(row["confidence"], 0.7)
+
+    def test_job_role_filter(self):
+        ops = JobRole.objects.create(name="SRE")
+        FutureSkillPrediction.objects.create(
+            job_role=self.dev, skill=self.skill, horizon_years=3,
+            score=60, level="MEDIUM",
+        )
+        FutureSkillPrediction.objects.create(
+            job_role=ops, skill=self.skill, horizon_years=3,
+            score=95, level="HIGH",
+        )
+        body = self.client.get(
+            "/api/future-skills/demand/?job_role=developer"
+        ).json()
+        self.assertEqual(body["results"][0]["score"], 60.0)
+
+    def test_history_series_and_trend(self):
+        from future_skills.models import FutureSkillSnapshot
+
+        for date, trend in (("2026-01-01", 0.40), ("2026-04-01", 0.55),
+                            ("2026-07-01", 0.70)):
+            FutureSkillSnapshot.objects.create(
+                job_role=self.dev, skill=self.skill, as_of_date=date,
+                trend_score=trend, internal_usage=0.3,
+                training_requests=5, scarcity_index=0.6,
+                hiring_difficulty=0.5, avg_salary_k=60,
+                economic_indicator=0.5,
+            )
+        body = self.client.get(
+            "/api/future-skills/demand/history/?skill_code=PY"
+        ).json()
+        self.assertEqual(body["points"], 3)
+        self.assertEqual(body["trend"], "rising")
+        self.assertEqual(body["series"][0]["trend_score"], 0.4)
+
+        self.assertEqual(
+            self.client.get(
+                "/api/future-skills/demand/history/"
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.get(
+                "/api/future-skills/demand/history/?skill_code=NOPE"
+            ).status_code,
+            404,
+        )

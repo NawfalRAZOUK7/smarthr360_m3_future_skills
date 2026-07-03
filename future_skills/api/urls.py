@@ -9,7 +9,7 @@ market trends, economic reports, HR recommendations, and ML model training.
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .demand import DemandBySkillAPIView
+from .demand import DemandBySkillAPIView, DemandHistoryAPIView
 from .views import (
     BulkEmployeeImportAPIView,
     BulkEmployeeUploadAPIView,
@@ -48,6 +48,7 @@ urlpatterns = [
     # Frontend-friendly read-only endpoints
     # Stable cross-service demand API (ADR-007; consumed by career-sim)
     path("demand/", DemandBySkillAPIView.as_view(), name="demand-by-skill"),
+    path("demand/history/", DemandHistoryAPIView.as_view(), name="demand-history"),
 
     path("frontend/drift-report/", DriftReportAPIView.as_view(), name="frontend-drift-report"),
     path("frontend/confusion-matrix/", FrontendConfusionMatrixAPIView.as_view(), name="frontend-confusion-matrix"),
