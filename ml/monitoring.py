@@ -30,70 +30,53 @@ Usage:
     has_drift = monitor.detect_data_drift(reference_data, current_data)
 """
 
-import logging
 import json
-from collections import deque, defaultdict
+import logging
+from collections import defaultdict, deque
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 
 try:
-    from evidently.report import Report
     from evidently.metric_preset import DataDriftPreset, DataQualityPreset
-    from evidently.metrics import (
-        DatasetDriftMetric,
-        DataDriftTable,
-        DatasetMissingValuesMetric
-    )
+    from evidently.metrics import DataDriftTable, DatasetDriftMetric, DatasetMissingValuesMetric
+    from evidently.report import Report
+
     EVIDENTLY_AVAILABLE = True
 except ImportError:
     EVIDENTLY_AVAILABLE = False
     logging.warning("Evidently not installed. Data drift detection will be limited.")
 
-from prometheus_client import Counter, Gauge, Histogram, Summary
 from django.core.cache import cache
+from prometheus_client import Counter, Gauge, Histogram, Summary
 
 logger = logging.getLogger(__name__)
 
 
 # Prometheus Metrics
 PREDICTION_COUNTER = Counter(
-    'ml_predictions_total',
-    'Total number of predictions made',
-    ['model_name', 'model_version', 'prediction_class']
+    "ml_predictions_total", "Total number of predictions made", ["model_name", "model_version", "prediction_class"]
 )
 
 PREDICTION_LATENCY = Histogram(
-    'ml_prediction_latency_seconds',
-    'Prediction latency in seconds',
-    ['model_name', 'model_version']
+    "ml_prediction_latency_seconds", "Prediction latency in seconds", ["model_name", "model_version"]
 )
 
-MODEL_ACCURACY_GAUGE = Gauge(
-    'ml_model_accuracy',
-    'Current model accuracy',
-    ['model_name', 'model_version']
-)
+MODEL_ACCURACY_GAUGE = Gauge("ml_model_accuracy", "Current model accuracy", ["model_name", "model_version"])
 
-DRIFT_DETECTED = Counter(
-    'ml_drift_detections_total',
-    'Number of data drift detections',
-    ['model_name', 'drift_type']
-)
+DRIFT_DETECTED = Counter("ml_drift_detections_total", "Number of data drift detections", ["model_name", "drift_type"])
 
-ERROR_COUNTER = Counter(
-    'ml_prediction_errors_total',
-    'Total prediction errors',
-    ['model_name', 'error_type']
-)
+ERROR_COUNTER = Counter("ml_prediction_errors_total", "Total prediction errors", ["model_name", "error_type"])
 
 
 @dataclass
 class PredictionLog:
     """Single prediction log entry."""
+
     timestamp: datetime
     model_name: str
     model_version: str
@@ -109,7 +92,7 @@ class PredictionLog:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         data = asdict(self)
-        data['timestamp'] = self.timestamp.isoformat()
+        data["timestamp"] = self.timestamp.isoformat()
         return data
 
     def is_correct(self) -> Optional[bool]:
@@ -158,7 +141,7 @@ class PredictionLogger:
         prediction_time_ms: Optional[float] = None,
         request_id: Optional[str] = None,
         user_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Log a prediction.
@@ -184,7 +167,7 @@ class PredictionLogger:
             prediction_time_ms=prediction_time_ms,
             request_id=request_id,
             user_id=user_id,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         # Add to buffer
@@ -192,16 +175,13 @@ class PredictionLogger:
 
         # Update Prometheus metrics
         PREDICTION_COUNTER.labels(
-            model_name=model_name,
-            model_version=model_version,
-            prediction_class=str(prediction)
+            model_name=model_name, model_version=model_version, prediction_class=str(prediction)
         ).inc()
 
         if prediction_time_ms:
-            PREDICTION_LATENCY.labels(
-                model_name=model_name,
-                model_version=model_version
-            ).observe(prediction_time_ms / 1000.0)
+            PREDICTION_LATENCY.labels(model_name=model_name, model_version=model_version).observe(
+                prediction_time_ms / 1000.0
+            )
 
         # Flush buffer if full
         if len(self.buffer) >= self.buffer_size:
@@ -215,9 +195,9 @@ class PredictionLogger:
         self._update_daily_file()
 
         try:
-            with open(self._daily_file, 'a') as f:
+            with open(self._daily_file, "a") as f:
                 for log_entry in self.buffer:
-                    f.write(json.dumps(log_entry.to_dict()) + '\n')
+                    f.write(json.dumps(log_entry.to_dict()) + "\n")
 
             logger.debug(f"Flushed {len(self.buffer)} predictions to {self._daily_file}")
             self.buffer.clear()
@@ -226,10 +206,7 @@ class PredictionLogger:
             logger.error(f"Failed to flush prediction logs: {e}")
 
     def get_recent_predictions(
-        self,
-        model_name: Optional[str] = None,
-        model_version: Optional[str] = None,
-        limit: int = 100
+        self, model_name: Optional[str] = None, model_version: Optional[str] = None, limit: int = 100
     ) -> List[PredictionLog]:
         """
         Get recent predictions from buffer and recent log files.
@@ -252,11 +229,7 @@ class PredictionLogger:
 
         return predictions[-limit:]
 
-    def load_predictions_from_date(
-        self,
-        date: datetime,
-        model_name: Optional[str] = None
-    ) -> List[PredictionLog]:
+    def load_predictions_from_date(self, date: datetime, model_name: Optional[str] = None) -> List[PredictionLog]:
         """
         Load predictions from a specific date.
 
@@ -276,12 +249,12 @@ class PredictionLogger:
         predictions = []
 
         try:
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 for line in f:
                     data = json.loads(line)
-                    data['timestamp'] = datetime.fromisoformat(data['timestamp'])
+                    data["timestamp"] = datetime.fromisoformat(data["timestamp"])
 
-                    if model_name and data.get('model_name') != model_name:
+                    if model_name and data.get("model_name") != model_name:
                         continue
 
                     predictions.append(PredictionLog(**data))
@@ -292,10 +265,7 @@ class PredictionLogger:
         return predictions
 
     def get_prediction_statistics(
-        self,
-        model_name: str,
-        start_date: datetime,
-        end_date: Optional[datetime] = None
+        self, model_name: str, start_date: datetime, end_date: Optional[datetime] = None
     ) -> Dict[str, Any]:
         """
         Get prediction statistics for a date range.
@@ -320,21 +290,12 @@ class PredictionLogger:
             current_date += timedelta(days=1)
 
         if not all_predictions:
-            return {
-                "total_predictions": 0,
-                "date_range": f"{start_date.date()} to {end_date.date()}"
-            }
+            return {"total_predictions": 0, "date_range": f"{start_date.date()} to {end_date.date()}"}
 
         # Calculate statistics
-        prediction_times = [
-            p.prediction_time_ms for p in all_predictions
-            if p.prediction_time_ms is not None
-        ]
+        prediction_times = [p.prediction_time_ms for p in all_predictions if p.prediction_time_ms is not None]
 
-        probabilities = [
-            p.probability for p in all_predictions
-            if p.probability is not None
-        ]
+        probabilities = [p.probability for p in all_predictions if p.probability is not None]
 
         # Count predictions by class
         prediction_counts = defaultdict(int)
@@ -363,12 +324,7 @@ class ModelMonitor:
     Tracks model performance, drift, and health metrics.
     """
 
-    def __init__(
-        self,
-        model_name: str,
-        model_version: Optional[str] = None,
-        cache_ttl: int = 300
-    ):
+    def __init__(self, model_name: str, model_version: Optional[str] = None, cache_ttl: int = 300):
         """
         Initialize model monitor.
 
@@ -401,9 +357,7 @@ class ModelMonitor:
         logger.info(f"Set reference data with {len(data)} samples")
 
     def detect_data_drift(
-        self,
-        current_data: pd.DataFrame,
-        reference_data: Optional[pd.DataFrame] = None
+        self, current_data: pd.DataFrame, reference_data: Optional[pd.DataFrame] = None
     ) -> Tuple[bool, Dict[str, Any]]:
         """
         Detect data drift between reference and current data.
@@ -428,36 +382,32 @@ class ModelMonitor:
 
         try:
             # Create Evidently report
-            report = Report(metrics=[
-                DataDriftPreset(),
-                DatasetDriftMetric(),
-                DataDriftTable(),
-            ])
-
-            report.run(
-                reference_data=reference_data,
-                current_data=current_data
+            report = Report(
+                metrics=[
+                    DataDriftPreset(),
+                    DatasetDriftMetric(),
+                    DataDriftTable(),
+                ]
             )
+
+            report.run(reference_data=reference_data, current_data=current_data)
 
             # Extract drift results
             report_dict = report.as_dict()
 
             # Check if drift detected
-            dataset_drift = report_dict.get('metrics', [{}])[0]
-            drift_detected = dataset_drift.get('result', {}).get('dataset_drift', False)
+            dataset_drift = report_dict.get("metrics", [{}])[0]
+            drift_detected = dataset_drift.get("result", {}).get("dataset_drift", False)
 
             drift_report = {
                 "drift_detected": drift_detected,
-                "drift_score": dataset_drift.get('result', {}).get('drift_share', 0.0),
-                "drifted_features": dataset_drift.get('result', {}).get('number_of_drifted_columns', 0),
-                "timestamp": datetime.now().isoformat()
+                "drift_score": dataset_drift.get("result", {}).get("drift_share", 0.0),
+                "drifted_features": dataset_drift.get("result", {}).get("number_of_drifted_columns", 0),
+                "timestamp": datetime.now().isoformat(),
             }
 
             if drift_detected:
-                DRIFT_DETECTED.labels(
-                    model_name=self.model_name,
-                    drift_type="data_drift"
-                ).inc()
+                DRIFT_DETECTED.labels(model_name=self.model_name, drift_type="data_drift").inc()
 
                 logger.warning(
                     f"Data drift detected for {self.model_name}: "
@@ -471,9 +421,7 @@ class ModelMonitor:
             return False, {"error": str(e)}
 
     def _basic_drift_detection(
-        self,
-        current_data: pd.DataFrame,
-        reference_data: Optional[pd.DataFrame] = None
+        self, current_data: pd.DataFrame, reference_data: Optional[pd.DataFrame] = None
     ) -> Tuple[bool, Dict[str, Any]]:
         """
         Basic drift detection using statistical tests.
@@ -495,6 +443,7 @@ class ModelMonitor:
 
             # Use Kolmogorov-Smirnov test for numeric features
             from scipy import stats
+
             ref_values = reference_data[column].dropna()
             cur_values = current_data[column].dropna()
 
@@ -508,16 +457,13 @@ class ModelMonitor:
             "drift_detected": drift_detected,
             "drifted_features": drifted_features,
             "num_drifted_features": len(drifted_features),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         return drift_detected, drift_report
 
     def track_model_performance(
-        self,
-        y_true: np.ndarray,
-        y_pred: np.ndarray,
-        metrics: Optional[Dict[str, float]] = None
+        self, y_true: np.ndarray, y_pred: np.ndarray, metrics: Optional[Dict[str, float]] = None
     ) -> None:
         """
         Track model performance over time.
@@ -532,15 +478,10 @@ class ModelMonitor:
 
             accuracy = accuracy_score(y_true, y_pred)
             precision, recall, f1, _ = precision_recall_fscore_support(
-                y_true, y_pred, average='weighted', zero_division=0
+                y_true, y_pred, average="weighted", zero_division=0
             )
 
-            metrics = {
-                "accuracy": accuracy,
-                "precision": precision,
-                "recall": recall,
-                "f1_score": f1
-            }
+            metrics = {"accuracy": accuracy, "precision": precision, "recall": recall, "f1_score": f1}
 
         # Add timestamp
         metrics["timestamp"] = datetime.now().isoformat()
@@ -550,19 +491,15 @@ class ModelMonitor:
         self.performance_history.append(metrics)
 
         # Update Prometheus gauge
-        MODEL_ACCURACY_GAUGE.labels(
-            model_name=self.model_name,
-            model_version=self.model_version or "unknown"
-        ).set(metrics["accuracy"])
+        MODEL_ACCURACY_GAUGE.labels(model_name=self.model_name, model_version=self.model_version or "unknown").set(
+            metrics["accuracy"]
+        )
 
         # Cache recent metrics
         cache_key = f"model_metrics:{self.model_name}"
         cache.set(cache_key, metrics, self.cache_ttl)
 
-    def get_performance_metrics(
-        self,
-        window_size: int = 100
-    ) -> Dict[str, Any]:
+    def get_performance_metrics(self, window_size: int = 100) -> Dict[str, Any]:
         """
         Get recent performance metrics.
 
@@ -582,7 +519,7 @@ class ModelMonitor:
             "window_size": len(recent_metrics),
             "latest": recent_metrics[-1] if recent_metrics else {},
             "average": {},
-            "trend": {}
+            "trend": {},
         }
 
         # Calculate averages
@@ -597,10 +534,7 @@ class ModelMonitor:
                     first_half = np.mean(values[:mid])
                     second_half = np.mean(values[mid:])
                     trend = "improving" if second_half > first_half else "declining"
-                    aggregated["trend"][metric_name] = {
-                        "direction": trend,
-                        "change": second_half - first_half
-                    }
+                    aggregated["trend"][metric_name] = {"direction": trend, "change": second_half - first_half}
 
         return aggregated
 
@@ -611,11 +545,7 @@ class ModelMonitor:
         Returns:
             Dictionary with health status and issues
         """
-        health = {
-            "status": "healthy",
-            "issues": [],
-            "timestamp": datetime.now().isoformat()
-        }
+        health = {"status": "healthy", "issues": [], "timestamp": datetime.now().isoformat()}
 
         # Check performance degradation
         metrics = self.get_performance_metrics(window_size=100)
@@ -624,38 +554,26 @@ class ModelMonitor:
 
             if latest_accuracy < 0.7:
                 health["status"] = "degraded"
-                health["issues"].append(
-                    f"Low accuracy: {latest_accuracy:.3f} (threshold: 0.7)"
-                )
+                health["issues"].append(f"Low accuracy: {latest_accuracy:.3f} (threshold: 0.7)")
 
         # Check for declining trend
         if metrics.get("trend", {}).get("accuracy"):
             trend = metrics["trend"]["accuracy"]
             if trend["direction"] == "declining" and abs(trend["change"]) > 0.05:
                 health["status"] = "warning"
-                health["issues"].append(
-                    f"Declining accuracy trend: {trend['change']:.3f}"
-                )
+                health["issues"].append(f"Declining accuracy trend: {trend['change']:.3f}")
 
         # Check prediction latency
-        recent_predictions = self.prediction_logger.get_recent_predictions(
-            model_name=self.model_name,
-            limit=100
-        )
+        recent_predictions = self.prediction_logger.get_recent_predictions(model_name=self.model_name, limit=100)
 
         if recent_predictions:
-            latencies = [
-                p.prediction_time_ms for p in recent_predictions
-                if p.prediction_time_ms is not None
-            ]
+            latencies = [p.prediction_time_ms for p in recent_predictions if p.prediction_time_ms is not None]
 
             if latencies:
                 p95_latency = np.percentile(latencies, 95)
                 if p95_latency > 1000:  # > 1 second
                     health["status"] = "warning"
-                    health["issues"].append(
-                        f"High prediction latency: P95={p95_latency:.0f}ms"
-                    )
+                    health["issues"].append(f"High prediction latency: P95={p95_latency:.0f}ms")
 
         return health
 
@@ -676,8 +594,7 @@ class ModelMonitor:
 
         # Add prediction statistics
         stats = self.prediction_logger.get_prediction_statistics(
-            model_name=self.model_name,
-            start_date=datetime.now() - timedelta(days=7)
+            model_name=self.model_name, start_date=datetime.now() - timedelta(days=7)
         )
         report["prediction_stats"] = stats
 

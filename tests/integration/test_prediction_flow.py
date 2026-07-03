@@ -114,9 +114,7 @@ class TestRecommendationFlow:
         # Assert successful response
         assert response.status_code == status.HTTP_200_OK
 
-    def test_recommendation_considers_current_skills(
-        self, authenticated_client, sample_employee
-    ):
+    def test_recommendation_considers_current_skills(self, authenticated_client, sample_employee):
         """Test that recommendations consider employee's current skills."""
         url = reverse("futureskill-recommend-skills")
         data = {"employee_id": sample_employee.id, "exclude_current": True}
@@ -213,15 +211,13 @@ class TestMLModelIntegration:
 
     def test_batch_prediction(self, sample_job_role, sample_skill, db):
         """Test batch prediction functionality."""
-        from future_skills.services.prediction_engine import PredictionEngine
         from future_skills.models import Skill
+        from future_skills.services.prediction_engine import PredictionEngine
 
         # Create multiple skills
         skills = [sample_skill]
         for i in range(3):
-            skills.append(
-                Skill.objects.create(name=f"Test Skill {i}", category="Technical")
-            )
+            skills.append(Skill.objects.create(name=f"Test Skill {i}", category="Technical"))
 
         engine = PredictionEngine()
 
@@ -248,9 +244,7 @@ class TestMLModelIntegration:
 class TestPermissionsFlow:
     """Test permission-based workflows."""
 
-    def test_hr_manager_can_access_all_employees(
-        self, api_client, hr_manager, sample_employee
-    ):
+    def test_hr_manager_can_access_all_employees(self, api_client, hr_manager, sample_employee):
         """Test that HR managers can access all employee data."""
         api_client.force_authenticate(user=hr_manager)
 

@@ -22,7 +22,7 @@ import logging
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Tuple
+from typing import Any, Dict, List, Tuple
 
 import joblib
 import pandas as pd
@@ -30,27 +30,26 @@ from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
+    accuracy_score,
     classification_report,
     confusion_matrix,
-    accuracy_score,
-    precision_recall_fscore_support,
     f1_score,
+    precision_recall_fscore_support,
 )
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 # Configure logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 # Suppress warnings for cleaner output
 warnings.filterwarnings("ignore")
 
 ALLOWED_LEVELS = {"LOW", "MEDIUM", "HIGH"}
 RANDOM_STATE = 42
+MARKDOWN_SEPARATOR = "\n---\n\n"
 
 
 def load_dataset(csv_path: Path) -> pd.DataFrame:
@@ -61,23 +60,18 @@ def load_dataset(csv_path: Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
 
     if "future_need_level" not in df.columns:
-        raise ValueError(
-            "La colonne target 'future_need_level' est absente du dataset."
-        )
+        raise ValueError("La colonne target 'future_need_level' est absente du dataset.")
 
     before = len(df)
     df = df[df["future_need_level"].isin(ALLOWED_LEVELS)].copy()
     after = len(df)
 
     if after == 0:
-        raise ValueError(
-            "Aucune ligne valide avec future_need_level dans {LOW, MEDIUM, HIGH}."
-        )
+        raise ValueError("Aucune ligne valide avec future_need_level dans {LOW, MEDIUM, HIGH}.")
 
     if after < before:
         print(
-            f"[WARN] {before - after} ligne(s) ignorée(s) car future_need_level "
-            f"n'était pas dans {ALLOWED_LEVELS}."
+            f"[WARN] {before - after} ligne(s) ignorée(s) car future_need_level " f"n'était pas dans {ALLOWED_LEVELS}."
         )
 
     return df
@@ -129,9 +123,7 @@ def prepare_data(
     return X, y, categorical_features, numeric_features
 
 
-def create_preprocessor(
-    categorical_features: List[str], numeric_features: List[str]
-) -> ColumnTransformer:
+def create_preprocessor(categorical_features: List[str], numeric_features: List[str]) -> ColumnTransformer:
     """Create the preprocessing pipeline."""
     categorical_transformer = OneHotEncoder(handle_unknown="ignore")
     numeric_transformer = StandardScaler()
@@ -228,9 +220,7 @@ def get_models_to_test() -> Dict[str, Dict[str, Any]]:
         }
     except Exception as e:
         logger.warning(f"XGBoost not available: {type(e).__name__}")
-        logger.info(
-            "To use XGBoost: pip install xgboost && brew install libomp (macOS)"
-        )
+        logger.info("To use XGBoost: pip install xgboost && brew install libomp (macOS)")
 
     # Try to import LightGBM
     try:
@@ -308,17 +298,13 @@ def train_and_evaluate_model(
     accuracy = accuracy_score(y_test, y_pred)
 
     # Compute per-class metrics first
-    precision_per_class, recall_per_class, f1_per_class, support = (
-        precision_recall_fscore_support(
-            y_test, y_pred, labels=class_labels, average=None
-        )
+    precision_per_class, recall_per_class, f1_per_class, support = precision_recall_fscore_support(
+        y_test, y_pred, labels=class_labels, average=None
     )
 
     # Compute weighted metrics
-    precision_weighted, recall_weighted, f1_weighted, _ = (
-        precision_recall_fscore_support(
-            y_test, y_pred, labels=class_labels, average="weighted"
-        )
+    precision_weighted, recall_weighted, f1_weighted, _ = precision_recall_fscore_support(
+        y_test, y_pred, labels=class_labels, average="weighted"
     )
 
     # Per-class metrics
@@ -338,9 +324,7 @@ def train_and_evaluate_model(
 
     # Cross-validation score (on train set for comparison)
     logger.info("Cross-validation (5-fold) in progress...")
-    cv_scores = cross_val_score(
-        pipeline, X_train, y_train, cv=5, scoring="f1_weighted", n_jobs=-1
-    )
+    cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring="f1_weighted", n_jobs=-1)
     cv_mean = cv_scores.mean()
     cv_std = cv_scores.std()
 
@@ -355,9 +339,7 @@ def train_and_evaluate_model(
 
     logger.info("\n📈 Per-class accuracy:")
     for level, metrics in per_class_metrics.items():
-        logger.info(
-            f"   • {level:7s} : {metrics['accuracy']:.2%} (n={metrics['support']})"
-        )
+        logger.info(f"   • {level:7s} : {metrics['accuracy']:.2%} (n={metrics['support']})")
 
     # Classification report
     logger.info("\n📋 Classification Report:")
@@ -547,18 +529,14 @@ def _add_recommendations_section(best_model: dict, results: list) -> str:
     return md
 
 
-def generate_comparison_table(
-    results: List[Dict[str, Any]], class_labels: List[str]
-) -> str:
+def generate_comparison_table(results: List[Dict[str, Any]], class_labels: List[str]) -> str:
     """Generate a markdown table comparing all models."""
 
     if not results:
         return "# ⚠️ Aucun résultat d'expérimentation disponible\n\nAucun modèle n'a pu être entraîné avec succès.\n"
 
     # Sort by F1-score
-    sorted_results = sorted(
-        results, key=lambda x: x["metrics"]["f1_weighted"], reverse=True
-    )
+    sorted_results = sorted(results, key=lambda x: x["metrics"]["f1_weighted"], reverse=True)
 
     md = "# 🔬 Comparaison des Modèles - Future Skills Prediction\n\n"
     md += f"**Date de l'expérimentation** : {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
@@ -588,9 +566,7 @@ def main():
     base_dir = Path(__file__).resolve().parent.parent
     default_csv = base_dir / "data" / "future_skills_dataset.csv"
 
-    parser = argparse.ArgumentParser(
-        description="Expérimente plusieurs modèles ML pour Future Skills."
-    )
+    parser = argparse.ArgumentParser(description="Expérimente plusieurs modèles ML pour Future Skills.")
     parser.add_argument(
         "--csv",
         type=str,
@@ -634,9 +610,7 @@ def main():
         print(f"   • {level:7s} : {count:4d} ({count/len(y)*100:.1f}%)")
 
     # Split data
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y)
 
     print(f"\n✂️  Split : Train={len(X_train)}, Test={len(X_test)}")
 
@@ -698,9 +672,7 @@ def main():
     print("📊 RÉSUMÉ DE L'EXPÉRIMENTATION")
     print("=" * 70)
 
-    sorted_results = sorted(
-        all_results, key=lambda x: x["metrics"]["f1_weighted"], reverse=True
-    )
+    sorted_results = sorted(all_results, key=lambda x: x["metrics"]["f1_weighted"], reverse=True)
 
     print("\n🏆 Classement par F1-score :\n")
     for i, result in enumerate(sorted_results, 1):
@@ -716,9 +688,7 @@ def main():
         f1 = result["metrics"]["f1_weighted"]
         acc = result["metrics"]["accuracy"]
         time = result["training_time_seconds"]
-        print(
-            f"   {medal} {result['model_name']:20s} | F1={f1:.4f} | Acc={acc:.4f} | {time:.2f}s"
-        )
+        print(f"   {medal} {result['model_name']:20s} | F1={f1:.4f} | Acc={acc:.4f} | {time:.2f}s")
 
     print("\n" + "=" * 70)
     print("✅ Expérimentation terminée avec succès!")

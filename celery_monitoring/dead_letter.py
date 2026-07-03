@@ -5,10 +5,11 @@ Stores failed tasks for manual inspection and reprocessing.
 Tasks that exceed max retries are sent here instead of being lost.
 """
 
-import logging
 import json
+import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
+
 from django.db import models
 from django.utils import timezone
 
@@ -48,11 +49,11 @@ class DeadLetterTask(models.Model):
     queue_name = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        db_table = 'celery_dead_letter_queue'
-        ordering = ['-failed_at']
+        db_table = "celery_dead_letter_queue"
+        ordering = ["-failed_at"]
         indexes = [
-            models.Index(fields=['task_name', 'failed_at']),
-            models.Index(fields=['reprocessed', 'failed_at']),
+            models.Index(fields=["task_name", "failed_at"]),
+            models.Index(fields=["reprocessed", "failed_at"]),
         ]
 
     def __str__(self):
@@ -80,34 +81,26 @@ class DeadLetterTask(models.Model):
             # Mark as reprocessed
             self.reprocessed = True
             self.reprocessed_at = timezone.now()
-            self.reprocessing_result = json.dumps({
-                'status': 'success',
-                'result': str(result.result) if hasattr(result, 'result') else None
-            })
+            self.reprocessing_result = json.dumps(
+                {"status": "success", "result": str(result.result) if hasattr(result, "result") else None}
+            )
             self.save()
 
             logger.info(f"Successfully reprocessed task: {self.task_id}")
 
             return {
-                'status': 'success',
-                'task_id': self.task_id,
-                'result': result.result if hasattr(result, 'result') else None
+                "status": "success",
+                "task_id": self.task_id,
+                "result": result.result if hasattr(result, "result") else None,
             }
 
         except Exception as e:
             logger.error(f"Failed to reprocess task {self.task_id}: {e}")
 
-            self.reprocessing_result = json.dumps({
-                'status': 'failed',
-                'error': str(e)
-            })
+            self.reprocessing_result = json.dumps({"status": "failed", "error": str(e)})
             self.save()
 
-            return {
-                'status': 'failed',
-                'task_id': self.task_id,
-                'error': str(e)
-            }
+            return {"status": "failed", "task_id": self.task_id, "error": str(e)}
 
 
 def send_to_dead_letter_queue(
@@ -117,8 +110,8 @@ def send_to_dead_letter_queue(
     kwargs: dict,
     exception: Exception,
     retries: int,
-    worker_name: str = '',
-    queue_name: str = ''
+    worker_name: str = "",
+    queue_name: str = "",
 ) -> DeadLetterTask:
     """
     Send a failed task to the dead letter queue.
@@ -154,21 +147,15 @@ def send_to_dead_letter_queue(
         exception_traceback=exception_traceback,
         retries=retries,
         worker_name=worker_name,
-        queue_name=queue_name
+        queue_name=queue_name,
     )
 
-    logger.info(
-        f"Sent task to dead letter queue: {task_name} ({task_id}), "
-        f"exception: {exception_type}"
-    )
+    logger.info(f"Sent task to dead letter queue: {task_name} ({task_id}), " f"exception: {exception_type}")
 
     return dead_letter_task
 
 
-def reprocess_dead_letter_tasks(
-    task_name: Optional[str] = None,
-    limit: int = 10
-) -> Dict[str, Any]:
+def reprocess_dead_letter_tasks(task_name: Optional[str] = None, limit: int = 10) -> Dict[str, Any]:
     """
     Bulk reprocess dead letter tasks.
 
@@ -186,23 +173,15 @@ def reprocess_dead_letter_tasks(
 
     tasks = query[:limit]
 
-    results = {
-        'total': len(tasks),
-        'success': 0,
-        'failed': 0,
-        'errors': []
-    }
+    results = {"total": len(tasks), "success": 0, "failed": 0, "errors": []}
 
     for task in tasks:
         result = task.reprocess()
-        if result['status'] == 'success':
-            results['success'] += 1
+        if result["status"] == "success":
+            results["success"] += 1
         else:
-            results['failed'] += 1
-            results['errors'].append({
-                'task_id': task.task_id,
-                'error': result.get('error')
-            })
+            results["failed"] += 1
+            results["errors"].append({"task_id": task.task_id, "error": result.get("error")})
 
     return results
 
@@ -221,10 +200,7 @@ def cleanup_old_dead_letter_tasks(days: int = 30) -> int:
 
     cutoff_date = timezone.now() - timedelta(days=days)
 
-    deleted_count, _ = DeadLetterTask.objects.filter(
-        reprocessed=True,
-        reprocessed_at__lt=cutoff_date
-    ).delete()
+    deleted_count, _ = DeadLetterTask.objects.filter(reprocessed=True, reprocessed_at__lt=cutoff_date).delete()
 
     logger.info(f"Cleaned up {deleted_count} old dead letter tasks")
 

@@ -11,7 +11,7 @@ import logging
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any, Dict, List, Optional, Tuple
 
 import joblib
 import mlflow
@@ -20,24 +20,14 @@ import pandas as pd
 from django.conf import settings
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    precision_recall_fscore_support,
-)
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from future_skills.models import TrainingRun
 from ml.mlflow_config import get_mlflow_config
-from ml.model_versioning import (
-    create_model_version,
-    ModelVersionManager,
-    ModelStage,
-    ModelFramework,
-)
+from ml.model_versioning import ModelFramework, ModelStage, ModelVersionManager, create_model_version
 from ml.monitoring import ModelMonitor
 
 logger = logging.getLogger(__name__)
@@ -45,16 +35,19 @@ logger = logging.getLogger(__name__)
 
 class ModelTrainerError(Exception):
     """Base exception for ModelTrainer errors."""
+
     pass
 
 
 class DataLoadError(ModelTrainerError):
     """Exception raised when data loading fails."""
+
     pass
 
 
 class TrainingError(ModelTrainerError):
     """Exception raised when model training fails."""
+
     pass
 
 
@@ -97,12 +90,7 @@ class ModelTrainer:
         "economic_indicator",
     ]
 
-    def __init__(
-        self,
-        dataset_path: str,
-        test_split: float = 0.2,
-        random_state: int = 42
-    ):
+    def __init__(self, dataset_path: str, test_split: float = 0.2, random_state: int = 42):
         """
         Initialize ModelTrainer.
 
@@ -174,21 +162,15 @@ class ModelTrainer:
             after_count = len(self.df)
 
             if after_count == 0:
-                raise DataLoadError(
-                    f"No valid rows with {self.TARGET_COLUMN} in {self.ALLOWED_LEVELS}"
-                )
+                raise DataLoadError(f"No valid rows with {self.TARGET_COLUMN} in {self.ALLOWED_LEVELS}")
 
             if after_count < before_count:
                 filtered = before_count - after_count
                 logger.warning(f"Filtered {filtered} rows with invalid target values")
 
             # Identify available features
-            self.available_features = [
-                col for col in self.FEATURE_COLUMNS if col in self.df.columns
-            ]
-            self.missing_features = [
-                col for col in self.FEATURE_COLUMNS if col not in self.df.columns
-            ]
+            self.available_features = [col for col in self.FEATURE_COLUMNS if col in self.df.columns]
+            self.missing_features = [col for col in self.FEATURE_COLUMNS if col not in self.df.columns]
 
             if not self.available_features:
                 raise DataLoadError("No features available in dataset")
@@ -214,21 +196,15 @@ class ModelTrainer:
             logger.info(f"Class imbalance ratio: {imbalance_ratio:.2f}")
             if imbalance_ratio > 3:
                 logger.warning(
-                    f"Class imbalance detected (ratio={imbalance_ratio:.2f}). "
-                    "Using balanced class weights."
+                    f"Class imbalance detected (ratio={imbalance_ratio:.2f}). " "Using balanced class weights."
                 )
 
             # Train/test split
             self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-                X, y,
-                test_size=self.test_split,
-                random_state=self.random_state,
-                stratify=y
+                X, y, test_size=self.test_split, random_state=self.random_state, stratify=y
             )
 
-            logger.info(
-                f"Split complete: train={len(self.X_train)}, test={len(self.X_test)}"
-            )
+            logger.info(f"Split complete: train={len(self.X_train)}, test={len(self.X_test)}")
 
         except pd.errors.EmptyDataError:
             raise DataLoadError("Dataset is empty")
@@ -243,7 +219,7 @@ class ModelTrainer:
         self.numeric_features = []
 
         for col in self.available_features:
-            if self.df[col].dtype in ['object', 'category']:
+            if self.df[col].dtype in ["object", "category"]:
                 self.categorical_features.append(col)
             else:
                 self.numeric_features.append(col)
@@ -283,21 +259,20 @@ class ModelTrainer:
 
             # Default hyperparameters
             self.hyperparameters = {
-                'n_estimators': hyperparameters.get('n_estimators', 200),
-                'max_depth': hyperparameters.get('max_depth', None),
-                'min_samples_split': hyperparameters.get('min_samples_split', 2),
-                'min_samples_leaf': hyperparameters.get('min_samples_leaf', 1),
-                'class_weight': hyperparameters.get('class_weight', 'balanced'),
-                'random_state': self.random_state,
-                'n_jobs': -1,
+                "n_estimators": hyperparameters.get("n_estimators", 200),
+                "max_depth": hyperparameters.get("max_depth", None),
+                "min_samples_split": hyperparameters.get("min_samples_split", 2),
+                "min_samples_leaf": hyperparameters.get("min_samples_leaf", 1),
+                "class_weight": hyperparameters.get("class_weight", "balanced"),
+                "random_state": self.random_state,
+                "n_jobs": -1,
             }
 
             logger.info(f"Hyperparameters: {self.hyperparameters}")
 
             # Start MLflow run
             with mlflow_config.start_run(
-                run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                experiment_name="model-training"
+                run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}", experiment_name="model-training"
             ) as run:
                 # Log hyperparameters
                 mlflow.log_params(self.hyperparameters)
@@ -316,9 +291,7 @@ class ModelTrainer:
                 self.model.fit(self.X_train, self.y_train)
 
                 self.training_end_time = datetime.now()
-                self.training_duration_seconds = (
-                    self.training_end_time - self.training_start_time
-                ).total_seconds()
+                self.training_duration_seconds = (self.training_end_time - self.training_start_time).total_seconds()
 
                 logger.info(f"Training completed in {self.training_duration_seconds:.2f}s")
 
@@ -329,17 +302,19 @@ class ModelTrainer:
                 self.metrics = self.evaluate(self.X_test, self.y_test)
 
                 # Log metrics to MLflow
-                mlflow.log_metrics({
-                    "accuracy": self.metrics['accuracy'],
-                    "precision": self.metrics['precision'],
-                    "recall": self.metrics['recall'],
-                    "f1_score": self.metrics['f1_score'],
-                })
+                mlflow.log_metrics(
+                    {
+                        "accuracy": self.metrics["accuracy"],
+                        "precision": self.metrics["precision"],
+                        "recall": self.metrics["recall"],
+                        "f1_score": self.metrics["f1_score"],
+                    }
+                )
 
                 # Log per-class metrics
-                for level, level_metrics in self.metrics.get('per_class', {}).items():
-                    mlflow.log_metric(f"{level}_accuracy", level_metrics['accuracy'])
-                    mlflow.log_metric(f"{level}_support", level_metrics['support'])
+                for level, level_metrics in self.metrics.get("per_class", {}).items():
+                    mlflow.log_metric(f"{level}_accuracy", level_metrics["accuracy"])
+                    mlflow.log_metric(f"{level}_support", level_metrics["support"])
 
                 # Feature importance
                 self.feature_importance = self.get_feature_importance()
@@ -350,11 +325,7 @@ class ModelTrainer:
                         mlflow.log_metric(f"feature_importance_{i+1}_{feat}", imp)
 
                 # Log model to MLflow
-                mlflow.sklearn.log_model(
-                    self.model,
-                    "model",
-                    registered_model_name="future-skills-model"
-                )
+                mlflow.sklearn.log_model(self.model, "model", registered_model_name="future-skills-model")
 
                 # Store run_id for later use
                 self.mlflow_run_id = run.info.run_id
@@ -364,9 +335,7 @@ class ModelTrainer:
 
         except Exception as e:
             self.training_end_time = datetime.now()
-            self.training_duration_seconds = (
-                self.training_end_time - self.training_start_time
-            ).total_seconds()
+            self.training_duration_seconds = (self.training_end_time - self.training_start_time).total_seconds()
             logger.error(f"Training failed after {self.training_duration_seconds:.2f}s: {str(e)}")
             raise TrainingError(f"Model training failed: {str(e)}")
 
@@ -395,7 +364,7 @@ class ModelTrainer:
                 ("preprocess", preprocessor),
                 ("clf", clf),
             ],
-            memory='auto'  # Cache transformers  # noqa: S106
+            memory="auto",  # Cache transformers  # noqa: S106
         )
 
         return pipeline
@@ -426,10 +395,7 @@ class ModelTrainer:
             # Overall metrics
             accuracy = accuracy_score(y_test, y_pred)
             precision, recall, f1, _ = precision_recall_fscore_support(
-                y_test, y_pred,
-                labels=["LOW", "MEDIUM", "HIGH"],
-                average="weighted",
-                zero_division=0
+                y_test, y_pred, labels=["LOW", "MEDIUM", "HIGH"], average="weighted", zero_division=0
             )
 
             logger.info(f"Accuracy: {accuracy:.4f}")
@@ -474,10 +440,7 @@ class ModelTrainer:
             else:
                 accuracy = 0.0
 
-            per_class[level] = {
-                "accuracy": round(accuracy, 4),
-                "support": support
-            }
+            per_class[level] = {"accuracy": round(accuracy, 4), "support": support}
             logger.info(f"  {level}: accuracy={accuracy:.2%}, support={support}")
 
         return per_class
@@ -523,7 +486,7 @@ class ModelTrainer:
         try:
             clf = self.model.named_steps["clf"]  # noqa: PD011
 
-            if not hasattr(clf, 'feature_importances_'):
+            if not hasattr(clf, "feature_importances_"):
                 logger.warning("Model does not support feature importance")
                 return {}
 
@@ -532,31 +495,21 @@ class ModelTrainer:
 
             cat_features = []
             if self.categorical_features:
-                cat_transformer = preprocessor.named_transformers_['cat']  # noqa: PD011
-                if hasattr(cat_transformer, 'get_feature_names_out'):
-                    cat_features = cat_transformer.get_feature_names_out(
-                        self.categorical_features
-                    ).tolist()
+                cat_transformer = preprocessor.named_transformers_["cat"]  # noqa: PD011
+                if hasattr(cat_transformer, "get_feature_names_out"):
+                    cat_features = cat_transformer.get_feature_names_out(self.categorical_features).tolist()
 
             all_features = cat_features + self.numeric_features
 
             if len(all_features) != len(clf.feature_importances_):
-                logger.warning(
-                    f"Feature count mismatch: {len(all_features)} vs "
-                    f"{len(clf.feature_importances_)}"
-                )
+                logger.warning(f"Feature count mismatch: {len(all_features)} vs " f"{len(clf.feature_importances_)}")
                 return {}
 
             # Create importance dict
-            importance = {
-                feat: float(imp)
-                for feat, imp in zip(all_features, clf.feature_importances_)
-            }
+            importance = {feat: float(imp) for feat, imp in zip(all_features, clf.feature_importances_)}
 
             # Sort by importance
-            sorted_importance = dict(
-                sorted(importance.items(), key=lambda x: x[1], reverse=True)
-            )
+            sorted_importance = dict(sorted(importance.items(), key=lambda x: x[1], reverse=True))
 
             # Log top 10
             logger.info("Top 10 important features:")
@@ -570,12 +523,7 @@ class ModelTrainer:
             return {}
 
     def save_training_run(
-        self,
-        model_version: str,
-        model_path: str,
-        user=None,
-        notes: str = "",
-        auto_promote: bool = True
+        self, model_version: str, model_path: str, user=None, notes: str = "", auto_promote: bool = True
     ) -> TrainingRun:
         """
         Save training run to database for MLOps tracking.
@@ -604,10 +552,10 @@ class ModelTrainer:
             version_obj = create_model_version(
                 version_string=model_version,
                 metrics={
-                    "accuracy": self.metrics['accuracy'],
-                    "precision": self.metrics['precision'],
-                    "recall": self.metrics['recall'],
-                    "f1_score": self.metrics['f1_score'],
+                    "accuracy": self.metrics["accuracy"],
+                    "precision": self.metrics["precision"],
+                    "recall": self.metrics["recall"],
+                    "f1_score": self.metrics["f1_score"],
                     "training_time": self.training_duration_seconds,
                 },
                 model_path=model_path,
@@ -617,9 +565,9 @@ class ModelTrainer:
                 training_dataset_size=len(self.X_train) if self.X_train is not None else 0,
                 training_features=self.available_features,
                 target_classes=["LOW", "MEDIUM", "HIGH"],
-                mlflow_run_id=getattr(self, 'mlflow_run_id', None),
+                mlflow_run_id=getattr(self, "mlflow_run_id", None),
                 stage=ModelStage.STAGING,  # Start in staging
-                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}"
+                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
             )
 
             # Register version
@@ -636,7 +584,7 @@ class ModelTrainer:
                         new_version=version_obj,
                         current_version=prod_version,
                         metric_name="f1_score",
-                        improvement_threshold=0.01  # 1% improvement required
+                        improvement_threshold=0.01,  # 1% improvement required
                     )
 
                     if should_promote:
@@ -649,15 +597,13 @@ class ModelTrainer:
                         # Transition in MLflow
                         mlflow_config = get_mlflow_config()
                         try:
-                            latest_version = mlflow_config.get_latest_model_version(
-                                model_name="future-skills-model"
-                            )
+                            latest_version = mlflow_config.get_latest_model_version(model_name="future-skills-model")
                             if latest_version:
                                 mlflow_config.transition_model_stage(
                                     model_name="future-skills-model",
                                     version=str(latest_version.version),
                                     stage="Production",
-                                    archive_existing=True
+                                    archive_existing=True,
                                 )
                                 logger.info("Transitioned MLflow model to Production")
                         except Exception as e:
@@ -680,12 +626,12 @@ class ModelTrainer:
                 model_path=str(model_path),
                 dataset_path=str(self.dataset_path),
                 test_split=self.test_split,
-                n_estimators=self.hyperparameters.get('n_estimators', 200),
+                n_estimators=self.hyperparameters.get("n_estimators", 200),
                 random_state=self.random_state,
-                accuracy=self.metrics['accuracy'],
-                precision=self.metrics['precision'],
-                recall=self.metrics['recall'],
-                f1_score=self.metrics['f1_score'],
+                accuracy=self.metrics["accuracy"],
+                precision=self.metrics["precision"],
+                recall=self.metrics["recall"],
+                f1_score=self.metrics["f1_score"],
                 total_samples=len(self.df) if self.df is not None else 0,
                 train_samples=len(self.X_train) if self.X_train is not None else 0,
                 test_samples=len(self.X_test) if self.X_test is not None else 0,
@@ -694,7 +640,7 @@ class ModelTrainer:
                 features_used=self.available_features,
                 trained_by=user,
                 notes=f"{notes}\n\nMLflow Run ID: {getattr(self, 'mlflow_run_id', 'N/A')}\n{promotion_info or ''}".strip(),
-                status='COMPLETED',
+                status="COMPLETED",
                 hyperparameters=self.hyperparameters,
             )
 
@@ -710,11 +656,7 @@ class ModelTrainer:
             raise TrainingError(f"Failed to save training run: {str(e)}")
 
     def save_failed_training_run(
-        self,
-        model_version: str,
-        error_message: str,
-        user=None,
-        notes: str = ""
+        self, model_version: str, error_message: str, user=None, notes: str = ""
     ) -> TrainingRun:
         """
         Save failed training run to database for tracking.
@@ -737,7 +679,7 @@ class ModelTrainer:
                 model_path="",
                 dataset_path=str(self.dataset_path),
                 test_split=self.test_split,
-                n_estimators=self.hyperparameters.get('n_estimators', 200),
+                n_estimators=self.hyperparameters.get("n_estimators", 200),
                 random_state=self.random_state,
                 accuracy=0.0,
                 precision=0.0,
@@ -751,7 +693,7 @@ class ModelTrainer:
                 features_used=[],
                 trained_by=user,
                 notes=notes,
-                status='FAILED',
+                status="FAILED",
                 error_message=error_message,
                 hyperparameters=self.hyperparameters or {},
             )

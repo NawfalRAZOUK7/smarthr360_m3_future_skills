@@ -21,8 +21,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.WARNING(
-                f"Lancement du recalcul des prédictions à horizon {horizon_years} ans..."
-                f"(via management command)..."
+                f"Lancement du recalcul des prédictions à horizon {horizon_years} ans..." f"(via management command)..."
             )
         )
 
@@ -36,8 +35,4 @@ class Command(BaseCommand):
             },
         )
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Recalcul terminé. {total} prédiction(s) créée(s)/mise(s) à jour."
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"Recalcul terminé. {total} prédiction(s) créée(s)/mise(s) à jour."))

@@ -13,18 +13,18 @@ from pathlib import Path
 from typing import Any, Dict
 
 import structlog
-
+from django.conf import settings
 
 # ============================================================================
 # LOG LEVELS
 # ============================================================================
 
 LOG_LEVELS = {
-    'DEBUG': logging.DEBUG,
-    'INFO': logging.INFO,
-    'WARNING': logging.WARNING,
-    'ERROR': logging.ERROR,
-    'CRITICAL': logging.CRITICAL,
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
 }
 
 
@@ -32,31 +32,29 @@ LOG_LEVELS = {
 # STRUCTLOG PROCESSORS
 # ============================================================================
 
+
 def add_app_context(logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Add application context to log events."""
-    event_dict['app'] = 'smarthr360'
-    event_dict['environment'] = os.getenv('ENVIRONMENT', 'development')
+    event_dict["app"] = "smarthr360"
+    event_dict["environment"] = os.getenv("ENVIRONMENT", "development")
     return event_dict
 
 
 def add_log_level(logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Add log level to event dict."""
-    if method_name == 'warn':
-        method_name = 'warning'
-    event_dict['level'] = method_name.upper()
+    if method_name == "warn":
+        method_name = "warning"
+    event_dict["level"] = method_name.upper()
     return event_dict
 
 
 def censor_sensitive_data(logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Remove sensitive data from logs."""
-    sensitive_keys = [
-        'password', 'token', 'secret', 'api_key', 'authorization',
-        'credit_card', 'ssn', 'cvv', 'pin'
-    ]
+    sensitive_keys = ["password", "token", "secret", "api_key", "authorization", "credit_card", "ssn", "cvv", "pin"]
 
     for key in list(event_dict.keys()):
         if any(sensitive in key.lower() for sensitive in sensitive_keys):
-            event_dict[key] = '***REDACTED***'
+            event_dict[key] = "***REDACTED***"
 
     return event_dict
 
@@ -64,6 +62,7 @@ def censor_sensitive_data(logger: Any, method_name: str, event_dict: Dict[str, A
 # ============================================================================
 # STRUCTLOG CONFIGURATION
 # ============================================================================
+
 
 def get_structlog_config(use_json: bool = True, base_dir: Path = None) -> Dict[str, Any]:
     """
@@ -78,14 +77,14 @@ def get_structlog_config(use_json: bool = True, base_dir: Path = None) -> Dict[s
     """
     # Use /tmp for logs in container environments if base_dir not provided
     if base_dir is None:
-        log_dir = Path('/tmp/logs')
+        log_dir = Path("/tmp/logs")
     else:
-        log_dir = base_dir / 'logs'
+        log_dir = base_dir / "logs"
 
     # Ensure log directory exists
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamper = structlog.processors.TimeStamper(fmt='iso')
+    timestamper = structlog.processors.TimeStamper(fmt="iso")
 
     shared_processors = [
         structlog.stdlib.add_log_level,
@@ -100,120 +99,116 @@ def get_structlog_config(use_json: bool = True, base_dir: Path = None) -> Dict[s
 
     if use_json:
         # Production: JSON formatter
-        processors = shared_processors + [
-            structlog.processors.JSONRenderer()
-        ]
+        processors = shared_processors + [structlog.processors.JSONRenderer()]
     else:
         # Development: Colored console
-        processors = shared_processors + [
-            structlog.dev.ConsoleRenderer(colors=True)
-        ]
+        processors = shared_processors + [structlog.dev.ConsoleRenderer(colors=True)]
 
     return {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'json': {
-                '()': structlog.stdlib.ProcessorFormatter,
-                'processor': structlog.processors.JSONRenderer(),
-                'foreign_pre_chain': shared_processors,
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "json": {
+                "()": structlog.stdlib.ProcessorFormatter,
+                "processor": structlog.processors.JSONRenderer(),
+                "foreign_pre_chain": shared_processors,
             },
-            'colored': {
-                '()': structlog.stdlib.ProcessorFormatter,
-                'processor': structlog.dev.ConsoleRenderer(colors=True),
-                'foreign_pre_chain': shared_processors,
+            "colored": {
+                "()": structlog.stdlib.ProcessorFormatter,
+                "processor": structlog.dev.ConsoleRenderer(colors=True),
+                "foreign_pre_chain": shared_processors,
             },
-            'plain': {
-                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-                'datefmt': '%Y-%m-%d %H:%M:%S',
-            },
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'colored' if not use_json else 'json',
-                'stream': sys.stdout,
-            },
-            'file': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'json',
-                'filename': str(log_dir / 'application.log'),
-                'maxBytes': 10485760,  # 10MB
-                'backupCount': 10,
-            },
-            'error_file': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'json',
-                'filename': str(log_dir / 'error.log'),
-                'maxBytes': 10485760,  # 10MB
-                'backupCount': 10,
-                'level': 'ERROR',
-            },
-            'security_file': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'json',
-                'filename': str(log_dir / 'security.log'),
-                'maxBytes': 10485760,  # 10MB
-                'backupCount': 10,
-            },
-            'performance_file': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'json',
-                'filename': str(log_dir / 'performance.log'),
-                'maxBytes': 10485760,  # 10MB
-                'backupCount': 10,
+            "plain": {
+                "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
             },
         },
-        'loggers': {
-            '': {  # Root logger
-                'handlers': ['console', 'file'],
-                'level': os.getenv('LOG_LEVEL', 'INFO'),
-                'propagate': False,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "colored" if not use_json else "json",
+                "stream": sys.stdout,
             },
-            'django': {
-                'handlers': ['console', 'file'],
-                'level': 'INFO',
-                'propagate': False,
+            "file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "formatter": "json",
+                "filename": str(log_dir / "application.log"),
+                "maxBytes": 10485760,  # 10MB
+                "backupCount": 10,
             },
-            'django.request': {
-                'handlers': ['console', 'file', 'error_file'],
-                'level': 'WARNING',
-                'propagate': False,
+            "error_file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "formatter": "json",
+                "filename": str(log_dir / "error.log"),
+                "maxBytes": 10485760,  # 10MB
+                "backupCount": 10,
+                "level": "ERROR",
             },
-            'django.server': {
-                'handlers': ['console', 'file'],
-                'level': 'INFO',
-                'propagate': False,
+            "security_file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "formatter": "json",
+                "filename": str(log_dir / "security.log"),
+                "maxBytes": 10485760,  # 10MB
+                "backupCount": 10,
             },
-            'django.db.backends': {
-                'handlers': ['file'],
-                'level': 'WARNING',
-                'propagate': False,
+            "performance_file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "formatter": "json",
+                "filename": str(log_dir / "performance.log"),
+                "maxBytes": 10485760,  # 10MB
+                "backupCount": 10,
             },
-            'future_skills': {
-                'handlers': ['console', 'file'],
-                'level': 'INFO',
-                'propagate': False,
+        },
+        "loggers": {
+            "": {  # Root logger
+                "handlers": ["console", "file"],
+                "level": os.getenv("LOG_LEVEL", "INFO"),
+                "propagate": False,
             },
-            'security': {
-                'handlers': ['console', 'security_file'],
-                'level': 'INFO',
-                'propagate': False,
+            "django": {
+                "handlers": ["console", "file"],
+                "level": "INFO",
+                "propagate": False,
             },
-            'performance': {
-                'handlers': ['console', 'performance_file'],
-                'level': 'INFO',
-                'propagate': False,
+            "django.request": {
+                "handlers": ["console", "file", "error_file"],
+                "level": "WARNING",
+                "propagate": False,
             },
-            'celery': {
-                'handlers': ['console', 'file'],
-                'level': 'INFO',
-                'propagate': False,
+            "django.server": {
+                "handlers": ["console", "file"],
+                "level": "INFO",
+                "propagate": False,
             },
-            'apm': {
-                'handlers': ['console', 'file'],
-                'level': 'WARNING',
-                'propagate': False,
+            "django.db.backends": {
+                "handlers": ["file"],
+                "level": "WARNING",
+                "propagate": False,
+            },
+            "future_skills": {
+                "handlers": ["console", "file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "security": {
+                "handlers": ["console", "security_file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "performance": {
+                "handlers": ["console", "performance_file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "celery": {
+                "handlers": ["console", "file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "apm": {
+                "handlers": ["console", "file"],
+                "level": "WARNING",
+                "propagate": False,
             },
         },
     }
@@ -226,7 +221,7 @@ def configure_structlog(use_json: bool = True) -> None:
     Args:
         use_json: If True, use JSON formatter. If False, use colored console.
     """
-    timestamper = structlog.processors.TimeStamper(fmt='iso')
+    timestamper = structlog.processors.TimeStamper(fmt="iso")
 
     if use_json:
         renderer = structlog.processors.JSONRenderer()
@@ -258,20 +253,21 @@ def configure_structlog(use_json: bool = True) -> None:
 # LOGSTASH CONFIGURATION
 # ============================================================================
 
+
 def get_logstash_handler_config() -> Dict[str, Any]:
     """Get Logstash handler configuration."""
-    logstash_host = os.getenv('LOGSTASH_HOST', 'localhost')
-    logstash_port = int(os.getenv('LOGSTASH_PORT', '5000'))
+    logstash_host = os.getenv("LOGSTASH_HOST", "localhost")
+    logstash_port = int(os.getenv("LOGSTASH_PORT", "5000"))
 
     return {
-        'logstash': {
-            'class': 'logstash_async.handler.AsynchronousLogstashHandler',
-            'transport': 'logstash_async.transport.TcpTransport',
-            'host': logstash_host,
-            'port': logstash_port,
-            'database_path': os.path.join(settings.BASE_DIR, 'logs', 'logstash.db'),
-            'formatter': 'json',
-            'level': 'INFO',
+        "logstash": {
+            "class": "logstash_async.handler.AsynchronousLogstashHandler",
+            "transport": "logstash_async.transport.TcpTransport",
+            "host": logstash_host,
+            "port": logstash_port,
+            "database_path": os.path.join(settings.BASE_DIR, "logs", "logstash.db"),
+            "formatter": "json",
+            "level": "INFO",
         },
     }
 
@@ -279,6 +275,7 @@ def get_logstash_handler_config() -> Dict[str, Any]:
 # ============================================================================
 # LOGGING UTILITIES
 # ============================================================================
+
 
 def get_logger(name: str) -> structlog.BoundLogger:
     """
@@ -299,11 +296,11 @@ def setup_logging() -> None:
     Should be called during application startup.
     """
     # Create logs directory if it doesn't exist
-    logs_dir = Path(settings.BASE_DIR) / 'logs'
+    logs_dir = Path(settings.BASE_DIR) / "logs"
     logs_dir.mkdir(exist_ok=True)
 
     # Determine if we're in production
-    is_production = os.getenv('ENVIRONMENT', 'development').lower() == 'production'
+    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
 
     # Configure structlog
     configure_structlog(use_json=is_production)
@@ -312,12 +309,12 @@ def setup_logging() -> None:
     config = get_structlog_config(use_json=is_production)
 
     # Add Logstash handler if configured
-    if os.getenv('LOGSTASH_HOST'):
+    if os.getenv("LOGSTASH_HOST"):
         logstash_config = get_logstash_handler_config()
-        config['handlers'].update(logstash_config)
+        config["handlers"].update(logstash_config)
 
         # Add logstash handler to root logger
-        config['loggers']['']['handlers'].append('logstash')
+        config["loggers"][""]["handlers"].append("logstash")
 
     # Apply configuration
     logging.config.dictConfig(config)
@@ -325,9 +322,9 @@ def setup_logging() -> None:
     # Log startup message
     logger = get_logger(__name__)
     logger.info(
-        'logging_configured',
-        environment=os.getenv('ENVIRONMENT', 'development'),
-        log_level=os.getenv('LOG_LEVEL', 'INFO'),
+        "logging_configured",
+        environment=os.getenv("ENVIRONMENT", "development"),
+        log_level=os.getenv("LOG_LEVEL", "INFO"),
         json_format=is_production,
     )
 
@@ -335,6 +332,7 @@ def setup_logging() -> None:
 # ============================================================================
 # LOG CONTEXT MANAGERS
 # ============================================================================
+
 
 class LogContext:
     """Context manager for adding context to logs."""
@@ -368,13 +366,14 @@ import time
 from functools import wraps
 
 
-def log_performance(logger_name: str = 'performance'):
+def log_performance(logger_name: str = "performance"):
     """
     Decorator to log function performance.
 
     Args:
         logger_name: Name of logger to use
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -386,10 +385,10 @@ def log_performance(logger_name: str = 'performance'):
                 duration = time.time() - start_time
 
                 logger.info(
-                    'function_completed',
+                    "function_completed",
                     function=func.__name__,
                     duration_seconds=round(duration, 3),
-                    status='success',
+                    status="success",
                 )
 
                 return result
@@ -397,10 +396,10 @@ def log_performance(logger_name: str = 'performance'):
                 duration = time.time() - start_time
 
                 logger.error(
-                    'function_failed',
+                    "function_failed",
                     function=func.__name__,
                     duration_seconds=round(duration, 3),
-                    status='error',
+                    status="error",
                     error=str(e),
                     exc_info=True,
                 )
@@ -408,4 +407,5 @@ def log_performance(logger_name: str = 'performance'):
                 raise
 
         return wrapper
+
     return decorator

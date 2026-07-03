@@ -35,11 +35,11 @@ Usage:
 
 import json
 import logging
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import semver
 from pydantic import BaseModel, Field, validator
@@ -49,6 +49,7 @@ logger = logging.getLogger(__name__)
 
 class ModelStage(str, Enum):
     """Model lifecycle stages."""
+
     DEVELOPMENT = "Development"
     STAGING = "Staging"
     PRODUCTION = "Production"
@@ -58,6 +59,7 @@ class ModelStage(str, Enum):
 
 class ModelFramework(str, Enum):
     """Supported ML frameworks."""
+
     SCIKIT_LEARN = "scikit-learn"
     TENSORFLOW = "tensorflow"
     PYTORCH = "pytorch"
@@ -69,6 +71,7 @@ class ModelFramework(str, Enum):
 
 class ModelMetrics(BaseModel):
     """Model performance metrics."""
+
     accuracy: Optional[float] = Field(None, ge=0.0, le=1.0)
     precision: Optional[float] = Field(None, ge=0.0, le=1.0)
     recall: Optional[float] = Field(None, ge=0.0, le=1.0)
@@ -84,7 +87,7 @@ class ModelMetrics(BaseModel):
     class Config:
         extra = "allow"  # Allow additional metrics
 
-    @validator('custom_metrics')
+    @validator("custom_metrics")
     def validate_custom_metrics(cls, v):
         """Ensure all custom metrics are numeric."""
         for key, value in v.items():
@@ -100,16 +103,14 @@ class ModelMetrics(BaseModel):
 
     def to_dict(self) -> Dict[str, float]:
         """Convert metrics to dictionary."""
-        metrics_dict = {
-            k: v for k, v in self.dict().items()
-            if v is not None and k != "custom_metrics"
-        }
+        metrics_dict = {k: v for k, v in self.dict().items() if v is not None and k != "custom_metrics"}
         metrics_dict.update(self.custom_metrics)
         return metrics_dict
 
 
 class ModelMetadata(BaseModel):
     """Comprehensive model metadata."""
+
     model_id: str = Field(..., description="Unique model identifier")
     version_string: str = Field(..., description="Semantic version string")
 
@@ -174,6 +175,7 @@ class ModelVersion:
     - MINOR: Backward-compatible changes (improvements, tuning)
     - PATCH: Bug fixes, small improvements
     """
+
     major: int
     minor: int
     patch: int
@@ -194,31 +196,31 @@ class ModelVersion:
     def __repr__(self) -> str:
         return f"ModelVersion({str(self)})"
 
-    def __eq__(self, other: 'ModelVersion') -> bool:
+    def __eq__(self, other: "ModelVersion") -> bool:
         """Check equality."""
         if not isinstance(other, ModelVersion):
             return False
         return str(self) == str(other)
 
-    def __lt__(self, other: 'ModelVersion') -> bool:
+    def __lt__(self, other: "ModelVersion") -> bool:
         """Compare versions."""
         if not isinstance(other, ModelVersion):
             return NotImplemented
         return semver.compare(str(self), str(other)) < 0
 
-    def __le__(self, other: 'ModelVersion') -> bool:
+    def __le__(self, other: "ModelVersion") -> bool:
         return self < other or self == other
 
-    def __gt__(self, other: 'ModelVersion') -> bool:
+    def __gt__(self, other: "ModelVersion") -> bool:
         if not isinstance(other, ModelVersion):
             return NotImplemented
         return semver.compare(str(self), str(other)) > 0
 
-    def __ge__(self, other: 'ModelVersion') -> bool:
+    def __ge__(self, other: "ModelVersion") -> bool:
         return self > other or self == other
 
     @classmethod
-    def from_string(cls, version_string: str) -> 'ModelVersion':
+    def from_string(cls, version_string: str) -> "ModelVersion":
         """Create ModelVersion from string."""
         try:
             parsed = semver.VersionInfo.parse(version_string)
@@ -227,20 +229,20 @@ class ModelVersion:
                 minor=parsed.minor,
                 patch=parsed.patch,
                 prerelease=parsed.prerelease or None,
-                build=parsed.build or None
+                build=parsed.build or None,
             )
         except ValueError as e:
             raise ValueError(f"Invalid version string '{version_string}': {e}")
 
-    def bump_major(self) -> 'ModelVersion':
+    def bump_major(self) -> "ModelVersion":
         """Create new version with bumped major number."""
         return ModelVersion(self.major + 1, 0, 0)
 
-    def bump_minor(self) -> 'ModelVersion':
+    def bump_minor(self) -> "ModelVersion":
         """Create new version with bumped minor number."""
         return ModelVersion(self.major, self.minor + 1, 0)
 
-    def bump_patch(self) -> 'ModelVersion':
+    def bump_patch(self) -> "ModelVersion":
         """Create new version with bumped patch number."""
         return ModelVersion(self.major, self.minor, self.patch + 1)
 
@@ -294,7 +296,7 @@ class ModelVersionManager:
         versions_file = self.storage_path / "versions.json"
         if versions_file.exists():
             try:
-                with open(versions_file, 'r') as f:
+                with open(versions_file, "r") as f:
                     data = json.load(f)
                     for version_data in data.get("versions", []):
                         version = ModelVersion.from_string(version_data["version"])
@@ -308,11 +310,8 @@ class ModelVersionManager:
         """Save version history to storage."""
         versions_file = self.storage_path / "versions.json"
         try:
-            data = {
-                "versions": [v.to_dict() for v in self.versions],
-                "updated_at": datetime.now().isoformat()
-            }
-            with open(versions_file, 'w') as f:
+            data = {"versions": [v.to_dict() for v in self.versions], "updated_at": datetime.now().isoformat()}
+            with open(versions_file, "w") as f:
                 json.dump(data, f, indent=2, default=str)
         except Exception as e:
             logger.error(f"Failed to save version history: {e}")
@@ -335,9 +334,7 @@ class ModelVersionManager:
         logger.info(f"Registered model version: {version}")
 
     def get_latest_version(
-        self,
-        stage: Optional[ModelStage] = None,
-        stable_only: bool = False
+        self, stage: Optional[ModelStage] = None, stable_only: bool = False
     ) -> Optional[ModelVersion]:
         """
         Get the latest version, optionally filtered by stage.
@@ -352,10 +349,7 @@ class ModelVersionManager:
         filtered_versions = self.versions
 
         if stage:
-            filtered_versions = [
-                v for v in filtered_versions
-                if v.metadata and v.metadata.stage == stage
-            ]
+            filtered_versions = [v for v in filtered_versions if v.metadata and v.metadata.stage == stage]
 
         if stable_only:
             filtered_versions = [v for v in filtered_versions if v.is_stable()]
@@ -371,7 +365,7 @@ class ModelVersionManager:
         new_version: ModelVersion,
         current_version: Optional[ModelVersion] = None,
         metric_name: str = "accuracy",
-        improvement_threshold: float = 0.01
+        improvement_threshold: float = 0.01,
     ) -> Tuple[bool, str]:
         """
         Determine if new version should be promoted.
@@ -406,21 +400,13 @@ class ModelVersionManager:
         improvement = new_metric - current_metric
 
         if improvement < improvement_threshold:
-            return False, (
-                f"Insufficient improvement: {improvement:.4f} "
-                f"(threshold: {improvement_threshold:.4f})"
-            )
+            return False, (f"Insufficient improvement: {improvement:.4f} " f"(threshold: {improvement_threshold:.4f})")
 
         return True, (
-            f"Significant improvement: {improvement:.4f} "
-            f"({metric_name}: {current_metric:.4f} → {new_metric:.4f})"
+            f"Significant improvement: {improvement:.4f} " f"({metric_name}: {current_metric:.4f} → {new_metric:.4f})"
         )
 
-    def auto_version(
-        self,
-        current_version: Optional[ModelVersion] = None,
-        change_type: str = "patch"
-    ) -> ModelVersion:
+    def auto_version(self, current_version: Optional[ModelVersion] = None, change_type: str = "patch") -> ModelVersion:
         """
         Automatically generate next version number.
 
@@ -446,9 +432,7 @@ class ModelVersionManager:
             return current_version.bump_patch()
 
     def get_version_history(
-        self,
-        limit: Optional[int] = None,
-        stage: Optional[ModelStage] = None
+        self, limit: Optional[int] = None, stage: Optional[ModelStage] = None
     ) -> List[ModelVersion]:
         """
         Get version history.
@@ -463,10 +447,7 @@ class ModelVersionManager:
         versions = self.versions
 
         if stage:
-            versions = [
-                v for v in versions
-                if v.metadata and v.metadata.stage == stage
-            ]
+            versions = [v for v in versions if v.metadata and v.metadata.stage == stage]
 
         if limit:
             versions = versions[:limit]
@@ -474,10 +455,7 @@ class ModelVersionManager:
         return versions
 
     def compare_versions(
-        self,
-        version1: ModelVersion,
-        version2: ModelVersion,
-        metrics: Optional[List[str]] = None
+        self, version1: ModelVersion, version2: ModelVersion, metrics: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Compare two model versions.
@@ -493,12 +471,7 @@ class ModelVersionManager:
         if metrics is None:
             metrics = ["accuracy", "precision", "recall", "f1_score"]
 
-        comparison = {
-            "version1": str(version1),
-            "version2": str(version2),
-            "newer": version1 > version2,
-            "metrics": {}
-        }
+        comparison = {"version1": str(version1), "version2": str(version2), "newer": version1 > version2, "metrics": {}}
 
         if version1.metadata and version2.metadata:
             for metric in metrics:
@@ -509,16 +482,12 @@ class ModelVersionManager:
                     "version1": val1,
                     "version2": val2,
                     "diff": val1 - val2,
-                    "improvement": ((val1 - val2) / val2 * 100) if val2 > 0 else 0
+                    "improvement": ((val1 - val2) / val2 * 100) if val2 > 0 else 0,
                 }
 
         return comparison
 
-    def archive_old_versions(
-        self,
-        keep_latest: int = 5,
-        keep_production: bool = True
-    ) -> int:
+    def archive_old_versions(self, keep_latest: int = 5, keep_production: bool = True) -> int:
         """
         Archive old model versions.
 
@@ -558,7 +527,7 @@ def create_model_version(
     algorithm: Optional[str] = None,
     hyperparameters: Optional[Dict[str, Any]] = None,
     stage: str = "Development",
-    **kwargs
+    **kwargs,
 ) -> ModelVersion:
     """
     Helper function to create a ModelVersion with metadata.
@@ -591,7 +560,7 @@ def create_model_version(
         hyperparameters=hyperparameters or {},
         metrics=model_metrics,
         stage=ModelStage(stage),
-        **{k: v for k, v in kwargs.items() if k not in ["model_id"]}
+        **{k: v for k, v in kwargs.items() if k not in ["model_id"]},
     )
 
     version.metadata = metadata

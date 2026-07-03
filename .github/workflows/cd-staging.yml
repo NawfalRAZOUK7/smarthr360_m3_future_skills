@@ -19,8 +19,31 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  guard:
+    name: Check deploy prerequisites
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - name: Determine whether a staging target is configured
+        id: check
+        env:
+          CLOUD_PROVIDER: ${{ secrets.CLOUD_PROVIDER }}
+        run: |
+          case "${CLOUD_PROVIDER:-}" in
+            aws|gcp|azure)
+              echo "deploy=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::notice::No CLOUD_PROVIDER repository secret set — skipping staging deploy (no target to deploy to)."
+              echo "deploy=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
   deploy-staging:
     name: Deploy to Staging
+    needs: guard
+    if: needs.guard.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     environment:
       name: staging

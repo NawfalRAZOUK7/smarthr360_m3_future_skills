@@ -38,8 +38,7 @@ class FutureSkillsModel:
     def _load(self) -> None:
         if not self.model_path.exists():
             logger.warning(
-                "FutureSkillsModel: fichier modèle introuvable à %s. "
-                "Fallback sur le moteur de règles.",
+                "FutureSkillsModel: fichier modèle introuvable à %s. " "Fallback sur le moteur de règles.",
                 self.model_path,
             )
             self.pipeline = None
@@ -54,9 +53,7 @@ class FutureSkillsModel:
                 self.model_path,
             )
         except Exception as exc:  # pragma: no cover (log uniquement)
-            logger.exception(
-                "FutureSkillsModel: échec du chargement du modèle ML: %s", exc
-            )
+            logger.exception("FutureSkillsModel: échec du chargement du modèle ML: %s", exc)
             self.pipeline = None
             self._loaded = False
 
@@ -79,9 +76,7 @@ class FutureSkillsModel:
         - score_0_100 basé sur la probabilité maximale de la prédiction.
         """
         if not self.is_available():
-            raise RuntimeError(
-                "FutureSkillsModel: modèle ML non disponible (non chargé ou invalide)."
-            )
+            raise RuntimeError("FutureSkillsModel: modèle ML non disponible (non chargé ou invalide).")
 
         data = {
             "job_role_name": [job_role_name],
@@ -106,9 +101,7 @@ class FutureSkillsModel:
                 proba_max = float(proba.max())
                 score_0_100 = round(proba_max * 100.0, 2)
         except Exception as exc:  # pragma: no cover (log uniquement)
-            logger.warning(
-                "FutureSkillsModel: erreur lors du calcul des probabilités : %s", exc
-            )
+            logger.warning("FutureSkillsModel: erreur lors du calcul des probabilités : %s", exc)
             # On garde le score par défaut (100.0)
 
         return level, score_0_100

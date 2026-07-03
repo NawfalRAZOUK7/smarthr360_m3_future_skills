@@ -2,19 +2,18 @@
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.urls import reverse
 from django.test import TestCase
-
-from rest_framework.test import APITestCase
+from django.urls import reverse
 from rest_framework import status
+from rest_framework.test import APITestCase
 
 from future_skills.models import (
-    Skill,
-    JobRole,
-    MarketTrend,
     FutureSkillPrediction,
     HRInvestmentRecommendation,
+    JobRole,
+    MarketTrend,
     PredictionRun,
+    Skill,
 )
 from future_skills.services.prediction_engine import recalculate_predictions
 from future_skills.services.recommendation_engine import generate_recommendations_from_predictions
@@ -30,18 +29,12 @@ class BaseAPITestCase(APITestCase):
         self.group_manager = Group.objects.create(name="MANAGER")
 
         # Create test users
-        self.user_no_role = User.objects.create_user(
-            username="user_no_role", password="pass1234"
-        )
+        self.user_no_role = User.objects.create_user(username="user_no_role", password="pass1234")
 
-        self.user_manager = User.objects.create_user(
-            username="manager_user", password="pass1234"
-        )
+        self.user_manager = User.objects.create_user(username="manager_user", password="pass1234")
         self.user_manager.groups.add(self.group_manager)
 
-        self.user_drh = User.objects.create_user(
-            username="drh_user", password="pass1234"
-        )
+        self.user_drh = User.objects.create_user(username="drh_user", password="pass1234")
         self.user_drh.groups.add(self.group_drh)
 
         # Create test data for predictions
@@ -103,7 +96,7 @@ class FutureSkillsListAPITests(BaseAPITestCase):
 
         data = response.json()
         # Handle paginated response
-        results = data.get('results', data) if isinstance(data, dict) else data
+        results = data.get("results", data) if isinstance(data, dict) else data
         # On doit avoir au moins une prédiction
         self.assertTrue(len(results) > 0)
         # Verif champs principaux
@@ -158,7 +151,6 @@ class RecalculateFutureSkillsAPITests(BaseAPITestCase):
             self.assertEqual(last_run.parameters.get("engine"), "rules_v1")
 
 
-
 class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
     """Tests pour vérifier le fallback ML dans l'API."""
 
@@ -175,6 +167,7 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
         - PredictionRun.run_by == utilisateur DRH
         """
         from unittest.mock import patch
+
         from django.test import override_settings
 
         url = reverse("future-skills-recalculate")
@@ -216,7 +209,6 @@ class RecalculateFutureSkillsMLFallbackTests(BaseAPITestCase):
                 self.assertNotIn("model_version", last_run.parameters)
 
 
-
 class MarketTrendsAPITests(BaseAPITestCase):
     def test_get_market_trends_with_manager_role_should_succeed(self):
         url = reverse("market-trends-list")
@@ -228,9 +220,11 @@ class MarketTrendsAPITests(BaseAPITestCase):
         data = response.json()
         self.assertTrue(len(data) >= 2)  # on a créé 2 MarketTrend en setUp
 
+
 class HRInvestmentRecommendationsAPITests(BaseAPITestCase):
     def test_get_hr_investment_recommendations_without_auth_should_be_forbidden(self):
         from django.urls import reverse
+
         url = reverse("hr-investment-recommendations-list")
 
         response = self.client.get(url)
@@ -238,6 +232,7 @@ class HRInvestmentRecommendationsAPITests(BaseAPITestCase):
 
     def test_get_hr_investment_recommendations_with_manager_role_should_succeed(self):
         from django.urls import reverse
+
         url = reverse("hr-investment-recommendations-list")
 
         self.client.force_authenticate(user=self.user_manager)

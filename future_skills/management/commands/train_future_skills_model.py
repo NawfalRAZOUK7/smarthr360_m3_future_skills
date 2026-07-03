@@ -13,10 +13,10 @@ Usage:
     python manage.py train_future_skills_model --test-split 0.25 --random-state 123
 """
 
+import importlib.util
 import sys
 from datetime import datetime
 from pathlib import Path
-import importlib.util
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -171,7 +171,7 @@ class Command(BaseCommand):
                 features_used=metadata["dataset"].get("features_used", []),
                 trained_by=None,  # CLI execution, no user
                 notes=notes,
-                status='COMPLETED',
+                status="COMPLETED",
                 hyperparameters=hyperparameters,
             )
 
@@ -229,7 +229,7 @@ class Command(BaseCommand):
                 training_duration_seconds=training_duration,
                 trained_by=None,
                 notes=notes,
-                status='FAILED',
+                status="FAILED",
                 error_message=str(e),
                 hyperparameters=hyperparameters,
             )

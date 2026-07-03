@@ -1,5 +1,5 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 
 
 class Skill(models.Model):
@@ -7,26 +7,23 @@ class Skill(models.Model):
     Représente une compétence (technique, soft skill, métier, etc.)
     Exemple : Python, Gestion de projet, IA générative...
     """
+
     name = models.CharField(max_length=150, unique=True)
     category = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        help_text="Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)"
+        help_text="Catégorie de la compétence (ex : Technique, Soft Skill, Langue...)",
     )
-    description = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Description optionnelle de la compétence."
-    )
+    description = models.TextField(blank=True, null=True, help_text="Description optionnelle de la compétence.")
 
     class Meta:
         verbose_name = "Compétence"
         verbose_name_plural = "Compétences"
-        ordering = ['name']
+        ordering = ["name"]
         indexes = [
-            models.Index(fields=['name']),  # Already unique, helps with lookups
-            models.Index(fields=['category']),  # Category filtering
+            models.Index(fields=["name"]),  # Already unique, helps with lookups
+            models.Index(fields=["category"]),  # Category filtering
         ]
 
     def __str__(self):
@@ -38,26 +35,20 @@ class JobRole(models.Model):
     Représente un poste / métier dans l’entreprise.
     Exemple : Data Engineer, Responsable RH, Développeur Fullstack...
     """
+
     name = models.CharField(max_length=150, unique=True)
     department = models.CharField(
-        max_length=150,
-        blank=True,
-        null=True,
-        help_text="Département ou direction (ex : IT, RH, Finance...)."
+        max_length=150, blank=True, null=True, help_text="Département ou direction (ex : IT, RH, Finance...)."
     )
-    description = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Description optionnelle du rôle."
-    )
+    description = models.TextField(blank=True, null=True, help_text="Description optionnelle du rôle.")
 
     class Meta:
         verbose_name = "Rôle professionnel"
         verbose_name_plural = "Rôles professionnels"
-        ordering = ['name']
+        ordering = ["name"]
         indexes = [
-            models.Index(fields=['name']),  # Already unique, helps with lookups
-            models.Index(fields=['department']),  # Department filtering
+            models.Index(fields=["name"]),  # Already unique, helps with lookups
+            models.Index(fields=["department"]),  # Department filtering
         ]
 
     def __str__(self):
@@ -69,24 +60,15 @@ class MarketTrend(models.Model):
     Tendance marché / technologique utilisée comme input
     pour la prédiction des compétences futures.
     """
+
     title = models.CharField(max_length=200)
     source_name = models.CharField(
-        max_length=200,
-        help_text="Source de la tendance (ex : LinkedIn Report 2025, World Economic Forum...)."
+        max_length=200, help_text="Source de la tendance (ex : LinkedIn Report 2025, World Economic Forum...)."
     )
     year = models.IntegerField()
-    sector = models.CharField(
-        max_length=150,
-        help_text="Secteur / domaine concerné (ex : Tech, RH, Industrie...)."
-    )
-    trend_score = models.FloatField(
-        help_text="Score de tendance entre 0 et 1 (0 = faible, 1 = très forte tendance)."
-    )
-    description = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Description ou résumé de la tendance."
-    )
+    sector = models.CharField(max_length=150, help_text="Secteur / domaine concerné (ex : Tech, RH, Industrie...).")
+    trend_score = models.FloatField(help_text="Score de tendance entre 0 et 1 (0 = faible, 1 = très forte tendance).")
+    description = models.TextField(blank=True, null=True, help_text="Description ou résumé de la tendance.")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -95,10 +77,10 @@ class MarketTrend(models.Model):
         verbose_name_plural = "Tendances marché"
         ordering = ["-year", "-trend_score"]
         indexes = [
-            models.Index(fields=['-year']),
-            models.Index(fields=['sector']),
-            models.Index(fields=['-trend_score']),
-            models.Index(fields=['sector', '-year']),  # Composite for sector+year queries
+            models.Index(fields=["-year"]),
+            models.Index(fields=["sector"]),
+            models.Index(fields=["-trend_score"]),
+            models.Index(fields=["sector", "-year"]),  # Composite for sector+year queries
         ]
 
     def __str__(self):
@@ -131,31 +113,21 @@ class FutureSkillPrediction(models.Model):
         on_delete=models.CASCADE,
         related_name="future_skill_predictions",
     )
-    horizon_years = models.PositiveIntegerField(
-        help_text="Horizon de prédiction en années (ex : 3, 5...)."
-    )
+    horizon_years = models.PositiveIntegerField(help_text="Horizon de prédiction en années (ex : 3, 5...).")
 
     # Tu peux choisir : 0–100 ou 0–1. Ici on part sur 0–100 pour être plus lisible.
-    score = models.FloatField(
-        help_text="Score de besoin futur (0–100)."
-    )
+    score = models.FloatField(help_text="Score de besoin futur (0–100).")
 
     level = models.CharField(
-        max_length=10,
-        choices=LEVEL_CHOICES,
-        help_text="Niveau de criticité : LOW / MEDIUM / HIGH."
+        max_length=10, choices=LEVEL_CHOICES, help_text="Niveau de criticité : LOW / MEDIUM / HIGH."
     )
 
     rationale = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Explication textuelle de la prédiction (pour le DRH)."
+        blank=True, null=True, help_text="Explication textuelle de la prédiction (pour le DRH)."
     )
 
     explanation = models.JSONField(
-        blank=True,
-        null=True,
-        help_text="Explication détaillée générée par SHAP/LIME (text, top_factors, confidence)."
+        blank=True, null=True, help_text="Explication détaillée générée par SHAP/LIME (text, top_factors, confidence)."
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -166,15 +138,15 @@ class FutureSkillPrediction(models.Model):
         # Un couple (job_role, skill, horizon) est logique unique :
         unique_together = ("job_role", "skill", "horizon_years")
         indexes = [
-            models.Index(fields=['job_role']),
-            models.Index(fields=['skill']),
-            models.Index(fields=['horizon_years']),
-            models.Index(fields=['level']),
-            models.Index(fields=['-score']),
-            models.Index(fields=['-created_at']),
-            models.Index(fields=['job_role', 'horizon_years']),  # Common filter combo
-            models.Index(fields=['skill', 'level']),  # Skill filtering by level
-            models.Index(fields=['horizon_years', '-score']),  # Horizon + top scores
+            models.Index(fields=["job_role"]),
+            models.Index(fields=["skill"]),
+            models.Index(fields=["horizon_years"]),
+            models.Index(fields=["level"]),
+            models.Index(fields=["-score"]),
+            models.Index(fields=["-created_at"]),
+            models.Index(fields=["job_role", "horizon_years"]),  # Common filter combo
+            models.Index(fields=["skill", "level"]),  # Skill filtering by level
+            models.Index(fields=["horizon_years", "-score"]),  # Horizon + top scores
         ]
 
     def __str__(self):
@@ -186,11 +158,10 @@ class PredictionRun(models.Model):
     Trace une exécution du moteur de prédiction
     (utile pour l’audit et la transparence).
     """
+
     run_date = models.DateTimeField(auto_now_add=True)
     description = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Contexte du recalcul (ex : 'Mise à jour tendances 2025')."
+        blank=True, null=True, help_text="Contexte du recalcul (ex : 'Mise à jour tendances 2025')."
     )
     total_predictions = models.IntegerField()
 
@@ -214,8 +185,8 @@ class PredictionRun(models.Model):
         verbose_name_plural = "Exécutions de prédiction"
         ordering = ["-run_date"]
         indexes = [
-            models.Index(fields=['-run_date']),
-            models.Index(fields=['run_by']),  # Filter by user who triggered
+            models.Index(fields=["-run_date"]),
+            models.Index(fields=["run_by"]),  # Filter by user who triggered
         ]
 
     def __str__(self):
@@ -227,79 +198,42 @@ class TrainingRun(models.Model):
     Trace an ML model training execution for audit and MLOps tracking.
     Stores training metrics, parameters, and model information.
     """
+
     run_date = models.DateTimeField(auto_now_add=True)
     model_version = models.CharField(
-        max_length=50,
-        help_text="Version identifier for the trained model (e.g., 'v1', 'v2.1')."
+        max_length=50, help_text="Version identifier for the trained model (e.g., 'v1', 'v2.1')."
     )
-    model_path = models.CharField(
-        max_length=500,
-        help_text="File system path where the model was saved."
-    )
+    model_path = models.CharField(max_length=500, help_text="File system path where the model was saved.")
     dataset_path = models.CharField(
-        max_length=500,
-        blank=True,
-        null=True,
-        help_text="Path to the training dataset CSV file."
+        max_length=500, blank=True, null=True, help_text="Path to the training dataset CSV file."
     )
 
     # Training parameters
-    test_split = models.FloatField(
-        default=0.2,
-        help_text="Test set split ratio (e.g., 0.2 = 20% test)."
-    )
-    n_estimators = models.IntegerField(
-        default=200,
-        help_text="Number of trees in RandomForest classifier."
-    )
-    random_state = models.IntegerField(
-        default=42,
-        help_text="Random seed for reproducibility."
-    )
+    test_split = models.FloatField(default=0.2, help_text="Test set split ratio (e.g., 0.2 = 20% test).")
+    n_estimators = models.IntegerField(default=200, help_text="Number of trees in RandomForest classifier.")
+    random_state = models.IntegerField(default=42, help_text="Random seed for reproducibility.")
 
     # Training metrics
-    accuracy = models.FloatField(
-        help_text="Overall accuracy on test set (0.0 to 1.0)."
-    )
-    precision = models.FloatField(
-        help_text="Weighted average precision on test set."
-    )
-    recall = models.FloatField(
-        help_text="Weighted average recall on test set."
-    )
-    f1_score = models.FloatField(
-        help_text="Weighted average F1-score on test set."
-    )
+    accuracy = models.FloatField(help_text="Overall accuracy on test set (0.0 to 1.0).")
+    precision = models.FloatField(help_text="Weighted average precision on test set.")
+    recall = models.FloatField(help_text="Weighted average recall on test set.")
+    f1_score = models.FloatField(help_text="Weighted average F1-score on test set.")
 
     # Dataset information
-    total_samples = models.IntegerField(
-        help_text="Total number of samples in the dataset."
-    )
-    train_samples = models.IntegerField(
-        help_text="Number of samples in training set."
-    )
-    test_samples = models.IntegerField(
-        help_text="Number of samples in test set."
-    )
+    total_samples = models.IntegerField(help_text="Total number of samples in the dataset.")
+    train_samples = models.IntegerField(help_text="Number of samples in training set.")
+    test_samples = models.IntegerField(help_text="Number of samples in test set.")
 
     # Training duration
-    training_duration_seconds = models.FloatField(
-        help_text="Total training duration in seconds."
-    )
+    training_duration_seconds = models.FloatField(help_text="Total training duration in seconds.")
 
     # Per-class metrics (stored as JSON)
     per_class_metrics = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Per-class accuracy and support counts (LOW, MEDIUM, HIGH)."
+        default=dict, blank=True, help_text="Per-class accuracy and support counts (LOW, MEDIUM, HIGH)."
     )
 
     # Feature information
-    features_used = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="List of features used for training."
-    )
+    features_used = models.JSONField(default=list, blank=True, help_text="List of features used for training.")
 
     # User tracking
     trained_by = models.ForeignKey(
@@ -312,34 +246,24 @@ class TrainingRun(models.Model):
     )
 
     # Additional metadata
-    notes = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Additional notes or comments about this training run."
-    )
+    notes = models.TextField(blank=True, null=True, help_text="Additional notes or comments about this training run.")
 
     # Training status tracking
     status = models.CharField(
         max_length=20,
         choices=[
-            ('RUNNING', 'Running'),
-            ('COMPLETED', 'Completed'),
-            ('FAILED', 'Failed'),
+            ("RUNNING", "Running"),
+            ("COMPLETED", "Completed"),
+            ("FAILED", "Failed"),
         ],
-        default='COMPLETED',
-        help_text="Current status of the training run."
+        default="COMPLETED",
+        help_text="Current status of the training run.",
     )
-    error_message = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Error message if training failed."
-    )
+    error_message = models.TextField(blank=True, null=True, help_text="Error message if training failed.")
 
     # Consolidated hyperparameters (in addition to individual fields)
     hyperparameters = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="All hyperparameters used for this training run (consolidated view)."
+        default=dict, blank=True, help_text="All hyperparameters used for this training run (consolidated view)."
     )
 
     class Meta:
@@ -347,8 +271,8 @@ class TrainingRun(models.Model):
         verbose_name_plural = "Training Runs"
         ordering = ["-run_date"]
         indexes = [
-            models.Index(fields=['-run_date']),
-            models.Index(fields=['model_version']),
+            models.Index(fields=["-run_date"]),
+            models.Index(fields=["model_version"]),
         ]
 
     def __str__(self):
@@ -364,24 +288,18 @@ class EconomicReport(models.Model):
       - Investissements en IA par secteur
       - Croissance de l'emploi dans un domaine donné
     """
+
     title = models.CharField(max_length=200)
     source_name = models.CharField(
-        max_length=200,
-        help_text="Source du rapport (ex : Banque Mondiale, FMI, HCP, WEF...)."
+        max_length=200, help_text="Source du rapport (ex : Banque Mondiale, FMI, HCP, WEF...)."
     )
     year = models.IntegerField()
     indicator = models.CharField(
-        max_length=150,
-        help_text="Nom de l’indicateur (ex : 'Taux chômage IT', 'Investissement IA')."
+        max_length=150, help_text="Nom de l’indicateur (ex : 'Taux chômage IT', 'Investissement IA')."
     )
-    value = models.FloatField(
-        help_text="Valeur de l’indicateur (pourcentage, indice, budget…)."
-    )
+    value = models.FloatField(help_text="Valeur de l’indicateur (pourcentage, indice, budget…).")
     sector = models.CharField(
-        max_length=150,
-        blank=True,
-        null=True,
-        help_text="Secteur concerné (ex : Tech, Industrie, RH...)."
+        max_length=150, blank=True, null=True, help_text="Secteur concerné (ex : Tech, Industrie, RH...)."
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -390,14 +308,15 @@ class EconomicReport(models.Model):
         verbose_name_plural = "Rapports économiques"
         ordering = ["-year", "title"]
         indexes = [
-            models.Index(fields=['-year']),
-            models.Index(fields=['sector']),
-            models.Index(fields=['indicator']),
-            models.Index(fields=['sector', '-year']),  # Composite for sector+year queries
+            models.Index(fields=["-year"]),
+            models.Index(fields=["sector"]),
+            models.Index(fields=["indicator"]),
+            models.Index(fields=["sector", "-year"]),  # Composite for sector+year queries
         ]
 
     def __str__(self):
         return f"{self.title} ({self.year}) - {self.indicator}"
+
 
 class HRInvestmentRecommendation(models.Model):
     """
@@ -442,9 +361,7 @@ class HRInvestmentRecommendation(models.Model):
         null=True,
         help_text="Rôle cible de la recommandation (optionnel si globale à la compétence).",
     )
-    horizon_years = models.PositiveIntegerField(
-        help_text="Horizon temporel de la recommandation (en années)."
-    )
+    horizon_years = models.PositiveIntegerField(help_text="Horizon temporel de la recommandation (en années).")
     priority_level = models.CharField(
         max_length=10,
         choices=PRIORITY_CHOICES,
@@ -474,15 +391,15 @@ class HRInvestmentRecommendation(models.Model):
         # Une recommandation par couple (job_role, skill, horizon) est logique :
         unique_together = ("job_role", "skill", "horizon_years")
         indexes = [
-            models.Index(fields=['skill']),
-            models.Index(fields=['job_role']),
-            models.Index(fields=['horizon_years']),
-            models.Index(fields=['priority_level']),
-            models.Index(fields=['recommended_action']),
-            models.Index(fields=['-created_at']),
-            models.Index(fields=['skill', 'priority_level']),  # Skill by priority
-            models.Index(fields=['job_role', 'horizon_years']),  # Role+horizon combo
-            models.Index(fields=['priority_level', 'recommended_action']),  # Action filtering
+            models.Index(fields=["skill"]),
+            models.Index(fields=["job_role"]),
+            models.Index(fields=["horizon_years"]),
+            models.Index(fields=["priority_level"]),
+            models.Index(fields=["recommended_action"]),
+            models.Index(fields=["-created_at"]),
+            models.Index(fields=["skill", "priority_level"]),  # Skill by priority
+            models.Index(fields=["job_role", "horizon_years"]),  # Role+horizon combo
+            models.Index(fields=["priority_level", "recommended_action"]),  # Action filtering
         ]
 
     def __str__(self):
@@ -495,36 +412,26 @@ class Employee(models.Model):
     Représente un employé dans l'entreprise.
     Utilisé pour générer des prédictions de compétences personnalisées.
     """
+
     name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
-    department = models.CharField(
-        max_length=150,
-        help_text="Département de l'employé (ex : IT, RH, Finance...)."
-    )
-    position = models.CharField(
-        max_length=150,
-        help_text="Poste actuel de l'employé (ex : Developer, Manager...)."
-    )
+    department = models.CharField(max_length=150, help_text="Département de l'employé (ex : IT, RH, Finance...).")
+    position = models.CharField(max_length=150, help_text="Poste actuel de l'employé (ex : Developer, Manager...).")
     job_role = models.ForeignKey(
         JobRole,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="employees",
-        help_text="Rôle/métier associé dans le référentiel JobRole."
+        help_text="Rôle/métier associé dans le référentiel JobRole.",
     )
     current_skills = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Liste des compétences actuelles de l'employé (ex : ['Python', 'Django'])."
+        default=list, blank=True, help_text="Liste des compétences actuelles de l'employé (ex : ['Python', 'Django'])."
     )
 
     # Option B: Use ManyToMany instead of JSONField (advanced, more normalized)
     skills = models.ManyToManyField(
-        Skill,
-        blank=True,
-        related_name='employees',
-        help_text="Skills possessed by this employee"
+        Skill, blank=True, related_name="employees", help_text="Skills possessed by this employee"
     )
 
     date_joined = models.DateTimeField(auto_now_add=True)
@@ -534,11 +441,11 @@ class Employee(models.Model):
         verbose_name_plural = "Employés"
         ordering = ["name"]
         indexes = [
-            models.Index(fields=['email']),  # Already unique, but index helps lookups
-            models.Index(fields=['department']),
-            models.Index(fields=['job_role']),
-            models.Index(fields=['name']),
-            models.Index(fields=['job_role', 'department']),  # Role+dept queries
+            models.Index(fields=["email"]),  # Already unique, but index helps lookups
+            models.Index(fields=["department"]),
+            models.Index(fields=["job_role"]),
+            models.Index(fields=["name"]),
+            models.Index(fields=["job_role", "department"]),  # Role+dept queries
         ]
 
     def __str__(self):

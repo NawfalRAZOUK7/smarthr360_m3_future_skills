@@ -38,22 +38,19 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Dict, Any
+from typing import Any, Dict, Tuple
 
 from django.conf import settings
 
-from future_skills.models import (
-    JobRole,
-    Skill,
-    MarketTrend,
-    FutureSkillPrediction,
-    PredictionRun,
-)
 from future_skills.ml_model import FutureSkillsModel
+from future_skills.models import FutureSkillPrediction, JobRole, MarketTrend, PredictionRun, Skill
+
+logger = logging.getLogger(__name__)
 
 # Lazy import pour éviter erreur si SHAP pas installé
 try:
     from future_skills.services.explanation_engine import ExplanationEngine
+
     EXPLANATION_ENGINE_AVAILABLE = True
 except ImportError:
     EXPLANATION_ENGINE_AVAILABLE = False
@@ -61,9 +58,6 @@ except ImportError:
         "ExplanationEngine non disponible. Les explications ne seront pas générées. "
         "Installez 'shap' pour activer cette fonctionnalité."
     )
-
-
-logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -88,8 +82,8 @@ class PredictionEngine:
             use_ml: If True, use ML model. If None, use settings.FUTURE_SKILLS_USE_ML
             model_path: Path to ML model file. If None, use settings.FUTURE_SKILLS_MODEL_PATH
         """
-        self.use_ml = use_ml if use_ml is not None else getattr(settings, 'FUTURE_SKILLS_USE_ML', False)
-        self.model_path = model_path or getattr(settings, 'FUTURE_SKILLS_MODEL_PATH', None)
+        self.use_ml = use_ml if use_ml is not None else getattr(settings, "FUTURE_SKILLS_USE_ML", False)
+        self.model_path = model_path or getattr(settings, "FUTURE_SKILLS_MODEL_PATH", None)
         self.model = None
         self.explanation_engine = None
 
@@ -214,19 +208,19 @@ class PredictionEngine:
         results = []
         for data in predictions_data:
             score, level, rationale, explanation = self.predict(
-                data['job_role_id'],
-                data['skill_id'],
-                data['horizon_years']
+                data["job_role_id"], data["skill_id"], data["horizon_years"]
             )
-            results.append({
-                'job_role_id': data['job_role_id'],
-                'skill_id': data['skill_id'],
-                'horizon_years': data['horizon_years'],
-                'score': score,
-                'level': level,
-                'rationale': rationale,
-                'explanation': explanation
-            })
+            results.append(
+                {
+                    "job_role_id": data["job_role_id"],
+                    "skill_id": data["skill_id"],
+                    "horizon_years": data["horizon_years"],
+                    "score": score,
+                    "level": level,
+                    "rationale": rationale,
+                    "explanation": explanation,
+                }
+            )
 
         return results
 
@@ -256,7 +250,7 @@ def _log_prediction_for_monitoring(
     Logs are anonymized (using IDs instead of names) and stored in JSON format.
     """
     # Only log if monitoring is enabled (default: True)
-    if not getattr(settings, 'FUTURE_SKILLS_ENABLE_MONITORING', True):
+    if not getattr(settings, "FUTURE_SKILLS_ENABLE_MONITORING", True):
         return
 
     log_entry = {
@@ -273,16 +267,14 @@ def _log_prediction_for_monitoring(
     # Write to monitoring log file
     try:
         monitoring_log_path = getattr(
-            settings,
-            'FUTURE_SKILLS_MONITORING_LOG',
-            settings.BASE_DIR / "logs" / "predictions_monitoring.jsonl"
+            settings, "FUTURE_SKILLS_MONITORING_LOG", settings.BASE_DIR / "logs" / "predictions_monitoring.jsonl"
         )
 
         # Ensure logs directory exists
         monitoring_log_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(monitoring_log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps(log_entry) + '\n')
+        with open(monitoring_log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
 
     except Exception as exc:
         logger.warning(f"Failed to write monitoring log: {exc}")
@@ -439,8 +431,12 @@ def recalculate_predictions(
     job_roles = JobRole.objects.all()
     skills = Skill.objects.all()
 
-    logger.info("Dataset size: %s job roles × %s skills = %s combinations",
-                job_roles.count(), skills.count(), job_roles.count() * skills.count())
+    logger.info(
+        "Dataset size: %s job roles × %s skills = %s combinations",
+        job_roles.count(),
+        skills.count(),
+        job_roles.count() * skills.count(),
+    )
 
     # Determine engine label for logging
     engine_label = "ml_random_forest_v1" if engine.use_ml else "rules_v1"
@@ -450,11 +446,7 @@ def recalculate_predictions(
     predictions_data = []
     for job_role in job_roles:
         for skill in skills:
-            predictions_data.append({
-                'job_role_id': job_role.id,
-                'skill_id': skill.id,
-                'horizon_years': horizon_years
-            })
+            predictions_data.append({"job_role_id": job_role.id, "skill_id": skill.id, "horizon_years": horizon_years})
 
     logger.info("Prepared %s predictions for batch processing", len(predictions_data))
 
@@ -465,13 +457,13 @@ def recalculate_predictions(
 
     # Save results to database
     for result in results:
-        job_role_id = result['job_role_id']
-        skill_id = result['skill_id']
+        job_role_id = result["job_role_id"]
+        skill_id = result["skill_id"]
 
-        score = result['score']
-        level = result['level']
-        rationale = result['rationale']
-        explanation = result['explanation']
+        score = result["score"]
+        level = result["level"]
+        rationale = result["rationale"]
+        explanation = result["explanation"]
 
         # Get job role and skill objects for database operations
         job_role = JobRole.objects.get(id=job_role_id)
@@ -513,7 +505,7 @@ def recalculate_predictions(
                 "internal_usage": internal_usage,
                 "training_requests": training_requests,
                 "scarcity_index": scarcity_index,
-            }
+            },
         )
 
     # Build parameters for PredictionRun
@@ -533,10 +525,7 @@ def recalculate_predictions(
         params.pop("model_version", None)
 
     PredictionRun.objects.create(
-        description=(
-            f"Recalcul des prédictions à horizon {horizon_years} ans "
-            f"({engine_label})."
-        ),
+        description=(f"Recalcul des prédictions à horizon {horizon_years} ans " f"({engine_label})."),
         total_predictions=total_predictions,
         run_by=run_by,
         parameters=params,

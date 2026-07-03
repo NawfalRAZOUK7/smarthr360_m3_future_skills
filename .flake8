@@ -1,0 +1,32 @@
+[flake8]
+max-line-length = 120
+# Black owns formatting (E203/W503/E501); Django settings use `from .base import *`
+# (F403/F405) and deliberate late imports (E402). The unused-import/var and minor
+# style codes below are pre-existing debt in this module — kept non-fatal so real
+# errors (undefined names F82x, syntax E9) still gate CI. Tighten incrementally.
+extend-ignore =
+    E203,
+    W503,
+    E501,
+    E402,
+    E722,
+    W291,
+    W293,
+    F401,
+    F403,
+    F405,
+    F541,
+    F811,
+    F841
+exclude =
+    .git,
+    __pycache__,
+    migrations,
+    .venv,
+    venv,
+    node_modules,
+    mlruns,
+    artifacts,
+    staticfiles,
+    build,
+    dist

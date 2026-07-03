@@ -4,16 +4,17 @@ API Health Check and Monitoring Endpoints
 Provides endpoints for system health checks, version info, and metrics.
 """
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
+import platform
+import sys
+
+from django.conf import settings
+from django.core.cache import cache
+from django.db import connection
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from django.db import connection
-from django.core.cache import cache
-from django.conf import settings
-from django.utils import timezone
-import sys
-import platform
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 class HealthCheckView(APIView):
@@ -32,33 +33,34 @@ class HealthCheckView(APIView):
     - Cache availability
     - System info
     """
+
     permission_classes = [AllowAny]
     throttle_classes = []  # No throttling for health checks
 
     def get(self, request):
         """Check system health"""
         health_data = {
-            'status': 'healthy',
-            'timestamp': timezone.now().isoformat(),
-            'checks': {},
+            "status": "healthy",
+            "timestamp": timezone.now().isoformat(),
+            "checks": {},
         }
 
         # Check database
         db_healthy = self._check_database()
-        health_data['checks']['database'] = {
-            'status': 'healthy' if db_healthy else 'unhealthy',
-            'type': settings.DATABASES['default']['ENGINE'],
+        health_data["checks"]["database"] = {
+            "status": "healthy" if db_healthy else "unhealthy",
+            "type": settings.DATABASES["default"]["ENGINE"],
         }
 
         # Check cache
         cache_healthy = self._check_cache()
-        health_data['checks']['cache'] = {
-            'status': 'healthy' if cache_healthy else 'unhealthy',
+        health_data["checks"]["cache"] = {
+            "status": "healthy" if cache_healthy else "unhealthy",
         }
 
         # Overall status
         all_healthy = db_healthy and cache_healthy
-        health_data['status'] = 'healthy' if all_healthy else 'degraded'
+        health_data["status"] = "healthy" if all_healthy else "degraded"
 
         # Return appropriate status code
         response_status = status.HTTP_200_OK if all_healthy else status.HTTP_503_SERVICE_UNAVAILABLE
@@ -77,9 +79,9 @@ class HealthCheckView(APIView):
     def _check_cache(self):
         """Check cache availability"""
         try:
-            cache.set('health_check', 'ok', 10)
-            value = cache.get('health_check')
-            return value == 'ok'
+            cache.set("health_check", "ok", 10)
+            value = cache.get("health_check")
+            return value == "ok"
         except Exception:
             return False
 
@@ -96,6 +98,7 @@ class VersionInfoView(APIView):
     - Deprecated versions
     - Changelog
     """
+
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -103,17 +106,20 @@ class VersionInfoView(APIView):
         from .versioning import get_version_info
 
         version_data = get_version_info()
-        version_data.update({
-            'server_time': timezone.now().isoformat(),
-            'python_version': sys.version,
-            'django_version': self._get_django_version(),
-        })
+        version_data.update(
+            {
+                "server_time": timezone.now().isoformat(),
+                "python_version": sys.version,
+                "django_version": self._get_django_version(),
+            }
+        )
 
         return Response(version_data)
 
     def _get_django_version(self):
         """Get Django version"""
         import django
+
         return django.get_version()
 
 
@@ -132,23 +138,21 @@ class MetricsView(APIView):
     - Response times
     - Database stats
     """
+
     permission_classes = []  # Requires staff
 
     def get(self, request):
         """Get API metrics"""
         # Only allow staff users
         if not request.user.is_authenticated or not request.user.is_staff:
-            return Response(
-                {'error': 'Staff access required'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Staff access required"}, status=status.HTTP_403_FORBIDDEN)
 
         metrics = {
-            'timestamp': timezone.now().isoformat(),
-            'system': self._get_system_metrics(),
-            'database': self._get_database_metrics(),
-            'cache': self._get_cache_metrics(),
-            'api': self._get_api_metrics(),
+            "timestamp": timezone.now().isoformat(),
+            "system": self._get_system_metrics(),
+            "database": self._get_database_metrics(),
+            "cache": self._get_cache_metrics(),
+            "api": self._get_api_metrics(),
         }
 
         return Response(metrics)
@@ -156,9 +160,9 @@ class MetricsView(APIView):
     def _get_system_metrics(self):
         """Get system-level metrics"""
         return {
-            'platform': platform.platform(),
-            'python_version': sys.version,
-            'cpu_count': platform.machine(),
+            "platform": platform.platform(),
+            "python_version": sys.version,
+            "cpu_count": platform.machine(),
         }
 
     def _get_database_metrics(self):
@@ -166,64 +170,62 @@ class MetricsView(APIView):
         try:
             with connection.cursor() as cursor:
                 # Get table count
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT COUNT(*) FROM sqlite_master
                     WHERE type='table' AND name NOT LIKE 'sqlite_%'
-                """)
+                """
+                )
                 table_count = cursor.fetchone()[0]
 
             return {
-                'status': 'connected',
-                'engine': settings.DATABASES['default']['ENGINE'],
-                'table_count': table_count,
+                "status": "connected",
+                "engine": settings.DATABASES["default"]["ENGINE"],
+                "table_count": table_count,
             }
         except Exception as e:
             return {
-                'status': 'error',
-                'error': str(e),
+                "status": "error",
+                "error": str(e),
             }
 
     def _get_cache_metrics(self):
         """Get cache metrics"""
         try:
             # Test cache
-            test_key = 'metrics_test'
-            cache.set(test_key, 'test', 10)
+            test_key = "metrics_test"
+            cache.set(test_key, "test", 10)
             cache.get(test_key)
             cache.delete(test_key)
 
             return {
-                'status': 'available',
-                'backend': settings.CACHES['default']['BACKEND'],
+                "status": "available",
+                "backend": settings.CACHES["default"]["BACKEND"],
             }
         except Exception as e:
             return {
-                'status': 'error',
-                'error': str(e),
+                "status": "error",
+                "error": str(e),
             }
 
     def _get_api_metrics(self):
         """Get API-specific metrics"""
-        from future_skills.models import (
-            Skill,
-            JobRole,
-            FutureSkillPrediction,
-            Employee,
-        )
+        from future_skills.models import Employee, FutureSkillPrediction, JobRole, Skill
 
         return {
-            'models': {
-                'skills': Skill.objects.count(),
-                'job_roles': JobRole.objects.count(),
-                'predictions': FutureSkillPrediction.objects.count(),
-                'employees': Employee.objects.count(),
+            "models": {
+                "skills": Skill.objects.count(),
+                "job_roles": JobRole.objects.count(),
+                "predictions": FutureSkillPrediction.objects.count(),
+                "employees": Employee.objects.count(),
             },
-            'rate_limits': self._get_rate_limit_info(),
+            "rate_limits": self._get_rate_limit_info(),
         }
 
     def _get_rate_limit_info(self):
         """Get rate limit configuration"""
         from .throttling import get_throttle_rates
+
         return get_throttle_rates()
 
 
@@ -236,26 +238,24 @@ class ReadyCheckView(APIView):
     Similar to health check but includes more thorough checks.
     Used to determine if the service is ready to accept traffic.
     """
+
     permission_classes = [AllowAny]
     throttle_classes = []
 
     def get(self, request):
         """Check if service is ready"""
         checks = {
-            'database': self._check_database(),
-            'migrations': self._check_migrations(),
-            'cache': self._check_cache(),
+            "database": self._check_database(),
+            "migrations": self._check_migrations(),
+            "cache": self._check_cache(),
         }
 
         all_ready = all(checks.values())
 
         ready_data = {
-            'ready': all_ready,
-            'timestamp': timezone.now().isoformat(),
-            'checks': {
-                key: 'passed' if value else 'failed'
-                for key, value in checks.items()
-            },
+            "ready": all_ready,
+            "timestamp": timezone.now().isoformat(),
+            "checks": {key: "passed" if value else "failed" for key, value in checks.items()},
         }
 
         response_status = status.HTTP_200_OK if all_ready else status.HTTP_503_SERVICE_UNAVAILABLE
@@ -273,6 +273,7 @@ class ReadyCheckView(APIView):
     def _check_migrations(self):
         """Check if all migrations are applied"""
         from django.db.migrations.executor import MigrationExecutor
+
         try:
             executor = MigrationExecutor(connection)
             plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
@@ -283,10 +284,10 @@ class ReadyCheckView(APIView):
     def _check_cache(self):
         """Check cache availability"""
         try:
-            cache.set('ready_check', 'ok', 10)
-            value = cache.get('ready_check')
-            cache.delete('ready_check')
-            return value == 'ok'
+            cache.set("ready_check", "ok", 10)
+            value = cache.get("ready_check")
+            cache.delete("ready_check")
+            return value == "ok"
         except Exception:
             return False
 
@@ -300,12 +301,15 @@ class LivenessCheckView(APIView):
     Simple endpoint to check if the service is running.
     Does not perform deep checks, just returns 200 OK.
     """
+
     permission_classes = [AllowAny]
     throttle_classes = []
 
     def get(self, request):
         """Check if service is alive"""
-        return Response({
-            'alive': True,
-            'timestamp': timezone.now().isoformat(),
-        })
+        return Response(
+            {
+                "alive": True,
+                "timestamp": timezone.now().isoformat(),
+            }
+        )

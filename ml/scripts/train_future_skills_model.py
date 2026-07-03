@@ -28,21 +28,14 @@ import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    classification_report,
-    confusion_matrix,
-    accuracy_score,
-    precision_recall_fscore_support,
-)
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 # Configure logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 
 ALLOWED_LEVELS = {"LOW", "MEDIUM", "HIGH"}
@@ -67,10 +60,7 @@ def load_dataset(csv_path: Path) -> pd.DataFrame:
         raise ValueError(f"No valid rows with future_need_level in {ALLOWED_LEVELS}.")
 
     if after < before:
-        logger.warning(
-            f"{before - after} row(s) filtered out where future_need_level "
-            f"was not in {ALLOWED_LEVELS}."
-        )
+        logger.warning(f"{before - after} row(s) filtered out where future_need_level " f"was not in {ALLOWED_LEVELS}.")
 
     return df
 
@@ -152,9 +142,7 @@ def _check_class_imbalance(y: pd.Series) -> tuple:
     imbalance_ratio = class_counts.max() / class_counts.min()
     print(f"[INFO] Ratio de déséquilibre : {imbalance_ratio:.2f}")
     if imbalance_ratio > 3:
-        print(
-            "[WARN] Déséquilibre des classes détecté. Utilisation de class_weight='balanced'"
-        )
+        print("[WARN] Déséquilibre des classes détecté. Utilisation de class_weight='balanced'")
     return imbalance_ratio, class_counts
 
 
@@ -218,14 +206,10 @@ def train_model(
     target_col = "future_need_level"
 
     # Prepare features and target
-    X, y, available_features, missing_cols = _prepare_features(
-        df, feature_cols, target_col
-    )
+    X, y, available_features, missing_cols = _prepare_features(df, feature_cols, target_col)
 
     # Identify feature types
-    categorical_features, numeric_features = _identify_feature_types(
-        df, available_features
-    )
+    categorical_features, numeric_features = _identify_feature_types(df, available_features)
 
     print(f"[INFO] Features catégorielles : {categorical_features}")
     print(f"[INFO] Features numériques : {numeric_features}")
@@ -254,9 +238,7 @@ def train_model(
         random_state=random_state,
     )
 
-    print(
-        f"[INFO] Entraînement du modèle RandomForestClassifier (n_estimators={n_estimators})..."
-    )
+    print(f"[INFO] Entraînement du modèle RandomForestClassifier (n_estimators={n_estimators})...")
     pipeline.fit(X_train, y_train)
 
     training_end_time = datetime.now()
@@ -289,20 +271,14 @@ def train_model(
     feature_importance_dict = {}
     if hasattr(clf, "feature_importances_"):
         print("\n[INFO] Importance des features :")
-        preprocessor = pipeline.named_steps[
-            "preprocess"
-        ]  # noqa: PD011 - sklearn pipeline access pattern
+        preprocessor = pipeline.named_steps["preprocess"]  # noqa: PD011 - sklearn pipeline access pattern
 
         # Get feature names after preprocessing
         cat_features = []
         if categorical_features:
-            cat_transformer = preprocessor.named_transformers_[
-                "cat"
-            ]  # noqa: PD011 - sklearn pipeline access pattern
+            cat_transformer = preprocessor.named_transformers_["cat"]  # noqa: PD011 - sklearn pipeline access pattern
             if hasattr(cat_transformer, "get_feature_names_out"):
-                cat_features = cat_transformer.get_feature_names_out(
-                    categorical_features
-                ).tolist()
+                cat_features = cat_transformer.get_feature_names_out(categorical_features).tolist()
 
         all_features = cat_features + numeric_features
 
@@ -372,9 +348,7 @@ def main():
     default_csv = base_dir / "data" / "future_skills_dataset.csv"
     default_model = base_dir / "models" / "future_skills_model.pkl"
 
-    parser = argparse.ArgumentParser(
-        description="Entraîne le modèle ML pour le Module 3 - Future Skills."
-    )
+    parser = argparse.ArgumentParser(description="Entraîne le modèle ML pour le Module 3 - Future Skills.")
     parser.add_argument(
         "--csv",
         type=str,
@@ -419,9 +393,7 @@ def main():
 
     # If version is provided and output doesn't include version, add it
     if args.version and args.version not in output_model_path.stem:
-        output_model_path = (
-            output_model_path.parent / f"{output_model_path.stem}_{args.version}.pkl"
-        )
+        output_model_path = output_model_path.parent / f"{output_model_path.stem}_{args.version}.pkl"
         print(f"[INFO] Nom du modèle ajusté avec version : {output_model_path}")
 
     metadata = train_model(
