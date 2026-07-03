@@ -99,5 +99,16 @@ logs/
 db.sqlite3
 db.sqlite3.*
 production-secrets*.txt
+# generated secret dumps (scripts/generate-secrets.sh) — never track
+secrets-*.txt
+secrets.env
+# TLS private keys (dev certs) — never track the key; the .crt may be tracked
+nginx/ssl/*.key
 .env
+# real per-environment secret files — keep the *.example / *.template tracked
+.env.production
+.env.staging
+.env.docker
 !.env.example
+!.env.*.example
+!.env.template
