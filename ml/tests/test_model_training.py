@@ -476,7 +476,7 @@ class TestTrainingRunTracking:
         call_kwargs = mock_training_run.objects.create.call_args[1]
 
         # Check required fields
-        assert call_kwargs["model_version"] == "v1.0-test"
+        assert call_kwargs["model_version"] == "1.0.0-test"
         assert call_kwargs["model_path"] == str(model_path)
         assert "accuracy" in call_kwargs
         assert "f1_score" in call_kwargs
