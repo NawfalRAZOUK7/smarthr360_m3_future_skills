@@ -9,6 +9,9 @@ import os
 # Ensure required env defaults exist before importing base settings that expect them
 os.environ["SECRET_KEY"] = os.environ.get("SECRET_KEY", "test-secret-key")
 os.environ["DEBUG"] = "False"
+# MLflow >=3 rejects the filesystem ('./mlruns') tracking backend by default;
+# the ML tests use the file store, so opt back in.
+os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
 
 from .base import *  # noqa: F403,S2208,E402 - Standard Django settings pattern
 

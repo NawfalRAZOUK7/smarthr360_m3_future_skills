@@ -35,7 +35,7 @@ py-spy>=0.3.14                 # Sampling profiler for production
 
 # Health Checks
 # ----------------------------------------------------------------------------
-django-health-check>=3.17.0    # Health check endpoints
+django-health-check>=3.17.0,<4  # cap <4: 4.x removed health_check.db/cache/storage apps
 
 # Additional Utilities
 # ----------------------------------------------------------------------------

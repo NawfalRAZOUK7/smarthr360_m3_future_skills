@@ -68,6 +68,16 @@ JWT_SETTINGS = {
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom JWT serializer that adds additional user information to the token response."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Login accepts email OR username (see validate()). The base serializer
+        # only declares the USERNAME_FIELD ("email") and marks it required, so a
+        # username-only request would 400 during field validation before
+        # validate() runs. Relax that and expose an optional username field.
+        if self.username_field in self.fields:
+            self.fields[self.username_field].required = False
+        self.fields["username"] = serializers.CharField(required=False)
+
     @classmethod
     def get_token(cls, user):
         """Generate JWT token with custom user claims.

@@ -49,7 +49,7 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements files
-COPY requirements/requirements.txt requirements/requirements_ml.txt requirements/requirements_logging.txt requirements/requirements_security.txt requirements/requirements_celery.txt requirements/requirements-all.txt ./requirements/
+COPY requirements/requirements.txt requirements/requirements-dev.txt requirements/requirements_ml.txt requirements/requirements_logging.txt requirements/requirements_security.txt requirements/requirements_celery.txt requirements/requirements-all.txt ./requirements/
 
 # Install Python dependencies in virtual environment with BuildKit pip cache, with retry loop for network errors
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -67,6 +67,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 WORKDIR /build/app
 COPY manage.py pyproject.toml pytest.ini ./
 COPY config/ ./config/
+COPY accounts/ ./accounts/
 COPY future_skills/ ./future_skills/
 COPY celery_monitoring/ ./celery_monitoring/
 COPY tests/ ./tests/

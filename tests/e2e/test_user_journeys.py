@@ -197,7 +197,7 @@ class TestMLPipelineJourney:
 
         # Create sample data with required columns for ModelTrainer
         # Required: future_need_level (target) + feature columns
-        sample_data = """job_role_name,skill_name,skill_category,job_department,trend_score,internal_usage,training_requests,scarcity_index,hiring_difficulty,avg_salary_k,economic_indicator,future_need_level  # noqa: E501
+        sample_data = """job_role_name,skill_name,skill_category,job_department,trend_score,internal_usage,training_requests,scarcity_index,hiring_difficulty,avg_salary_k,economic_indicator,future_need_level
 Software Engineer,Python,Technical,Engineering,0.85,0.80,45,0.65,0.70,95.5,0.75,HIGH
 Software Engineer,Machine Learning,Technical,Engineering,0.90,0.75,60,0.80,0.85,110.0,0.78,HIGH
 Manager,Leadership,Soft Skills,Management,0.75,0.85,30,0.40,0.50,85.0,0.72,MEDIUM

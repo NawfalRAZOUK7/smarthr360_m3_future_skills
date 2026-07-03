@@ -311,7 +311,12 @@ class TestPredictionEnginePredict(TestCase):
         # Mock ML model
         mock_model = MagicMock()
         mock_model.is_available.return_value = True
-        mock_model.predict_level.return_value = ("HIGH", 85.0)
+        mock_model.predict_with_metadata.return_value = {
+            "score": 85.0,
+            "level": "HIGH",
+            "confidence": 0.95,
+            "probabilities": {"LOW": 0.02, "MEDIUM": 0.03, "HIGH": 0.95},
+        }
         mock_model_class.instance.return_value = mock_model
 
         engine = PredictionEngine()
@@ -332,7 +337,12 @@ class TestPredictionEnginePredict(TestCase):
         # Mock ML model
         mock_model = MagicMock()
         mock_model.is_available.return_value = True
-        mock_model.predict_level.return_value = ("HIGH", 85.0)
+        mock_model.predict_with_metadata.return_value = {
+            "score": 85.0,
+            "level": "HIGH",
+            "confidence": 0.95,
+            "probabilities": {"LOW": 0.02, "MEDIUM": 0.03, "HIGH": 0.95},
+        }
         mock_model_class.instance.return_value = mock_model
 
         # Mock explanation engine
@@ -359,7 +369,12 @@ class TestPredictionEnginePredict(TestCase):
         # Mock ML model
         mock_model = MagicMock()
         mock_model.is_available.return_value = True
-        mock_model.predict_level.return_value = ("HIGH", 85.0)
+        mock_model.predict_with_metadata.return_value = {
+            "score": 85.0,
+            "level": "HIGH",
+            "confidence": 0.95,
+            "probabilities": {"LOW": 0.02, "MEDIUM": 0.03, "HIGH": 0.95},
+        }
         mock_model_class.instance.return_value = mock_model
 
         # Mock explanation engine that raises error
@@ -694,7 +709,12 @@ class TestRecalculatePredictionsExtended(TestCase):
         """Test that ML mode includes model_version in parameters."""
         mock_model = MagicMock()
         mock_model.is_available.return_value = True
-        mock_model.predict_level.return_value = ("HIGH", 85.0)
+        mock_model.predict_with_metadata.return_value = {
+            "score": 85.0,
+            "level": "HIGH",
+            "confidence": 0.95,
+            "probabilities": {"LOW": 0.02, "MEDIUM": 0.03, "HIGH": 0.95},
+        }
         mock_model_class.instance.return_value = mock_model
 
         total = recalculate_predictions(horizon_years=5)

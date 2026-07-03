@@ -49,7 +49,7 @@ django-prometheus>=2.3.1
 django-log-request-id>=2.1.0
 django-silk>=5.0.4
 py-spy>=0.3.14
-django-health-check>=3.17.0
+django-health-check>=3.17.0,<4  # cap <4: 4.x removed health_check.db/cache/storage apps
 psutil>=5.9.6
 python-dateutil>=2.8.2
 

@@ -29,6 +29,21 @@ from future_skills.models import TrainingRun  # noqa: E402
 User = get_user_model()
 
 
+@pytest.fixture
+def client(db):
+    """Authenticated HR-staff API client.
+
+    The training endpoints override get_permissions() to enforce IsHRStaff /
+    IsManagerOrAuditorReadOnly, so the AllowAny test default does not apply and
+    a plain (unauthenticated) client is rejected with 403. Provide an
+    authenticated HR user, which both permission classes accept.
+    """
+    user = create_test_user()
+    api = APIClient()
+    api.force_authenticate(user=user)
+    return api
+
+
 def create_test_user():
     """Create a test user with HR staff permissions."""
     print("\n1️⃣  Creating test user...")

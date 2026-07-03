@@ -198,7 +198,12 @@ class MLFallbackTests(TestCase):
             with patch("future_skills.services.prediction_engine.FutureSkillsModel.instance") as mock_ml:
                 mock_instance = MagicMock()
                 mock_instance.is_available.return_value = True
-                mock_instance.predict_level.return_value = ("HIGH", 85.0)
+                mock_instance.predict_with_metadata.return_value = {
+                    "score": 85.0,
+                    "level": "HIGH",
+                    "confidence": 0.95,
+                    "probabilities": {"LOW": 0.02, "MEDIUM": 0.03, "HIGH": 0.95},
+                }
                 mock_ml.return_value = mock_instance
 
                 # Appel du recalcul
@@ -218,5 +223,5 @@ class MLFallbackTests(TestCase):
                 # ✅ Le champ model_version doit être présent
                 self.assertEqual(last_run.parameters.get("model_version"), "ml_random_forest_v1")
 
-                # Vérifier que predict_level a bien été appelé
-                self.assertTrue(mock_instance.predict_level.called)
+                # Vérifier que le moteur ML (predict_with_metadata) a bien été appelé
+                self.assertTrue(mock_instance.predict_with_metadata.called)
