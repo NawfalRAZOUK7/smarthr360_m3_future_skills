@@ -3,6 +3,7 @@
 GET /api/future-skills/demand/                     all skills, latest demand
 GET /api/future-skills/demand/?horizon_years=3
 GET /api/future-skills/demand/?job_role=Developer
+GET /api/future-skills/demand/?department=ENG      restrict to a department
 GET /api/future-skills/demand/history/?skill_code=PY   signal time series
 
 Response schema (STABLE — sibling services parse this):
@@ -85,6 +86,11 @@ class DemandBySkillAPIView(APIView):
         job_role = request.query_params.get("job_role")
         if job_role:
             queryset = queryset.filter(job_role__name__iexact=job_role)
+        department = request.query_params.get("department")
+        if department:
+            # JobRole.department is indexed; lets career-sim / policy-gen pull
+            # demand segmented to one org unit (e.g. ?department=ENG).
+            queryset = queryset.filter(job_role__department__iexact=department)
 
         best: dict[int, FutureSkillPrediction] = {}
         roles: dict[int, set] = {}

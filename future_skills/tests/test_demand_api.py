@@ -113,6 +113,30 @@ class DemandContractExtrasTests(APITestCase):
         ).json()
         self.assertEqual(body["results"][0]["score"], 60.0)
 
+    def test_department_filter(self):
+        eng = JobRole.objects.create(name="Backend Engineer", department="ENG")
+        sales = JobRole.objects.create(name="Account Exec", department="SALES")
+        FutureSkillPrediction.objects.create(
+            job_role=eng, skill=self.skill, horizon_years=3,
+            score=88, level="HIGH",
+        )
+        FutureSkillPrediction.objects.create(
+            job_role=sales, skill=self.skill, horizon_years=3,
+            score=42, level="MEDIUM",
+        )
+        # case-insensitive; only the ENG prediction is aggregated
+        body = self.client.get(
+            "/api/future-skills/demand/?department=eng"
+        ).json()
+        self.assertEqual(body["count"], 1)
+        self.assertEqual(body["results"][0]["score"], 88.0)
+        # an unknown department yields an empty (but valid) contract
+        empty = self.client.get(
+            "/api/future-skills/demand/?department=NOPE"
+        ).json()
+        self.assertEqual(empty["count"], 0)
+        self.assertEqual(empty["results"], [])
+
     def test_history_series_and_trend(self):
         from future_skills.models import FutureSkillSnapshot
 

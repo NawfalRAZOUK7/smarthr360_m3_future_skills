@@ -94,6 +94,9 @@ urlpatterns = [
     path("api/health/", HealthCheckView.as_view(), name="health-check"),
     path("api/ready/", ReadyCheckView.as_view(), name="ready-check"),
     path("api/alive/", LivenessCheckView.as_view(), name="liveness-check"),
+    # Platform-standard liveness alias: every sibling service exposes /healthz/,
+    # and the platform seed/e2e probes it to decide a service is "up".
+    path("healthz/", LivenessCheckView.as_view(), name="healthz"),
     path("api/version/", VersionInfoView.as_view(), name="version-info"),
     path("api/metrics/", MetricsView.as_view(), name="api-metrics"),
     path("api/metrics/slice-performance/refresh/", RefreshSliceMetricsView.as_view(), name="metrics-refresh-slices"),
