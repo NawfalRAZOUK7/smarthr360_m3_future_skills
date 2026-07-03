@@ -79,3 +79,21 @@ coverage.xml
 # Joblib cache (sklearn pipeline cache)
 auto/joblib/
 auto/
+
+# --- Secrets — NEVER commit (local only) ---
+.env.*
+!.env.example
+secrets.env
+secrets-*.txt
+production-secrets.txt
+*.pem
+*.key
+nginx/ssl/
+
+# --- Local data, ML runs, artifacts, backups, deps ---
+node_modules/
+mlruns/
+mlruns_backup_*/
+artifacts/
+*.bak
+logs/*.jsonl
