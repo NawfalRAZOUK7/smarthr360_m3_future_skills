@@ -25,6 +25,9 @@ jobs:
     environment:
       name: staging
       url: https://staging.smarthr360.com
+    env:
+      CLOUD_PROVIDER: ${{ secrets.CLOUD_PROVIDER }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
     steps:
       - name: Checkout code
@@ -34,6 +37,54 @@ jobs:
         uses: azure/setup-kubectl@v4
         with:
           version: "v1.28.0"
+
+      - name: Validate deployment configuration
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          GCP_ZONE: ${{ secrets.GCP_ZONE }}
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+          GKE_CLUSTER_NAME: ${{ secrets.GKE_CLUSTER_NAME }}
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}
+        run: |
+          set -euo pipefail
+
+          require_secret() {
+            local name="$1"
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required repository secret: ${name}"
+              exit 1
+            fi
+          }
+
+          case "${CLOUD_PROVIDER}" in
+            aws)
+              require_secret AWS_ACCESS_KEY_ID
+              require_secret AWS_SECRET_ACCESS_KEY
+              require_secret AWS_REGION
+              require_secret EKS_CLUSTER_NAME
+              ;;
+            gcp)
+              require_secret GCP_CREDENTIALS
+              require_secret GCP_ZONE
+              require_secret GCP_PROJECT
+              require_secret GKE_CLUSTER_NAME
+              ;;
+            azure)
+              require_secret AZURE_CREDENTIALS
+              require_secret AZURE_RESOURCE_GROUP
+              require_secret AKS_CLUSTER_NAME
+              ;;
+            *)
+              echo "::error::Set CLOUD_PROVIDER repository secret to one of: aws, gcp, azure"
+              exit 1
+              ;;
+          esac
 
       - name: Configure AWS credentials
         if: env.CLOUD_PROVIDER == 'aws'
@@ -135,10 +186,10 @@ jobs:
           API_POD=$(kubectl get pod -n smarthr360-staging -l component=api -o jsonpath='{.items[0].metadata.name}')
 
           # Run migrations
-          kubectl exec -n smarthr360-staging $API_POD -- python manage.py migrate --noinput
+          kubectl exec -n smarthr360-staging "$API_POD" -- python manage.py migrate --noinput
 
           # Collect static files
-          kubectl exec -n smarthr360-staging $API_POD -- python manage.py collectstatic --noinput
+          kubectl exec -n smarthr360-staging "$API_POD" -- python manage.py collectstatic --noinput
 
       - name: Verify deployment
         run: |
@@ -151,7 +202,7 @@ jobs:
           # Test health endpoint
           INGRESS_IP=$(kubectl get ingress -n smarthr360-staging -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}')
           if [ -n "$INGRESS_IP" ]; then
-            curl -f http://$INGRESS_IP/api/health/ || echo "Health check failed"
+            curl -f "http://${INGRESS_IP}/api/health/" || echo "Health check failed"
           fi
 
       - name: Run smoke tests
@@ -167,7 +218,7 @@ jobs:
           curl -f http://localhost:8000/api/skills/ || exit 1
 
           # Cleanup
-          kill $PF_PID
+          kill "$PF_PID"
 
       - name: Update deployment status
         if: always()
@@ -180,7 +231,8 @@ jobs:
           fi
 
       - name: Rollback on failure
-        if: failure()
+        if: failure() && (env.CLOUD_PROVIDER == 'aws' || env.CLOUD_PROVIDER == 'gcp' || env.CLOUD_PROVIDER == 'azure')
+        continue-on-error: true
         run: |
           echo "Rolling back deployment..."
           kubectl rollout undo deployment/smarthr360-api -n smarthr360-staging
@@ -188,7 +240,7 @@ jobs:
           kubectl rollout undo deployment/smarthr360-celery-beat -n smarthr360-staging
 
       - name: Send deployment notification
-        if: always()
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
@@ -198,6 +250,3 @@ jobs:
             Version: ${{ github.sha }}
             URL: https://staging.smarthr360.com
             Triggered by: ${{ github.actor }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

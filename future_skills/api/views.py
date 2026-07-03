@@ -32,9 +32,7 @@ from .serializers import (
     UpdateEmployeeSkillsSerializer,
 )
 
-from ..services.prediction_engine import recalculate_predictions
 from ..permissions import IsHRStaff, IsHRStaffOrManager
-from ..services.recommendation_engine import generate_recommendations_from_predictions
 
 
 # Error messages constants
@@ -239,6 +237,9 @@ class RecalculateFutureSkillsAPIView(APIView):
     permission_classes = [IsHRStaff]
 
     def post(self, request, *args, **kwargs):
+        from ..services.prediction_engine import recalculate_predictions
+        from ..services.recommendation_engine import generate_recommendations_from_predictions
+
         horizon_years = request.data.get("horizon_years", 5)
 
         try:
@@ -865,6 +866,8 @@ class BulkEmployeeImportAPIView(APIView):
         if auto_predict:
             # Recalculate predictions for all job roles
             try:
+                from ..services.prediction_engine import recalculate_predictions
+
                 total_predictions = recalculate_predictions(
                     horizon_years=horizon_years,
                     run_by=request.user if request.user.is_authenticated else None,
@@ -1251,6 +1254,8 @@ class BulkEmployeeUploadAPIView(APIView):
         if auto_predict:
             # Recalculate predictions for all job roles
             try:
+                from ..services.prediction_engine import recalculate_predictions
+
                 total_predictions = recalculate_predictions(
                     horizon_years=horizon_years,
                     run_by=request.user if request.user.is_authenticated else None,

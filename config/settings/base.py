@@ -46,9 +46,6 @@ INSTALLED_APPS = [
     # Monitoring & APM
     'django_prometheus',  # Prometheus metrics
     'health_check',  # Health check endpoints
-    'health_check.db',
-    'health_check.cache',
-    'health_check.storage',
 
     # Project apps
     'future_skills',
@@ -558,4 +555,3 @@ HEALTH_CHECK = {
     'DISK_USAGE_MAX': 90,  # Percent
     'MEMORY_MIN': 100,  # MB
 }
-

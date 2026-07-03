@@ -152,14 +152,14 @@ def get_structlog_config(use_json: bool = True, base_dir: Path = None) -> Dict[s
             'security_file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'json',
-                'filename': os.path.join(settings.BASE_DIR, 'logs', 'security.log'),
+                'filename': str(log_dir / 'security.log'),
                 'maxBytes': 10485760,  # 10MB
                 'backupCount': 10,
             },
             'performance_file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'json',
-                'filename': os.path.join(settings.BASE_DIR, 'logs', 'performance.log'),
+                'filename': str(log_dir / 'performance.log'),
                 'maxBytes': 10485760,  # 10MB
                 'backupCount': 10,
             },

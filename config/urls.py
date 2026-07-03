@@ -22,6 +22,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
+from health_check.views import HealthCheckView as DjangoHealthCheckView
 from future_skills.api.monitoring import (
     HealthCheckView,
     ReadyCheckView,
@@ -70,5 +71,5 @@ urlpatterns = [
 
     # Monitoring & Observability
     path('', include('django_prometheus.urls')),  # Prometheus metrics at /metrics
-    path('health/', include('health_check.urls')),  # Django health checks at /health/
+    path('health/', DjangoHealthCheckView.as_view(), name='django-health-check'),
 ]

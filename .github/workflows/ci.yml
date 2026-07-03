@@ -161,9 +161,11 @@ jobs:
       - name: Create .env file
         run: |
           cp .env.example .env
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_smarthr360" >> .env
-          echo "DJANGO_SETTINGS_MODULE=config.settings.test" >> .env
-          echo "FUTURE_SKILLS_USE_ML=True" >> .env
+          {
+            echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_smarthr360"
+            echo "DJANGO_SETTINGS_MODULE=config.settings.test"
+            echo "FUTURE_SKILLS_USE_ML=True"
+          } >> .env
 
       - name: Run migrations
         run: |
