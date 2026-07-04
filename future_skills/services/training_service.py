@@ -548,76 +548,82 @@ class ModelTrainer:
         try:
             logger.info(f"Saving training run: version={model_version}")
 
-            # Create version metadata
-            version_obj = create_model_version(
-                version_string=model_version,
-                metrics={
-                    "accuracy": self.metrics["accuracy"],
-                    "precision": self.metrics["precision"],
-                    "recall": self.metrics["recall"],
-                    "f1_score": self.metrics["f1_score"],
-                    "training_time": self.training_duration_seconds,
-                },
-                model_path=model_path,
-                framework=ModelFramework.SCIKIT_LEARN,
-                algorithm="RandomForestClassifier",
-                hyperparameters=self.hyperparameters,
-                training_dataset_size=len(self.X_train) if self.X_train is not None else 0,
-                training_features=self.available_features,
-                target_classes=["LOW", "MEDIUM", "HIGH"],
-                mlflow_run_id=getattr(self, "mlflow_run_id", None),
-                stage=ModelStage.STAGING,  # Start in staging
-                description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
-            )
-
-            # Register version
-            version_manager = ModelVersionManager()
-            version_manager.register_version(version_obj)
-            logger.info(f"Registered model version: {model_version}")
-
-            # Check if should promote to production
             promotion_info = None
-            if auto_promote:
-                prod_version = version_manager.get_production_version()
-                if prod_version:
-                    should_promote, reason = version_manager.should_promote(
-                        new_version=version_obj,
-                        current_version=prod_version,
-                        metric_name="f1_score",
-                        improvement_threshold=0.01,  # 1% improvement required
-                    )
+            try:
+                # Create version metadata
+                version_obj = create_model_version(
+                    version_string=model_version,
+                    metrics={
+                        "accuracy": self.metrics["accuracy"],
+                        "precision": self.metrics["precision"],
+                        "recall": self.metrics["recall"],
+                        "f1_score": self.metrics["f1_score"],
+                        "training_time": self.training_duration_seconds,
+                    },
+                    model_path=model_path,
+                    framework=ModelFramework.SCIKIT_LEARN,
+                    algorithm="RandomForestClassifier",
+                    hyperparameters=self.hyperparameters,
+                    training_dataset_size=len(self.X_train) if self.X_train is not None else 0,
+                    training_features=self.available_features,
+                    target_classes=["LOW", "MEDIUM", "HIGH"],
+                    mlflow_run_id=getattr(self, "mlflow_run_id", None),
+                    stage=ModelStage.STAGING,  # Start in staging
+                    description=notes or f"Model trained on {datetime.now().strftime('%Y-%m-%d')}",
+                )
 
-                    if should_promote:
-                        logger.info(f"Promoting model to production: {reason}")
+                # Register version
+                version_manager = ModelVersionManager()
+                version_manager.register_version(version_obj)
+                logger.info(f"Registered model version: {model_version}")
 
-                        # Update stage
+                # Check if should promote to production
+                if auto_promote:
+                    prod_version = version_manager.get_production_version()
+                    if prod_version:
+                        should_promote, reason = version_manager.should_promote(
+                            new_version=version_obj,
+                            current_version=prod_version,
+                            metric_name="f1_score",
+                            improvement_threshold=0.01,  # 1% improvement required
+                        )
+
+                        if should_promote:
+                            logger.info(f"Promoting model to production: {reason}")
+
+                            # Update stage
+                            version_obj.metadata.stage = ModelStage.PRODUCTION
+                            version_manager.register_version(version_obj)
+
+                            # Transition in MLflow
+                            mlflow_config = get_mlflow_config()
+                            try:
+                                latest_version = mlflow_config.get_latest_model_version(
+                                    model_name="future-skills-model"
+                                )
+                                if latest_version:
+                                    mlflow_config.transition_model_stage(
+                                        model_name="future-skills-model",
+                                        version=str(latest_version.version),
+                                        stage="Production",
+                                        archive_existing=True,
+                                    )
+                                    logger.info("Transitioned MLflow model to Production")
+                            except Exception as e:
+                                logger.warning(f"Failed to transition MLflow stage: {e}")
+
+                            promotion_info = reason
+                        else:
+                            logger.info(f"Not promoting model: {reason}")
+                            promotion_info = f"Not promoted: {reason}"
+                    else:
+                        logger.info("No existing production model. Auto-promoting first model.")
                         version_obj.metadata.stage = ModelStage.PRODUCTION
                         version_manager.register_version(version_obj)
-
-                        # Transition in MLflow
-                        mlflow_config = get_mlflow_config()
-                        try:
-                            latest_version = mlflow_config.get_latest_model_version(model_name="future-skills-model")
-                            if latest_version:
-                                mlflow_config.transition_model_stage(
-                                    model_name="future-skills-model",
-                                    version=str(latest_version.version),
-                                    stage="Production",
-                                    archive_existing=True,
-                                )
-                                logger.info("Transitioned MLflow model to Production")
-                        except Exception as e:
-                            logger.warning(f"Failed to transition MLflow stage: {e}")
-
-                        promotion_info = reason
-                    else:
-                        logger.info(f"Not promoting model: {reason}")
-                        promotion_info = f"Not promoted: {reason}"
-                else:
-                    logger.info("No existing production model. Auto-promoting first model.")
-                    version_obj.metadata.stage = ModelStage.PRODUCTION
-                    version_manager.register_version(version_obj)
-                    promotion_info = "First model - automatically promoted to production"
+                        promotion_info = "First model - automatically promoted to production"
+            except ValueError as e:
+                logger.warning(f"Skipping model version metadata for '{model_version}': {e}")
+                promotion_info = "Model version metadata skipped: non-SemVer model_version"
 
             # Create Django TrainingRun record
             training_run = TrainingRun.objects.create(

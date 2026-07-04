@@ -33,6 +33,11 @@ urlpatterns = [
         FutureSkillPredictionListAPIView.as_view(),
         name="future-skills-list",
     ),
+    path(
+        "predictions/",
+        FutureSkillPredictionListAPIView.as_view(),
+        name="predictions-list",
+    ),
     # Recalcul des prédictions
     path(
         "future-skills/recalculate/",

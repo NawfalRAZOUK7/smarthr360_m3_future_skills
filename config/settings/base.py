@@ -41,10 +41,13 @@ INSTALLED_APPS = [
     "corsheaders",  # CORS headers
     "axes",  # Login attempt tracking
     "drf_spectacular",  # OpenAPI documentation
+    "django_celery_results",  # Celery task result storage
+    "django_celery_beat",  # Celery periodic task scheduler
     # Monitoring & APM
     "django_prometheus",  # Prometheus metrics
     "health_check",  # Health check endpoints
     # Project apps
+    "celery_monitoring",
     "future_skills",
 ]
 
@@ -71,6 +74,8 @@ MIDDLEWARE = [
     "future_skills.api.middleware.APIPerformanceMiddleware",
     "future_skills.api.middleware.RequestLoggingMiddleware",
     "future_skills.api.middleware.APIDeprecationMiddleware",
+    "future_skills.api.middleware.CORSHeadersMiddleware",
+    "future_skills.api.middleware.APICacheMiddleware",
     "config.security_middleware.SecurityAuditMiddleware",  # Security audit
     "config.logging_middleware.ErrorTrackingMiddleware",  # Error tracking
     "django_prometheus.middleware.PrometheusAfterMiddleware",  # Prometheus - end

@@ -13,6 +13,7 @@ import os
 import sys
 
 import django
+import pytest
 
 # Setup Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
@@ -21,6 +22,8 @@ django.setup()
 from pathlib import Path
 
 from future_skills.services.training_service import DataLoadError, ModelTrainer, TrainingError
+
+pytestmark = pytest.mark.django_db
 
 
 def test_training_service():

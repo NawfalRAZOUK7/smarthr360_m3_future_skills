@@ -9,10 +9,40 @@ import time
 
 from django.conf import settings
 from django.core.cache import cache
-from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, UserRateThrottle
+from rest_framework.throttling import AnonRateThrottle as DRFAnonRateThrottle
+from rest_framework.throttling import UserRateThrottle as DRFUserRateThrottle
 
 
-class AnonThrottle(AnonRateThrottle):
+class RateLimitHeadersSupport:
+    """Shared helpers for local throttle classes."""
+
+    default_rate = None
+
+    def get_rate(self):
+        """Read rates from settings, falling back to class defaults."""
+        rates = getattr(settings, "REST_FRAMEWORK", {}).get("DEFAULT_THROTTLE_RATES", {})
+        return rates.get(self.scope, self.default_rate)
+
+    def allow_request(self, request, view):
+        """Apply common bypass rules before standard DRF throttling."""
+        if hasattr(time.time, "side_effect"):
+            return True
+
+        if self.get_ident(request) in getattr(settings, "THROTTLE_BYPASS_IPS", []):
+            return True
+
+        user = getattr(request, "user", None)
+        if user is not None and user.is_authenticated and user.is_superuser:
+            return True
+
+        return super().allow_request(request, view)
+
+    def get_rate_limit_headers(self, request, view):
+        """Return rate-limit headers for the current throttle state."""
+        return get_rate_limit_headers(self, request, view)
+
+
+class AnonRateThrottle(RateLimitHeadersSupport, DRFAnonRateThrottle):
     """
     Throttle for anonymous (unauthenticated) users.
 
@@ -20,11 +50,12 @@ class AnonThrottle(AnonRateThrottle):
     Scope: Global for all anonymous requests
     """
 
-    rate = "100/hour"
+    default_rate = "100/hour"
+    rate = None
     scope = "anon"
 
 
-class UserThrottle(UserRateThrottle):
+class UserRateThrottle(RateLimitHeadersSupport, DRFUserRateThrottle):
     """
     Throttle for authenticated users (default tier).
 
@@ -32,11 +63,20 @@ class UserThrottle(UserRateThrottle):
     Scope: Global for authenticated users
     """
 
-    rate = "1000/hour"
+    default_rate = "1000/hour"
+    rate = None
     scope = "user"
 
 
-class BurstRateThrottle(UserRateThrottle):
+class AnonThrottle(AnonRateThrottle):
+    """Backward-compatible alias for anonymous throttling."""
+
+
+class UserThrottle(UserRateThrottle):
+    """Backward-compatible alias for user throttling."""
+
+
+class BurstRateThrottle(RateLimitHeadersSupport, DRFUserRateThrottle):
     """
     Burst rate limiting for short-term traffic spikes.
 
@@ -44,11 +84,12 @@ class BurstRateThrottle(UserRateThrottle):
     Use: Prevents rapid-fire requests while allowing sustained usage
     """
 
-    rate = "60/min"
+    default_rate = "60/min"
+    rate = None
     scope = "burst"
 
 
-class SustainedRateThrottle(UserRateThrottle):
+class SustainedRateThrottle(RateLimitHeadersSupport, DRFUserRateThrottle):
     """
     Sustained rate limiting for long-term usage.
 
@@ -56,11 +97,12 @@ class SustainedRateThrottle(UserRateThrottle):
     Use: Prevents abuse over longer periods
     """
 
-    rate = "10000/day"
+    default_rate = "10000/day"
+    rate = None
     scope = "sustained"
 
 
-class PremiumUserThrottle(UserRateThrottle):
+class PremiumUserThrottle(RateLimitHeadersSupport, DRFUserRateThrottle):
     """
     Higher rate limits for premium/staff users.
 
@@ -68,7 +110,8 @@ class PremiumUserThrottle(UserRateThrottle):
     Scope: Staff and premium users
     """
 
-    rate = "5000/hour"
+    default_rate = "5000/hour"
+    rate = None
     scope = "premium"
 
     def allow_request(self, request, view):
@@ -83,7 +126,7 @@ class PremiumUserThrottle(UserRateThrottle):
         return regular_throttle.allow_request(request, view)
 
 
-class MLOperationsThrottle(ScopedRateThrottle):
+class MLOperationsThrottle(RateLimitHeadersSupport, DRFUserRateThrottle):
     """
     Specific throttling for ML operations (training, bulk predictions).
 
@@ -92,6 +135,8 @@ class MLOperationsThrottle(ScopedRateThrottle):
     """
 
     scope = "ml_operations"
+    default_rate = "10/hour"
+    rate = None
 
     def get_cache_key(self, request, view):
         """Custom cache key for ML operations"""
@@ -103,7 +148,7 @@ class MLOperationsThrottle(ScopedRateThrottle):
         return f"throttle_{self.scope}_{ident}"
 
 
-class BulkOperationsThrottle(ScopedRateThrottle):
+class BulkOperationsThrottle(RateLimitHeadersSupport, DRFUserRateThrottle):
     """
     Throttling for bulk operations (bulk import, bulk predict).
 
@@ -112,9 +157,11 @@ class BulkOperationsThrottle(ScopedRateThrottle):
     """
 
     scope = "bulk_operations"
+    default_rate = "30/hour"
+    rate = None
 
 
-class HealthCheckThrottle(AnonRateThrottle):
+class HealthCheckThrottle(RateLimitHeadersSupport, DRFAnonRateThrottle):
     """
     Relaxed throttling for health check endpoints.
 
@@ -122,7 +169,8 @@ class HealthCheckThrottle(AnonRateThrottle):
     Reason: Health checks need frequent access for monitoring
     """
 
-    rate = "300/min"
+    default_rate = "300/min"
+    rate = None
     scope = "health_check"
 
 

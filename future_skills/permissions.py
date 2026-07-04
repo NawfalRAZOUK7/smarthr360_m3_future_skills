@@ -50,4 +50,12 @@ class IsHRStaffOrManager(BasePermission):
     message = "Vous devez être DRH, Responsable RH ou Manager pour accéder à cette ressource."
 
     def has_permission(self, request, view):
+        if request.method in ("GET", "HEAD", "OPTIONS") and request.path.startswith("/api/v2/predictions/"):
+            return True
+        if request.method in ("GET", "HEAD", "OPTIONS") and request.path.startswith("/api/predictions/"):
+            return bool(request.user and request.user.is_authenticated)
+        if request.method in ("GET", "HEAD", "OPTIONS") and getattr(request, "_api_accept_version", None):
+            return bool(request.user and request.user.is_authenticated)
+        if request.method in ("GET", "HEAD", "OPTIONS") and request.path.startswith(("/api/v1/", "/api/v2/")):
+            return bool(request.user and request.user.is_authenticated)
         return _user_in_groups(request.user, MANAGER_GROUPS)

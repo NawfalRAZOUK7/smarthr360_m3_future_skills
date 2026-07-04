@@ -87,6 +87,16 @@ urlpatterns = [
         TrainModelAPIView.as_view(),
         name="ml-train",
     ),
+    path(
+        "training/train/",
+        TrainModelAPIView.as_view(),
+        name="training-train-model",
+    ),
+    path(
+        "training/start/",
+        TrainModelAPIView.as_view(),
+        name="training-start",
+    ),
     # Bulk operations
     path(
         "bulk/employees/import/",  # v2: better organization
@@ -108,5 +118,15 @@ urlpatterns = [
         "ml/training-runs/<int:pk>/",  # v2: namespaced under ml/
         TrainingRunDetailAPIView.as_view(),
         name="ml-training-runs-detail",
+    ),
+    path(
+        "training/runs/",
+        TrainingRunListAPIView.as_view(),
+        name="training-runs",
+    ),
+    path(
+        "training/runs/<int:pk>/",
+        TrainingRunDetailAPIView.as_view(),
+        name="training-run-detail",
     ),
 ]

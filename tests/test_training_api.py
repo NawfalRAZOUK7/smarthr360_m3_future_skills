@@ -12,6 +12,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 # Setup Django
 import django
+import pytest
 
 django.setup()
 
@@ -20,6 +21,17 @@ from django.contrib.auth.models import Group, User
 from rest_framework.test import APIClient
 
 from future_skills.models import TrainingRun
+
+pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture
+def client():
+    """Authenticated API client for pytest collection of this script."""
+    user = create_test_user()
+    api_client = APIClient()
+    api_client.force_authenticate(user=user)
+    return api_client
 
 
 def create_test_user():

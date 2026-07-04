@@ -39,9 +39,14 @@ from django.utils import timezone
 from pybreaker import CircuitBreaker, CircuitBreakerError
 from tenacity import after_log, before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from .monitoring import monitor_task  # re-export so `from celery_monitoring import monitor_task` works
-
 logger = logging.getLogger(__name__)
+
+
+def monitor_task(*args, **kwargs):
+    """Lazy re-export so importing celery_monitoring has no Django model side effects."""
+    from .monitoring import monitor_task as _monitor_task
+
+    return _monitor_task(*args, **kwargs)
 
 
 # ============================================================================

@@ -182,8 +182,11 @@ def get_version_info():
     """
     return {
         "current": "v2",
+        "current_version": "v2",
         "supported": ["v1", "v2"],
+        "available_versions": ["v1", "v2"],
         "deprecated": ["v1"],
+        "deprecated_versions": ["v1"],
         "versions": {
             "v1": {
                 "status": "deprecated",
