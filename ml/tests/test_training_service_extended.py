@@ -331,8 +331,13 @@ class TestEvaluationEdgeCases:
                 [0, 1, 4],  # HIGH
             ]
         )
+        # Support is derived from y_true, so the labels have to agree with the
+        # matrix above: LOW never occurs, MEDIUM is predicted 5/6 correctly,
+        # HIGH 4/5.
+        y_true = ["MEDIUM"] * 6 + ["HIGH"] * 5
+        y_pred = ["MEDIUM"] * 5 + ["HIGH"] + ["MEDIUM"] + ["HIGH"] * 4
 
-        per_class = trainer._compute_per_class_metrics(cm)
+        per_class = trainer._compute_per_class_metrics(y_true, y_pred, cm)
 
         # Should handle zero support gracefully
         assert per_class["LOW"]["support"] == 0
