@@ -1,0 +1,72 @@
+name: CI
+
+# This service had no CI on main: the workflows lived only on the `develop`
+# branch, which had drifted 113 commits behind. Tests and migrations here are
+# run on the runner directly rather than through the service image, because
+# that image carries a heavy ML stack and building it is what exhausts runner
+# disk.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+env:
+  # config("SECRET_KEY") is the only setting with no default. Test settings
+  # want at least 32 bytes of entropy.
+  SECRET_KEY: ci-only-not-for-runtime-at-least-32-bytes
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements/requirements-all.txt ruff
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Tests
+        # Coverage thresholds are configured per-job upstream; this run cares
+        # about pass/fail, so coverage is disabled rather than left targetless.
+        run: pytest --no-cov
+
+  migrate-seed:
+    # Proves migration 0017 and the demo seeder actually apply against
+    # Postgres, which is what the service runs on. Both were added without
+    # ever being executed anywhere.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: smarthr
+          POSTGRES_PASSWORD: smarthr
+          POSTGRES_DB: future_skills
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://smarthr:smarthr@localhost:5432/future_skills
+      DJANGO_SETTINGS_MODULE: config.settings.compose
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements/requirements-all.txt
+      - name: Migrate
+        run: python manage.py migrate --noinput
+      - name: Seed demo data
+        run: python manage.py seed_demo
+      - name: Seed again (must be idempotent)
+        run: python manage.py seed_demo
