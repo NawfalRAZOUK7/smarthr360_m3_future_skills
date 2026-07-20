@@ -26,7 +26,7 @@ WORKDIR /build
 
 
 # Install build dependencies with BuildKit cache for apt, with retry loop for lock errors
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,id=apt-builder,sharing=locked \
         set -eux; \
         n=0; \
         until [ "$n" -ge 5 ]; do \
@@ -114,7 +114,7 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000
 
 # Install runtime dependencies only and create app user (with BuildKit apt cache, with retry loop)
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,id=apt-runtime,sharing=locked \
         set -eux; \
         n=0; \
         until [ "$n" -ge 5 ]; do \
