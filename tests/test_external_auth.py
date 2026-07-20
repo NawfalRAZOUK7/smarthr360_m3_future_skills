@@ -98,7 +98,7 @@ class HybridJWTAuthenticationTests(TestCase):
         self.assertEqual(user.username, "manager")
 
     @override_settings(
-        AUTH_JWT_SHARED_SECRET="shared-secret",
+        AUTH_JWT_SHARED_SECRET="shared-secret-for-tests-with-32-bytes-minimum",
         AUTH_ISSUER="smarthr360",
         AUTH_JWT_ALGORITHMS=["HS256"],
         AUTH_LOCAL_ENABLED=False,
@@ -110,7 +110,7 @@ class HybridJWTAuthenticationTests(TestCase):
             "email": "employee@example.com",
             "role": "EMPLOYEE",
         }
-        token = jwt.encode(payload, "shared-secret", algorithm="HS256")
+        token = jwt.encode(payload, "shared-secret-for-tests-with-32-bytes-minimum", algorithm="HS256")
         request = self.factory.get(
             "/api/v2/predictions/",
             HTTP_AUTHORIZATION=f"Bearer {token}",

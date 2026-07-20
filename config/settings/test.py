@@ -7,16 +7,23 @@ This configuration is optimized for running automated tests with pytest.
 import os
 
 # Ensure required env defaults exist before importing base settings that expect them
-os.environ["SECRET_KEY"] = os.environ.get("SECRET_KEY", "test-secret-key")
+os.environ["SECRET_KEY"] = os.environ.get(
+    "SECRET_KEY",
+    "smarthr360-test-secret-key-with-at-least-32-bytes-of-entropy",
+)
 os.environ["DEBUG"] = "False"
 # MLflow >=3 rejects the filesystem ('./mlruns') tracking backend by default;
 # the ML tests use the file store, so opt back in.
 os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
+os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
 
 from .base import *  # noqa: F403,S2208,E402 - Standard Django settings pattern
 
 # Provide a deterministic secret key for tests so env vars aren't required
-SECRET_KEY = config("SECRET_KEY", default="test-secret-key")  # noqa: F405
+SECRET_KEY = config(  # noqa: F405
+    "SECRET_KEY",
+    default="smarthr360-test-secret-key-with-at-least-32-bytes-of-entropy",
+)
 ALLOWED_HOSTS = ["*"]
 
 # Debug mode for tests
@@ -96,6 +103,7 @@ LOGGING["handlers"]["file"] = {
 # ML settings for tests
 FUTURE_SKILLS_USE_ML = False  # Disable ML predictions in tests by default
 FUTURE_SKILLS_ENABLE_MONITORING = False  # Disable monitoring in tests
+FUTURE_SKILLS_ASYNC_PREDICTIONS = False  # deterministic fallback; async tests override this
 
 # CORS - allow all for tests
 CORS_ALLOW_ALL_ORIGINS = True

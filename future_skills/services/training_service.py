@@ -9,6 +9,7 @@ logging, and integration with Django's TrainingRun model for MLOps tracking.
 import logging
 import re
 from datetime import datetime
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -17,6 +18,7 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 from django.conf import settings
+from mlflow.models import infer_signature
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
@@ -513,8 +515,24 @@ class ModelTrainer:
                     for i, (feat, imp) in enumerate(list(self.feature_importance.items())[:10]):
                         mlflow.log_metric(f"feature_importance_{i + 1}_{feat}", imp)
 
-                # Log model to MLflow
-                mlflow.sklearn.log_model(self.model, "model", registered_model_name="future-skills-model")
+                # Record a complete, reproducible model contract. Supplying the
+                # signature, input example, and runtime requirement also avoids
+                # MLflow spawning a second environment-inference process.
+                input_example = self.x_train.head(min(5, len(self.x_train))).copy()
+                # MLflow schemas cannot represent missing values in integer
+                # columns. Record numeric inputs as doubles so the persisted
+                # signature remains compatible with real inference payloads.
+                integer_columns = input_example.select_dtypes(include=["integer"]).columns
+                input_example[integer_columns] = input_example[integer_columns].astype("float64")
+                signature = infer_signature(input_example, self.model.predict(input_example))
+                mlflow.sklearn.log_model(
+                    self.model,
+                    "model",
+                    registered_model_name="future-skills-model",
+                    signature=signature,
+                    input_example=input_example,
+                    pip_requirements=[f"scikit-learn=={version('scikit-learn')}"],
+                )
 
                 # Store run_id for later use
                 self.mlflow_run_id = run.info.run_id

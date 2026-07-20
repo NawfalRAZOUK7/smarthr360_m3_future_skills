@@ -34,10 +34,13 @@ from .views import (
     MarketTrendListAPIView,
     PredictSkillsAPIView,
     RecalculateFutureSkillsAPIView,
+    PredictionRunDetailAPIView,
+    DriftAPIView,
     RecommendSkillsAPIView,
     TrainingRunDetailAPIView,
     TrainingRunListAPIView,
     TrainModelAPIView,
+    TrainingDatasetUploadAPIView,
 )
 
 # Router for ViewSets
@@ -92,6 +95,8 @@ urlpatterns = [
         RecalculateFutureSkillsAPIView.as_view(),
         name="future-skills-recalculate",
     ),
+    path("future-skills/prediction-runs/<int:pk>/", PredictionRunDetailAPIView.as_view(), name="prediction-run-detail"),
+    path("future-skills/drift/", DriftAPIView.as_view(), name="future-skills-drift"),
     # (Optionnel) Liste des tendances marché
     path(
         "market-trends/",
@@ -149,6 +154,8 @@ urlpatterns = [
         TrainModelAPIView.as_view(),
         name="training-train-model",
     ),
+    path("training/dataset/", TrainingDatasetUploadAPIView.as_view(), name="training-dataset-upload"),
+    path("future-skills/training/dataset/", TrainingDatasetUploadAPIView.as_view(), name="future-skills-training-dataset-upload"),
     # Train new model - Alternative endpoint (Section 2.6: training/start/)
     path(
         "training/start/",

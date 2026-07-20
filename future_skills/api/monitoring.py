@@ -165,17 +165,18 @@ class MetricsView(APIView):
         }
 
     def _get_database_metrics(self):
-        """Get database metrics."""
+        """Get database metrics.
+
+        Uses Django's backend-agnostic introspection so the table count works
+        on PostgreSQL (production), SQLite, and any other configured engine,
+        rather than a SQLite-only ``sqlite_master`` query.
+        """
         try:
             with connection.cursor() as cursor:
-                # Get table count
-                cursor.execute(
-                    """
-                    SELECT COUNT(*) FROM sqlite_master
-                    WHERE type='table' AND name NOT LIKE 'sqlite_%'
-                """
-                )
-                table_count = cursor.fetchone()[0]
+                # Confirm connectivity with a trivial, portable query.
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+                table_count = len(connection.introspection.table_names(cursor))
 
             return {
                 "status": "connected",

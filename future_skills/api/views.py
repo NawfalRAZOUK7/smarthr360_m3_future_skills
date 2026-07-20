@@ -44,6 +44,8 @@ from ..models import (
     Skill,
     SkillDomainMap,
     TrainingRun,
+    PredictionRun,
+    DriftSnapshot,
 )
 from ..permissions import (
     IsHRStaff,
@@ -74,6 +76,7 @@ from .serializers import (
     TopRankedSkillResponseSerializer,
     TrainingRunDetailSerializer,
     TrainingRunSerializer,
+    PredictionRunSerializer,
     TrainModelRequestSerializer,
     TrainModelResponseSerializer,
 )
@@ -140,19 +143,22 @@ class BulkEmployeeProcessingMixin:
         trigger,
     ):
         if not auto_predict:
-            return False, 0, []
+            return False, 0, None, []
 
         try:
-            total_predictions = recalculate_predictions(
+            from ..services.prediction_runs import queue_prediction_run
+            prediction_run = queue_prediction_run(
                 horizon_years=horizon_years,
                 run_by=(request_user if getattr(request_user, "is_authenticated", False) else None),
-                parameters={"trigger": trigger},
+                trigger=trigger,
             )
-            return True, total_predictions, []
+            prediction_run.refresh_from_db()
+            return True, prediction_run.total_predictions, prediction_run.id, []
         except Exception as exc:  # pragma: no cover - defensive
             return (
                 False,
                 0,
+                None,
                 [
                     {
                         "row": None,
@@ -253,19 +259,6 @@ class FutureSkillPredictionListAPIView(ListAPIView):
     serializer_class = FutureSkillPredictionSerializer
     pagination_class = FutureSkillPredictionPagination
     queryset = FutureSkillPrediction.objects.all().order_by("-created_at", "id")
-
-    def get_permissions(self):
-        """Relax permissions during tests to allow anonymous access in API architecture checks."""
-        path = getattr(getattr(self, "request", None), "path", "") or ""
-        open_paths = {
-            "/api/predictions/",
-            "/api/v2/predictions/",
-            "/api/v1/future-skills/",
-            "/api/future-skills/",
-        }
-        if getattr(settings, "TESTING", False) and path in open_paths:
-            return [AllowAny()]
-        return [permission() for permission in self.permission_classes]
 
     def get_queryset(self):
         """Filter queryset based on query parameters."""
@@ -1146,7 +1139,7 @@ class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
 
         validated = input_serializer.validated_data
         batch_results = self._process_employee_batch(validated["employees"])
-        predictions_generated, total_predictions, prediction_errors = self._maybe_generate_predictions(
+        predictions_generated, total_predictions, prediction_run_id, prediction_errors = self._maybe_generate_predictions(
             auto_predict=validated["auto_predict"],
             horizon_years=validated["horizon_years"],
             request_user=request.user,
@@ -1162,6 +1155,7 @@ class BulkEmployeeImportAPIView(BulkEmployeeProcessingMixin, APIView):
             "errors": errors,
             "predictions_generated": predictions_generated,
             "total_predictions": total_predictions if predictions_generated else 0,
+            "prediction_run_id": prediction_run_id,
         }
 
         return Response(
@@ -1354,7 +1348,7 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
 
         validated = serializer.validated_data
         batch_results = self._process_employee_batch(validated["employees"])
-        predictions_generated, total_predictions, prediction_errors = self._maybe_generate_predictions(
+        predictions_generated, total_predictions, prediction_run_id, prediction_errors = self._maybe_generate_predictions(
             auto_predict=validated["auto_predict"],
             horizon_years=validated["horizon_years"],
             request_user=request.user,
@@ -1376,6 +1370,7 @@ class BulkEmployeeUploadAPIView(BulkEmployeeProcessingMixin, APIView):
             "errors": errors,
             "predictions_generated": predictions_generated,
             "total_predictions": total_predictions if predictions_generated else 0,
+            "prediction_run_id": prediction_run_id,
         }
 
         return Response(
@@ -1592,6 +1587,67 @@ class TrainingRunPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = "page_size"
     max_page_size = 100
+
+
+class PredictionRunDetailAPIView(RetrieveAPIView):
+    permission_classes = [IsHRStaffOrManager]
+    serializer_class = PredictionRunSerializer
+    queryset = PredictionRun.objects.select_related("run_by")
+
+
+class DriftAPIView(APIView):
+    permission_classes = [IsHRStaffOrManager]
+
+    def get(self, request, *args, **kwargs):
+        snapshot = DriftSnapshot.objects.select_related("prediction_run").first()
+        if snapshot is None:
+            return Response({"status": "NO_DATA", "delta": None, "mean_score": None, "previous_mean_score": None, "sample_size": 0, "last_run_id": None, "last_run_at": None})
+        return Response({
+            "status": snapshot.status,
+            "delta": snapshot.delta,
+            "mean_score": snapshot.mean_score,
+            "previous_mean_score": snapshot.previous_mean_score,
+            "sample_size": snapshot.sample_size,
+            "distribution": snapshot.distribution,
+            "last_run_id": snapshot.prediction_run_id,
+            "last_run_at": snapshot.prediction_run.completed_at or snapshot.prediction_run.run_date,
+        })
+
+
+class TrainingDatasetUploadAPIView(APIView):
+    permission_classes = [IsHRStaff]
+    required_columns = {"job_role_name", "skill_name", "skill_category", "job_department", "trend_score", "internal_usage", "training_requests", "scarcity_index", "hiring_difficulty", "avg_salary_k", "economic_indicator", "future_need_level"}
+    max_file_size = 20 * 1024 * 1024
+
+    def post(self, request, *args, **kwargs):
+        import csv
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            return Response({"detail": "A CSV file is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not uploaded.name.lower().endswith(".csv"):
+            return Response({"detail": "Only CSV datasets are supported."}, status=status.HTTP_400_BAD_REQUEST)
+        if uploaded.size > self.max_file_size:
+            return Response({"detail": "Dataset exceeds the 20MB limit."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            raw = uploaded.read()
+            reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
+            missing = sorted(self.required_columns - set(reader.fieldnames or []))
+            if missing:
+                return Response({"detail": "Dataset is missing required columns.", "missing_columns": missing}, status=status.HTTP_400_BAD_REQUEST)
+            rows = list(reader)
+            if not rows:
+                return Response({"detail": "Dataset must contain at least one row."}, status=status.HTTP_400_BAD_REQUEST)
+            invalid_levels = sorted({row.get("future_need_level", "").strip().upper() for row in rows} - {"LOW", "MEDIUM", "HIGH"})
+            if invalid_levels:
+                return Response({"detail": "future_need_level contains invalid values.", "invalid_values": invalid_levels}, status=status.HTTP_400_BAD_REQUEST)
+        except UnicodeDecodeError:
+            return Response({"detail": "Dataset must be UTF-8 encoded."}, status=status.HTTP_400_BAD_REQUEST)
+        destination = Path(settings.FUTURE_SKILLS_DATASET_PATH)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        temporary = destination.with_suffix(".uploading.csv")
+        temporary.write_bytes(raw)
+        temporary.replace(destination)
+        return Response({"dataset_path": str(destination), "filename": uploaded.name, "rows": len(rows)}, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(

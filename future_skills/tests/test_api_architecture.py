@@ -33,6 +33,7 @@ class APIVersioningTestCase(APITestCase):
             username="testuser",
             email="testuser@example.com",
             password="testpass123",
+            role=User.Role.MANAGER,
         )
         self.client.force_authenticate(user=self.user)
 
@@ -108,19 +109,13 @@ class RateLimitingTestCase(APITestCase):
             },
         }
     )
-    def test_anonymous_rate_limiting(self):
-        """Test rate limiting for anonymous users."""
-        # Make requests up to the limit
-        for i in range(5):
+    def test_anonymous_requests_are_rejected_before_user_throttling(self):
+        """Protected prediction data must never become public for a throttle test."""
+        for _ in range(6):
             response = self.client.get("/api/v2/predictions/")
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
             self.assertIn("X-RateLimit-Limit", response)
             self.assertIn("X-RateLimit-Remaining", response)
-
-        # Next request should be throttled
-        response = self.client.get("/api/v2/predictions/")
-        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-        self.assertIn("Retry-After", response)
 
     def test_rate_limit_headers_present(self):
         """Test that rate limit headers are present in responses."""
@@ -232,6 +227,7 @@ class CachingTestCase(APITestCase):
             username="testuser",
             email="testuser@example.com",
             password="testpass123",
+            role=User.Role.MANAGER,
         )
         self.client.force_authenticate(user=self.user)
         cache.clear()
@@ -464,7 +460,11 @@ class CORSHeadersTestCase(APITestCase):
 
     def test_cors_preflight_request(self):
         """Test CORS preflight OPTIONS request."""
-        response = self.client.options("/api/v2/predictions/")
+        response = self.client.options(
+            "/api/v2/predictions/",
+            HTTP_ORIGIN="http://localhost:3100",
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="GET",
+        )
 
         # Should return 200 OK
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -483,6 +483,7 @@ class EndToEndAPITestCase(APITestCase):
             username="testuser",
             email="testuser@example.com",
             password="testpass123",
+            role=User.Role.MANAGER,
         )
         self.client.force_authenticate(user=self.user)
 

@@ -15,7 +15,17 @@ load_dotenv("secrets.env")
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
+    # Django's built-in test runner does not read pytest.ini. Select the
+    # isolated test profile before Django initializes so `manage.py test` and
+    # pytest exercise the same database, cache, artifact paths, and security
+    # defaults. A CLI `--settings=...` remains an explicit override; the
+    # container's normal runtime profile must not leak into its test process.
+    is_test_command = len(sys.argv) > 1 and sys.argv[1] == "test"
+    has_cli_settings = any(arg == "--settings" or arg.startswith("--settings=") for arg in sys.argv[2:])
+    if is_test_command and not has_cli_settings:
+        os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings.test"
+    else:
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

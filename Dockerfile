@@ -85,8 +85,10 @@ RUN mkdir -p \
     artifacts/results \
     artifacts/cache/joblib
 
-# Collect static files
-RUN python manage.py collectstatic --noinput --clear || true
+# Collect static files with deterministic build-only settings. Any error must
+# fail the image build instead of being hidden.
+RUN DJANGO_SETTINGS_MODULE=config.settings.build \
+    python manage.py collectstatic --noinput --clear
 
 # ==============================================================================
 # Stage 2: Runtime
@@ -198,9 +200,10 @@ RUN set -eux; \
 # Switch to non-root user
 USER ${APP_USER}
 
-# Health check
+# Health check — use Python (always present) instead of curl, which is not
+# installed in the runtime image. Exits 0 only on a 200 from /api/health/.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/api/health/ || exit 1
+    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz/', timeout=5).status == 200 else 1)" || exit 1
 
 # Expose port
 EXPOSE ${PORT}

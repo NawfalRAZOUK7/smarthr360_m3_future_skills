@@ -526,7 +526,15 @@ class PredictionRun(models.Model):
         null=True,
         help_text="Contexte du recalcul (ex : 'Mise à jour tendances 2025').",
     )
-    total_predictions = models.IntegerField()
+    total_predictions = models.IntegerField(default=0)
+    status = models.CharField(
+        max_length=20,
+        choices=[("QUEUED", "Queued"), ("RUNNING", "Running"), ("DONE", "Done"), ("FAILED", "Failed")],
+        default="DONE",
+    )
+    started_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    error_message = models.TextField(blank=True, null=True)
 
     # 🔐 Nouveaux champs de traçabilité
     run_by = models.ForeignKey(
@@ -557,6 +565,22 @@ class PredictionRun(models.Model):
     def __str__(self):
         """Return a string representation of the PredictionRun instance."""
         return f"Run du {self.run_date} - {self.total_predictions} prédictions"
+
+
+class DriftSnapshot(models.Model):
+    """Persisted prediction-score distribution summary for one run."""
+
+    prediction_run = models.OneToOneField(PredictionRun, on_delete=models.CASCADE, related_name="drift_snapshot")
+    created_at = models.DateTimeField(auto_now_add=True)
+    mean_score = models.FloatField()
+    previous_mean_score = models.FloatField(blank=True, null=True)
+    delta = models.FloatField(default=0.0)
+    status = models.CharField(max_length=20, choices=[("STABLE", "Stable"), ("WARNING", "Warning"), ("DRIFTED", "Drifted")], default="STABLE")
+    sample_size = models.PositiveIntegerField(default=0)
+    distribution = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
 
 class TrainingRun(models.Model):

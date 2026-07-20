@@ -955,6 +955,7 @@ def recalculate_predictions(
     run_by=None,
     parameters: Dict[str, Any] | None = None,
     generate_explanations: bool = False,
+    prediction_run: PredictionRun | None = None,
 ) -> int:
     """Recalculate all FutureSkillPrediction entries for all (JobRole, Skill).
 
@@ -1035,12 +1036,22 @@ def recalculate_predictions(
         as_of_date=as_of_date,
     )
 
-    PredictionRun.objects.create(
-        description=(f"Recalcul des prédictions à horizon {horizon_years} ans " f"({engine_label})."),
-        total_predictions=total_predictions,
-        run_by=run_by,
-        parameters=params,
-    )
+    run_values = {
+        "description": (f"Recalcul des prédictions à horizon {horizon_years} ans " f"({engine_label})."),
+        "total_predictions": total_predictions,
+        "parameters": params,
+        "status": "DONE",
+        "completed_at": timezone.now(),
+    }
+    if prediction_run is None:
+        prediction_run = PredictionRun.objects.create(run_by=run_by, started_at=timezone.now(), **run_values)
+    else:
+        for field, value in run_values.items():
+            setattr(prediction_run, field, value)
+        prediction_run.save(update_fields=list(run_values))
+
+    from future_skills.services.prediction_metrics import update_drift_snapshot
+    update_drift_snapshot(prediction_run)
 
     logger.info("✅ Prediction recalculation completed successfully")
     logger.info("Total predictions created/updated: %s", total_predictions)

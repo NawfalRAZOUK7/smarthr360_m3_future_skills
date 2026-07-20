@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from django.conf import settings
+from django.db.models import Avg, Count
+
 try:  # pragma: no cover - optional metrics dependency
     from prometheus_client import Counter, Histogram  # type: ignore
 
@@ -64,3 +67,26 @@ def update_prediction_metrics(
                     DATA_QUALITY_TOTAL.labels(flag=flag).inc()
             except (TypeError, ValueError):
                 continue
+
+
+def update_drift_snapshot(prediction_run):
+    """Persist score-distribution drift against the preceding completed run."""
+    from future_skills.models import DriftSnapshot, FutureSkillPrediction
+
+    horizon = prediction_run.parameters.get("horizon_years", 5)
+    scores = FutureSkillPrediction.objects.filter(horizon_years=horizon)
+    aggregate = scores.aggregate(mean=Avg("score"), count=Count("id"))
+    mean_score = float(aggregate["mean"] or 0.0)
+    previous = DriftSnapshot.objects.exclude(prediction_run=prediction_run).order_by("-created_at").first()
+    previous_mean = previous.mean_score if previous else None
+    delta = mean_score - previous_mean if previous_mean is not None else 0.0
+    absolute_delta = abs(delta)
+    warning = float(getattr(settings, "FUTURE_SKILLS_DRIFT_WARNING_THRESHOLD", 5.0))
+    critical = float(getattr(settings, "FUTURE_SKILLS_DRIFT_CRITICAL_THRESHOLD", 10.0))
+    drift_status = "DRIFTED" if absolute_delta >= critical else "WARNING" if absolute_delta >= warning else "STABLE"
+    distribution = {row["level"]: row["count"] for row in scores.values("level").annotate(count=Count("id"))}
+    snapshot, _ = DriftSnapshot.objects.update_or_create(
+        prediction_run=prediction_run,
+        defaults={"mean_score": mean_score, "previous_mean_score": previous_mean, "delta": delta, "status": drift_status, "sample_size": aggregate["count"], "distribution": distribution},
+    )
+    return snapshot

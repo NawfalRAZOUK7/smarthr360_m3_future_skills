@@ -13,6 +13,7 @@ from ..models import (
     HRInvestmentRecommendation,
     JobRole,
     MarketTrend,
+    PredictionRun,
     Skill,
     TrainingRun,
 )
@@ -543,6 +544,15 @@ class TrainingRunSerializer(serializers.ModelSerializer):
             "training_duration_seconds",
             "trained_by_username",
         ]
+        read_only_fields = fields
+
+
+class PredictionRunSerializer(serializers.ModelSerializer):
+    run_by_username = serializers.CharField(source="run_by.username", read_only=True, allow_null=True)
+
+    class Meta:
+        model = PredictionRun
+        fields = ["id", "run_date", "status", "started_at", "completed_at", "total_predictions", "parameters", "error_message", "run_by_username"]
         read_only_fields = fields
 
 
