@@ -131,7 +131,11 @@ jobs:
       - name: Export the digest
         run: |
           mkdir -p /tmp/digests
-          touch "/tmp/digests/${{ steps.build.outputs.digest }}"
+          # The digest is "sha256:<hex>", and the upload-artifact action
+          # rejects colons in filenames. Store the bare hex and put the
+          # prefix back when the manifest is assembled.
+          digest='${{ steps.build.outputs.digest }}'
+          touch "/tmp/digests/${digest#sha256:}"
       - uses: actions/upload-artifact@v4
         with:
           name: digest-${{ strategy.job-index }}
@@ -177,6 +181,6 @@ jobs:
         run: |
           docker buildx imagetools create \
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ steps.img.outputs.name }}@%s ' *)
+            $(printf '${{ steps.img.outputs.name }}@sha256:%s ' *)
       - name: Show what was published
         run: docker buildx imagetools inspect ${{ steps.img.outputs.name }}:${{ steps.meta.outputs.version }}
